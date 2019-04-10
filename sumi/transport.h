@@ -45,22 +45,24 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef sumi_api_TRANSPORT_H
 #define sumi_api_TRANSPORT_H
 
-#include <sprockit/debug.h>
-#include <sprockit/factories/factory.h>
-#include <unordered_map>
-#include <sprockit/util.h>
+#include <sstmac/hardware/network/network_message_fwd.h>
+#include <sstmac/software/process/software_id.h>
+#include <sstmac/software/process/app_id.h>
+#include <sumi/message_fwd.h>
+#include <sumi/collective.h>
+#include <sumi/comm_functions.h>
 #include <sumi/collective_message.h>
 #include <sumi/collective.h>
 #include <sumi/comm_functions.h>
 #include <sumi/options.h>
-#include <sumi/ping.h>
 #include <sumi/communicator_fwd.h>
+#include <sprockit/debug.h>
+#include <sprockit/sim_parameters_fwd.h>
+
+#include <unordered_map>
+#include <queue>
 
 DeclareDebugSlot(sumi);
-
-#define CHECK_IF_I_AM_DEAD(x) if (is_dead_) x
-
-#define print_size(x) printf("%s %d: sizeof(%s)=%d\n", __FILE__, __LINE__, #x, sizeof(x))
 
 namespace sumi {
 
@@ -72,69 +74,138 @@ struct enum_hash {
   }
 };
 
-class transport {
-  DeclareFactory(transport)
+/**
+ * @brief The Transport class
+ * Base class that can be included by an application. std library
+ * replacement headers can be activated with this file. No simulator internals
+ * are referenced assign from integer typedefs.
+ */
+class Transport {
+
  public:
-  virtual ~transport();
+  static Transport* get();
 
-  virtual void init();
-  
-  virtual void finish();
+  sstmac::sw::SoftwareId sid() const {
+    return sid_;
+  }
 
-  void deadlock_check();
+  sstmac::NodeId addr() const {
+    return nid_;
+  }
 
-  int allocate_cq();
+  int rank() const {
+    return rank_;
+  }
 
-  /**
-   Send a message directly to a destination node.
-   This assumes there is buffer space available at the destination to eagerly receive.
-   * @param dst         The destination of the message
-   * @param ev          An enum for the type of payload carried
-   * @param needs_ack   Whether an ack should be generated notifying that the message was fully injected
-   * @param msg         The message to send (full message at the MTL layer)
-   */
-  void smsg_send(int dst,
-     message::payload_type_t ev,
-     message* msg,
-     int send_cq, int recv_cq);
+  int nproc() const {
+    return nproc_;
+  }
 
-  /**
-   Helper function for #smsg_send. Directly send a message header.
-   * @param dst
-   * @param msg
-   */
-  void send_header(int dst, message* msg, int send_cq, int recv_cq);
+  std::string serverLibname() const {
+    return server_libname_;
+  }
 
-  /**
-   Helper function for #smsg_send. Directly send an actual data payload.
-   * @param dst
-   * @param msg
-   */
-  void send_payload(int dst, message* msg, int send_cq, int recv_cq);
+  virtual void init() = 0;
+
+  virtual void finish() = 0;
+
+  virtual ~Transport();
+
+  virtual sstmac::NodeId rankToNode(int rank) const = 0;
 
   /**
-   Put a message directly to the destination node.
-   This assumes the application has properly configured local/remote buffers for the transfer.
-   * @param dst      Where the data is being put (destination)
-   * @param msg      The message to send (full message at the MTL layer).
-   *                 Should have local/remote buffers configured for RDMA.
-   * @param needs_send_ack  Whether an ack should be generated send-side when the message is fully injected
-   * @param needs_recv_ack  Whether an ack should be generated recv-side when the message is fully received
+   * @brief smsg_send_response After receiving a short message m, use that message object to return a response
+   * This function "reverses" the sender/recever
+   * @param m
+   * @param loc_buffer
+   * @param local_cq
+   * @param remote_cq
+   * @return
    */
-  void rdma_put(int dst, message* msg, int send_cq, int recv_cq);
+  virtual void smsgSendResponse(Message* m, uint64_t sz, void* loc_buffer, int local_cq, int remote_cq) = 0;
 
   /**
-   Get a message directly from the source node.
-   This assumes the application has properly configured local/remote buffers for the transfer.
-   * @param src      Where the data is being put (destination)
-   * @param msg      The message to send (full message at the MTL layer).
-   *                 Should have local/remote buffers configured for RDMA.
-   * @param send_cq  Where an ack should be generated send-side (source) when the message is fully injected
-   * @param recv_cq  Where an ack should be generated recv-side when the message is fully received
+   * @brief rdma_get_response After receiving a short message payload coordinating an RDMA get,
+   * use that message object to send an rdma get
+   * @param m
+   * @param loc_buffer
+   * @param remote_buffer
+   * @param local_cq
+   * @param remote_cq
+   * @return
    */
-  void rdma_get(int src, message* msg, int send_cq, int recv_cq);
+  virtual void rdmaGetRequestResponse(Message* m, uint64_t sz, void* loc_buffer, void* remote_buffer,
+                                      int local_cq, int remote_cq) = 0;
 
-  void nvram_get(int src, message* msg);
+  virtual void rdmaGetResponse(Message* m, uint64_t sz, int local_cq, int remote_cq) = 0;
+
+  /**
+   * @brief rdma_put_response
+   * @param m
+   * @param loc_buffer
+   * @param remote_buffer
+   * @param local_cq
+   * @param remote_cq
+   * @return
+   */
+  virtual void rdmaPutResponse(Message* m, uint64_t payload_bytes,
+                         void* loc_buffer, void* remote_buffer, int local_cq, int remote_cq) = 0;
+
+  template <class T, class... Args>
+  uint64_t rdmaGet(int remote_proc, uint64_t byte_length, void* local_buffer, void* remote_buffer,
+                    int local_cq, int remote_cq, Message::class_t cls, Args&&... args){
+    uint64_t flow_id = allocateFlowId();
+    bool needs_ack = remote_cq != Message::no_ack;
+    T* t = new T(std::forward<Args>(args)...,
+                 rank_, remote_proc, remote_cq, local_cq, cls,
+                 flow_id, serverLibname(), sid().app_,
+                 rankToNode(remote_proc), addr(),
+                 byte_length, needs_ack, local_buffer, remote_buffer, Message::rdma_get{});
+    send(t);
+    return flow_id;
+  }
+
+  template <class T, class... Args>
+  uint64_t rdmaPut(int remote_proc, uint64_t byte_length, void* local_buffer, void* remote_buffer,
+                    int local_cq, int remote_cq, Message::class_t cls, Args&&... args){
+    uint64_t flow_id = allocateFlowId();
+    bool needs_ack = local_cq != Message::no_ack;
+    T* t = new T(std::forward<Args>(args)...,
+                 rank_, remote_proc, local_cq, remote_cq, cls,
+                 flow_id, serverLibname(), sid().app_,
+                 rankToNode(remote_proc), addr(),
+                 byte_length, needs_ack, local_buffer, remote_buffer, Message::rdma_put{});
+    send(t);
+    return flow_id;
+  }
+
+  template <class T, class... Args>
+  uint64_t smsgSend(int remote_proc, uint64_t byte_length, void* buffer,
+                     int local_cq, int remote_cq, Message::class_t cls, Args&&... args){
+    uint64_t flow_id = allocateFlowId();
+    bool needs_ack = local_cq != Message::no_ack;
+    T* t = new T(std::forward<Args>(args)...,
+                 rank_, remote_proc, local_cq, remote_cq, cls,
+                 flow_id, serverLibname(), sid().app_,
+                 rankToNode(remote_proc), addr(),
+                 byte_length, needs_ack, buffer, Message::header{});
+    send(t);
+    return flow_id;
+  }
+
+  virtual void memcopy(uint64_t bytes) = 0;
+
+  virtual double wallTime() const = 0;
+
+  virtual void* allocatePublicBuffer(uint64_t size) = 0;
+
+  virtual void* makePublicBuffer(void* buffer, uint64_t size) = 0;
+
+  virtual void unmakePublicBuffer(void* buf, uint64_t size){}
+
+  virtual void freePublicBuffer(void* buf, uint64_t size) = 0;
+
+  virtual int* nidlist() const = 0;
   
   /**
    Check if a message has been received on a specific completion queue.
@@ -145,7 +216,7 @@ class transport {
    @param timeout  An optional timeout - only valid with blocking
    @return    The next message to be received, null if no messages
   */
-  message* poll(bool blocking, int cq_id, double timeout = -1);
+  virtual Message* poll(bool blocking, int cq_id, double timeout = -1) = 0;
 
   /**
    Check all completion queues if a message has been received.
@@ -155,7 +226,7 @@ class transport {
    @param timeout  An optional timeout - only valid with blocking
    @return    The next message to be received, null if no messages
   */
-  message* poll(bool blocking, double timeout = -1);
+  virtual Message* poll(bool blocking, double timeout = -1) = 0;
 
   /**
    Block until a message is received.
@@ -166,122 +237,104 @@ class transport {
    @param timeout   Timeout in seconds
    @return          The next message to be received. Message is NULL on timeout
   */
-  message* blocking_poll(int cq_id, double timeout = -1);
+  virtual Message* blockingPoll(int cq_id, double timeout = -1) = 0;
 
-  template <class T> T*
-  poll(const char* file, int line, const char* cls) {
-    message* msg = poll(true);
-    T* result = dynamic_cast<T*>(msg);
-    if (!result){
-      poll_cast_error(file, line, cls, msg);
-    }
-    return result;
+  virtual uint64_t allocateFlowId() = 0;
+
+  virtual int allocateCqId() = 0;
+
+  virtual int allocateDefaultCq() = 0;
+
+  CollectiveEngine* engine() const {
+    return engine_;
   }
 
-  template <class T> T*
-  poll(double timeout, const char* file, int line, const char* cls) {
-    message* msg = poll(true, timeout);
-    T* result = dynamic_cast<T*>(msg);
-    if (msg && !result){
-      poll_cast_error(file, line, cls, msg);
-    }
-    return result;
+ private:      
+  virtual void send(Message* m) = 0;
+
+ protected:
+  Transport(const std::string& server_name,
+            sstmac::sw::SoftwareId sid,
+            sstmac::NodeId nid) :
+    server_libname_(server_name),
+    sid_(sid),
+    nid_(nid),
+    rank_(sid.task_),
+    nproc_(-1),
+    engine_(nullptr)
+  {
   }
 
-#define SUMI_POLL(tport, msgtype) tport->poll<msgtype>(__FILE__, __LINE__, #msgtype)
-#define SUMI_POLL_TIME(tport, msgtype, to) tport->poll<msgtype>(to, __FILE__, __LINE__, #msgtype)
+  std::set<int> smp_neighbors_;
 
-  void cq_push_back(int cq_id, message* msg);
+  std::string server_libname_;
 
-  std::list<message*>::iterator cq_begin(int cq_id){
-    return completion_queues_[cq_id].begin();
+  sstmac::sw::SoftwareId sid_;
+
+  sstmac::NodeId nid_;
+
+  int rank_;
+
+  int nproc_;
+
+  CollectiveEngine* engine_;
+};
+
+class CollectiveEngine
+{
+ public:
+  CollectiveEngine(SST::Params& params,
+                    Transport* tport);
+
+  ~CollectiveEngine();
+
+  CollectiveDoneMessage* incoming(Message* m);
+
+  void initSmp(const std::set<int>& neighbors);
+
+  int allocateGlobalCollectiveTag(){
+    system_collective_tag_--;
+    if (system_collective_tag_ >= 0)
+      system_collective_tag_ = -1;
+    return system_collective_tag_;
   }
 
-  std::list<message*>::iterator cq_end(int cq_id){
-    return completion_queues_[cq_id].end();
+  Communicator* globalDom() const {
+    return global_domain_;
   }
-
-  message* pop(int cq_id, std::list<message*>::iterator it){
-    message* msg = *it;
-    completion_queues_[cq_id].erase(it);
-    return msg;
-  }
-
-  message* poll(message::payload_type_t ty, bool blocking, int cq_id, double timeout = -1);
-
-  message* poll_new(message::payload_type_t ty, bool blocking, int cq_id, double timeout);
-
-  message* poll_new(bool blocking, int cq_id, double timeout);
 
   /**
-   * @brief poll_pending_messages
-   * @param blocking  Whether to block if no messages are available
-   * @param timeout   How long to block if no messages found
-   * @return A transport message carrying a message
-   */
-  virtual transport_message* poll_pending_messages(bool blocking, double timeout) = 0;
-
-  virtual void send_terminate(int dst) = 0;
-
-  virtual double wall_time() const = 0;
-
-  virtual int* nidlist() const = 0;
-
-  /**
-   * Block on a collective of a particular type and tag
-   * until that collective is complete
-   * @param ty
-   * @param tag
+   * The cutoff for message size in bytes
+   * for switching between an eager protocol and a rendezvous RDMA protocol
    * @return
    */
-  virtual collective_done_message* collective_block(
-      collective::type_t ty, int tag, int cq_id = 0) = 0;
+  uint32_t eagerCutoff() const {
+    return eager_cutoff_;
+  }
 
-  bool use_eager_protocol(uint64_t byte_length) const {
+  void notifyCollectiveDone(int rank, Collective::type_t ty, int tag);
+
+  bool useEagerProtocol(uint64_t byte_length) const {
     return byte_length < eager_cutoff_;
   }
 
-  void set_eager_cutoff(uint64_t bytes) {
+  void setEagerCutoff(uint64_t bytes) {
     eager_cutoff_ = bytes;
   }
 
-  bool use_put_protocol() const {
+  bool usePutProtocol() const {
     return use_put_protocol_;
   }
 
-  bool use_get_protocol() const {
+  bool useGetProtocol() const {
     return !use_put_protocol_;
   }
 
-  void set_put_protocol(bool flag) {
+  void setPutProtocol(bool flag) {
     use_put_protocol_ = flag;
   }
 
-  void set_use_hardware_ack(bool flag);
-
-  virtual bool supports_hardware_ack() const {
-    return false;
-  }
-
-  void send_self_terminate();
-  
-  /**
-   * The total size of the input/result buffer in bytes is nelems*type_size
-   * This always run in a fault-tolerant fashion
-   * This uses a dynamic tree structure that reconnects partners when failures are detected
-   * @param vote The vote (currently restricted to integer) from this process
-   * @param nelems The number of elements in the input and result buffer.
-   * @param tag A unique tag identifier for the collective
-   * @param fxn The function that merges vote, usually AND, OR, MAX, MIN
-   * @param context The context (i.e. initial set of failed procs)
-   */
-  void dynamic_tree_vote(int vote, int tag, vote_fxn fxn, collective::config cfg = collective::cfg());
-
-  template <template <class> class VoteOp>
-  void vote(int vote, int tag, collective::config cfg = collective::cfg()){
-    typedef VoteOp<int> op_class_type;
-    dynamic_tree_vote(vote, tag, &op_class_type::op, cfg);
-  }
+  CollectiveDoneMessage* blockUntilNext(int cq_id);
 
   /**
    * The total size of the input buffer in bytes is nelems*type_size*comm_size
@@ -295,13 +348,14 @@ class transport {
    * @param fault_aware Whether to execute in a fault-aware fashion to detect failures
    * @param context The context (i.e. initial set of failed procs)
    */
-  void reduce_scatter(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
-                     collective::config cfg = collective::cfg());
+  CollectiveDoneMessage* reduceScatter(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
+                                          int cq_id, Communicator* comm = nullptr);
 
   template <typename data_t, template <typename> class Op>
-  void reduce_scatter(void* dst, void* src, int nelems, int tag, collective::config cfg = collective::cfg()){
+  CollectiveDoneMessage* reduceScatter(void* dst, void* src, int nelems, int tag,
+                                          int cq_id, Communicator* comm = nullptr){
     typedef ReduceOp<Op, data_t> op_class_type;
-    reduce_scatter(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cfg);
+    return reduceScatter(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cq_id, comm);
   }
 
   /**
@@ -316,13 +370,14 @@ class transport {
    * @param fault_aware Whether to execute in a fault-aware fashion to detect failures
    * @param context The context (i.e. initial set of failed procs)
    */
-  void allreduce(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
-                         collective::config cfg = collective::cfg());
+  CollectiveDoneMessage* allreduce(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
+                                     int cq_id, Communicator* comm = nullptr);
 
   template <typename data_t, template <typename> class Op>
-  void allreduce(void* dst, void* src, int nelems, int tag, collective::config cfg = collective::cfg()){
+  CollectiveDoneMessage* allreduce(void* dst, void* src, int nelems, int tag,
+                                     int cq_id, Communicator* comm = nullptr){
     typedef ReduceOp<Op, data_t> op_class_type;
-    allreduce(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cfg);
+    return allreduce(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cq_id, comm);
   }
 
   /**
@@ -337,24 +392,27 @@ class transport {
    * @param fault_aware Whether to execute in a fault-aware fashion to detect failures
    * @param context The context (i.e. initial set of failed procs)
    */
-  void scan(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
-        collective::config cfg = collective::cfg());
+  CollectiveDoneMessage* scan(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
+                                int cq_id, Communicator* comm = nullptr);
 
   template <typename data_t, template <typename> class Op>
-  void scan(void* dst, void* src, int nelems, int tag, collective::config cfg = collective::cfg()){
+  CollectiveDoneMessage* scan(void* dst, void* src, int nelems, int tag, int cq_id, Communicator* comm = nullptr){
     typedef ReduceOp<Op, data_t> op_class_type;
-    scan(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cfg);
+    return scan(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cq_id, comm);
   }
 
-  virtual void reduce(int root, void* dst, void* src, int nelems, int type_size, int tag,
-    reduce_fxn fxn, collective::config cfg = collective::cfg());
+  CollectiveDoneMessage* reduce(int root, void* dst, void* src, int nelems, int type_size, int tag,
+                                  reduce_fxn fxn, int cq_id, Communicator* comm = nullptr);
 
   template <typename data_t, template <typename> class Op>
-  void reduce(int root, void* dst, void* src, int nelems, int tag, collective::config cfg = collective::cfg()){
+  CollectiveDoneMessage* reduce(int root, void* dst, void* src, int nelems, int tag, int cq_id, Communicator* comm = nullptr){
     typedef ReduceOp<Op, data_t> op_class_type;
-    reduce(root, dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cfg);
+    return reduce(root, dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cq_id, comm);
   }
 
+  Transport* tport() const {
+    return tport_;
+  }
 
   /**
    * The total size of the input/result buffer in bytes is nelems*type_size
@@ -366,372 +424,86 @@ class transport {
    * @param fault_aware Whether to execute in a fault-aware fashion to detect failures
    * @param context The context (i.e. initial set of failed procs)
    */
-  void allgather(void* dst, void* src, int nelems, int type_size, int tag,
-                         collective::config = collective::cfg());
+  CollectiveDoneMessage* allgather(void* dst, void* src, int nelems, int type_size, int tag,
+                                     int cq_id, Communicator* comm = nullptr);
 
-  void allgatherv(void* dst, void* src, int* recv_counts, int type_size, int tag,
-                          collective::config = collective::cfg());
+  CollectiveDoneMessage* allgatherv(void* dst, void* src, int* recv_counts, int type_size, int tag,
+                                      int cq_id, Communicator* comm = nullptr);
 
-  void gather(int root, void* dst, void* src, int nelems, int type_size, int tag,
-                      collective::config = collective::cfg());
+  CollectiveDoneMessage* gather(int root, void* dst, void* src, int nelems, int type_size, int tag,
+                                  int cq_id, Communicator* comm = nullptr);
 
-  void gatherv(int root, void* dst, void* src, int sendcnt, int* recv_counts, int type_size, int tag,
-                       collective::config = collective::cfg());
+  CollectiveDoneMessage* gatherv(int root, void* dst, void* src, int sendcnt, int* recv_counts, int type_size, int tag,
+                                   int cq_id, Communicator* comm = nullptr);
 
-  void alltoall(void* dst, void* src, int nelems, int type_size, int tag,
-                        collective::config = collective::cfg());
+  CollectiveDoneMessage* alltoall(void* dst, void* src, int nelems, int type_size, int tag,
+                                    int cq_id, Communicator* comm = nullptr);
+  CollectiveDoneMessage* alltoallv(void* dst, void* src, int* send_counts, int* recv_counts, int type_size, int tag,
+                                     int cq_id, Communicator* comm = nullptr);
 
-  void alltoallv(void* dst, void* src, int* send_counts, int* recv_counts, int type_size, int tag,
-                         collective::config = collective::cfg());
+  CollectiveDoneMessage* scatter(int root, void* dst, void* src, int nelems, int type_size, int tag,
+                                   int cq_id, Communicator* comm = nullptr);
 
-  void scatter(int root, void* dst, void* src, int nelems, int type_size, int tag,
-                 collective::config = collective::cfg());
+  CollectiveDoneMessage* scatterv(int root, void* dst, void* src, int* send_counts, int recvcnt, int type_size, int tag,
+                                    int cq_id, Communicator* comm = nullptr);
 
-  void scatterv(int root, void* dst, void* src, int* send_counts, int recvcnt, int type_size, int tag,
-                        collective::config = collective::cfg());
-
-  void wait_barrier(int tag);
+  void waitBarrier(int tag);
 
   /**
    * Essentially just executes a zero-byte allgather.
    * @param tag
    * @param fault_aware
    */
-  void barrier(int tag, collective::config = collective::cfg());
+  CollectiveDoneMessage* barrier(int tag, int cq_id, Communicator* comm = nullptr);
 
-  void bcast(int root, void* buf, int nelems, int type_size, int tag, collective::config cfg = collective::cfg());
-  
-  void system_bcast(message* msg);
+  CollectiveDoneMessage* bcast(int root, void* buf, int nelems, int type_size, int tag,
+                                 int cq_id, Communicator* comm = nullptr);
 
-  int rank() const {
-    return rank_;
-  }
+  void cleanUp();
 
-  int allocate_global_collective_tag(){
-    system_collective_tag_--;
-    if (system_collective_tag_ >= 0)
-      system_collective_tag_ = -1;
-    return system_collective_tag_;
-  }
-
-  int nproc() const {
-    return nproc_;
-  }
-
-  communicator* global_dom() const {
-    return global_domain_;
-  }
-
-  /**
-   * The cutoff for message size in bytes
-   * for switching between an eager protocol and a rendezvous RDMA protocol
-   * @return
-   */
-  uint32_t eager_cutoff() const {
-    return eager_cutoff_;
-  }
-
-  void notify_collective_done(collective_done_message* msg);
-
-
-  /**
-   * @brief handle Receive some version of point-2-point message.
-   *  Return either the original message or a collective done message
-   *  if the message is part of a collective and the collective is done
-   * @param msg A point to point message that might be part of a collective
-   * @return Null, if collective message and collective is not done
-   */
-  message* handle(message* msg);
-
-  void* allocate_public_buffer(uint64_t size) {
-    return ::malloc(size);
-  }
-
-  virtual void* make_public_buffer(void* buffer, uint64_t size) = 0;
-
-  virtual void unmake_public_buffer(void* buf, uint64_t size) = 0;
-
-  virtual void free_public_buffer(void* buf, uint64_t size) = 0;
-
-  virtual void memcopy(uint64_t bytes) = 0;
-
- protected:
-  void clean_up();
-
-  void configure_send(int dst,
-    message::payload_type_t ev,
-    message* msg);
-
-  virtual void do_smsg_send(int dst, message* msg) = 0;
-
-  virtual void do_rdma_put(int dst, message* msg) = 0;
-
-  virtual void do_rdma_get(int src, message* msg) = 0;
-
-  virtual void do_nvram_get(int src, message* msg) = 0;
-
-  virtual void go_die() = 0;
-
-  virtual void go_revive() = 0;
-
- private:  
-  void finish_collective(collective* coll, collective_done_message* dmsg);
-
-  void start_collective(collective* coll);
-
-  void validate_collective(collective::type_t ty, int tag);
-
-  void deliver_pending(collective* coll, int tag, collective::type_t ty);
-  
- protected:
-  transport(sprockit::sim_parameters* params);
-  
-  void validate_api();
-
-  /**
-   * @brief poll_new Return a new message not already in the completion queue
-   * @param blocking
-   * @param timeout
-   * @return A message if found, null message if non-blocking or timed out
-   */
-  message* poll_new(bool blocking, double timeout = -1);
+  void deadlockCheck();
 
  private:
-  /**
-   * Helper function for doing operations necessary to close out a heartbeat
-   * @param dmsg
-   */
-  void vote_done(int context, collective_done_message* dmsg);
+  CollectiveDoneMessage* skipCollective(Collective::type_t ty,
+                        int cq_id, Communicator* comm,
+                        void* dst, void *src,
+                        int nelems, int type_size,
+                        int tag);
 
-  bool skip_collective(collective::type_t ty,
-    collective::config& cfg,
-    void* dst, void *src,
-    int nelems, int type_size,
-    int tag);
+  void finishCollective(Collective* coll, int rank, Collective::type_t ty, int tag);
+
+  CollectiveDoneMessage* startCollective(Collective* coll);
+
+  void validateCollective(Collective::type_t ty, int tag);
+
+  CollectiveDoneMessage* deliverPending(Collective* coll, int tag, Collective::type_t ty);
 
  private:
+  Transport* tport_;
+
   template <typename Key, typename Value>
   using spkt_enum_map = std::unordered_map<Key, Value, enum_hash>;
 
-  typedef std::unordered_map<int,collective*> tag_to_collective_map;
-  typedef spkt_enum_map<collective::type_t, tag_to_collective_map> collective_map;
+  typedef std::unordered_map<int,Collective*> tag_to_collective_map;
+  typedef spkt_enum_map<Collective::type_t, tag_to_collective_map> collective_map;
   collective_map collectives_;
 
-  typedef std::unordered_map<int,std::list<collective_work_message*>> tag_to_pending_map;
-  typedef spkt_enum_map<collective::type_t, tag_to_pending_map> pending_map;
+  typedef std::unordered_map<int,std::list<CollectiveWorkMessage*>> tag_to_pending_map;
+  typedef spkt_enum_map<Collective::type_t, tag_to_pending_map> pending_map;
   pending_map pending_collective_msgs_;
 
-  std::list<collective*> todel_;
+  std::list<Collective*> todel_;
 
- protected:
-  bool inited_;
-  
-  bool finalized_;
-  
-  int rank_;
+  Communicator* global_domain_;
 
-  int nproc_;
-  
   uint32_t eager_cutoff_;
-
-  std::vector<std::list<message*>> completion_queues_;
 
   bool use_put_protocol_;
 
-  bool use_hardware_ack_;
-
-  communicator* global_domain_;
-
   int system_collective_tag_;
 
- private:
-  void poll_cast_error(const char* file, int line, const char* cls, message* msg){
-    spkt_throw_printf(sprockit::value_error,
-       "Could not cast incoming message to type %s\n"
-       "Got %s\n"
-       "%s:%d",
-       cls, msg->to_string().c_str(),
-       file, line);
-  }
-
- private:
-  static collective_algorithm_selector* allgather_selector_;
-  static collective_algorithm_selector* alltoall_selector_;
-  static collective_algorithm_selector* alltoallv_selector_;
-  static collective_algorithm_selector* allreduce_selector_;
-  static collective_algorithm_selector* reduce_scatter_selector_;
-  static collective_algorithm_selector* scan_selector_;
-  static collective_algorithm_selector* allgatherv_selector_;
-  static collective_algorithm_selector* bcast_selector_;
-  static collective_algorithm_selector* gather_selector_;
-  static collective_algorithm_selector* gatherv_selector_;
-  static collective_algorithm_selector* reduce_selector_;
-  static collective_algorithm_selector* scatter_selector_;
-  static collective_algorithm_selector* scatterv_selector_;
-
-
-#if SSTMAC_COMM_SYNC_STATS
- public:
-  virtual void collect_sync_delays(double wait_start, message* msg){}
-
-  virtual void start_collective_sync_delays(){}
-#endif
-
-#ifdef FEATURE_TAG_SUMI_RESILIENCE
- public:
-  int nproc_alive() const {
-    return nproc_ - failed_ranks_.size();
-  }
-
-  int nproc_failed() const {
-    return failed_ranks_.size();
-  }
-
-  virtual void schedule_ping_timeout(pinger* pnger, double to) = 0;
-
-  virtual void send_ping_request(int dst) = 0;
-
-  /**
-   * Get the set of failed ranks associated with a given context
-   * @param context The context for which you want to know the set of failed procs,
-   *                default parameter is "default_context" which is the beginning, i.e. no failed procs
-   * @throw If the context is unknown - i.e. no vote has executed with that tag number
-   * @return The set of failed procs
-   */
-  const thread_safe_set<int>& failed_ranks(int context) const;
-
-  const thread_safe_set<int>& failed_ranks() const {
-    return failed_ranks_;
-  }
-
-  void clear_failures() {
-    failed_ranks_.clear();
-  }
-
-  void declare_failed(int rank) {
-    failed_ranks_.insert(rank);
-  }
-
-  bool is_failed(int rank) const {
-    return failed_ranks_.count(rank);
-  }
-
-  bool is_alive(int rank) const {
-    return failed_ranks_.count(rank) == 0;
-  }
-
-  void die();
-
-  void revive();
-
-  bool is_dead() const {
-    return is_dead_;
-  }
-
-  /**
-   * Cancel a currently active ping
-   * @param dst
-   * @param func
-   */
-  void cancel_ping(int dst, timeout_function* func);
-
-  /**
-    @param dst The neighbor
-    @param func The timeout function to be invoked if no response
-                or NACK received
-    @return True if the dst node is already known to be failed. False if not.
-  */
-  bool ping(int dst, timeout_function* func);
-
-  /**
-   * @brief watch Wait on heartbeat notifcations for failures on this node.
-   * Do NOT actively ping.  Wait instead for failure notifications.
-   * @param dst
-   * @param func
-   * @return True if the dst node is already known to be failed. False if not.
-   */
-  bool start_watching(int dst, timeout_function* func);
-
-  void stop_watching(int dst, timeout_function* func);
-
-  void renew_pings();
-
-  /**
-   * Start regular heartbeat (i.e. vote) collectives going
-   * This informs the application at regular intervals of any new process failures
-   * @param interval The time in seconds at which to regularly execute heartbeats
-   */
-  virtual void start_heartbeat(double interval);
-
-  /**
-   * Let the current heartbeat finish and then stop them executing.
-   */
-  virtual void stop_heartbeat();
-
- protected:
-  double heartbeat_interval_;
-
-  void next_heartbeat();
-
- private:
-  bool lazy_watch_;
-
-  activity_monitor* monitor_;
-
-  bool heartbeat_active_;
-
-  bool heartbeat_running_;
-
-  bool is_heartbeat(collective_done_message* dmsg) const {
-    return dmsg->tag() >= heartbeat_tag_start_ && dmsg->tag() <= heartbeat_tag_stop_;
-  }
-
-  int nspares_;
-
-  thread_safe_int<uint32_t> recovery_lock_;
-
-  struct vote_result {
-    int vote;
-    thread_safe_set<int> failed_ranks;
-    vote_result(int v, const thread_safe_set<int>& f) :
-      vote(v), failed_ranks(f)
-    {
-    }
-    vote_result() : vote(0) {}
-  };
-  typedef std::map<int, vote_result> vote_map;
-  vote_map votes_done_;
-
-  bool is_dead_;
-
-  int heartbeat_tag_;
-  thread_safe_set<int> failed_ranks_;
-
-  int heartbeat_tag_start_;
-
-  int heartbeat_tag_stop_;
-
-  typedef std::map<int, function_set> watcher_map;
-  watcher_map watchers_;
-
-  void fail_watcher(int dst);
-
-  void start_recovery();
-
-  void end_recovery();
-
-  virtual void schedule_next_heartbeat() = 0;
-
-  /**
-   * Actually do the work of executing a heartbeat
-   * @param prev_context The context number for the last successful heartbeat
-   */
-  void do_heartbeat(int prev_context);
-#endif
-};
-
-class terminate_exception : public std::exception
-{
+  std::string alltoall_type_;
+  std::string allgather_type_;
 };
 
 static void* sumi_null_ptr = ((void*)0x123);
@@ -743,7 +515,6 @@ static inline bool isNonNull(void* buf){
 static inline bool isNull(void* buf){
   return !(sumi::isNonNull(buf));
 }
-
 
 }
 

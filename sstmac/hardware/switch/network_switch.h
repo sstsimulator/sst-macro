@@ -47,7 +47,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 
 
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <sprockit/debug.h>
 
 #include <sstmac/hardware/common/connection.h>
@@ -61,37 +61,36 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <vector>
 
-DeclareDebugSlot(network_switch)
+DeclareDebugSlot(NetworkSwitch)
 #define switch_debug(...) \
-  debug_printf(sprockit::dbg::network_switch, "Switch %d: %s", \
+  debug_printf(sprockit::dbg::NetworkSwitch, "Switch %d: %s", \
     int(addr()), sprockit::printf(__VA_ARGS__).c_str())
 
 namespace sstmac {
 namespace hw {
 
 /**
- * @brief The network_switch class
+ * @brief The NetworkSwitch class
  * A class encapsulating a network switch that packets must traverse on the network.
  * The network switch performs both routing computations and congestion modeling.
  */
-class network_switch :
-  public connectable_component
+class NetworkSwitch :
+  public ConnectableComponent
 {
-  DeclareFactory(network_switch,uint32_t,event_manager*)
  public:
+  SST_ELI_DECLARE_BASE(NetworkSwitch)
+  SST_ELI_DECLARE_DEFAULT_INFO()
+  SST_ELI_DECLARE_CTOR(uint32_t,SST::Params&)
+
   virtual void init(unsigned int phase);
 
-  virtual ~network_switch();
+  virtual ~NetworkSwitch();
 
-  switch_id addr() const {
+  SwitchId addr() const {
     return my_addr_;
   }
 
-  virtual router* rter() const = 0;
-
-  virtual void compatibility_check() const {
-    //by default, nothing
-  }
+  virtual Router* router() const = 0;
 
   /**
    * @brief queue_length
@@ -103,16 +102,13 @@ class network_switch :
    * @param port The port to check the queue length of
    * @return The queue length as an integer number of packets waiting
    */
-  virtual int queue_length(int port) const = 0;
+  virtual int queueLength(int port, int vc) const = 0;
 
  protected:
-  network_switch(
-    sprockit::sim_parameters* params,
-    uint32_t id,
-    event_manager* mgr);
+  NetworkSwitch(uint32_t id, SST::Params& params);
 
-  switch_id my_addr_;
-  topology* top_;
+  SwitchId my_addr_;
+  Topology* top_;
 
 };
 

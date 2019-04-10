@@ -53,86 +53,53 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/app_id.h>
 
 #include <sstmac/software/process/operating_system_fwd.h>
-#include <sumi-mpi/mpi_protocol/mpi_protocol_fwd.h>
 #include <sumi/message.h>
 #include <sprockit/thread_safe_new.h>
 
 namespace sumi {
 
-class mpi_message final :
-  public sumi::message,
-  public sprockit::thread_safe_new<mpi_message>
+class MpiMessage final :
+  public sumi::ProtocolMessage,
+  public sprockit::thread_safe_new<MpiMessage>
 {
-  ImplementSerializable(mpi_message)
+  ImplementSerializable(MpiMessage)
 
  public:
-  typedef uint64_t id;
+  template <class... Args>
+  MpiMessage(int src_rank, int dst_rank,
+              MPI_Datatype type, int tag, MPI_Comm commid, int seqnum,
+              int count, int type_size, void* partner_buf, int protocol,
+              Args&&... args) :
+    sumi::ProtocolMessage(count, type_size, partner_buf, protocol,
+                           std::forward<Args>(args)...),
+    src_rank_(src_rank),
+    dst_rank_(dst_rank),
+    type_(type),
+    tag_(tag),
+    commid_(commid),
+    seqnum_(seqnum)
+  {
+  }
 
-  typedef enum {
-    null_content, data, header, eager_payload, completion_ack, fake
-  } content_type_t;
+  std::string toString() const override;
 
-  void recompute_bytes();
+  ~MpiMessage() throw ();
 
- public:
-  mpi_message(int src, int dst, int count,
-              MPI_Datatype type, int type_packed_size,
-              int tag,
-              MPI_Comm commid, int seqnum,
-              mpi_message::id msgid,
-              mpi_protocol* protocol);
-
-  mpi_message(){}
-
-  std::string to_string() const override;
-
-  static const char* str(content_type_t content_type);
-
-  ~mpi_message() throw ();
-
-  sumi::mpi_message* clone_me() const {
-    mpi_message* cln = new mpi_message;
-    clone_into(cln);
+  sumi::MpiMessage* clone_me() const {
+    MpiMessage* cln = new MpiMessage(*this);
     return cln;
   }
 
-  sumi::message* clone(payload_type_t ty) const override {
-    return clone_me();
+  sstmac::hw::NetworkMessage* cloneInjectionAck() const override {
+    auto* msg = clone_me();
+    msg->convertToAck();
+    return msg;
   }
 
   void serialize_order(sstmac::serializer& ser) override;
 
-  uint64_t payload_bytes() const {
-    return uint64_t(count_) * uint64_t(type_packed_size_);
-  }
-
-  mpi_protocol* protocol() const;
-
-  void set_protocol(mpi_protocol* protocol);
-
-  void payload_to_completion_ack();
-
-  int count() const {
-    return count_;
-  }
-
-
-  bool is_payload() const {
-    switch (content_type_){
-  case eager_payload:
-  case data:
-    return true;
-  default:
-    return false;
-    }
-  }
-
   MPI_Datatype type() const {
     return type_;
-  }
-
-  int type_packed_size() const {
-    return type_packed_size_;
   }
 
   int tag() const {
@@ -147,61 +114,28 @@ class mpi_message final :
     return seqnum_;
   }
 
-  int src_rank() const {
+  int srcRank() const {
     return src_rank_;
   }
 
-  void set_src_rank(int rank) {
-    src_rank_ = rank;
-  }
-
-  int dst_rank() const {
+  int dstRank() const {
     return dst_rank_;
   }
 
-  void set_dst_rank(int rank) {
-    dst_rank_ = rank;
-  }
-
-  mpi_message::id unique_int() const {
-    return msgid_;
-  }
-
-  content_type_t content_type() const {
-    return content_type_;
-  }
-
-  void set_content_type(content_type_t ty) {
-    content_type_ = ty;
-    recompute_bytes();
-  }
-
-  void build_status(MPI_Status* stat) const;
-
-  void set_in_flight(bool flag){
-    in_flight_ = flag;
-  }
-
-  bool in_flight() const {
-    return in_flight_;
-  }
+  void buildStatus(MPI_Status* stat) const;
 
  protected:
-  void clone_into(mpi_message* cln) const;
+  //void clone_into(mpi_message* cln) const;
 
- protected:
+ private:
+  MpiMessage(){} //for serialization
+
   int src_rank_;
   int dst_rank_;
-  int count_;
   MPI_Datatype type_;
-  int type_packed_size_;
   int tag_;
   MPI_Comm commid_;
   int seqnum_;
-  mpi_message::id msgid_;
-  content_type_t content_type_;
-  int protocol_;
-  bool in_flight_;
 
 };
 

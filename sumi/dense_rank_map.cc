@@ -49,21 +49,21 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-dense_rank_map::dense_rank_map(const std::set<int>& failed,
-  communicator* dom) :
+DenseRankMap::DenseRankMap(const std::set<int>& failed,
+  Communicator* dom) :
   num_failed_ranks_(failed.size()),
   failed_ranks_(0)
 {
   init(failed, dom);
 }
 
-dense_rank_map::dense_rank_map() :
+DenseRankMap::DenseRankMap() :
   num_failed_ranks_(0),
   failed_ranks_(0)
 {
 }
 
-dense_rank_map::~dense_rank_map()
+DenseRankMap::~DenseRankMap()
 {
   if (failed_ranks_){
     delete[] failed_ranks_;
@@ -71,7 +71,7 @@ dense_rank_map::~dense_rank_map()
 }
 
 void
-dense_rank_map::init(const std::set<int>& failed, communicator* dom)
+DenseRankMap::init(const std::set<int>& failed, Communicator* dom)
 {
   if (failed_ranks_){ //clear out old data
     delete[] failed_ranks_;
@@ -86,7 +86,7 @@ dense_rank_map::init(const std::set<int>& failed, communicator* dom)
 
   int idx = 0;
   for (int global_rank : failed){
-    int comm_rank = dom ? dom->global_to_comm_rank(global_rank) : global_rank;
+    int comm_rank = dom ? dom->globalToCommRank(global_rank) : global_rank;
     failed_ranks_[idx++] = comm_rank;
   }
 
@@ -97,7 +97,7 @@ dense_rank_map::init(const std::set<int>& failed, communicator* dom)
 }
 
 int
-dense_rank_map::linear_find_rank(int sparse_rank) const
+DenseRankMap::linearFindRank(int sparse_rank) const
 {
   for (int i=0; i < num_failed_ranks_; ++i){
     if (sparse_rank < failed_ranks_[i]){
@@ -108,7 +108,7 @@ dense_rank_map::linear_find_rank(int sparse_rank) const
 }
 
 int
-dense_rank_map::sparse_rank(int dense_rank) const
+DenseRankMap::sparseRank(int dense_rank) const
 {
   int rank = dense_rank;
   for (int i=0; i < num_failed_ranks_; ++i){
@@ -122,20 +122,20 @@ dense_rank_map::sparse_rank(int dense_rank) const
 }
 
 int
-dense_rank_map::dense_rank(int sparse_rank) const
+DenseRankMap::denseRank(int sparse_rank) const
 {
   if (num_failed_ranks_ == 0){
     return sparse_rank;
   } else if (num_failed_ranks_ <= tree_cutoff){
-    return linear_find_rank(sparse_rank);
+    return linearFindRank(sparse_rank);
   } else {
-    return tree_find_rank(sparse_rank,
+    return treeFindRank(sparse_rank,
         0, num_failed_ranks_, failed_ranks_);
   }
 }
 
 int
-dense_rank_map::tree_find_rank(
+DenseRankMap::treeFindRank(
   int sparse_rank,
   int offset,
   int num_failed,
@@ -150,7 +150,7 @@ dense_rank_map::tree_find_rank(
     } else if (sparse_rank < failed_array[0]){
       return sparse_rank - offset;
     } else {
-      spkt_throw_printf(sprockit::value_error,
+      spkt_throw_printf(sprockit::ValueError,
         "dense_rank_map::trying to get dense rank for failed process %d",
         sparse_rank);
     }
@@ -158,14 +158,14 @@ dense_rank_map::tree_find_rank(
 
   int middle_index = num_failed / 2;
   if (sparse_rank < failed_array[middle_index]){
-    return tree_find_rank(sparse_rank, offset, middle_index, failed_array);
+    return treeFindRank(sparse_rank, offset, middle_index, failed_array);
   } else if (sparse_rank > failed_array[middle_index]){
-    return tree_find_rank(sparse_rank, 
+    return treeFindRank(sparse_rank, 
         offset +  middle_index, 
         num_failed - middle_index, 
         failed_array + middle_index);
   } else {
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
       "dense_rank_map::trying to get dense rank for failed process %d",
       sparse_rank);
   }

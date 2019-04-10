@@ -45,6 +45,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef sstmac_common_cartrgrid_h
 #define sstmac_common_cartrgrid_h
 
-void gen_cart_grid(int n, int& x, int& y, int& z);
+void genCartGrid(int n, int& x, int& y, int& z);
 
 #endif

@@ -4,15 +4,15 @@
 
 extern "C"
 void sst_gdb_select_rank(int rank){
-  sstmac::sw::operating_system::gdb_switch_to_thread(rank);
+  sstmac::sw::OperatingSystem::gdbSwitchToThread(rank);
 }
 
 extern "C"
-void sst_gdb_reset(){
-  sstmac::sw::operating_system::gdb_reset();
+void sst_gdbReset(){
+  sstmac::sw::OperatingSystem::gdbReset();
 }
 
 extern "C"
-void sst_gdb_set_active(int flag){
-  sstmac::sw::operating_system::gdb_set_active(flag);
+void sst_gdbSetActive(int flag){
+  sstmac::sw::OperatingSystem::gdbSetActive(flag);
 }

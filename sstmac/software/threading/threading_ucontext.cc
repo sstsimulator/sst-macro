@@ -54,70 +54,70 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-class threading_ucontext : public thread_context
+class ThreadingUContext : public ThreadContext
 {
  public:
-  FactoryRegister("ucontext", thread_context, threading_ucontext)
+  SST_ELI_REGISTER_DERIVED(
+    ThreadContext,
+    ThreadingUContext,
+    "macro",
+    "ucontext",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "uses ucontext for portable linux context switching")
 
-  threading_ucontext(sprockit::sim_parameters* params)
-  {
-  }
+  ThreadingUContext(){}
 
-  void init_context() override {
+  void initContext() override {
     if (getcontext(&context_) != 0) {
-      spkt_throw_printf(sprockit::os_error,
-        "threading_ucontext::init_context: %s",
-        ::strerror(errno));
+      spkt_abort_printf("ThreadingUContext::init_context: %s", ::strerror(errno));
     }
   }
 
-  thread_context* copy() const override {
-    return new threading_ucontext(nullptr);
+  ThreadContext* copy() const override {
+    return new ThreadingUContext;
   }
 
 
-  void destroy_context() override {}
+  void destroyContext() override {}
 
-  void start_context(void* stack, size_t stacksize,
+  void startContext(void* stack, size_t stacksize,
                      void(*func)(void*), void *args,
-                     thread_context* from) override {
+                     ThreadContext* from) override {
 
     funcptr funcp(func);
     voidptr voidp(args);
     context_.uc_stack.ss_sp = stack;
     context_.uc_stack.ss_size = stacksize;
-    init_context();
+    initContext();
 
-    threading_ucontext* fromctx = static_cast<threading_ucontext*>(from);
+    ThreadingUContext* fromctx = static_cast<ThreadingUContext*>(from);
     context_.uc_link = NULL;
 
     makecontext(&context_, (void
           (*)()) (context_springboard), 4, funcp.fpair.a, funcp.fpair.b,
           voidp.vpair.a, voidp.vpair.b);
 
-    swap_context(from, this);
+    swapContext(from, this);
   }
 
-  void pause_context(thread_context* to) override {
-    swap_context(this, to);
+  void pauseContext(ThreadContext* to) override {
+    swapContext(this, to);
   }
 
-  void resume_context(thread_context* from) override {
-    swap_context(from, this);
+  void resumeContext(ThreadContext* from) override {
+    swapContext(from, this);
   }
 
-  void complete_context(thread_context* to) override {
-    swap_context(this, to);
+  void completeContext(ThreadContext* to) override {
+    swapContext(this, to);
   }
 
  private:
-  static void swap_context(thread_context* from, thread_context* to) {
-    threading_ucontext* fromctx = static_cast<threading_ucontext*>(from);
-    threading_ucontext* toctx = static_cast<threading_ucontext*>(to);
+  static void swapContext(ThreadContext* from, ThreadContext* to) {
+    ThreadingUContext* fromctx = static_cast<ThreadingUContext*>(from);
+    ThreadingUContext* toctx = static_cast<ThreadingUContext*>(to);
     if (swapcontext(&fromctx->context_, &toctx->context_) == -1) {
-      spkt_throw_printf(sprockit::os_error,
-         "threading_ucontext::swap_context: %s",
-         strerror(errno));
+      spkt_abort_printf("ThreadingUContext::swapContext: %s", strerror(errno));
     }
   }
 

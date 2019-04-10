@@ -55,65 +55,56 @@ namespace hw {
  *  The fully_connected network generates a network which connects
     each node to every other node.
  */
-class fully_connected : public structured_topology
+class FullyConnected : public StructuredTopology
 {
-  FactoryRegister("fully_connected | full", topology, fully_connected)
  public:
-  std::string to_string() const override {
+  SPKT_REGISTER_DERIVED(
+    Topology,
+    FullyConnected,
+    "macro",
+    "fully_connected",
+    "implements a topology with all nodes connected to a single switch")
+
+  std::string toString() const override {
     return "fully_connected topology";
   }
 
-  virtual ~fully_connected() {}
+  virtual ~FullyConnected() {}
 
-  fully_connected(sprockit::sim_parameters* params);
+  FullyConnected(SST::Params& params);
 
   int diameter() const override {
     return 1;
   }
 
-  int max_num_ports() const override {
+  int maxNumPorts() const override {
     return size_ + concentration();
   }
 
-  switch_id num_leaf_switches() const override {
+  SwitchId numLeafSwitches() const override {
     return size_;
   }
 
-  int minimal_distance(switch_id src, switch_id dst) const {
+  int minimalDistance(SwitchId src, SwitchId dst) const {
     return 1;
   }
 
-  int num_hops_to_node(node_id src, node_id dst) const override {
+  int numHopsToNode(NodeId src, NodeId dst) const override {
     return 1;
   }
 
-  void endpoints_connected_to_injection_switch(switch_id swid,
-                          std::vector<injection_port>& nodes) const override;
+  void endpointsConnectedToInjectionSwitch(SwitchId swid,
+                          std::vector<InjectionPort>& nodes) const override;
 
-  bool uniform_network_ports() const override {
-    return true;
-  }
+  void connectedOutports(SwitchId src,
+       std::vector<Connection>& conns) const override;
 
-  bool uniform_switches_non_uniform_network_ports() const override {
-    return true;
-  }
-
-  bool uniform_switches() const override {
-    return true;
-  }
-
-  void configure_individual_port_params(switch_id src,
-        sprockit::sim_parameters *switch_params) const override;
-
-  void connected_outports(switch_id src,
-       std::vector<connection>& conns) const override;
-
-  switch_id num_switches() const override {
+  SwitchId numSwitches() const override {
     return size_;
   }
 
  private:
-  switch_id size_;
+  SwitchId size_;
 
 };
 

@@ -53,29 +53,35 @@ namespace sw {
 /**
  * An index strategy that allocates indices using a round robin.
  */
-class round_robin_task_mapper : public task_mapper
+class RoundRobinTaskMapper : public TaskMapper
 {
-  FactoryRegister("round | round_robin", task_mapper, round_robin_task_mapper,
-     "Tries to spread out ranks across the nodes. Ranks 0,1,2,3 are on different nodes."
-     "Ranks 0,4,8 are on the same node. Round robin and block indexing are equivalent "
-     "if there is one process per node")
 
  public:
-  round_robin_task_mapper(sprockit::sim_parameters* params) :
-    task_mapper(params)
+  SST_ELI_REGISTER_DERIVED(
+    TaskMapper,
+    RoundRobinTaskMapper,
+    "macro",
+    "round",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "Tries to spread out ranks across the nodes. Ranks 0,1,2,3 are on different nodes."
+    "Ranks 0,4,8 are on the same node. Round robin and block indexing are equivalent "
+    "if there is one process per node")
+
+  RoundRobinTaskMapper(SST::Params& params) :
+    TaskMapper(params)
   {
   }
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "round robin task mapper";
   }
 
-  virtual ~round_robin_task_mapper() throw () {}
+  virtual ~RoundRobinTaskMapper() throw () {}
 
-  virtual void map_ranks(
+  virtual void mapRanks(
     const ordered_node_set& nodes,
     int ppn,
-    std::vector<node_id> &result,
+    std::vector<NodeId> &result,
     int nproc) override;
 
 };

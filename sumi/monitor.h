@@ -45,8 +45,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef sumi_api_MONITOR_H
 #define sumi_api_MONITOR_H
 
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <sprockit/debug.h>
+#include <sprockit/sim_parameters_fwd.h>
 #include <sumi/message.h>
 #include <sumi/timeout.h>
 #include <sumi/transport_fwd.h>
@@ -56,11 +57,11 @@ DeclareDebugSlot(sumi_failure)
 
 namespace sumi {
 
-class function_set {
+class FunctionSet {
  public:
-  int erase(timeout_function* func);
+  int erase(TimeoutFunction* func);
 
-  void append(timeout_function* func){
+  void append(TimeoutFunction* func){
     listeners_.push_back(func);
   }
 
@@ -72,35 +73,34 @@ class function_set {
     return listeners_.empty();
   }
 
-  void timeout_all_listeners(int dst);
+  void timeoutAllListeners(int dst);
 
  protected:
-  std::list<timeout_function*> listeners_;
+  std::list<TimeoutFunction*> listeners_;
 };
 
-class activity_monitor
+class ActivityMonitor
 {
-  DeclareFactory(activity_monitor, transport*)
  public:
-  activity_monitor(sprockit::sim_parameters* params,
-                   transport* t) : api_(t){}
+  ActivityMonitor(SST::Params& params,
+                  Transport* t) : api_(t){}
 
-  virtual ~activity_monitor(){}
+  virtual ~ActivityMonitor(){}
 
-  virtual void ping(int dst, timeout_function* func) = 0;
+  virtual void ping(int dst, TimeoutFunction* func) = 0;
 
-  virtual void cancel_ping(int dst, timeout_function* func) = 0;
+  virtual void cancelPing(int dst, TimeoutFunction* func) = 0;
 
-  virtual void message_received(message* msg) = 0;
+  virtual void messageReceived(Message* msg) = 0;
 
-  virtual void renew_pings(double wtime) = 0;
+  virtual void renewPings(double wtime) = 0;
 
-  virtual void validate_done() = 0;
+  virtual void validateDone() = 0;
 
-  virtual void validate_all_pings() = 0;
+  virtual void validateAllPings() = 0;
 
  protected:
-  transport* api_;
+  Transport* api_;
 
 };
 

@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <vector>
 #include <sstmac/skeleton.h>
+#include <sprockit/keyword_registration.h>
 
 #define sstmac_app_name mpi_ping_pong
 
@@ -19,16 +20,12 @@ void ping(int rank, int src, int dst, int msize) {
   }
 }
 
-int main(int argc, char** argv)
+int USER_MAIN(int argc, char** argv)
 {
   int sizes[18] = {1,2,4,8,16,32,128,256,512,1024,2048,5096,10192,20384,40768,81536,163072,326144};
-  sprockit::sim_parameters* params = get_params();
-  //params->parse_file(, false, true);
  
-  std::vector<int> src;
-  std::vector<int> dst;
-  params->get_vector_param("sources", src);
-  params->get_vector_param("destinations", dst);
+  std::vector<int> src = sstmac::getArrayParam<int>("sources");
+  std::vector<int> dst = sstmac::getArrayParam<int>("destinations");
 
   MPI_Init(&argc, &argv);
   int rank, size;

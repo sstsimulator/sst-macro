@@ -46,19 +46,19 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sprockit {
 
-std::list<statics::clear_fxn>* statics::fxns_ = nullptr;
+std::list<Statics::clear_fxn>* Statics::fxns_ = nullptr;
 
 void
-statics::register_finish(clear_fxn fxn)
+Statics::registerFinish(clear_fxn fxn)
 {
   if (fxns_ == nullptr){
-    fxns_ = new std::list<statics::clear_fxn>;
+    fxns_ = new std::list<Statics::clear_fxn>;
   }
   fxns_->push_back(fxn);
 }
 
 void
-statics::finish()
+Statics::finish()
 {
   if (fxns_ == nullptr)
     return;

@@ -61,24 +61,22 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-dumpi_allocation::dumpi_allocation(sprockit::sim_parameters* params)
- : node_allocator(params)
+DumpiAllocation::DumpiAllocation(SST::Params& params)
+ : NodeAllocator(params)
 {
-  metafile_ = params->get_param("dumpi_metaname");
+  metafile_ = params.find<std::string>("dumpi_metaname");
 }
 
 bool
-dumpi_allocation::allocate(
+DumpiAllocation::allocate(
   int nnode_requested,
    const ordered_node_set& available,
    ordered_node_set& allocation) const
 {
-  hw::cartesian_topology* regtop = safe_cast(hw::cartesian_topology, topology_);
-
-  dumpi_meta* meta = new dumpi_meta(metafile_);
-  int nrank = meta->num_procs();
+  DumpiMeta* meta = new DumpiMeta(metafile_);
+  int nrank = meta->numProcs();
   for (int i = 0; i < nrank; i++) {
-    std::string fname = dumpi_file_name(i, meta->dirplusfileprefix_);
+    std::string fname = dumpiFileName(i, meta->dirplusfileprefix_);
     dumpi_profile *profile = undumpi_open(fname.c_str());
     if (profile == NULL) {
       spkt_abort_printf("dumpi_allocation::allocate: unable to open %s", fname.c_str());
@@ -93,23 +91,26 @@ dumpi_allocation::allocate(
     }
 
     if (header->meshdim == 0) {
-      spkt_throw_printf(sprockit::input_error,
-                       "dumpi_allocation::allocate: trace file %s contains no mesh info. No mesh coordinates found.\n"
-                       "To run the trace you will need to use launch_allocation = hostname.\n"
-                       "You will also need to give a hostname_map file giving the machine topology.\n"
-                       "Alternatively, the trace file may just be corrupted.",
-                       fname.c_str());
+      //there better be a topology initialized that maps hostnames
+      NodeId nid = topology_->nodeNameToId(header->hostname);
+      allocation.insert(nid);
+    } else { //read mesh coords directly
+      hw::CartesianTopology* regtop = safe_cast(hw::CartesianTopology, topology_);
+      hw::coordinates coord_vec(header->meshdim);
+      for (int i=0; i < header->meshdim; ++i) {
+        coord_vec[i] = header->meshcrd[i];
+      }
+      NodeId nid = regtop->node_addr(coord_vec);
+      allocation.insert(nid);
+      //spkt_throw_printf(sprockit::input_error,
+      //                 "dumpi_allocation::allocate: trace file %s contains no mesh info. No mesh coordinates found.\n"
+      //                 "To run the trace you will need to use launch_allocation = hostname.\n"
+      //                 "You will also need to give a hostname_map file giving the machine topology.\n"
+      //                 "Alternatively, the trace file may just be corrupted.",
+      //                 fname.c_str());
     }
-    hw::coordinates coord_vec(header->meshdim);
-    for (int i=0; i < header->meshdim; ++i) {
-      coord_vec[i] = header->meshcrd[i];
-    }
-    node_id nid = regtop->node_addr(coord_vec);
-
-    allocation.insert(nid);
     dumpi_free_header(header);
   }
-
   return true;
 }
 

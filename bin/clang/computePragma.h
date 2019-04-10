@@ -239,7 +239,7 @@ class SSTImplicitStatePragmaHandler : public SSTStringMapPragmaHandler
  public:
   SSTImplicitStatePragmaHandler(SSTPragmaList& plist, clang::CompilerInstance& CI,
                      SkeletonASTVisitor& visitor) :
-   SSTStringMapPragmaHandler("implicit_state", plist, CI, visitor)
+   SSTStringMapPragmaHandler("ImplicitState", plist, CI, visitor)
   {}
  private:
   SSTPragma* allocatePragma(const std::map<std::string, std::list<std::string>>& args) const override;

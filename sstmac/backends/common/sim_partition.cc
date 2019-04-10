@@ -61,7 +61,7 @@ RegisterDebugSlot(partition);
 
 namespace sstmac {
 
-partition::partition(sprockit::sim_parameters* params, parallel_runtime* rt) :
+Partition::Partition(SST::Params& params, ParallelRuntime* rt) :
   rt_(rt),
   switch_to_lpid_(nullptr),
   switch_to_thread_(nullptr)
@@ -71,23 +71,25 @@ partition::partition(sprockit::sim_parameters* params, parallel_runtime* rt) :
   nthread_ = rt_->nthread();
 }
 
-partition::~partition()
+Partition::~Partition()
 {
 }
 
-serial_partition::~serial_partition()
+SerialPartition::~SerialPartition()
 {
   delete[] switch_to_thread_;
   delete[] switch_to_lpid_;
 }
 
 
-serial_partition::serial_partition(sprockit::sim_parameters* params, parallel_runtime* rt)
- : partition(params, rt)
+SerialPartition::SerialPartition(SST::Params& params, ParallelRuntime* rt)
+ : Partition(params, rt)
 {
-  sprockit::sim_parameters* top_params = params->get_namespace("topology");
-  hw::topology* fake_top = hw::topology::factory::get_param("name", top_params);
-  int nswitches = fake_top->num_switches();
+  SST::Params top_params = params.find_scoped_params("topology");
+  hw::Topology* fake_top = sprockit::create<hw::Topology>(
+        "macro", top_params.find<std::string>("name"), top_params);
+
+  int nswitches = fake_top->numSwitches();
   num_switches_total_ = nswitches;
   switch_to_lpid_ = new int[nswitches];
   switch_to_thread_ = new int[nswitches];
@@ -100,44 +102,46 @@ serial_partition::serial_partition(sprockit::sim_parameters* params, parallel_ru
   delete fake_top;
 }
 
-topology_partition::~topology_partition()
+TopologyPartition::~TopologyPartition()
 {
 }
 
-topology_partition::topology_partition(sprockit::sim_parameters* params, parallel_runtime* rt)
-  : partition(params, rt)
+TopologyPartition::TopologyPartition(SST::Params& params, ParallelRuntime* rt)
+  : Partition(params, rt)
 {
   //this will need to be fixed later...
-  sprockit::sim_parameters* top_params = params->get_namespace("topology");
-  fake_top_ = hw::topology::factory::get_param("name", top_params);
+  SST::Params top_params = params.find_scoped_params("topology");
+  fake_top_ = sprockit::create<hw::Topology>(
+     "macro", top_params.find<std::string>("name"), top_params);
 
-  noccupied_ = params->get_int_param("num_occupied");
+  noccupied_ = params.find<int>("num_occupied");
 
-  num_switches_total_ = fake_top_->num_switches();
+  num_switches_total_ = fake_top_->numSwitches();
   switch_to_lpid_ = new int[num_switches_total_];
   switch_to_thread_ = new int[num_switches_total_];
-  fake_top_->create_partition(switch_to_lpid_, switch_to_thread_,
+  fake_top_->createPartition(switch_to_lpid_, switch_to_thread_,
                               me_, nproc_, nthread_, noccupied_);
 }
 
-block_partition::~block_partition()
+BlockPartition::~BlockPartition()
 {
 }
 
-block_partition::block_partition(sprockit::sim_parameters* params, parallel_runtime* rt)
-  : partition(params, rt)
+BlockPartition::BlockPartition(SST::Params& params, ParallelRuntime* rt)
+  : Partition(params, rt)
 {
-  sprockit::sim_parameters* top_params = params->get_namespace("topology");
-  fake_top_ = hw::topology::factory::get_param("name", top_params);
-  num_switches_total_ = fake_top_->num_switches();
+  SST::Params top_params = params.find_scoped_params("topology");
+  fake_top_ = sprockit::create<hw::Topology>(
+     "macro", top_params.find<std::string>("name"), top_params);
+  num_switches_total_ = fake_top_->numSwitches();
 
-  num_switches_total_ = fake_top_->num_switches();
+  num_switches_total_ = fake_top_->numSwitches();
   switch_to_lpid_ = new int[num_switches_total_];
   switch_to_thread_ = new int[num_switches_total_];
 }
 
 void
-block_partition::partition_switches()
+BlockPartition::partitionSwitches()
 {
   int nworkers = nproc_ * nthread_;
   int sw_per_worker = num_switches_total_ / nworkers;
@@ -154,35 +158,35 @@ block_partition::partition_switches()
   }
 }
 
-occupied_block_partition::~occupied_block_partition()
+OccupiedBlockPartition::~OccupiedBlockPartition()
 {
 }
 
 void
-block_partition::finalize_init()
+BlockPartition::finalizeInit(SST::Params& params)
 {
-  partition_switches();
+  partitionSwitches();
 }
 
-occupied_block_partition::occupied_block_partition(sprockit::sim_parameters* params,
-                                                   parallel_runtime* rt)
-  : block_partition(params, rt)
+OccupiedBlockPartition::OccupiedBlockPartition(SST::Params& params,
+                                                   ParallelRuntime* rt)
+  : BlockPartition(params, rt)
 {
-  occupied_switches_ = params->get_int_param("occupied_switches");
-  num_switches_total_ = fake_top_->num_switches();
+  occupied_switches_ = params.find<int>("occupied_switches");
+  num_switches_total_ = fake_top_->numSwitches();
   unoccupied_switches_ = num_switches_total_ - occupied_switches_;
 
   if( occupied_switches_ < nproc_ )
-    spkt_throw_printf(sprockit::input_error,
+    spkt_throw_printf(sprockit::InputError,
       "number of logical processes exceeds number of full switches");
   if( occupied_switches_ > num_switches_total_ )
-    spkt_throw_printf(sprockit::input_error,
+    spkt_throw_printf(sprockit::InputError,
       "occupied_switches=%d exceeds number of switches=%d",
       occupied_switches_, num_switches_total_ );
 }
 
 void
-occupied_block_partition::partition_switches()
+OccupiedBlockPartition::partitionSwitches()
 {
   int remainder;
 

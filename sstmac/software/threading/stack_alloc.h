@@ -61,7 +61,7 @@ namespace sw {
  * This allocator does not return memory to the system until it is
  * deleted, but regions can be allocated and free-d repeatedly.
  */
-class stack_alloc
+class StackAlloc
 {
  public:
   class chunk;
@@ -79,13 +79,15 @@ class stack_alloc
   static size_t suggested_chunk_;
   /// Each stack request is of this size:
   static size_t stacksize_;
+  /// Optionally added a protected stack between each stack we return
+  static bool protect_stacks_;
 
  public:
   static size_t stacksize() {
     return stacksize_;
   }
 
-  ~stack_alloc(){
+  ~StackAlloc(){
     clear();
   }
 
@@ -93,7 +95,7 @@ class stack_alloc
     return suggested_chunk_;
   }
 
-  static void init(sprockit::sim_parameters* params);
+  static void init(SST::Params& params);
 
   static void* alloc();
 

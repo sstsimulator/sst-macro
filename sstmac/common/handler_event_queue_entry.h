@@ -2,24 +2,23 @@
 #define sstmac_common_handler_queue_entry_H
 
 #include <sstmac/common/sst_event.h>
+#include <sstmac/common/event_handler.h>
 #include <sprockit/thread_safe_new.h>
 
 namespace sstmac {
 
-class handler_event_queue_entry :
-  public event_queue_entry,
-  public sprockit::thread_safe_new<handler_event_queue_entry>
+class HandlerExecutionEvent :
+  public ExecutionEvent,
+  public sprockit::thread_safe_new<HandlerExecutionEvent>
 {
-
  public:
-  virtual ~handler_event_queue_entry() {}
+  using sprockit::thread_safe_new<HandlerExecutionEvent>::operator delete;
 
-  handler_event_queue_entry(event* ev,
-    event_handler* hand,
-    uint32_t src_comp_id) :
+  virtual ~HandlerExecutionEvent() {}
+
+  HandlerExecutionEvent(Event* ev, EventHandler* hand) :
     ev_to_deliver_(ev),
-    handler_(hand),
-    event_queue_entry(hand->component_id(), src_comp_id)
+    handler_(hand)
   {
   }
 
@@ -28,9 +27,9 @@ class handler_event_queue_entry :
   }
 
  protected:
-  event* ev_to_deliver_;
+  Event* ev_to_deliver_;
 
-  event_handler* handler_;
+  EventHandler* handler_;
 
 };
 

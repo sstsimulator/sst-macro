@@ -42,11 +42,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef SPKT_STRING_H
-#define SPKT_STRING_H
+#ifndef sprockit_STRING_H
+#define sprockit_STRING_H
 
 #include <sstream>
-#include <sprockit/spkt_config.h>
 #include <sprockit/spkt_printf.h>
 #include <cctype>
 #include <algorithm>
@@ -54,7 +53,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sprockit {
 
 template<typename WritableRangeT>
-void to_upper(WritableRangeT& input)
+void toUpper(WritableRangeT& input)
 {
   for(char& ch : input) {
     ch = (char)std::toupper(ch);
@@ -62,7 +61,7 @@ void to_upper(WritableRangeT& input)
 }
 
 template<typename WritableRangeT>
-void to_lower(WritableRangeT& input)
+void toLower(WritableRangeT& input)
 {
   for(char& ch : input) {
     ch = (char)std::tolower(ch);
@@ -89,4 +88,4 @@ void trim(SequenceT& input)
 }
 
 
-#endif // SPKT_STRING_H
+#endif

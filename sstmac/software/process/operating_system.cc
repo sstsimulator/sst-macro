@@ -45,12 +45,11 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <stdlib.h>
 #include <sstream>
 #include <csignal>
-#include <sstmac/common/messages/sst_message.h>
+#include <sstmac/hardware/common/flow.h>
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/common/event_callback.h>
 #include <sstmac/common/runtime.h>
 #include <sstmac/common/event_manager.h>
-#include <sstmac/common/messages/library_message.h>
 #include <sstmac/software/launch/launch_request.h>
 #include <sstmac/software/launch/launch_event.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
@@ -62,6 +61,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/key.h>
 #include <sstmac/software/process/time.h>
+#include <sstmac/software/process/progress_queue.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/compute_scheduler.h>
 #include <sstmac/software/process/thread_info.h>
@@ -77,7 +77,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sprockit/errors.h>
 #include <sprockit/statics.h>
-#include <sprockit/delete.h>
 #include <sprockit/output.h>
 #include <sprockit/util.h>
 #include <sstmac/software/api/api.h>
@@ -93,13 +92,13 @@ MakeDebugSlot(dropped_events)
   debug_printf(sprockit::dbg::os, "OS on Node %d: %s", \
     int(addr()), sprockit::printf(__VA_ARGS__).c_str())
 
-RegisterNamespaces("call_graph", "ftq");
+RegisterNamespaces("callGraph", "ftq");
 RegisterKeywords(
 { "stack_size", "the size of stack to allocate to each user-space thread" },
 { "stack_chunk_size", "the block size to allocate in the memory pool when more stacks are needed" },
 { "ftq", "DEPRECATED: sets the fileroot of the FTQ statistic" },
 { "ftq_epoch", "DEPRECATED: sets the time epoch size for the FTQ statistic" },
-{ "call_graph", "DEPRECATED: sets the fileroot of the call graph statistic" },
+{ "callGraph", "DEPRECATED: sets the fileroot of the call graph statistic" },
 { "compute_scheduler", "the type of compute scheduler or assigning cores to computation" },
 { "context", "the user-space thread context library" },
 );
@@ -115,64 +114,85 @@ extern int sstmac_global_stacksize;
 namespace sstmac {
 namespace sw {
 
-class delete_thread_event :
-  public event_queue_entry
+class DeleteThreadEvent :
+  public ExecutionEvent
 {
  public:
-  delete_thread_event(thread* thr) :
-    thr_(thr),
-    event_queue_entry(thr->os()->component_id(), thr->os()->component_id())
+  DeleteThreadEvent(Thread* thr) :
+    thr_(thr)
   {
   }
 
-  void execute(){
+  void execute() override {
     delete thr_;
   }
 
  protected:
-  thread* thr_;
+  Thread* thr_;
 };
 
-struct null_implicit_state : public operating_system::implicit_state
+struct NullImplicitState : public OperatingSystem::ImplicitState
 {
-  FactoryRegister("null", operating_system::implicit_state, null_implicit_state)
+  SST_ELI_REGISTER_DERIVED(
+    OperatingSystem::ImplicitState,
+    NullImplicitState,
+    "macro",
+    "null",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "an implicit that holds nothing")
 
-  null_implicit_state(sprockit::sim_parameters* params) :
-    operating_system::implicit_state(params){}
+  NullImplicitState(SST::Params& params) :
+    OperatingSystem::ImplicitState(params){}
 
-  void set_state(int type, int value) override {}
-  void unset_state(int type) override {}
+  void setState(int type, int value) override {}
+  void unsetState(int type) override {}
 };
 
-struct null_regression : public operating_system::thread_safe_timer_model<double>
+struct NullRegression : public OperatingSystem::ThreadSafeTimerModel<double>
 {
-  FactoryRegister("null", operating_system::regression_model, null_regression)
 
-  using parent = operating_system::thread_safe_timer_model<double>;
+  SST_ELI_REGISTER_DERIVED(
+    OperatingSystem::RegressionModel,
+    NullRegression,
+    "macro",
+    "null",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "a regression model that does nothing")
 
-  null_regression(sprockit::sim_parameters* params,
-                  const std::string& key)
-    : parent(params, key), computed_(false) {}
+  using Parent = OperatingSystem::ThreadSafeTimerModel<double>;
+
+  NullRegression(SST::BaseComponent* comp, const std::string& key,
+                 const std::string& subName, SST::Params& params)
+    : Parent(params, comp, key, ""), computed_(false) {}
 
   double compute(int n_params, const double params[],
-                 operating_system::implicit_state* state) override {
+                 OperatingSystem::ImplicitState* state) override {
     if (!computed_){
       computed_ = true;
-      compute_mean();
+      computeMean();
     }
     return mean_;
   }
 
-  int start_collection() override {
-    return parent::start();
+  void outputStatisticData(StatisticOutput *statOutput, bool EndOfSimFlag) override {
+    sprockit::abort("unimplemented: NullRegression::outputStatisticData");
   }
 
-  void finish_collection(int thr_tag, int n_params, const double params[],
-                         operating_system::implicit_state* state) override {
-    parent::finish(thr_tag);
+  void registerOutputFields(StatisticOutput *statOutput) override {
+    sprockit::abort("unimplemented: NullRegression::registerOutputFields");
   }
 
-  void finalize(sstmac::timestamp t) override {
+  int startCollection() override {
+    return Parent::start();
+  }
+
+  void finishCollection(int thr_tag, int n_params, const double params[],
+                         OperatingSystem::ImplicitState* state) override {
+    Parent::finish(thr_tag);
+  }
+
+  /**
+  void finalize(sstmac::Timestamp t) override {
     compute_mean();
     std::string file = key() + ".memo";
     std::ofstream ofs(file);
@@ -180,27 +200,10 @@ struct null_regression : public operating_system::thread_safe_timer_model<double
         << "\n" << mean_;
     ofs.close();
   }
-
-  void dump_global_data() override {}
-
-  void dump_local_data() override {}
-
-  std::string to_string() const override {
-    return "mean";
-  }
-
-  void clear() override {}
-
-  void reduce(stat_collector* coll) override {}
-
-  void global_reduce(sstmac::parallel_runtime* rt) override {}
-
-  stat_collector* do_clone(sprockit::sim_parameters* params) const override {
-    return new null_regression(params, key());
-  }
+  */
 
  private:
-  void compute_mean(){
+  void computeMean(){
     double total = 0;
     for (double d : samples_){
       total += d;
@@ -213,21 +216,28 @@ struct null_regression : public operating_system::thread_safe_timer_model<double
 
 };
 
-struct linear_regression : public operating_system::thread_safe_timer_model<std::pair<double,double>>
+struct LinearRegression : public OperatingSystem::ThreadSafeTimerModel<std::pair<double,double>>
 {
-  FactoryRegister("linear", operating_system::regression_model, linear_regression)
-  using parent = operating_system::thread_safe_timer_model<std::pair<double,double>>;
-  linear_regression(sprockit::sim_parameters* params,
-                    const std::string& key)
-    : parent(params, key), computed_(false) {}
+  SST_ELI_REGISTER_DERIVED(
+    OperatingSystem::RegressionModel,
+    LinearRegression,
+    "macro",
+    "linear",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "a simple linear regression model")
+
+  using parent = OperatingSystem::ThreadSafeTimerModel<std::pair<double,double>>;
+  LinearRegression(SST::BaseComponent* comp, const std::string& key,
+                   const std::string& subName, SST::Params& params)
+    : parent(params, comp, key, ""), computed_(false) {}
 
   double compute(int n_params, const double params[],
-                 operating_system::implicit_state* state) override {
+                 OperatingSystem::ImplicitState* state) override {
     if (n_params != 1){
       spkt_abort_printf("linear regression can only take one parameter - got %d", n_params);
     }
     if (!computed_){
-      compute_regression();
+      computeRegression();
       computed_ = true;
     }
     double val = m_*params[0] + b_;
@@ -235,38 +245,29 @@ struct linear_regression : public operating_system::thread_safe_timer_model<std:
     return val;
   }
 
-  int start_collection() override {
+  void outputStatisticData(StatisticOutput *statOutput, bool EndOfSimFlag) override {
+    sprockit::abort("unimplemented: LinearRegression::outputStatisticData");
+  }
+
+  void registerOutputFields(StatisticOutput *statOutput) override {
+    sprockit::abort("unimplemented: LinearRegression::registerOutputFields");
+  }
+
+  int startCollection() override {
     return parent::start();
   }
 
-  void dump_global_data() override {}
-
-  void dump_local_data() override {}
-
-  std::string to_string() const override {
-    return "linear";
-  }
-
-  void clear() override {}
-
-  void reduce(stat_collector* coll) override {}
-
-  void global_reduce(sstmac::parallel_runtime* rt) override {}
-
-  stat_collector* do_clone(sprockit::sim_parameters* params) const override {
-    return new null_regression(params, key());
-  }
-
-  void finish_collection(int thr_tag, int n_params, const double params[],
-                         operating_system::implicit_state* state) override {
+  void finishCollection(int thr_tag, int n_params, const double params[],
+                        OperatingSystem::ImplicitState* state) override {
     if (n_params != 1){
       spkt_abort_printf("linear regression can only take one parameter - got %d", n_params);
     }
     parent::finish(thr_tag, params[0]);
   }
 
-  void finalize(sstmac::timestamp t) override {
-    compute_regression();
+  /**
+  void finalize(sstmac::Timestamp t) override {
+    computeRegression();
     std::string file = key() + ".memo";
     std::ofstream ofs(file);
     ofs << key()
@@ -274,9 +275,10 @@ struct linear_regression : public operating_system::thread_safe_timer_model<std:
         << "\n" << b_;
     ofs.close();
   }
+  */
 
  private:
-  void compute_regression(){
+  void computeRegression(){
     double meanX = 0;
     double meanY = 0;
     for (auto& pair : samples_){
@@ -305,79 +307,72 @@ struct linear_regression : public operating_system::thread_safe_timer_model<std:
   bool computed_;
 };
 
-static sprockit::need_delete_statics<operating_system> del_statics;
-static stats_unique_tag cg_tag;
+static sprockit::NeedDeletestatics<OperatingSystem> del_statics;
 
 #if SSTMAC_USE_MULTITHREAD
-std::vector<operating_system*> operating_system::active_os_;
+std::vector<OperatingSystem*> OperatingSystem::active_os_;
 #else
-operating_system* operating_system::active_os_ = nullptr;
+OperatingSystem* OperatingSystem::active_os_ = nullptr;
 #endif
 
-bool operating_system::hold_for_gdb_ = false;
-thread_context* operating_system::gdb_context_ = nullptr;
-thread_context* operating_system::gdb_original_context_ = nullptr;
-thread_context* operating_system::gdb_des_context_ = nullptr;
-std::unordered_map<uint32_t,thread*> operating_system::all_threads_;
-bool operating_system::gdb_active_ = false;
-std::map<std::string,operating_system::regression_model*> operating_system::memoize_models_;
-std::map<std::string,std::string>* operating_system::memoize_init_ = nullptr;
+bool OperatingSystem::hold_for_gdb_ = false;
+ThreadContext* OperatingSystem::gdb_context_ = nullptr;
+ThreadContext* OperatingSystem::gdb_original_context_ = nullptr;
+ThreadContext* OperatingSystem::gdb_des_context_ = nullptr;
+std::unordered_map<uint32_t,Thread*> OperatingSystem::all_threads_;
+bool OperatingSystem::gdb_active_ = false;
+std::map<std::string,std::unique_ptr<OperatingSystem::RegressionModel>> OperatingSystem::memoize_models_;
+std::unique_ptr<std::map<std::string,std::string>> OperatingSystem::memoize_init_ = nullptr;
 
-operating_system::operating_system(sprockit::sim_parameters* params, hw::node* parent) :
+OperatingSystem::OperatingSystem(SST::Params& params, hw::Node* parent) :
 #if SSTMAC_INTEGRATED_SST_CORE
   nthread_(1),
   thread_id_(0),
 #else
   nthread_(parent->nthread()),
-  thread_id_(parent->thread()),
+  thread_id_(parent->threadId()),
 #endif
   node_(parent),
   active_thread_(nullptr),
-  call_graph_(nullptr),
-  call_graph_active_(true), //on by default
+  callGraph_(nullptr),
+  callGraph_active_(true), //on by default
   des_context_(nullptr),
   ftq_trace_(nullptr),
   compute_sched_(nullptr),
-  event_subcomponent(parent),
+  SubComponent("os", parent),
   params_(params)
 {
   my_addr_ = node_ ? node_->addr() : 0;
 
-  compute_sched_ = compute_scheduler::factory::get_optional_param(
-                     "compute_scheduler", "simple", params, this);
+  //assume macro for now
+  compute_sched_ = sprockit::create<ComputeScheduler>(
+    "macro", params.find<std::string>("compute_scheduler", "simple"),
+    params, this, node_ ? node_->proc()->ncores() : 1, node_ ? node_->nsocket() : 1);
 
 #if SSTMAC_HAVE_GRAPHVIZ
   stat_descr_t stat_descr;
   stat_descr.dump_all = false;
   stat_descr.unique_tag = &cg_tag;
-  call_graph_ = optional_stats<graph_viz>(parent,
-          params, "call_graph", "call_graph", &stat_descr);
-#else
-  if (params->has_namespace("call_graph")){
-    spkt_abort_printf("cannot activate call graph collection - need to configure with --enable-graphviz");
-  }
+  callGraph_ = optionalStats<graph_viz>(parent,
+          params, "callGraph", "callGraph", &stat_descr);
 #endif
 
-  ftq_trace_ = optional_stats<ftq_calendar>(parent, params, "ftq", "ftq");
+  //ftq_trace_ = optionalStats<FTQCalendar>(parent, params, "ftq", "ftq");
 
-  stack_alloc::init(params);
+  StackAlloc::init(params);
 
-  rebuild_memoizations();
+  rebuildMemoizations();
 
-  if (node_) {
-    compute_sched_->configure(node_->proc()->ncores(), node_->nsocket());
-  } else {
-    compute_sched_->configure(1, 1);
+  SST::Params env_params = params.find_scoped_params("env");
+  std::set<std::string> keys = env_params.getKeys();
+  for (auto& key : keys){
+    env_[key] = env_params.find<std::string>(key);
   }
 
-  sprockit::sim_parameters* env_params = params->get_optional_namespace("env");
-  for (auto iter=env_params->begin(); iter != env_params->end(); ++iter){
-    env_[iter->first] = iter->second.value;
-  }
 }
 
 void
-operating_system::rebuild_memoizations()
+OperatingSystem::rebuildMemoizations()
 {
   if (!memoize_init_) return;
 
@@ -385,11 +380,12 @@ operating_system::rebuild_memoizations()
     auto iter = memoize_models_.find(pair.first);
 #if !SSTMAC_INTEGRATED_SST_CORE
     if (iter == memoize_models_.end()){
-      sprockit::sim_parameters* memo_params = params_->get_optional_namespace(pair.first);
-      memo_params->add_param_override("fileroot", pair.first);
-      auto* model = regression_model::factory::get_value(pair.second, memo_params, pair.first);
-      memoize_models_[pair.first] = model;
-      parent()->event_mgr()->register_stat(model, nullptr);
+      SST::Params memo_params = params_.find_scoped_params(pair.first);
+      memo_params.insert("fileroot", pair.first);
+      auto* model = sprockit::create<RegressionModel>(
+        "macro", pair.second, node(), pair.first, "", memo_params);
+      memoize_models_[pair.first] = std::unique_ptr<RegressionModel>(model);
+      //EventManager::global->registerStat(model, nullptr);
     }
 #else
     spkt_abort_printf("do not yet support memoization in integrated core - failed memoizing %s",
@@ -399,17 +395,29 @@ operating_system::rebuild_memoizations()
 }
 
 void
-operating_system::add_memoization(const std::string& name, const std::string& model)
+OperatingSystem::addMemoization(const std::string& name, const std::string& model)
 {
   if (!memoize_init_){
-    memoize_init_ = new std::map<std::string,std::string>;
+    memoize_init_ = std::unique_ptr<std::map<std::string,std::string>>(new std::map<std::string,std::string>);
   }
   (*memoize_init_)[name] = model;
 
 }
 
 void
-operating_system::init_threads(int nthread)
+OperatingSystem::allocateCore(Thread *thr)
+{
+  compute_sched_->reserveCores(1, thr);
+}
+
+void
+OperatingSystem::deallocateCore(Thread *thr)
+{
+  compute_sched_->releaseCores(1, thr);
+}
+
+void
+OperatingSystem::initThreads(int nthread)
 {
 #if SSTMAC_USE_MULTITHREAD
   if (active_os_.size() == 0){
@@ -418,36 +426,36 @@ operating_system::init_threads(int nthread)
 #endif
 }
 
-operating_system::~operating_system()
+OperatingSystem::~OperatingSystem()
 {
-  if (!pending_library_events_.empty()){
-    auto& pair = *pending_library_events_.begin();
-    const std::string& name = pair.first;
-    event* ev = pair.second.front();
-    cerrn << "Valid libraries on OS " << addr() << ":\n";
-    for  (auto& pair : libs_){
-      cerrn << pair.first << std::endl;
+  for (auto& pair : pending_library_request_){
+    std::string name = pair.first;
+    for (Request* req : pair.second){
+      cerrn << "Valid libraries on OS " << addr() << ":\n";
+      for  (auto& pair : libs_){
+        cerrn << pair.first << std::endl;
+      }
+      spkt_abort_printf("OperatingSystem:: never registered library %s on os %d for event %s",
+                     name.c_str(), int(addr()),
+                     sprockit::toString(req).c_str());
     }
-    spkt_abort_printf("operating_system::handle_event: never registered library %s on os %d for event %s",
-                   name.c_str(), int(addr()),
-                   sprockit::to_string(ev).c_str());
   }
 
   if (des_context_) {
-    des_context_->destroy_context();
+    des_context_->destroyContext();
     delete des_context_;
   }
   if (compute_sched_) delete compute_sched_;
 
 #if SSTMAC_HAVE_GRAPHVIZ
-  if (call_graph_) delete call_graph_;
+  if (callGraph_) delete callGraph_;
 #endif
 
   //if (ftq_trace_) delete ftq_trace_;
 }
 
 void
-operating_system::init_threading(sprockit::sim_parameters* params)
+OperatingSystem::initThreading(SST::Params& params)
 {
   if (des_context_){
     return; //already done
@@ -455,7 +463,7 @@ operating_system::init_threading(sprockit::sim_parameters* params)
 
 #if SSTMAC_USE_MULTITHREAD
   static thread_lock lock;
-  sprockit::thread_stack_size<int>() = sw::stack_alloc::stacksize();
+  sprockit::thread_stack_size<int>() = sw::StackAlloc::stacksize();
   lock.lock();
   if (active_os_.size() == 0){
     active_os_.resize(nthread());
@@ -463,162 +471,152 @@ operating_system::init_threading(sprockit::sim_parameters* params)
   lock.unlock();
 #endif
 
-  des_context_ = thread_context::factory::get_optional_param(
-        "context", thread_context::default_threading(), params);
+  des_context_ = sprockit::create<ThreadContext>(
+     "macro", params.find<std::string>("content", ThreadContext::defaultThreading()));
 
-  des_context_->init_context();
+  des_context_->initContext();
 
   active_thread_ = nullptr;
 }
 
 void
-operating_system::local_shutdown()
+OperatingSystem::localShutdown()
 {
 }
 
 void
-operating_system::delete_statics()
+OperatingSystem::deleteStatics()
 {
 }
 
 void
-operating_system::sleep(timestamp t)
+OperatingSystem::sleep(Timestamp t)
 {
-  sw::unblock_event* ev = new sw::unblock_event(this, active_thread_);
-  send_delayed_self_event_queue(t, ev);
+  sw::UnblockEvent* ev = new sw::UnblockEvent(this, active_thread_);
+  sendDelayedExecutionEvent(t, ev);
+  int ncores = active_thread_->numActiveCcores();
+  //when sleeping, release all cores
+  compute_sched_->releaseCores(ncores, active_thread_);
   block();
+  compute_sched_->reserveCores(ncores, active_thread_);
 }
 
 void
-operating_system::sleep_until(timestamp t)
+OperatingSystem::sleepUntil(GlobalTimestamp t)
 {
-  timestamp now_ = now();
+  GlobalTimestamp now_ = now();
   if (t > now_){
-    //sw::key* k = sw::key::construct();
-    sw::unblock_event* ev = new sw::unblock_event(this, active_thread_);
-    send_self_event_queue(t, ev);
+    sw::UnblockEvent* ev = new sw::UnblockEvent(this, active_thread_);
+    sendExecutionEvent(t, ev);
+    int ncores = active_thread_->numActiveCcores();
+    //when sleeping, release all cores
+    compute_sched_->releaseCores(ncores, active_thread_);
     block();
-    //delete k;
+    compute_sched_->reserveCores(ncores, active_thread_);
   }
 }
 
 void
-operating_system::compute(timestamp t)
+OperatingSystem::compute(Timestamp t)
 {
   // guard the ftq tag in this function
   const auto& cur_tag = active_thread_->tag();
-  ftq_scope scope(active_thread_,
-      cur_tag.id() == ftq_tag::null.id()?ftq_tag::compute:cur_tag);
+  FTQScope scope(active_thread_,
+      cur_tag.id() == FTQTag::null.id() ? FTQTag::compute:cur_tag);
 
-  //Make sure I have a core to execute on
-  //this will block if the thread has no core to run on
-  compute_sched_->reserve_core(active_thread_);
-  sleep(t);
-  compute_sched_->release_core(active_thread_);
+  sw::UnblockEvent* ev = new sw::UnblockEvent(this, active_thread_);
+  sendDelayedExecutionEvent(t, ev);
+  block();
 }
 
-
-void
-operating_system::async_kernel(ami::SERVICE_FUNC func,
-                               event *data)
+std::function<void(hw::NetworkMessage*)>
+OperatingSystem::nicDataIoctl()
 {
-  node_->execute(func, data);
+  return node_->nic()->dataIoctl();
+}
+
+std::function<void(hw::NetworkMessage*)>
+OperatingSystem::nicCtrlIoctl()
+{
+  return node_->nic()->ctrlIoctl();
 }
 
 void
-operating_system::execute(ami::COMP_FUNC func, event *data, int nthr)
+OperatingSystem::execute(ami::COMP_FUNC func, Event *data, int nthr)
 {
-  int old_ncores = active_thread_->num_active_cores();
-  active_thread_->set_num_active_cores(nthr);
+  int owned_ncores = active_thread_->numActiveCcores();
+  if (owned_ncores < nthr){
+    compute_sched_->reserveCores(nthr-owned_ncores, active_thread_);
+  }
 
-  //this will block if the thread has no core to run on
-  compute_sched_->reserve_core(active_thread_);
   //initiate the hardware events
-  callback* cb = new_callback(this, &operating_system::unblock, active_thread_);
+  Callback* cb = newCallback(this, &OperatingSystem::unblock, active_thread_);
 
   switch (func) {
     case sstmac::ami::COMP_INSTR:
       node_->proc()->compute(data, cb);
       break;
     case sstmac::ami::COMP_TIME: {
-      sw::timed_compute_event* ev = safe_cast(sw::timed_compute_event, data);
-      send_delayed_self_event_queue(ev->data(), cb);
+      sw::TimedComputeEvent* ev = safe_cast(sw::TimedComputeEvent, data);
+      sendDelayedExecutionEvent(ev->data(), cb);
       break;
     }
     default:
-      spkt_throw_printf(sprockit::spkt_error,
+      spkt_throw_printf(sprockit::SpktError,
             "simplenode: cannot process kernel %s",
             ami::tostr(func));
   }
 
   block();
-  compute_sched_->release_core(active_thread_);
-  active_thread_->set_num_active_cores(old_ncores);
-}
 
-void
-operating_system::execute_kernel(ami::COMM_FUNC func,
-                                 message* data)
-{
-  switch(func){
-  case sstmac::ami::COMM_SEND: {
-    hw::network_message* netmsg = safe_cast(hw::network_message, data);
-    netmsg->set_fromaddr(my_addr_);
-    node_->send_to_nic(netmsg);
-    break;
-  }
-  case sstmac::ami::COMM_PMI_SEND: {
-    hw::network_message* netmsg = safe_cast(hw::network_message, data);
-    netmsg->set_fromaddr(my_addr_);
-    node_->get_nic()->send_to_logp_switch(netmsg);
-    break;
-  }
+  if (owned_ncores < nthr){
+    compute_sched_->releaseCores(nthr-owned_ncores,active_thread_);
   }
 }
 
 void
-operating_system::decrement_app_refcount()
+OperatingSystem::decrementAppRefcount()
 {
-  node_->decrement_app_refcount();
+  node_->decrementAppRefcount();
 }
 
 void
-operating_system::increment_app_refcount()
+OperatingSystem::incrementAppRefcount()
 {
-  node_->increment_app_refcount();
+  node_->incrementAppRefcount();
 }
 
 void
-operating_system::simulation_done()
+OperatingSystem::simulationDone()
 {
 }
 
-library*
-operating_system::current_library(const std::string &name)
+Library*
+OperatingSystem::currentLibrary(const std::string &name)
 {
-  return current_os()->lib(name);
+  return currentOs()->lib(name);
 }
 
 void
-operating_system::switch_to_thread(thread* tothread)
+OperatingSystem::switchToThread(Thread* tothread)
 {
   if (active_thread_ != nullptr){ //not an error
     //but this must be thrown over to the DES context to actually execute
     //we cannot context switch directly from subthread to subthread
-    send_now_self_event_queue(new_callback(this, &operating_system::switch_to_thread, tothread));
+    sendExecutionEventNow(newCallback(this, &OperatingSystem::switchToThread, tothread));
     return;
   }
 
   active_thread_ = tothread;
-  active_os() = this;
-  tothread->context()->resume_context(des_context_);
+  activeOs() = this;
+  tothread->context()->resumeContext(des_context_);
 
   /** back to main thread */
   active_thread_ = nullptr;
 }
 
 void
-operating_system::print_libs(std::ostream &os) const
+OperatingSystem::printLibs(std::ostream &os) const
 {
   os << "available libraries: \n";
   for (auto& pair : libs_){
@@ -627,32 +625,31 @@ operating_system::print_libs(std::ostream &os) const
 }
 
 int
-operating_system::start_memoize(const char *token, const char* model_name)
+OperatingSystem::startMemoize(const char *token, const char* model_name)
 {
   auto iter = memoize_models_.find(token);
   if (iter == memoize_models_.end()){
     spkt_abort_printf("memoization %s for model %s was not registered - likely a compiler wrapper error",
                       token, model_name);
   }
-
-  regression_model* model = iter->second;
-  return model->start_collection();
+  return iter->second->startCollection();
 }
 
-static thread_local sstmac::sw::operating_system::implicit_state* implicit_memo_state_ = nullptr;
+static thread_local std::unique_ptr<sstmac::sw::OperatingSystem::ImplicitState> implicit_memo_state_;
 
-operating_system::implicit_state*
-operating_system::get_implicit_state()
+OperatingSystem::ImplicitState*
+OperatingSystem::getImplicitState()
 {
   if (!implicit_memo_state_){
-      implicit_memo_state_ = sstmac::sw::operating_system::implicit_state::factory
-                    ::get_optional_param("implicit_state", "null", params_);
+    implicit_memo_state_ = std::unique_ptr<sstmac::sw::OperatingSystem::ImplicitState>(
+          sprockit::create<sstmac::sw::OperatingSystem::ImplicitState>(
+        "macro", params_.find<std::string>("implicit_state", "null"), params_));
   }
-  return implicit_memo_state_;
+  return implicit_memo_state_.get();
 }
 
 void
-operating_system::stop_memoize(int thr_tag, const char *token, int n_params, double params[])
+OperatingSystem::stopMemoize(int thr_tag, const char *token, int n_params, double params[])
 {
   auto iter = memoize_models_.find(token);
   if (iter == memoize_models_.end()){
@@ -661,13 +658,12 @@ operating_system::stop_memoize(int thr_tag, const char *token, int n_params, dou
   }
 
   uintptr_t localStorage = get_sstmac_tls();
-  auto* states = (implicit_state*)(localStorage + SSTMAC_TLS_IMPLICIT_STATE);
-  regression_model* model = iter->second;
-  model->finish_collection(thr_tag, n_params, params, states);
+  auto* states = (ImplicitState*)(localStorage + SSTMAC_TLS_IMPLICIT_STATE);
+  iter->second->finishCollection(thr_tag, n_params, params, states);
 }
 
 void
-operating_system::compute_memoize(const char *token, int n_params, double params[])
+OperatingSystem::computeMemoize(const char *token, int n_params, double params[])
 {
   auto iter = memoize_models_.find(token);
   if (iter == memoize_models_.end()){
@@ -675,163 +671,177 @@ operating_system::compute_memoize(const char *token, int n_params, double params
                       token);
   }
 
-  regression_model* model = iter->second;
-
   uintptr_t localStorage = get_sstmac_tls();
-  auto* states = (implicit_state*)(localStorage + SSTMAC_TLS_IMPLICIT_STATE);
-  double time = model->compute(n_params, params, states);
-  current_os()->compute(timestamp(time));
+  auto* states = (ImplicitState*)(localStorage + SSTMAC_TLS_IMPLICIT_STATE);
+  double time = iter->second->compute(n_params, params, states);
+  currentOs()->compute(Timestamp(time));
 }
 
 void
-operating_system::block()
+OperatingSystem::reassign_cores(Thread *thr)
 {
-  timestamp before = now();
+  int ncores = thr->numActiveCcores();
+  //this is not equivalent to a no-op
+  //I could release cores - then based on changes
+  //to the cpumask, reserve different cores
+  compute_sched_->releaseCores(ncores, thr);
+  compute_sched_->reserveCores(ncores, thr);
+}
+
+void
+OperatingSystem::block()
+{
+  GlobalTimestamp before = now();
   //back to main DES thread
-  thread_context* old_context = active_thread_->context();
+  ThreadContext* old_context = active_thread_->context();
   if (old_context == des_context_){
     spkt_abort_printf("blocking main DES thread on node %d", my_addr_);
   }
-  thread* old_thread = active_thread_;
+  Thread* old_thread = active_thread_;
   //reset the time flag
-  active_thread_->set_timed_out(false);
+  active_thread_->setTimedOut(false);
   active_thread_ = nullptr;
-  old_context->pause_context(des_context_);
+  old_context->pauseContext(des_context_);
 
   while(hold_for_gdb_){
     sst_gdb_swap();  //do nothing - this is only for gdb purposes
   }
 
   //restore state to indicate this thread and this OS are active again
-  active_os() = this;
+  activeOs() = this;
   active_thread_ = old_thread;
-  active_thread_->increment_block_counter();
+  active_thread_->incrementBlockCounter();
 
    //collect any statistics associated with the elapsed time
-  timestamp after = now();
-  timestamp elapsed = after - before;
+  GlobalTimestamp after = now();
+  Timestamp elapsed = after - before;
 
-  if (call_graph_ && call_graph_active_) {
-    call_graph_->count_trace(elapsed.ticks(), active_thread_);
+  if (callGraph_ && callGraph_active_) {
+    callGraph_->addData(elapsed.ticks(), active_thread_);
   }
 
   if (ftq_trace_){
-    ftq_tag tag = active_thread_->tag();
-    ftq_trace_->collect(tag.id(),
+    FTQTag tag = active_thread_->tag();
+    ftq_trace_->addData(tag.id(),
       active_thread_->aid(), active_thread_->tid(),
-      before.ticks(), elapsed.ticks());
-    active_thread_->set_tag(ftq_tag::null);
+      before.time.ticks(), elapsed.ticks());
+    active_thread_->setTag(FTQTag::null);
   }
 }
 
 void
-operating_system::block_timeout(timestamp delay)
+OperatingSystem::blockTimeout(Timestamp delay)
 {
-  send_delayed_self_event_queue(delay, new timeout_event(this, active_thread_));
+  sendDelayedExecutionEvent(delay, new TimeoutEvent(this, active_thread_));
   block();
 }
 
-timestamp
-operating_system::unblock(thread* thr)
+void
+OperatingSystem::unblock(Thread* thr)
 {
-  if (thr->is_canceled()){
+  if (thr->isCanceled()){
     //just straight up delete the thread
     //it shall be neither seen nor heard
     delete thr;
   } else {
-    switch_to_thread(thr);
+    switchToThread(thr);
   }
-
-  return now();
 }
 
 void
-operating_system::join_thread(thread* t)
+OperatingSystem::joinThread(Thread* t)
 {
-  if (t->get_state() != thread::DONE) {
+  if (t->getState() != Thread::DONE) {
     //key* k = key::construct();
     os_debug("joining thread %ld - thread not done so blocking on thread %p",
-        t->thread_id(), active_thread_);
+        t->threadId(), active_thread_);
     t->joiners_.push(active_thread_);
+    int ncores = active_thread_->numActiveCcores();
+    //when joining - release all cores
+    compute_sched_->releaseCores(ncores, active_thread_);
     block();
+    compute_sched_->reserveCores(ncores, active_thread_);
   } else {
-    os_debug("joining completed thread %ld", t->thread_id());
+    os_debug("joining completed thread %ld", t->threadId());
   }
   delete t;
 }
 
 void
-operating_system::schedule_thread_deletion(thread* thr)
+OperatingSystem::scheduleThreadDeletion(Thread* thr)
 {
   //JJW 11/6/2014 This here is weird
   //The thread has run out of work and is terminating
   //However, because of weird thread swapping the DES thread
   //might still operate on the thread... we need to delay the delete
   //until the DES thread has completely finished processing its current event
-  send_now_self_event_queue(new delete_thread_event(thr));
+  sendExecutionEventNow(new DeleteThreadEvent(thr));
 }
 
 void
-operating_system::complete_active_thread()
+OperatingSystem::completeActiveThread()
 {
   if (gdb_active_){
     all_threads_.erase(active_thread_->tid());
   }
-  thread* thr_todelete = active_thread_;
+  compute_sched_->releaseCores(1, active_thread_);
+  Thread* thr_todelete = active_thread_;
 
   //if any threads waiting on the join, unblock them
-  os_debug("completing thread %ld", thr_todelete->thread_id());
+  os_debug("completing thread %ld", thr_todelete->threadId());
   while (!thr_todelete->joiners_.empty()) {
-    thread* blocker = thr_todelete->joiners_.front();
+    Thread* blocker = thr_todelete->joiners_.front();
     os_debug("thread %ld is unblocking joiner %p",
-        thr_todelete->thread_id(), blocker);
+        thr_todelete->threadId(), blocker);
     unblock(blocker);
     //to_awake_.push(thr_todelete->joiners_.front());
     thr_todelete->joiners_.pop();
   }
   active_thread_ = nullptr;
 
-  os_debug("completing context for %ld", thr_todelete->thread_id());
-  thr_todelete->context()->complete_context(des_context_);
+  os_debug("completing context for %ld", thr_todelete->threadId());
+  thr_todelete->context()->completeContext(des_context_);
 }
 
 void
-operating_system::register_lib(library* lib)
+OperatingSystem::registerLib(Library* lib)
 {
 #if SSTMAC_SANITY_CHECK
-  if (lib->lib_name() == "") {
-    sprockit::abort("operating_system: trying to register a lib with no name");
+  if (lib->libName() == "") {
+    sprockit::abort("OperatingSystem: trying to register a lib with no name");
   }
 #endif
-  os_debug("registering lib %s:%p", lib->lib_name().c_str(), lib);
+  os_debug("registering lib %s:%p", lib->libName().c_str(), lib);
   int& refcount = lib_refcounts_[lib];
   ++refcount;
-  libs_[lib->lib_name()] = lib;
+  libs_[lib->libName()] = lib;
   debug_printf(sprockit::dbg::dropped_events,
                "OS %d should no longer drop events for %s",
-               addr(), lib->lib_name().c_str());
+               addr(), lib->libName().c_str());
 
-  auto iter = pending_library_events_.find(lib->lib_name());
-  if (iter != pending_library_events_.end()){
-    const std::list<event*> events = iter->second;
-    for (event* ev : events){
-      send_now_self_event_queue(new_callback(component_id(), lib, &library::incoming_event, ev));
+  auto iter = pending_library_request_.find(lib->libName());
+  if (iter != pending_library_request_.end()){
+    const std::list<Request*> reqs = iter->second;
+    for (Request* req : reqs){
+      os_debug("delivering delayed event to lib %s: %s",
+               lib->libName().c_str(), sprockit::toString(req).c_str());
+      sendExecutionEventNow(newCallback(lib, &Library::incomingRequest, req));
     }
-    pending_library_events_.erase(iter);
+    pending_library_request_.erase(iter);
   }
 }
 
 void
-operating_system::unregister_lib(library* lib)
+OperatingSystem::unregisterLib(Library* lib)
 {
-  os_debug("unregistering lib %s", lib->lib_name().c_str());
+  os_debug("unregistering lib %s", lib->libName().c_str());
   int& refcount = lib_refcounts_[lib];
   if (refcount == 1){
     lib_refcounts_.erase(lib);
     debug_printf(sprockit::dbg::dropped_events,
                  "OS %d will now drop events for %s",
-                 addr(), lib->lib_name().c_str());
-    libs_.erase(lib->lib_name());
+                 addr(), lib->libName().c_str());
+    libs_.erase(lib->libName());
     //delete lib;
   } else {
     --refcount;
@@ -839,13 +849,12 @@ operating_system::unregister_lib(library* lib)
 }
 
 void
-operating_system::kill_node()
+OperatingSystem::killNode()
 {
-  node_->fail_stop();
 }
 
-library*
-operating_system::lib(const std::string& name) const
+Library*
+OperatingSystem::lib(const std::string& name) const
 {
   auto it = libs_.find(name);
   if (it == libs_.end()) {
@@ -856,13 +865,14 @@ operating_system::lib(const std::string& name) const
 }
 
 void
-operating_system::outcast_app_start(int my_rank, int aid, const std::string& app_ns,
-                                  task_mapping::ptr mapping,  sprockit::sim_parameters* app_params,
-                                  bool include_root)
+OperatingSystem::outcastAppStart(int my_rank, int aid, const std::string& app_ns,
+                                 TaskMapping::ptr mapping,
+                                 const SST::Params& app_params,
+                                 bool include_root)
 {
-  int num_ranks = mapping->num_ranks();
+  int num_ranks = mapping->numRanks();
   //job launcher needs to add this - might need it later
-  outcast_iterator iter(my_rank, num_ranks);
+  OutcastIterator iter(my_rank, num_ranks);
   int ranks[64];
   int num_to_send = 0;
   if (include_root){
@@ -875,16 +885,17 @@ operating_system::outcast_app_start(int my_rank, int aid, const std::string& app
 
   for (int r=0; r < num_to_send; ++r){
     int dst_rank = ranks[r];
-    int dst_nid = mapping->rank_to_node(dst_rank);
-    sw::start_app_event* lev = new start_app_event(aid, app_ns,
-                                     mapping, dst_rank, dst_nid,
+    int dst_nid = mapping->rankToNode(dst_rank);
+    sw::StartAppRequest* lev = new StartAppRequest(node_->allocateUniqueId(),
+                                     aid, app_ns, mapping, dst_rank, dst_nid,
                                      addr(), app_params);
-    node_->get_nic()->send_to_logp_switch(lev);
+    os_debug("outcast to %d: %s", dst_rank, lev->toString().c_str());
+    node_->nic()->sendManagerMsg(lev);
   }
 }
 
-thread_context*
-operating_system::active_context()
+ThreadContext*
+OperatingSystem::activeContext()
 {
   if (active_thread_){
     return active_thread_->context();
@@ -894,17 +905,17 @@ operating_system::active_context()
 }
 
 void
-operating_system::gdb_switch_to_thread(uint32_t id)
+OperatingSystem::gdbSwitchToThread(uint32_t id)
 {
-  thread* thr = all_threads_[id];
+  Thread* thr = all_threads_[id];
   if (thr){
-    thread_context* from_context = nullptr;
+    ThreadContext* from_context = nullptr;
     if (gdb_context_){
       from_context = gdb_context_;
     } else {
-      operating_system* os = static_os_thread_context();
-      if (os->active_thread()){
-        from_context = os->active_thread()->context();
+      OperatingSystem* os = staticOsThreadContext();
+      if (os->activeThread()){
+        from_context = os->activeThread()->context();
       } else {
         from_context = os->des_context_;
       }
@@ -915,14 +926,14 @@ operating_system::gdb_switch_to_thread(uint32_t id)
     }
 
     hold_for_gdb_ = true;
-    from_context->jump_context(thr->context());
+    from_context->jumpContext(thr->context());
   } else {
     std::cerr << "Invalid rank " << id << std::endl;
   }
 }
 
 void
-operating_system::gdb_reset()
+OperatingSystem::gdbReset()
 {
   hold_for_gdb_ = false;
   if (!gdb_original_context_){
@@ -930,40 +941,40 @@ operating_system::gdb_reset()
     return;
   }
 
-  thread_context* orig = gdb_original_context_;
-  thread_context* current = gdb_context_;
+  ThreadContext* orig = gdb_original_context_;
+  ThreadContext* current = gdb_context_;
   gdb_original_context_ = nullptr;
   gdb_context_ = nullptr;
 
-  current->jump_context(orig);
+  current->jumpContext(orig);
 }
 
 void
-operating_system::start_thread(thread* t)
+OperatingSystem::startThread(Thread* t)
 {
   if (active_thread_){
     //crap - can't do this on this thread - need to do on DES thread
-    send_now_self_event_queue(new_callback(this, &operating_system::start_thread, t));
+    sendExecutionEventNow(newCallback(this, &OperatingSystem::startThread, t));
   } else {
     active_thread_ = t;
-    active_os() = this;
-    app* parent = t->parent_app();
-    void* stack = stack_alloc::alloc();
-    t->init_thread(
+    activeOs() = this;
+    App* parent = t->parentApp();
+    void* stack = StackAlloc::alloc();
+    t->initThread(
       parent->params(),
       threadId(),
       des_context_,
       stack,
-      stack_alloc::stacksize(),
-      parent->globals_storage(),
-      parent->new_tls_storage());
+      StackAlloc::stacksize(),
+      parent->globalsStorage(),
+      parent->newTlsStorage());
   }
 
   if (gdb_active_){
     static thread_lock all_threads_lock;
     all_threads_lock.lock();
     auto tid = t->tid();
-    thread*& thrInMap = all_threads_[tid];
+    Thread*& thrInMap = all_threads_[tid];
     if (thrInMap){
       spkt_abort_printf("error: thread %d already exists for app %d",
                         t->tid(), thrInMap->aid());
@@ -974,50 +985,73 @@ operating_system::start_thread(thread* t)
 }
 
 void
-operating_system::start_app(app* theapp, const std::string& unique_name)
+OperatingSystem::startApp(App* theapp, const std::string& unique_name)
 {
   os_debug("starting app %d:%d on thread %d",
-    int(theapp->tid()), int(theapp->aid()), thread_id());
+    int(theapp->tid()), int(theapp->aid()), threadId());
   //this should be called from the actual thread running it
-  init_threading(params_);
-  if (params_->has_param("context")){
-    theapp->params()->add_param("context", params_->get_param("context"));
-  }
+  initThreading(params_);
   if (ftq_trace_){
-    ftq_trace_->register_app(theapp->aid(), sprockit::printf("app%d", int(theapp->aid())));
+    ftq_trace_->registerApp(theapp->aid(), sprockit::printf("app%d", int(theapp->aid())));
   }
 
-  start_thread(theapp);
+  startThread(theapp);
 }
 
 bool
-operating_system::handle_library_event(const std::string& name, event* ev)
+OperatingSystem::handleLibraryRequest(const std::string& name, Request* req)
 {
   auto it = libs_.find(name);
   bool found = it != libs_.end();
   if (found){
-    library* lib = it->second;
-    os_debug("delivering message to lib %s:%p\n%s",
-        name.c_str(), lib, sprockit::to_string(ev).c_str());
-    lib->incoming_event(ev);
+    Library* lib = it->second;
+    os_debug("delivering message to lib %s:%p: %s",
+        name.c_str(), lib, sprockit::toString(req).c_str());
+    lib->incomingRequest(req);
+  } else {
+    os_debug("unable to deliver message to lib %s: %s",
+        name.c_str(), sprockit::toString(req).c_str());
   }
   return found;
 }
 
+#if 0
 void
-operating_system::handle_event(event* ev)
+OperatingSystem::handleEvent(Event* ev)
 {  
   //this better be an incoming event to a library, probably from off node
-  library_interface* libmsg = test_cast(library_interface, ev);
+  Flow* libmsg = test_cast(Flow, ev);
   if (!libmsg) {
     spkt_throw_printf(sprockit::illformed_error,
-      "operating_system::handle_event: got event %s instead of library event",
-      sprockit::to_string(ev).c_str());
+      "OperatingSystem::handle_event: got event %s instead of library event",
+      sprockit::toString(ev).c_str());
   }
 
-  bool found = handle_library_event(libmsg->lib_name(), ev);
+  bool found = handleLibraryEvent(libmsg->libname(), ev);
   if (!found){
-    pending_library_events_[libmsg->lib_name()].push_back(ev);
+    os_debug("delaying event to lib %s: %s",
+             libmsg->libname().c_str(), libmsg->toString().c_str());
+    pending_library_events_[libmsg->libname()].push_back(ev);
+  }
+}
+#endif
+
+void
+OperatingSystem::handleRequest(Request* req)
+{
+  //this better be an incoming event to a library, probably from off node
+  Flow* libmsg = test_cast(Flow, req);
+  if (!libmsg) {
+    spkt_throw_printf(sprockit::IllformedError,
+      "OperatingSystem::handle_event: got event %s instead of library event",
+      sprockit::toString(req).c_str());
+  }
+
+  bool found = handleLibraryRequest(libmsg->libname(), req);
+  if (!found){
+    os_debug("delaying event to lib %s: %s",
+             libmsg->libname().c_str(), libmsg->toString().c_str());
+    pending_library_request_[libmsg->libname()].push_back(req);
   }
 }
 

@@ -48,13 +48,13 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/timestamp.h>
 #include <sstmac/common/event_location.h>
 
-#include <sstmac/common/messages/sst_message_fwd.h>
+#include <sstmac/hardware/common/flow_fwd.h>
 #include <sstmac/common/event_handler_fwd.h>
 #include <sstmac/common/event_scheduler.h>
 #include <sstmac/common/sst_event_fwd.h>
-#include <sstmac/common/stats/stat_collector.h>
+#include <sstmac/common/stats/stat_collector_fwd.h>
 #include <sprockit/sim_parameters_fwd.h>
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <sprockit/debug.h>
 #include <sprockit/allocator.h>
 
@@ -67,11 +67,12 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/threading/threading_interface_fwd.h>
 
 #include <vector>
+#include <queue>
 #include <cstdint>
 #include <cstddef>
 
 
-DeclareDebugSlot(event_manager);
+DeclareDebugSlot(EventManager);
 
 namespace sstmac {
 
@@ -83,76 +84,68 @@ namespace sstmac {
  * in the right order.
  */
 
-class event_manager
+class EventManager
 {
-  DeclareFactory(event_manager, parallel_runtime*)
-
-  FactoryRegister("map", event_manager, event_manager,
-      "Implements a basic event manager running in serial")
-
-  friend class event_component;
-  friend class event_subcomponent;
-  friend class event_scheduler;
-  friend class centralized_link;
-  friend class native::manager;
-
  public:
-  event_manager(sprockit::sim_parameters* params, parallel_runtime* rt);
+  SST_ELI_DECLARE_BASE(EventManager)
+  SST_ELI_DECLARE_CTOR(SST::Params&, ParallelRuntime*)
 
-  bool is_complete() {
+  SST_ELI_REGISTER_DERIVED(
+    EventManager,
+    EventManager,
+    "macro",
+    "map",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "Implements a basic event manager running in serial")
+
+  friend class Component;
+  friend class SubComponent;
+  friend class EventScheduler;
+  friend class native::Manager;
+
+  EventManager(SST::Params& params, ParallelRuntime* rt);
+
+  bool isComplete() {
     return complete_;
   }
 
-  static const timestamp no_events_left_time;
+  static const GlobalTimestamp* myClock() {
+    return global->nowPtr();
+  }
 
-  static event_manager* global;
+  static const GlobalTimestamp no_events_left_time;
 
-  virtual ~event_manager();
+  static EventManager* global;
+
+  virtual ~EventManager();
 
   /**
    * @brief spin_up
    * Create a user-space thread context for the event manager and start it running
    */
-  void spin_up(void(*fxn)(void*), void* args);
+  void spinUp(void(*fxn)(void*), void* args);
 
   /**
-   * @brief spin_down
+   * @brief spinDown
    * Bring down the user-space thread context and go back to original event manager
    */
-  void spin_down();
+  void spinDown();
 
-  sw::thread_context* clone_thread() const;
+  sw::ThreadContext* cloneThread() const;
 
   virtual void run();
 
   void stop();
 
-  void cancel_all_messages(uint32_t component_id);
+  Partition* topologyPartition() const;
 
-  void register_stat(
-    stat_collector* stat,
-    stat_descr_t* descr);
-
-  void register_unique_stat(stat_collector* stat, stat_descr_t* descr);
-
-  stat_collector* find_unique_stat(int unique_tag) const {
-    auto iter = unique_stats_.find(unique_tag);
-    if (iter != unique_stats_.end()){
-      return iter->second.main_collector;
-    } else {
-      return nullptr;
-    }
-  }
-
-  partition* topology_partition() const;
-
-  parallel_runtime* runtime() const {
+  ParallelRuntime* runtime() const {
     return rt_;
   }
 
-  void finish_stats();
+  void finishStats();
 
-  timestamp final_time() const {
+  GlobalTimestamp finalTime() const {
     return final_time_;
   }
 
@@ -167,7 +160,7 @@ class event_manager
     return thread_id_;
   }
 
-  void set_thread(int thr) {
+  void setThread(int thr) {
     thread_id_ = thr;
   }
 
@@ -183,86 +176,93 @@ class event_manager
     return nthread_;
   }
 
-  virtual event_manager* thread_manager(int thr) const {
-    return const_cast<event_manager*>(this);
+  void registerStatisticCore(StatisticBase* base);
+
+  virtual EventManager* threadManager(int thr) const {
+    return const_cast<EventManager*>(this);
   }
 
-  void ipc_schedule(ipc_event_t* iev);
+  void ipcSchedule(IpcEvent* iev);
 
-  void multithread_schedule(int slot, int srcThread, event_queue_entry* ev){
+  void multithreadSchedule(int slot, int srcThread, ExecutionEvent* ev){
     pending_events_[slot][srcThread].push_back(ev);
   }
 
-  void schedule_pending_serialization(char* buf){
+  void schedulePendingSerialization(char* buf){
     pending_serialization_.push_back(buf);
   }
 
-  int pending_slot() const {
-    return pending_slot_;
+  int pendingSlot() const {
+    return pendingSlot_;
   }
 
-  void schedule(event_queue_entry* ev){
+  void schedule(ExecutionEvent* ev){
     if (ev->time() < now_){
-      spkt_abort_printf("Time went backwards on thread %d: %llu < %llu", 
-                        thread_id_, ev->time().ticks(), now_.ticks());
+      spkt_abort_printf("Time went backwards on thread %d", thread_id_);
     }
     event_queue_.insert(ev);
   }
 
-  void set_interconnect(hw::interconnect* ic);
+  void setInterconnect(hw::Interconnect* ic);
 
-  hw::interconnect* interconn() const {
+  hw::Interconnect* interconnect() const {
     return interconn_;
   }
 
-  virtual void schedule_stop(timestamp until);
+  void startStatGroup(const std::string& name){
+    active_stat_group_.push(name);
+  }
+
+  void stopStatGroup(){
+    active_stat_group_.pop();
+  }
+
+  virtual void scheduleStop(GlobalTimestamp until);
 
   /**
    * @brief run_events
    * @param event_horizon
    * @return Whether no more events or just hit event horizon
    */
-  timestamp run_events(timestamp event_horizon);
+  GlobalTimestamp runEvents(GlobalTimestamp event_horizon);
 
-  timestamp now() const {
+  GlobalTimestamp now() const {
     return now_;
   }
 
-  const timestamp* now_ptr() const {
+  const GlobalTimestamp* nowPtr() const {
     return &now_;
   }
 
-  void set_min_ipc_time(timestamp t){
+  void setMinIpcTime(GlobalTimestamp t){
     min_ipc_time_ = std::min(t,min_ipc_time_);
   }
 
-  timestamp min_event_time() const {
+  GlobalTimestamp minEventTime() const {
     return event_queue_.empty()
           ? no_events_left_time
           : (*event_queue_.begin())->time();
   }
 
  protected:
-  void register_pending();
+  void registerPending();
 
-  virtual void finish_stats(stat_collector* main, const std::string& name);
-
-  virtual timestamp receive_incoming_events(timestamp vote) {
+  virtual GlobalTimestamp receiveIncomingEvents(GlobalTimestamp vote) {
     return vote;
   }
 
-#define num_pending_slots 4
-  int pending_slot_;
-  std::vector<std::vector<event_queue_entry*>> pending_events_[num_pending_slots];
+#define num_pendingSlots 4
+  int pendingSlot_;
+  std::vector<std::vector<ExecutionEvent*>> pending_events_[num_pendingSlots];
   std::vector<char*> pending_serialization_;
 
  protected:
   bool complete_;
-  timestamp final_time_;
-  parallel_runtime* rt_;
-  hw::interconnect* interconn_;
-  sw::thread_context* des_context_;
-  sw::thread_context* main_thread_;
+  GlobalTimestamp final_time_;
+  ParallelRuntime* rt_;
+  hw::Interconnect* interconn_;
+  sw::ThreadContext* des_context_;
+  sw::ThreadContext* main_thread_;
   bool scheduled_;
   bool stopped_;
 
@@ -272,60 +272,60 @@ class event_manager
   uint16_t nthread_;
   uint16_t thread_id_;
 
-  timestamp lookahead_;
-  timestamp now_;
+  Timestamp lookahead_;
+  GlobalTimestamp now_;
 
  private:
-  struct stats_entry {
-    bool reduce_all;
-    bool dump_all;
-    bool dump_main;
-    bool need_delete;
-    stat_collector* main_collector;
-    std::list<stat_collector*> collectors;
-    stats_entry() : main_collector(nullptr), need_delete(false)
-    {}
-  };
-
-  std::map<int, stats_entry> unique_stats_;
-
-  virtual void finish_unique_stat(int unique_tag, stats_entry& entry);
-
 #define MAX_EVENT_MGR_THREADS 128
-  std::vector<event_scheduler*> pending_registration_[MAX_EVENT_MGR_THREADS];
+  std::vector<EventScheduler*> pending_registration_[MAX_EVENT_MGR_THREADS];
 
  protected:
-  timestamp min_ipc_time_;
+  GlobalTimestamp min_ipc_time_;
 
-  void schedule_incoming(ipc_event_t* iev);
+  void finalizeStatsOutput();
 
-  int serialize_schedule(char* buf);
+  void finalizeStatsInit();
 
-  struct event_compare {
-    bool operator()(event_queue_entry* lhs, event_queue_entry* rhs) const {
+  void scheduleIncoming(IpcEvent* iev);
+
+  int serializeSchedule(char* buf);
+
+  struct EventCompare {
+    bool operator()(ExecutionEvent* lhs, ExecutionEvent* rhs) const {
       bool neq = lhs->time() != rhs->time();
       if (neq) return lhs->time() < rhs->time();
 
-      if (lhs->src_component_id() == rhs->src_component_id()){
+      if (lhs->linkId() == rhs->linkId()){
         return lhs->seqnum() < rhs->seqnum();
       } else {
-        return lhs->src_component_id() < rhs->src_component_id();
+        return lhs->linkId() < rhs->linkId();
       }
     }
   };
-  typedef std::set<event_queue_entry*, event_compare, 
-                   sprockit::allocator<event_queue_entry*>> queue_t;
+  using queue_t = std::set<ExecutionEvent*, EventCompare,
+                    sprockit::allocator<ExecutionEvent*>> ;
   queue_t event_queue_;
 
-  std::map<std::string, stats_entry> stats_;
+  struct StatGroup {
+    std::list<StatisticBase*> stats;
+    StatisticOutput* output;
+    std::string outputName;
+    StatGroup() : output(nullptr), outputName("csv") {}
+  };
+
+  StatisticOutput* dflt_stat_output_;
+
+  std::queue<std::string> active_stat_group_;
+
+  std::map<std::string, StatGroup> stat_groups_;
 
 };
 
-class null_event_manager : public event_manager
+class NullEventManager : public EventManager
 {
  public:
-  null_event_manager(sprockit::sim_parameters* params, parallel_runtime* rt) :
-    event_manager(params, rt)
+  NullEventManager(SST::Params& params, ParallelRuntime* rt) :
+    EventManager(params, rt)
   {
   }
 

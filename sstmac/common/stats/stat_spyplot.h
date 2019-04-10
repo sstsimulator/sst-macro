@@ -45,6 +45,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef SSTMAC_COMMON_STATS_STATS_COMMON_H_INCLUDED
 #define SSTMAC_COMMON_STATS_STATS_COMMON_H_INCLUDED
 
+#include <sstmac/common/event_scheduler.h>
 #include <sstmac/common/stats/stat_collector.h>
 #include <sstmac/common/timestamp.h>
 #include <iostream>
@@ -54,87 +55,42 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 
+using StatSpyplotParent = SST::Statistics::MultiStatistic<int,int,uint64_t>;
 
 /**
  * this stat_collector class keeps a spy plot
  */
-class stat_spyplot :
-  public stat_collector
+class StatSpyplot : public StatSpyplotParent
 {
-  FactoryRegister("ascii", stat_collector, stat_spyplot)
  public:
-  virtual std::string to_string() const override {
-    return "stat_spyplot";
-  }
+  SST_ELI_REGISTER_CUSTOM_STATISTIC(
+    StatSpyplotParent,
+    StatSpyplot,
+    "macro",
+    "spyplot",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "spyplot showing traffic matrics")
 
-  virtual void dump_to_file(const std::string& froot);
+  StatSpyplot(SST::BaseComponent* comp, const std::string& name,
+              const std::string& statName, SST::Params& params);
 
-  virtual void dump_local_data() override;
+  virtual ~StatSpyplot() {}
 
-  virtual void dump_global_data() override;
+  void addData_impl(int source, int dest, uint64_t num) override;
 
-  virtual void reduce(stat_collector *coll) override;
+  void registerOutputFields(SST::Statistics::StatisticOutput* output) override;
 
-  virtual void global_reduce(parallel_runtime *rt) override;
-
-  virtual void clear() override;
-
-  virtual ~stat_spyplot() {}
-
-  virtual void add_one(int source, int dest);
-
-  virtual void add(int source, int dest, long num);
-
-  virtual stat_collector* do_clone(sprockit::sim_parameters* params) const override {
-    return new stat_spyplot(params);
-  }
-
-  stat_spyplot(sprockit::sim_parameters* params) :
-    max_dest_(0),
-    stat_collector(params)
-  {
-  }
+  void outputStatisticData(SST::Statistics::StatisticOutput* output, bool endOfSim) override;
 
  protected:
-  typedef std::unordered_map<int, long> long_map;
-  typedef std::unordered_map<int, long_map> spyplot_map;
-  spyplot_map vals_;
-  int max_dest_;
+  std::vector<uint64_t> vals_;
+  int n_src_;
+  int n_dst_;
+  int my_id_;
+  std::vector<SST::Statistics::StatisticOutput::fieldHandle_t> fields_;
 
 };
 
-/**
- * this stat_collector class keeps a spy plot, and outputs it as a png
- */
-class stat_spyplot_png : public stat_spyplot
-{
-  FactoryRegister("png", stat_collector, stat_spyplot_png)
- public:
-  stat_spyplot_png(sprockit::sim_parameters* params);
-
-  std::string to_string() const override {
-    return "stat_spyplot_png";
-  }
-
-  virtual void add(int source, int dest, long num) override;
-
-  virtual void dump_to_file(const std::string& froot) override;
-
-  void set_normalization(long max) {
-    normalization_ = max;
-  }
-
-  virtual ~stat_spyplot_png() {}
-
-  stat_collector* do_clone(sprockit::sim_parameters* params) const override {
-    return new stat_spyplot_png(params);
-  }
-
- private:
-  long normalization_;
-  bool fill_;
-
-};
 
 }
 

@@ -47,6 +47,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/common/timestamp.h>
 #include <sstmac/common/node_address.h>
+#include <sstmac/common/event_scheduler.h>
 
 #include <sstmac/hardware/common/connection.h>
 #include <sstmac/hardware/node/node_fwd.h>
@@ -54,10 +55,11 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/nic/nic_fwd.h>
 #include <sstmac/hardware/switch/network_switch_fwd.h>
 
+#include <sstmac/backends/common/parallel_runtime_fwd.h>
 #include <sstmac/backends/common/sim_partition_fwd.h>
 
 #include <sprockit/debug.h>
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <unordered_map>
 
 #include <set>
@@ -73,60 +75,58 @@ namespace hw {
 /**
  * Base class for network congestion models.
  */
-class interconnect
+class Interconnect
 {
-  DeclareFactory(interconnect, event_manager*, partition*, parallel_runtime*)
-  FactoryRegister("switch | simple", interconnect, interconnect)
  public:
-  static interconnect* static_interconnect(sprockit::sim_parameters* params, event_manager* mgr);
+  static Interconnect* staticInterconnect(SST::Params& params, EventManager* mgr);
 
   /**
    * @brief static_interconnect Must already exist
    * @return
    */
-  static interconnect* static_interconnect();
+  static Interconnect* staticInterconnect();
 
-  static void clear_static_interconnect(){
+  static void clearStaticInterconnect(){
     if (static_interconnect_) delete static_interconnect_;
     static_interconnect_ = nullptr;
   }
 
-  interconnect(sprockit::sim_parameters* params, event_manager* mgr,
-                    partition* part, parallel_runtime* rt);
+  Interconnect(SST::Params& params, EventManager* mgr,
+                    Partition* part, ParallelRuntime* rt);
 
-  int num_nodes() const {
+  int numNodes() const {
     return num_nodes_;
   }
 
-  switch_id node_to_logp_switch(node_id nid) const;
+  SwitchId nodeToLogpSwitch(NodeId nid) const;
 
  protected:
-  topology* topology_;
+  Topology* topology_;
   int num_nodes_;
   int num_switches_;
   int num_leaf_switches_;
 
  private:
-  static interconnect* static_interconnect_;
+  static Interconnect* static_interconnect_;
 
-  interconnect(){}
+  Interconnect(){}
 
 #if SSTMAC_INTEGRATED_SST_CORE
 #else
  public:
-  const std::vector<connectable_component*>& components() const {
+  const std::vector<ConnectableComponent*>& components() const {
     return components_;
   }
 
-  typedef std::vector<network_switch*> switch_map;
-  typedef std::vector<connectable*> internal_map;
-  typedef std::vector<connectable*> endpoint_map;
-  typedef std::vector<node*> node_map;
-  typedef std::vector<nic*> nic_map;
+  typedef std::vector<NetworkSwitch*> switch_map;
+  typedef std::vector<Connectable*> internal_map;
+  typedef std::vector<Connectable*> endpoint_map;
+  typedef std::vector<Node*> node_map;
+  typedef std::vector<NIC*> nic_map;
+ 
+  ~Interconnect();
 
-  ~interconnect();
-
-  topology* topol() const {
+  Topology* topology() const {
     return topology_;
   }
 
@@ -138,11 +138,11 @@ class interconnect
    * @param nid The ID of the node object to get
    * @return The node object or NULL, if ID is not found
    */
-  node* node_at(node_id nid) const {
+  Node* nodeAt(NodeId nid) const {
     return nodes_[nid];
   }
 
-  network_switch* switch_at(switch_id id) const {
+  NetworkSwitch* switchAt(SwitchId id) const {
     return switches_[id];
   }
 
@@ -150,67 +150,61 @@ class interconnect
     return nodes_;
   }
 
-  void kill_node(node_id nid);
-
-  void kill_node(node_id nid, timestamp t);
-
-  void deadlock_check();
-
   void setup();
 
   const switch_map& switches() const {
     return switches_;
   }
 
-  timestamp lookahead() const {
+  Timestamp lookahead() const {
     return lookahead_;
   }
 
-  connectable_component* component(uint32_t id) const {
+  ConnectableComponent* component(uint32_t id) const {
     return components_[id];
   }
 
  private:
-  uint32_t switch_component_id(switch_id sid) const;
+  uint32_t switchComponentId(SwitchId sid) const;
 
-  uint32_t node_component_id(node_id nid) const;
+  uint32_t nodeComponentId(NodeId nid) const;
 
-  uint32_t logp_component_id(switch_id sid) const;
+  uint32_t logpComponentId(SwitchId sid) const;
 
-  void connect_switches(event_manager* mgr, sprockit::sim_parameters* switch_params);
+  void connectLogP(EventManager* mgr,
+        SST::Params& node_params,
+        SST::Params& nic_params);
 
-  void configure_interconnect_lookahead(sprockit::sim_parameters* params);
+  void connectSwitches(EventManager* mgr, SST::Params& switch_params);
 
-  void build_endpoints(sprockit::sim_parameters* node_params,
-                    sprockit::sim_parameters* nic_params,
-                    event_manager* mgr);
+  void configureInterconnectLookahead(SST::Params& params);
 
-  void build_switches(sprockit::sim_parameters* switch_params,
-                      event_manager* mgr);
+  void buildEndpoints(SST::Params& node_params,
+                    SST::Params& nic_params,
+                    EventManager* mgr);
 
-  void connect_endpoints(event_manager* mgr,
-                  sprockit::sim_parameters* ep_inj_params,
-                  sprockit::sim_parameters* ep_ej_params,
-                  sprockit::sim_parameters* sw_ej_params);
+  void buildSwitches(SST::Params& switch_params,
+                      EventManager* mgr);
 
-  event_link* allocate_local_link(event_scheduler* src, event_scheduler* dst,
-                                  event_handler* handler, timestamp latency);
+  void connectEndpoints(EventManager* mgr,
+                  SST::Params& ep_params,
+                  SST::Params& sw_params);
+
 
   switch_map switches_;
-
   node_map nodes_;
 
-  std::vector<connectable_component*> components_;
+  std::vector<ConnectableComponent*> components_;
 
-  timestamp lookahead_;
+  Timestamp lookahead_;
 
   int num_speedy_switches_with_extra_node_;
   int num_nodes_per_speedy_switch_;
 
-  std::vector<logp_switch*> logp_switches_;
+  std::vector<LogPSwitch*> logp_switches_;
 
-  partition* partition_;
-  parallel_runtime* rt_;
+  Partition* partition_;
+  ParallelRuntime* rt_;
 #endif
 };
 

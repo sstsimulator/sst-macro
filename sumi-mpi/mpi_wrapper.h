@@ -47,8 +47,4 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sumi-mpi/sstmac_mpi.h>
 
-#ifdef __cplusplus
-#include <sumi-mpi/mpi_api.h>
-#endif
-
 #endif // MPI_H

@@ -55,51 +55,40 @@ namespace hw {
  * A canonical dragonfly with notation/structure matching the Dally paper
  * Technology-Driven, Highly-Scalable Dragonfly Topology
  */
-class dragonfly_plus : public dragonfly
+class DragonflyPlus : public Dragonfly
 {
-  FactoryRegister("dragonfly_plus", topology, dragonfly_plus)
-
  public:
-  dragonfly_plus(sprockit::sim_parameters* params);
+  SPKT_REGISTER_DERIVED(
+    Topology,
+    DragonflyPlus,
+    "macro",
+    "dragonfly_plus",
+    "implements a Dragonfly+ with fat-tree groups")
 
- public:
-  std::string to_string() const override {
+  DragonflyPlus(SST::Params& params);
+
+  std::string toString() const override {
     return "dragonfly+";
   }
 
-  bool uniform_network_ports() const override {
-    return false;
-  }
-
-  bool is_global_port(int port) const {
+  bool isGlobalPort(int port) const {
     return port >= 2*a_;
   }
 
-  bool uniform_switches_non_uniform_network_ports() const override {
-    return false;
-  }
+  void connectedOutports(SwitchId src, std::vector<Connection>& conns) const override;
 
-  bool uniform_switches() const override {
-    return false;
-  }
+  virtual ~DragonflyPlus() {}
 
-  void connected_outports(switch_id src, std::vector<connection>& conns) const override;
-
-  void configure_individual_port_params(switch_id src,
-        sprockit::sim_parameters *switch_params) const override;
-
-  virtual ~dragonfly_plus() {}
-
-  vtk_switch_geometry get_vtk_geometry(switch_id sid) const override;
+  VTKSwitchGeometry getVtkGeometry(SwitchId sid) const override;
 
   int ndimensions() const {
     return 3;
   }
 
-  void endpoints_connected_to_injection_switch(switch_id swaddr,
-         std::vector<injection_port>& nodes) const override;
+  void endpointsConnectedToInjectionSwitch(SwitchId swaddr,
+         std::vector<InjectionPort>& nodes) const override;
 
-  int max_num_ports() const override {
+  int maxNumPorts() const override {
     return std::max(a_ + h_, a_ + concentration());
   }
 
@@ -109,51 +98,51 @@ class dragonfly_plus : public dragonfly
    * @param a
    * @param g
    */
-  inline void get_coords(switch_id sid, int& row, int& a, int& g) const {
+  inline void getCoords(SwitchId sid, int& row, int& a, int& g) const {
     row = sid / num_leaf_switches_;
     a = sid % a_;
     g = (sid % num_leaf_switches_) / a_;
   }
 
-  int get_uid(int row, int a, int g) const {
+  int getUid(int row, int a, int g) const {
     return row*num_leaf_switches_ + g*a_ + a;
   }
 
-  inline int computeRow(switch_id sid) const {
+  inline int computeRow(SwitchId sid) const {
     return sid / num_leaf_switches_;
   }
 
-  inline int computeA(switch_id sid) const {
+  inline int computeA(SwitchId sid) const {
     return sid % a_;
   }
 
-  inline int computeG(switch_id sid) const {
+  inline int computeG(SwitchId sid) const {
     return (sid % num_leaf_switches_) / a_;
   }
 
-  switch_id num_switches() const override {
+  SwitchId numSwitches() const override {
     return 2 * a_ * g_;
   }
 
-  switch_id num_leaf_switches() const override {
+  SwitchId numLeafSwitches() const override {
     return num_leaf_switches_;
   }
 
-  bool is_curved_vtk_link(switch_id sid, int port) const override {
+  bool isCurvedVtkLink(SwitchId sid, int port) const override {
     return false;
   }
 
-  int minimal_distance(switch_id src, switch_id dst) const;
+  int minimalDistance(SwitchId src, SwitchId dst) const;
 
-  int num_hops_to_node(node_id src, node_id dst) const override {
-    return minimal_distance(src / concentration_, dst/ concentration_);
+  int numHopsToNode(NodeId src, NodeId dst) const override {
+    return minimalDistance(src / concentration_, dst/ concentration_);
   }
 
   int diameter() const override {
     return 5;
   }
 
-  coordinates switch_coords(switch_id sid) const override {
+  coordinates switchCoords(SwitchId sid) const override {
     coordinates c(3);
     c[0] = computeRow(sid);
     c[1] = computeA(sid);
@@ -161,8 +150,8 @@ class dragonfly_plus : public dragonfly
     return c;
   }
 
-  switch_id switch_addr(const coordinates &coords) const override {
-    return get_uid(coords[0], coords[1], coords[2]);
+  SwitchId switchAddr(const coordinates &coords) const override {
+    return getUid(coords[0], coords[1], coords[2]);
   }
 
  private:

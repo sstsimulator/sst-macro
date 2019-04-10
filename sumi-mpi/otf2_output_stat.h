@@ -11,37 +11,37 @@
 
 namespace sumi {
 
-class otf2_writer : public sstmac::stat_collector
+class OTF2Writer : public sstmac::stat_collector
 {
-  FactoryRegister("otf2", stat_collector, otf2_writer)
+  FactoryRegister("otf2", stat_collector, OTF2Writer)
  public:
-  otf2_writer(sprockit::sim_parameters* params);
+  OTF2Writer(SST::Params& params);
 
   dumpi::OTF2_Writer& writer(){
     return writer_;
   }
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "OTF2 trace writer";
   }
 
-  sstmac::stat_collector* do_clone(sprockit::sim_parameters *params) const override {
-    spkt_abort_printf("otf2_writer should not be cloned");
+  sstmac::stat_collector* doClone(SST::Params& params) const override {
+    spkt_abort_printf("OTF2Writer should not be cloned");
     return nullptr;
-    //otf2_writer* writer = new otf2_writer(params);
+    //OTF2Writer* writer = new OTF2Writer(params);
     //writer->size_ = size_;
     //return writer;
   }
 
-  bool is_main() const override {
+  bool isMain() const override {
     return rank_ == 0;
   }
 
-  void dump_local_data() override;
+  void dumpLocalData() override;
 
-  void dump_global_data() override;
+  void dumpGlobalData() override;
 
-  void global_reduce(sstmac::parallel_runtime* rt) override;
+  void globalReduce(sstmac::parallel_runtime* rt) override;
 
   void reduce(sstmac::stat_collector* stat) override;
 

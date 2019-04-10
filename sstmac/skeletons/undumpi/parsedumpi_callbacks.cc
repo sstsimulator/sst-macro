@@ -90,8 +90,8 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 namespace sw {
-extern void api_lock();
-extern void api_unlock();
+extern void apiLock();
+extern void apiUnlock();
 }}
 
 namespace sumi {
@@ -124,21 +124,21 @@ int not_implemented(const char* fxn)
 
 /// Populate callbacks.
 parsedumpi_callbacks::
-parsedumpi_callbacks(parsedumpi *parent) :
+parsedumpi_callbacks(ParseDumpi *parent) :
   parent_(parent),
   initialized_(false),
   num_global_collectives_(0),
   early_terminate_count_(parent->early_terminate_count())
 {
-  sstmac::sw::api_lock();
+  sstmac::sw::apiLock();
   if(cbacks_ == NULL) {
     set_callbacks();
   }
   trace_compute_start_.sec = -1;
   init_maps();
   memset(&datatype_sizes_, 0, sizeof(dumpi_sizeof));
-  sstmac::sw::api_unlock();
-  parent->mpi()->set_generate_ids(false);
+  sstmac::sw::apiUnlock();
+  parent->mpi()->setGenerateIds(false);
 }
 
 parsedumpi_callbacks::~parsedumpi_callbacks()
@@ -153,11 +153,11 @@ parsedumpi_callbacks::parse_stream(
 {
   static const std::string here("parsedumpi_callbacks::parse_stream");
   if(parent_ == NULL) {
-    throw sprockit::null_error(here + ":  NULL parent pointer.");
+    throw sprockit::NullError(here + ":  NULL parent pointer.");
   }
   dumpi_profile *profile = undumpi_open(fname.c_str());
   if(profile == NULL) {
-    throw sprockit::io_error(here + ":  Unable to open \"" + fname + "\" for reading.");
+    throw sprockit::IOError(here + ":  Unable to open \"" + fname + "\" for reading.");
   }
   datatype_sizes_ = undumpi_read_datatype_sizes(profile);
   int retval = undumpi_read_stream_full(fname.c_str(), profile, cbacks_, this, print_progress);
@@ -203,11 +203,11 @@ void parsedumpi_callbacks::init_maps()
 
 
 // Convert a dumpi time difference into a timestamp.
-inline sstmac::timestamp deltat(const dumpi_clock &left, const dumpi_clock &right)
+inline sstmac::Timestamp deltat(const dumpi_clock &left, const dumpi_clock &right)
 {
   static const int64_t billion(1e9);
   uint64_t nsec = billion*(left.sec-right.sec) + (left.nsec - right.nsec);
-  return sstmac::timestamp(nsec, sstmac::timestamp::nanoseconds);
+  return sstmac::Timestamp(nsec, sstmac::Timestamp::one_nanosecond);
 }
 
 /// Indicate that we are starting an MPI call.
@@ -233,7 +233,7 @@ start_mpi(const dumpi_time *cpu, const dumpi_time *wall,
       }
     } else {
       // We get here if we are not using processor modeling.
-      sstmac::timestamp dt = parent_->timescaling_ * deltat(wall->start, trace_compute_start_);
+      sstmac::Timestamp dt = parent_->timescaling_ * deltat(wall->start, trace_compute_start_);
       parent_->compute(dt);
     }
   }
@@ -293,7 +293,7 @@ void parsedumpi_callbacks::
 add_mpitype(dumpi_datatype id, MPI_Datatype mpit)
 {
   if(id < DUMPI_FIRST_USER_DATATYPE){
-    spkt_throw_printf(sprockit::value_error, 
+    spkt_throw_printf(sprockit::ValueError, 
        "parsedumpi_callbacks::add_mpitype: %d trying to redefine built-in datatype index",
        int(id));
   }
@@ -320,7 +320,7 @@ parsedumpi_callbacks::get_mpitype(dumpi_datatype id)
   if(it == mpitype_.end()) {
     if(id < datatype_sizes_.count) {
       int size = datatype_sizes_.size[id];
-      mpitype_[id] = mpi_type::builtins[size].id;
+      mpitype_[id] = MpiType::builtins[size].id;
       printf("Remapped dumpi type %d to builtin of size %d\n", id, size);
     } else {
       cerrn << sprockit::printf("Warning: no match for datatype id %d - assuming double\n", int(id));
@@ -682,7 +682,7 @@ on_MPI_Send(const dumpi_send *prm, uint16_t thread,
 #if ENABLE_MPI_SEND
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw_printf(sprockit::null_error,
+    spkt_throw_printf(sprockit::NullError,
       "MPI_Send: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
@@ -702,7 +702,7 @@ on_MPI_Recv(const dumpi_recv *prm, uint16_t thread,
 #if ENABLE_MPI_RECV
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw_printf(sprockit::null_error,
+    spkt_throw_printf(sprockit::NullError,
       "MPI_Recv: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
@@ -1066,7 +1066,7 @@ on_MPI_Send_init(const dumpi_send_init *prm, uint16_t thread,
   }
   cb->start_mpi(cpu, wall, perf);
   MPI_Request req = prm->request;
-  cb->getmpi()->send_init(NULL, prm->count, cb->get_mpitype(prm->datatype),
+  cb->getmpi()->sendInit(NULL, prm->count, cb->get_mpitype(prm->datatype),
                     cb->get_mpiid(prm->dest), cb->get_mpitag(prm->tag),
                     translate_comm(prm->comm), &req);
   cb->end_mpi(cpu, wall, perf);
@@ -1107,12 +1107,12 @@ on_MPI_Recv_init(const dumpi_recv_init *prm, uint16_t thread,
 {
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-  spkt_throw_printf(sprockit::null_error,
+  spkt_throw_printf(sprockit::NullError,
   "MPI_Recv_init: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
   MPI_Request req = prm->request;
-  cb->getmpi()->recv_init(NULL, prm->count, cb->get_mpitype(prm->datatype),
+  cb->getmpi()->recvInit(NULL, prm->count, cb->get_mpitype(prm->datatype),
                           cb->get_mpiid(prm->source), cb->get_mpitag(prm->tag),
                           translate_comm(prm->comm), &req);
   cb->end_mpi(cpu, wall, perf);
@@ -1162,7 +1162,7 @@ on_MPI_Sendrecv(const dumpi_sendrecv *prm, uint16_t thread,
 #if ENABLE_MPI_SENDRECV
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw_printf(sprockit::null_error,
+    spkt_throw_printf(sprockit::NullError,
     "MPI_Sendrecv: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
@@ -1184,7 +1184,7 @@ on_MPI_Sendrecv_replace(const dumpi_sendrecv_replace *prm, uint16_t thread,
 #if ENABLE_MPI_SENDRECV
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw_printf(sprockit::null_error,
+    spkt_throw_printf(sprockit::NullError,
     "MPI_Sendrecv: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
@@ -1209,7 +1209,7 @@ on_MPI_Type_contiguous(const dumpi_type_contiguous *prm, uint16_t thread,
   }
   cb->start_mpi(cpu, wall, perf);
   MPI_Datatype newtype;
-  cb->getmpi()->type_contiguous(prm->count,
+  cb->getmpi()->typeContiguous(prm->count,
                                 cb->get_mpitype(prm->oldtype),
                                 &newtype);
   cb->add_mpitype(prm->newtype, newtype);
@@ -1228,7 +1228,7 @@ on_MPI_Type_vector(const dumpi_type_vector *prm, uint16_t thread,
   }
   cb->start_mpi(cpu, wall, perf);
   MPI_Datatype oldtype = cb->get_mpitype(prm->oldtype);
-  mpi_type* old_type_obj = cb->getmpi()->type_from_id(oldtype);
+  MpiType* old_type_obj = cb->getmpi()->typeFromId(oldtype);
 
   //this is to account for some crazy bug that I don't remember
   int size = prm->count * prm->blocklength * old_type_obj->packed_size();
@@ -1239,7 +1239,7 @@ on_MPI_Type_vector(const dumpi_type_vector *prm, uint16_t thread,
     }
   }
   MPI_Datatype newtype;
-  cb->getmpi()->type_vector(prm->count, prm->blocklength, 0, oldtype, &newtype);
+  cb->getmpi()->typeVector(prm->count, prm->blocklength, 0, oldtype, &newtype);
   cb->add_mpitype(prm->newtype, newtype);
   cb->end_mpi(cpu, wall, perf);
   return 1;
@@ -1266,7 +1266,7 @@ on_MPI_Type_indexed(const dumpi_type_indexed *prm, uint16_t thread,
   MPI_Datatype newtype;
   std::vector<int> disps; disps.assign(prm->indices, prm->indices + prm->count);
   MPI_Datatype oldtype = cb->get_mpitype(prm->oldtype);
-  cb->getmpi()->type_indexed(prm->count, prm->lengths, prm->indices,
+  cb->getmpi()->typeIndexed(prm->count, prm->lengths, prm->indices,
     oldtype, &newtype);
   cb->add_mpitype(prm->newtype, newtype);
   cb->end_mpi(cpu, wall, perf);
@@ -1293,7 +1293,7 @@ on_MPI_Type_struct(const dumpi_type_struct *prm, uint16_t thread,
   cb->start_mpi(cpu, wall, perf);
   MPI_Datatype* oldtypes = cb->get_mpitypes(prm->count, prm->oldtypes);
   MPI_Datatype newtype;
-  cb->getmpi()->type_create_struct(prm->count, prm->lengths, prm->indices, oldtypes, &newtype);
+  cb->getmpi()->typeCreateStruct(prm->count, prm->lengths, prm->indices, oldtypes, &newtype);
   cb->add_mpitype(prm->newtype, newtype);
   cb->end_mpi(cpu, wall, perf);
   return 1;
@@ -1350,7 +1350,7 @@ on_MPI_Type_commit(const dumpi_type_commit *prm, uint16_t thread,
   }
   cb->start_mpi(cpu, wall, perf);
   MPI_Datatype dtype = cb->get_mpitype(prm->datatype);
-  cb->getmpi()->type_commit(&dtype);
+  cb->getmpi()->typeCommit(&dtype);
   cb->end_mpi(cpu, wall, perf);
   return 1;
 }
@@ -1366,7 +1366,7 @@ on_MPI_Type_free(const dumpi_type_free *prm, uint16_t thread,
   }
   cb->start_mpi(cpu, wall, perf);
   MPI_Datatype dtype = cb->get_mpitype(prm->datatype);
-  cb->getmpi()->type_free(&dtype);
+  cb->getmpi()->typeFree(&dtype);
   cb->end_mpi(cpu, wall, perf);
   return 1;
 }
@@ -1682,7 +1682,7 @@ on_MPI_Reduce_scatter(const dumpi_reduce_scatter *prm, uint16_t thread,
   }
   cb->increment_collective(prm->comm);
   cb->start_mpi(cpu, wall, perf);
-  cb->getmpi()->reduce_scatter(prm->recvcounts,
+  cb->getmpi()->reduceScatter(prm->recvcounts,
                                cb->get_mpitype(prm->datatype),
                                DUMPI_OP,
                                translate_comm(prm->comm));
@@ -1803,7 +1803,7 @@ on_MPI_Group_incl(const dumpi_group_incl *prm, uint16_t thread,
   cb->start_mpi(cpu, wall, perf);
   MPI_Group ingrp = translate_group(prm->group);
   MPI_Group outgrp = prm->newgroup;
-  cb->getmpi()->group_incl(ingrp, prm->count, prm->ranks, &outgrp);
+  cb->getmpi()->groupIncl(ingrp, prm->count, prm->ranks, &outgrp);
   cb->end_mpi(cpu, wall, perf);
 #endif
   return 1;
@@ -1877,7 +1877,7 @@ on_MPI_Comm_dup(const dumpi_comm_dup *prm, uint16_t thread,
   }
   cb->start_mpi(cpu, wall, perf);
   MPI_Comm newcomm = prm->newcomm;
-  cb->getmpi()->comm_dup(translate_comm(prm->oldcomm), &newcomm);
+  cb->getmpi()->commDup(translate_comm(prm->oldcomm), &newcomm);
   cb->end_mpi(cpu, wall, perf);
 #endif
   return 1;
@@ -1895,7 +1895,7 @@ on_MPI_Comm_create(const dumpi_comm_create *prm, uint16_t thread,
   }
   cb->start_mpi(cpu, wall, perf);
   MPI_Comm newcomm = prm->newcomm;
-  cb->getmpi()->comm_create(translate_comm(prm->oldcomm),
+  cb->getmpi()->commCreate(translate_comm(prm->oldcomm),
                             prm->group, &newcomm);
   cb->end_mpi(cpu, wall, perf);
 #endif
@@ -1914,7 +1914,7 @@ on_MPI_Comm_split(const dumpi_comm_split *prm, uint16_t thread,
   }
   cb->start_mpi(cpu, wall, perf);
   MPI_Comm newcomm = prm->newcomm;
-  cb->getmpi()->comm_split(translate_comm(prm->oldcomm),
+  cb->getmpi()->commSplit(translate_comm(prm->oldcomm),
                            prm->color, prm->key, &newcomm);
   cb->end_mpi(cpu, wall, perf);
 #endif
@@ -1934,7 +1934,7 @@ on_MPI_Comm_free(const dumpi_comm_free *prm, uint16_t thread,
 
   cb->start_mpi(cpu, wall, perf);
   MPI_Comm comm = prm->comm;
-  cb->getmpi()->comm_free(&comm);
+  cb->getmpi()->commFree(&comm);
   cb->end_mpi(cpu, wall, perf);
 #endif
   return 1;
@@ -2240,7 +2240,7 @@ on_MPI_Type_dup(const dumpi_type_dup *prm, uint16_t thread,
   }
   cb->start_mpi(cpu, wall, perf);
   MPI_Datatype newtype;
-  cb->getmpi()->type_dup(cb->get_mpitype(prm->oldtype), &newtype);
+  cb->getmpi()->typeDup(cb->get_mpitype(prm->oldtype), &newtype);
   cb->add_mpitype(prm->newtype, newtype);
   cb->end_mpi(cpu, wall, perf);
   return 1;
@@ -2292,7 +2292,7 @@ on_MPI_Init_thread(const dumpi_init_thread *prm, uint16_t thread,
   int provided;
   int argc = prm->argc;
   char** argv = const_cast<char**>(prm->argv);
-  cb->getmpi()->init_thread(&argc, &argv, 
+  cb->getmpi()->initThread(&argc, &argv, 
                         prm->required, &provided);
   cb->end_mpi(cpu, wall, perf);
   return 1;

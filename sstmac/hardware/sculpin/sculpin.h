@@ -46,9 +46,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #define sculpin_packet_h
 
 #include <sstmac/hardware/common/packet.h>
-#include <sstmac/common/messages/sst_message.h>
+#include <sstmac/hardware/common/flow.h>
 #include <sprockit/thread_safe_new.h>
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <sprockit/debug.h>
 
 
@@ -63,44 +63,44 @@ namespace hw {
  same path between endpoints.  This is usually one fraction of
  a larger message.
  */
-class sculpin_packet :
-  public packet,
-  public sprockit::thread_safe_new<sculpin_packet>
+class SculpinPacket :
+  public Packet,
+  public sprockit::thread_safe_new<SculpinPacket>
 {
-  ImplementSerializable(sculpin_packet)
+  ImplementSerializable(SculpinPacket)
 
  public:
-  sculpin_packet(
-    message* msg,
-    uint32_t num_bytes,
-    bool is_tail,
-    uint64_t flow_id,
-    node_id toaddr,
-    node_id fromaddr);
+  SculpinPacket(
+    Flow* msg,
+    uint32_t numBytes,
+    bool isTail,
+    uint64_t flowId,
+    NodeId toaddr,
+    NodeId fromaddr);
 
-  sculpin_packet(){} //for serialization
+  SculpinPacket(){} //for serialization
 
-  std::string to_string() const override;
+  std::string toString() const override;
 
-  virtual ~sculpin_packet() {}
+  virtual ~SculpinPacket() {}
 
-  int next_port() const {
-    return rtr_header<header>()->edge_port;
+  int nextPort() const {
+    return rtrHeader<Header>()->edge_port;
   }
 
-  timestamp arrival() const {
+  GlobalTimestamp arrival() const {
     return arrival_;
   }
 
-  void set_arrival(timestamp time) {
+  void setArrival(GlobalTimestamp time) {
     arrival_ = time;
   }
 
-  timestamp time_to_send() const {
+  Timestamp timeToSend() const {
     return time_to_send_;
   }
 
-  void set_time_to_send(timestamp time) {
+  void setTimeToSend(Timestamp time) {
     time_to_send_ = time;
   }
 
@@ -108,7 +108,7 @@ class sculpin_packet :
     return priority_;
   }
 
-  void set_priority(int p) {
+  void setPriority(int p) {
     priority_ = p;
   }
 
@@ -116,7 +116,7 @@ class sculpin_packet :
     return seqnum_;
   }
 
-  void set_seqnum(uint32_t s){
+  void setSeqnum(uint32_t s){
     seqnum_ = s;
   }
 
@@ -125,9 +125,9 @@ class sculpin_packet :
  private:
   uint32_t seqnum_;
 
-  timestamp arrival_;
+  GlobalTimestamp arrival_;
 
-  timestamp time_to_send_;
+  Timestamp time_to_send_;
 
   int priority_;
 

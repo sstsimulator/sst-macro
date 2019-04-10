@@ -28,7 +28,7 @@ int main(int argc, char **argv)
 \end{CppCode}
 The starting point is creating a main routine for the application.
 The simulator itself already provides a \inlinecode{main} routine.
-The SST compiler automatically changes the function name to \inlinecode{user_skeleton_main},
+The SST compiler automatically changes the function name to \inlinecode{userSkeletonMain},
 which provides an entry point for the application to actually begin.
 When \sstmacro launches, it will invoke this routine and pass in any command line arguments specified via the \inlinefile{app1.argv} parameter.  Upon entering the main routine, 
 the code is now indistinguishable from regular MPI C++ code.  

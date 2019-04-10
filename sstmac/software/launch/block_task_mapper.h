@@ -53,26 +53,32 @@ namespace sw {
 /**
  * An index strategy that allocates indices using a round robin.
  */
-class block_task_mapper : public task_mapper
+class BlockTaskMapper : public TaskMapper
 {
-  FactoryRegister("block", task_mapper, block_task_mapper,
-     "Tries to group consecutive MPI ranks on the same node (i.e. in a block)."
-     "Otherwise, indexes in the same order as the allocation list")
  public:
-  block_task_mapper(sprockit::sim_parameters* params) :
-    task_mapper(params)
+  SST_ELI_REGISTER_DERIVED(
+    TaskMapper,
+    BlockTaskMapper,
+    "macro",
+    "block",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "Tries to group consecutive MPI ranks on the same node (i.e. in a block)."
+    "Otherwise, indexes in the same order as the allocation list")
+
+  BlockTaskMapper(SST::Params& params) :
+    TaskMapper(params)
   {
   }
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "block task mapper";
   }
 
-  virtual ~block_task_mapper() throw () {}
+  virtual ~BlockTaskMapper() throw () {}
 
-  virtual void map_ranks(
+  virtual void mapRanks(
      const ordered_node_set& nodes, int ppn,
-     std::vector<node_id> &result, int nproc) override;
+     std::vector<NodeId> &result, int nproc) override;
 
 };
 

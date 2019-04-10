@@ -44,7 +44,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/software/ami/ami.h>
 #include <sprockit/errors.h>
-#include <sstmac/common/messages/sst_message.h>
+#include <sstmac/hardware/common/flow.h>
 
 namespace sstmac {
 namespace ami {
@@ -62,7 +62,7 @@ tostr(CAT cat)
       enumcase(QUERY);
       enumcase(HW);
   }
-  spkt_throw_printf(sprockit::illformed_error,
+  spkt_throw_printf(sprockit::IllformedError,
                     "Invalid AMI_CAT %d received", cat);
 }
 
@@ -73,7 +73,7 @@ tostr(COMM_FUNC func)
     enumcase(COMM_SEND);
     enumcase(COMM_PMI_SEND);
   }
-  spkt_throw_printf(sprockit::illformed_error,
+  spkt_throw_printf(sprockit::IllformedError,
                     "Invalid AMI_COMM_FUNC %d received", func);
 }
 
@@ -83,7 +83,7 @@ tostr(SERVICE_FUNC func)
   switch(func) {
     enumcase(COMP_DISKACCESS);
   }
-  spkt_throw_printf(sprockit::illformed_error,
+  spkt_throw_printf(sprockit::IllformedError,
                     "Invalid AMI_COMP_FUNC %d received", func);
   return 0;
 }
@@ -96,7 +96,7 @@ tostr(COMP_FUNC func)
     enumcase(COMP_INSTR);
     enumcase(COMP_EIGER);
   }
-  spkt_throw_printf(sprockit::illformed_error,
+  spkt_throw_printf(sprockit::IllformedError,
                     "Invalid AMI_COMP_FUNC %d received", func);
   return 0;
 }

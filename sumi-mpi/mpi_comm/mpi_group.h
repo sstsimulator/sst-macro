@@ -52,18 +52,18 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-using sstmac::sw::task_id;
+using sstmac::sw::TaskId;
 
-class mpi_group  {
+class MpiGroup  {
 
  public:
-  mpi_group(const std::vector<task_id>& tl);
+  MpiGroup(const std::vector<TaskId>& tl);
 
-  mpi_group(size_t size);
+  MpiGroup(size_t size);
 
-  virtual ~mpi_group() {}
+  virtual ~MpiGroup() {}
 
-  task_id at(int rank);
+  TaskId at(int rank);
 
   size_t size() const {
     return size_;
@@ -73,15 +73,15 @@ class mpi_group  {
     return id_;
   }
 
-  void set_id(MPI_Group grp){
+  void setId(MPI_Group grp){
     id_ = grp;
   }
 
-  bool is_comm_world() const {
+  bool isCommWorld() const {
     return is_comm_world_;
   }
 
-  const std::vector<task_id>& world_ranks() const {
+  const std::vector<TaskId>& worldRanks() const {
     return local_to_world_map_;
   }
 
@@ -92,13 +92,13 @@ class mpi_group  {
    * @param t The world task_id to find in the group
    * @return The local rank of task within the group.
    */
-  int rank_of_task(task_id t) const;
+  int rankOfTask(TaskId t) const;
 
-  void translate_ranks(int n_ranks, const int* my_ranks, int* other_ranks, mpi_group* other_grp);
+  void translateRanks(int n_ranks, const int* my_ranks, int* other_ranks, MpiGroup* other_grp);
 
  protected:
   //map the local gorup rank to the world rank
-  std::vector<task_id> local_to_world_map_;
+  std::vector<TaskId> local_to_world_map_;
   MPI_Group id_;
   size_t size_; //used for comm_world
   bool is_comm_world_;  //we don't save all the peers to save space

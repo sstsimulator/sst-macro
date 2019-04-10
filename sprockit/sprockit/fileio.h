@@ -58,11 +58,11 @@ class SpktFileIO
   static std::list<std::string> file_paths_;
 
  public:
-  static void open_file(std::ifstream& stream, const std::string& filename);
+  static void openFile(std::ifstream& stream, const std::string& filename);
 
-  static void add_path(const std::string& path);
+  static void addPath(const std::string& path);
 
-  static void not_found(const std::string& filename);
+  static void notFound(const std::string& filename);
 };
 
 }

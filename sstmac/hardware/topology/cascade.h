@@ -54,11 +54,17 @@ namespace hw {
  * @brief The cascade class
  * Variant of dragonfly found in Cray Cascade (Aries) systems
  */
-class cascade : public cartesian_topology
+class Cascade : public CartesianTopology
 {
-  FactoryRegister("cascade", topology, cascade)
  public:
-  cascade(sprockit::sim_parameters* params);
+  SPKT_REGISTER_DERIVED(
+    Topology,
+    Cascade,
+    "macro",
+    "cascade",
+    "implements a cascade topology - dragonfly with 2D groups")
+
+  Cascade(SST::Params& params);
 
   typedef enum {
     x_dimension = 0,
@@ -77,14 +83,14 @@ class cascade : public cartesian_topology
   } y_vc_t;
 
  public:
-  std::string to_string() const override {
+  std::string toString() const override {
     return "cascade";
   }
 
-  void endpoints_connected_to_injection_switch(switch_id swaddr,
-          std::vector<injection_port>& nodes) const override;
+  void endpointsConnectedToInjectionSwitch(SwitchId swaddr,
+          std::vector<InjectionPort>& nodes) const override;
 
-  dimension_t dim_for_port(int port){
+  dimension_t dimForPort(int port){
     if (port >= (x_ + y_)){
       return g_dimension;
     } else if (port >= x_){
@@ -94,32 +100,17 @@ class cascade : public cartesian_topology
     }
   }
 
-  int max_num_ports() const override {
+  int maxNumPorts() const override {
     return x_ + y_ + g_ + concentration();
   }
 
-  bool is_global_port(uint16_t port) const {
+  bool isGlobalPort(uint16_t port) const {
      return port >= (x_ + y_);
   }
 
-  bool uniform_network_ports() const override {
-    return false;
-  }
+  void connectedOutports(SwitchId src, std::vector<Connection>& conns) const override;
 
-  bool uniform_switches_non_uniform_network_ports() const override {
-    return true;
-  }
-
-  bool uniform_switches() const override {
-    return true;
-  }
-
-  void connected_outports(switch_id src, std::vector<connection>& conns) const override;
-
-  void configure_individual_port_params(switch_id src,
-        sprockit::sim_parameters *switch_params) const override;
-
-  virtual ~cascade() {}
+  virtual ~Cascade() {}
 
   int ndimensions() const {
     return 3;
@@ -141,7 +132,7 @@ class cascade : public cartesian_topology
     return group_con_;
   }
 
-  inline void get_coords(switch_id sid, int& x, int& y, int& g) const {
+  inline void get_coords(SwitchId sid, int& x, int& y, int& g) const {
     x = computeX(sid);
     y = computeY(sid);
     g = computeG(sid);
@@ -163,55 +154,57 @@ class cascade : public cartesian_topology
     return x_ + y_ + g;
   }
 
-  inline int computeX(switch_id sid) const {
+  inline int computeX(SwitchId sid) const {
     return sid % x_;
   }
 
-  inline int computeY(switch_id sid) const {
+  inline int computeY(SwitchId sid) const {
     return (sid / x_) % y_;
   }
 
-  inline int computeG(switch_id sid) const {
+  inline int computeG(SwitchId sid) const {
     return (sid / (x_*y_));
   }
 
-  switch_id num_switches() const override {
+  SwitchId numSwitches() const override {
     return x_ * y_ * g_;
   }
 
-  switch_id num_leaf_switches() const override {
+  SwitchId numLeafSwitches() const override {
     return x_ * y_ * g_;
   }
 
-  void minimal_route_to_switch(
-      router* rtr,
-      switch_id current_sw_addr,
-      switch_id dest_sw_addr,
-      packet::header* hdr) const;
+  double portScaleFactor(uint32_t addr, int port) const override;
 
-  int minimal_distance(switch_id src, switch_id dst) const;
+  void minimalRouteToSwitch(
+      Router* rtr,
+      SwitchId current_sw_addr,
+      SwitchId dest_sw_addr,
+      Packet::Header* hdr) const;
 
-  int num_hops_to_node(node_id src, node_id dst) const override {
-    return minimal_distance(src / concentration_, dst / concentration_);
+  int minimalDistance(SwitchId src, SwitchId dst) const;
+
+  int numHopsToNode(NodeId src, NodeId dst) const override {
+    return minimalDistance(src / concentration_, dst / concentration_);
   }
 
   int diameter() const override {
     return 5;
   }
 
-  coordinates switch_coords(switch_id) const override;
+  coordinates switchCoords(SwitchId) const override;
 
-  switch_id switch_addr(const coordinates &coords) const override;
+  SwitchId switchAddr(const coordinates &coords) const override;
 
  protected:
-  void find_path_to_group(router* rtr, int myX, int myY, int myG, int dstG,
-                     int& dstX, int& dstY, packet::header* hdr) const;
+  void find_path_to_group(Router* rtr, int myX, int myY, int myG, int dstG,
+                     int& dstX, int& dstY, Packet::Header* hdr) const;
 
-  bool find_y_path_to_group(router* rtr, int myX, int myG, int dstG, int& dstY,
-                       packet::header* hdr) const;
+  bool find_y_path_to_group(Router* rtr, int myX, int myG, int dstG, int& dstY,
+                       Packet::Header* hdr) const;
 
-  bool find_x_path_to_group(router* rtr, int myY, int myG, int dstG, int& dstX,
-                       packet::header* hdr) const;
+  bool find_x_path_to_group(Router* rtr, int myY, int myG, int dstG, int& dstX,
+                       Packet::Header* hdr) const;
 
   bool xy_connected_to_group(int myX, int myY, int myG, int dstG) const;
 
@@ -221,23 +214,20 @@ class cascade : public cartesian_topology
   int g_;
   int group_con_;
 
-  void setup_port_params(sprockit::sim_parameters* params,
-                    int dim, int dimsize) const;
-
   static std::string set_string(int x, int y, int g)
   {
     return sprockit::printf("{ %d %d %d }", x, y, g);
   }
 
  private:
-  int convert_to_port(int dim, int dir) const {
+  int convertToPort(int dim, int dir) const {
     if      (dim == x_dimension) return x_port(dir);
     else if (dim == y_dimension) return y_port(dir);
     else if (dim == g_dimension) return g_port(dir);
     else return -1;
   }
 
-  int xyg_dir_to_group(int myX, int myY, int myG, int dir) const;
+  int xygDirToGroup(int myX, int myY, int myG, int dir) const;
 
 };
 

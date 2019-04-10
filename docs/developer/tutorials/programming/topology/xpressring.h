@@ -48,7 +48,7 @@ namespace sstmac {
 namespace hw {
 
 class xpress_ring :
-  public structured_topology
+  public StructuredTopology
 {
   FactoryRegister("xpress", topology, xpress_ring,
               "A ring topology with express cables that make large jumps")
@@ -61,11 +61,11 @@ class xpress_ring :
   } port_t;
 
  public:
-  xpress_ring(sprockit::sim_parameters* params);
+  xpress_ring(SST::Params& params);
 
   virtual ~xpress_ring() {}
 
-  bool uniform_switches() const override {
+  bool uniformSwitches() const override {
     return true;
   }
 
@@ -77,30 +77,30 @@ class xpress_ring :
     return true;
   }
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "xpress ring topology";
   }
 
-  void configure_individual_port_params(switch_id src,
-              sprockit::sim_parameters* switch_params) const override;
+  void configureIndividualPortParams(SwitchId src,
+              sprockit::SimParameters* switch_params) const override;
 
-  void connected_outports(switch_id src,
-        std::vector<topology::connection>& conns) const override;
+  void connectedOutports(SwitchId src,
+        std::vector<Topology::Connection>& conns) const override;
 
-  void endpoints_connected_to_injection_switch(switch_id swid,
-               std::vector<injection_port> &nodes) const override;
+  void endpointsConnectedToInjectionSwitch(SwitchId swid,
+               std::vector<InjectionPort> &nodes) const override;
 
-  int num_hops_to_node(node_id src, node_id dest) const override;
+  int numHopsToNode(NodeId src, NodeId dest) const override;
 
-  switch_id num_leaf_switches() const override {
+  SwitchId numLeafSwitches() const override {
     return ring_size_;
   }
 
-  int max_num_ports() const override {
+  int maxNumPorts() const override {
     return 4;
   }
 
-  switch_id num_switches() const override {
+  SwitchId numSwitches() const override {
     return ring_size_;
   }
 

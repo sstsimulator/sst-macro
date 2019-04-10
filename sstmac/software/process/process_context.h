@@ -50,10 +50,10 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-struct process_context {
+struct ProcessContext {
   long ctxt;
 
-  process_context(long id) : ctxt(id) {}
+  ProcessContext(long id) : ctxt(id) {}
 
   void operator=(long id){
     ctxt = id;

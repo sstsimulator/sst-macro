@@ -48,7 +48,6 @@ nobase_library_include_HEADERS += \
   logp/logp_nic.h \
   logp/logp_switch.h \
   logp/logp_switch_fwd.h \
-  logp/logp_param_expander.h \
   logp/logp_memory_model.h \
   processor/processor.h \
   processor/processor_fwd.h \
@@ -63,33 +62,28 @@ nobase_library_include_HEADERS += \
   node/node.h \
   node/node_fwd.h \
   node/simple_node.h \
+  common/flow.h \
+  common/flow_fwd.h \
   common/connection.h \
   common/connection_fwd.h \
   common/failable.h \
   common/packet.h \
-  common/packetizer.h \
   common/packet_fwd.h \
-  common/param_expander.h \
   common/recv_cq.h \
   common/unique_id.h \
   pisces/pisces.h \
   pisces/pisces_fwd.h \
-  pisces/pisces_stats.h \
-  pisces/pisces_stats_fwd.h \
-  pisces/pisces_param_expander.h \
   pisces/pisces_arbitrator.h \
   pisces/pisces_buffer.h \
   pisces/pisces_branched_switch.h \
   pisces/pisces_crossbar.h \
   pisces/pisces_nic.h \
-  pisces/pisces_packetizer.h \
   pisces/pisces_sender.h \
   pisces/pisces_switch.h \
   pisces/pisces_tiled_switch.h \
   pisces/pisces_memory_model.h \
   sculpin/sculpin_nic.h \
   sculpin/sculpin_switch.h \
-  sculpin/sculpin_param_expander.h \
   sculpin/sculpin.h \
   network/network_id.h \
   network/network_message.h \
@@ -103,6 +97,7 @@ nobase_library_include_HEADERS += \
   topology/dragonfly.h \
   topology/dragonfly_plus.h \
   topology/fat_tree.h \
+  topology/file.h \
   topology/torus.h \
   topology/hypercube.h \
   topology/topology.h \
@@ -120,15 +115,12 @@ nobase_library_include_HEADERS += \
 libsstmac_hw_la_SOURCES +=  \
   logp/logp_nic.cc \
   logp/logp_switch.cc \
-  logp/logp_param_expander.cc \
   logp/logp_memory_model.cc \
   processor/processor.cc \
   processor/simple_processor.cc \
   processor/instruction_processor.cc \
   common/connection.cc \
   common/packet.cc \
-  common/packetizer.cc \
-  common/param_expander.cc \
   common/recv_cq.cc \
   memory/memory_model.cc \
   nic/nic.cc \
@@ -136,21 +128,17 @@ libsstmac_hw_la_SOURCES +=  \
   node/node.cc \
   node/simple_node.cc \
   pisces/pisces.cc \
-  pisces/pisces_stats.cc \
   pisces/pisces_arbitrator.cc \
   pisces/pisces_buffer.cc \
   pisces/pisces_branched_switch.cc \
   pisces/pisces_crossbar.cc \
   pisces/pisces_nic.cc \
-  pisces/pisces_packetizer.cc \
-  pisces/pisces_param_expander.cc \
   pisces/pisces_sender.cc \
   pisces/pisces_switch.cc \
   pisces/pisces_tiled_switch.cc \
   pisces/pisces_memory_model.cc \
   sculpin/sculpin_nic.cc \
   sculpin/sculpin_switch.cc \
-  sculpin/sculpin_param_expander.cc \
   sculpin/sculpin.cc \
   network/network_message.cc \
   interconnect/interconnect.cc \
@@ -160,11 +148,13 @@ libsstmac_hw_la_SOURCES +=  \
   topology/dragonfly.cc \
   topology/dragonfly_plus.cc \
   topology/fat_tree.cc \
+  topology/file.cc \
   topology/torus.cc \
   topology/hypercube.cc \
   topology/coordinates.cc \
   topology/traffic/traffic.cc \
   router/router.cc \
+  router/table_routing.cc \
   router/fat_tree_router.cc \
   router/cascade_routing.cc \
   router/dragonfly_routing.cc \
@@ -182,7 +172,8 @@ libsstmac_hw_la_SOURCES +=  \
 
 if INTEGRATED_SST_CORE
 libsstmac_hw_la_SOURCES +=  \
-  pisces/pisces_simple_network.cc
+  pisces/pisces_simple_network.cc \
+  merlin/merlin_nic.cc
 
 nobase_library_include_HEADERS += \
   pisces/pisces_simple_network.h

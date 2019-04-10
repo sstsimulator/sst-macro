@@ -15,8 +15,8 @@ dnl
 #-------------------------------------------------
 
 # Version info, used both in library versioning and inside sstmacro.
-m4_define([SSTMAC_VERSION_TAG], 8)
-m4_define([SSTMAC_SUBVERSION_TAG], 1)
+m4_define([SSTMAC_VERSION_TAG], 9)
+m4_define([SSTMAC_SUBVERSION_TAG], 0)
 m4_define([SSTMAC_SUBSUBVERSION_TAG], 0)
 
 dnl Enable this for releases
@@ -34,7 +34,7 @@ dnl AC_PREREQ([2.68]) avoid this if possible
 AC_INIT([sstmacro], [SSTMAC_ACVERSION_TAG], [sst-macro-help@sandia.gov])
 AC_CONFIG_MACRO_DIR([acinclude])
 AC_CONFIG_AUX_DIR(bin)
-AC_CONFIG_HEADER(sstmac/common/config.h)
+AC_CONFIG_HEADERS(sstmac/common/config.h)
 AX_PREFIX_CONFIG_H(sstmac/common/sstmac_config.h, SSTMAC)
 AC_CANONICAL_TARGET
 
@@ -64,8 +64,8 @@ dnl For new releases the following procedure is used to determine the new versio
 dnl If incompatible changes are made: CURRENT++, REVISION=0, AGE=0
 dnl else if interfaces are added: CURRENT++, REVISION=0, AGE++
 dnl else (no interface changes): REVISION++
-m4_define([SSTMAC_CURRENT_LIBVERS],  8)
-m4_define([SSTMAC_REVISION_LIBVERS], 1)
+m4_define([SSTMAC_CURRENT_LIBVERS],  9)
+m4_define([SSTMAC_REVISION_LIBVERS], 0)
 m4_define([SSTMAC_AGE_LIBVERS],      0)
 m4_define([SSTMAC_LIBVERSION_TAG],
           [SSTMAC_CURRENT_LIBVERS:SSTMAC_REVISION_LIBVERS:SSTMAC_AGE_LIBVERS])
@@ -176,10 +176,6 @@ AH_TEMPLATE([DEFAULT_PARTITION_STRING], [Define to indicate default partitioning
 
 CHECK_REPO_BUILD([sstmac])
 
-CHECK_SUMI_MPI()
-
-CHECK_MPI_IMPLEMENTATION()
-
 CHECK_OTF2()
 
 CHECK_VTK()
@@ -204,11 +200,6 @@ CHECK_CLANG_LIBTOOLING()
 # Configure subdirs
 #-------------------------------------------------
 
-ac_configure_args="$ac_configure_args --enable-sst --enable-sst-subrepo"
-
-# Configure sprockit
-AC_CONFIG_SUBDIRS([sprockit])
-
 # Configure dumpi.
 AC_CONFIG_SUBDIRS([sst-dumpi])
 
@@ -231,11 +222,9 @@ AC_CONFIG_FILES([
  sstmac/install/Makefile
  sstmac/dumpi_util/Makefile
  sstmac/libraries/blas/Makefile
- sstmac/libraries/sumi/Makefile
  sstmac/libraries/pthread/Makefile
  sstmac/libraries/omp/Makefile
  sstmac/libraries/machines/Makefile
- sstmac/libraries/uq/Makefile
  sstmac/libraries/Makefile
  sstmac/skeletons/Makefile
  sstmac/test_skeletons/Makefile
@@ -250,6 +239,9 @@ AC_CONFIG_FILES([
  sstmac/common/Makefile
  sstmac/replacements/Makefile
  sstmac/clang_replacements/Makefile
+ sprockit/Makefile
+ sprockit/sprockit/Makefile
+ sprockit/test/Makefile
  bin/Makefile
  python/Makefile
  configurations/Makefile
@@ -283,7 +275,7 @@ echo "OS                 $os"
 echo "C compiler         $CC"
 echo "C++ compiler       $CXX"
 echo "CFLAGS             $CFLAGS"
-echo "CXXFLAGS           $CXXFLAGS"
+echo "CXXFLAGS           $CXXFLAGS $SST_CXXFLAGS"
 echo "CPPFLAGS           $CPPFLAGS"
 echo "LDFLAGS            $LDFLAGS"
 echo

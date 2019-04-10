@@ -51,8 +51,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/topology/topology_fwd.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
 #include <sstmac/software/launch/node_set.h>
+#include <sstmac/sst_core/integrated_component.h>
 
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <sprockit/debug.h>
 #include <sprockit/sim_parameters_fwd.h>
 #include <unordered_map>
@@ -67,12 +68,15 @@ namespace sw {
  * Strategy type for assigning processes to nodes in a parallel run.
  *
  */
-class node_allocator :
+class NodeAllocator :
   public sprockit::printable
 {
-  DeclareFactory(node_allocator)
  public:
-  virtual ~node_allocator() throw ();
+  SST_ELI_DECLARE_BASE(NodeAllocator)
+  SST_ELI_DECLARE_DEFAULT_INFO()
+  SST_ELI_DECLARE_CTOR(SST::Params&)
+
+  virtual ~NodeAllocator() throw ();
 
   /** Get nodes.
     @param nnode number of nodes requested
@@ -85,11 +89,11 @@ class node_allocator :
    ordered_node_set& allocation) const = 0;
 
  protected:
-  node_allocator(sprockit::sim_parameters* params);
+  NodeAllocator(SST::Params& params);
 
  protected:
-  hw::topology* topology_;
-  parallel_runtime* rt_;
+  hw::Topology* topology_;
+  ParallelRuntime* rt_;
 
 };
 

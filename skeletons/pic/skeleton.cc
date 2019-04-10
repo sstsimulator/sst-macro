@@ -1,7 +1,9 @@
 #include <vector>
 #include <cstdlib>
 #include <mpi.h>
+#include <cstring>
 #include <sprockit/keyword_registration.h>
+#include <iostream>
 #include "pic.h"
 
 RegisterKeywords(
@@ -44,14 +46,13 @@ void skeletonInitOutgoing(int step, Patch& p)
 
 void skeletonInitOverdecomposition(Patch& p, int ppc){
 
-  auto params = get_params();
+  p.od[0] = sstmac::getParam<int>("odx", 1);
+  p.od[1] = sstmac::getParam<int>("ody", 1);
+  p.od[2] = sstmac::getParam<int>("odz", 1);
+  p.uniformityFactory[0] = sstmac::getParam<int>("unitx", 1);
+  p.uniformityFactory[1] = sstmac::getParam<int>("unity", 1);
+  p.uniformityFactory[2] = sstmac::getParam<int>("unitz", 1);
 
-  p.od[0] = params->get_optional_int_param("odx", 1);
-  p.od[1] = params->get_optional_int_param("ody", 1);
-  p.od[2] = params->get_optional_int_param("odz", 1);
-  p.uniformityFactory[0] = params->get_optional_int_param("unitx", 1);
-  p.uniformityFactory[1] = params->get_optional_int_param("unity", 1);
-  p.uniformityFactory[2] = params->get_optional_int_param("unitz", 1);
   int numOdBoxes = p.od[0] * p.od[1] * p.od[2];
   int numPartsPerOdBox = (ppc*p.nCells) / numOdBoxes;
   for (int x=0; x < p.od[0]; ++x){
@@ -62,15 +63,15 @@ void skeletonInitOverdecomposition(Patch& p, int ppc){
     }
   }
 
-  p.minMigrateFraction = params->get_optional_double_param("min_migration", 0.02);
-  double maxMig = params->get_optional_double_param("max_migration", 0.06);
+  p.minMigrateFraction = sstmac::getParam<double>("min_migration", 0.02);
+  double maxMig = sstmac::getParam<double>("max_migration", 0.06);
   p.maxMigrateDifference = maxMig - p.minMigrateFraction;
   if (p.maxMigrateDifference < 0){
     std::cerr << "Max migration=" << maxMig << " must be greater than min="
               << p.minMigrateFraction << std::endl;
     abort();
   }
-  p.scrambleMigration = params->get_optional_bool_param("scramble", false);
+  p.scrambleMigration = sstmac::getParam<bool>("scramble", false);
 }
 
 void skeletonPackMigrated(Patch& p){

@@ -55,22 +55,22 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-std::unordered_map<std::string,int>* ftq_tag::category_name_to_id_ = nullptr;
-std::unordered_map<int,std::string>* ftq_tag::category_id_to_name_ = nullptr;
-ftq_tag ftq_tag::null("Null");
-ftq_tag ftq_tag::compute("Compute");
+std::unique_ptr<std::unordered_map<std::string,int>> FTQTag::category_name_to_id_;
+std::unique_ptr<std::unordered_map<int,std::string>> FTQTag::category_id_to_name_;
+FTQTag FTQTag::null("Null");
+FTQTag FTQTag::compute("Compute");
 
-ftq_tag::ftq_tag(const char *name)
+FTQTag::FTQTag(const char *name)
 {
-  id_ = allocate_category_id(name);
+  id_ = allocateCategoryId(name);
 }
 
 int
-ftq_tag::allocate_category_id(const std::string &name)
+FTQTag::allocateCategoryId(const std::string &name)
 {
   if (!category_name_to_id_) {
-    category_name_to_id_ = new std::unordered_map<std::string,int>;
-    category_id_to_name_ = new std::unordered_map<int,std::string>;
+    category_name_to_id_ = std::unique_ptr<std::unordered_map<std::string,int>>(new std::unordered_map<std::string,int>);
+    category_id_to_name_ = std::unique_ptr<std::unordered_map<int,std::string>>(new std::unordered_map<int,std::string>);
   }
   int id = category_name_to_id_->size();
   (*category_name_to_id_)[name] = id;
@@ -79,11 +79,11 @@ ftq_tag::allocate_category_id(const std::string &name)
 }
 
 int
-ftq_tag::event_typeid(const std::string& name)
+FTQTag::event_typeid(const std::string& name)
 {
   auto it = category_name_to_id_->find(name);
   if (it == category_name_to_id_->end()){
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
       "key::event_typeid: unknown event name %s",
       name.c_str());
   }

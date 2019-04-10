@@ -51,7 +51,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/memory/memory_model_fwd.h>
 #include <sstmac/hardware/node/node_fwd.h>
 #include <sstmac/software/libraries/compute/compute_event_fwd.h>
-#include <sprockit/factories/factory.h>
+#include <sstmac/sst_core/integrated_component.h>
+#include <sprockit/factory.h>
 #include <sprockit/debug.h>
 
 DeclareDebugSlot(processor);
@@ -62,30 +63,32 @@ namespace hw {
 /**
  * An interface for processor models
  */
-class processor
+class Processor
 {
-  DeclareFactory(processor, memory_model*, node*)
  public:
-  virtual ~processor();
+  SST_ELI_DECLARE_BASE(Processor)
+  SST_ELI_DECLARE_DEFAULT_INFO()
+  SST_ELI_DECLARE_CTOR(SST::Params&, MemoryModel*,Node*)
+  virtual ~Processor();
 
-  static void delete_statics();
+  static void deleteStatics();
 
-  virtual void compute(event* cev, callback* cb) = 0;
+  virtual void compute(Event* cev, ExecutionEvent* cb) = 0;
 
   int ncores() const {
     return ncores_;
   }
 
  protected:
-  processor(sprockit::sim_parameters* params, memory_model* mem, node* nd);
+  Processor(SST::Params& params, MemoryModel* mem, Node* nd);
 
  protected:
   double freq_;
   double mem_freq_;
   int ncores_;
 
-  memory_model* mem_;
-  node* node_;
+  MemoryModel* mem_;
+  Node* node_;
 
 };
 

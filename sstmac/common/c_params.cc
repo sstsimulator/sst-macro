@@ -49,8 +49,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/operating_system.h>
 
-static inline sprockit::sim_parameters* get_local_params() {
-  return sstmac::sw::operating_system::current_thread()->parent_app()->params();
+static inline SST::Params& get_local_params() {
+  return sstmac::sw::OperatingSystem::currentThread()->parentApp()->params();
 }
 
 union param_val {
@@ -65,53 +65,53 @@ static std::map<int,LookupMap> cache;
 extern "C" int
 sstmac_get_int_param(const char* str)
 {
-  return get_local_params()->get_int_param(str);
+  return get_local_params().find<int>(str);
 }
 
 extern "C" int
 sstmac_get_optional_int_param(const char* str, int val)
 {
-  return get_local_params()->get_optional_int_param(str, val);
+  return get_local_params().find<int>(str, val);
 }
 
 extern "C" long
 sstmac_get_long_param(const char* str)
 {
-  return get_local_params()->get_long_param(str);
+  return get_local_params().find<long>(str);
 }
 
 extern "C" long
 sstmac_get_optional_long_param(char* str, long val)
 {
-  return get_local_params()->get_optional_long_param(str, val);
+  return get_local_params().find<long>(str, val);
 }
 
 extern "C" double
 sstmac_get_double_param(const char* str)
 {
-  return get_local_params()->get_double_param(str);
+  return get_local_params().find<double>(str);
 }
 
 extern "C" double
 sstmac_get_optional_double_param(const char* str, double val)
 {
-  return get_local_params()->get_optional_double_param(str, val);
+  return get_local_params().find<double>(str, val);
 }
 
 extern "C" const char*
 sstmac_get_param(const char* str)
 {
-  return get_local_params()->get_param(str).c_str();
+  return get_local_params().find<std::string>(str).c_str();
 }
 
 extern "C" const char*
 sstmac_get_optional_param(const char* str, const char* val)
 {
-  return get_local_params()->get_optional_param(str, val).c_str();
+  return get_local_params().find<std::string>(str, val).c_str();
 }
 
 extern "C" double
 sstmac_get_time_param(const char *str)
 {
-  return get_local_params()->get_time_param(str);
+  return get_local_params().find<SST::UnitAlgebra>(str).getValue().toDouble();
 }

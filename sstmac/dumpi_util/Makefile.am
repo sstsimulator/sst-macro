@@ -20,12 +20,12 @@ libsstmac_dumpi_la_LIBADD = \
   ../../sst-dumpi/dumpi/libundumpi/libundumpi.la
 
 libsstmac_dumpi_la_SOURCES = \
-dumpi_meta.cc \
-dumpi_util.cc 
+ dumpi_meta.cc \
+ dumpi_util.cc 
 
 library_includedir=$(includedir)/sstmac/dumpi_util
 
 nobase_library_include_HEADERS = \
-dumpi_meta.h \
-dumpi_util.h 
+ dumpi_meta.h \
+ dumpi_util.h 
 

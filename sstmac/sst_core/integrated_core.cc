@@ -75,19 +75,6 @@ static char py_sstmacro[] = {
 using namespace sstmac;
 using namespace SST;
 
-sprockit::sim_parameters*
-make_spkt_params_from_sst_params(SST::Params& map)
-{
-  sprockit::sim_parameters* rv = new sprockit::sim_parameters;
-  std::set<std::string> key_names = map.getKeys();
-  for(auto&& key : key_names) {
-    rv->parse_keyval(
-        key, map.find<std::string>(key), false, true, false);
-  }
-  rv->append_extra_data(&map);
-  return rv;
-}
-
 namespace sstmac {
 
 PyObject*
@@ -114,7 +101,7 @@ int_vector_from_py_array(PyObject* tuple, std::vector<int>& vec)
 }
 
 void
-py_extract_params(PyObject* dict, sprockit::sim_parameters* params)
+py_extract_params(PyObject* dict, sprockit::SimParameters::ptr params)
 {
 #pragma GCC diagnostic ignored "-Wwrite-strings"
   PyObject* items = PyMapping_Items(dict);
@@ -126,13 +113,12 @@ py_extract_params(PyObject* dict, sprockit::sim_parameters* params)
     PyObject* key_str_obj = PyObject_Str(key);
     const char* key_c_str = PyString_AsString(key_str_obj);
     if (PyMapping_Check(val)){
-      sprockit::sim_parameters* sub_params =
-          params->get_optional_namespace(key_c_str);
+      sprockit::SimParameters::ptr sub_params = params->getOptionalNamespace(key_c_str);
       sstmac::py_extract_params(val, sub_params);
     } else {
       PyObject* val_str_obj = PyObject_Str(val);
       const char* val_c_str = PyString_AsString(val_str_obj);
-      params->add_param_override(key_c_str, val_c_str);
+      params->addParamOverride(key_c_str, val_c_str);
       Py_DECREF(val_str_obj);
     }
     Py_DECREF(key_str_obj);
@@ -144,9 +130,9 @@ py_extract_params(PyObject* dict, sprockit::sim_parameters* params)
 }
 
 void
-py_add_params(PyObject* dict, sprockit::sim_parameters* params)
+py_add_params(PyObject* dict, sprockit::SimParameters::ptr params)
 {
-  sprockit::sim_parameters::key_value_map::iterator it, end = params->end();
+  sprockit::SimParameters::key_value_map::iterator it, end = params->end();
   for (it=params->begin(); it != end; ++it){
     const std::string& key_name = it->first;
     const std::string& key_value = it->second.value;
@@ -157,11 +143,11 @@ py_add_params(PyObject* dict, sprockit::sim_parameters* params)
 }
 
 void
-py_add_sub_params(PyObject* dict, sprockit::sim_parameters* params)
+py_add_sub_params(PyObject* dict, sprockit::SimParameters::ptr params)
 {
-  sprockit::sim_parameters::namespace_iterator it, end = params->ns_end();
-  for (it=params->ns_begin(); it != end; ++it){
-    sprockit::sim_parameters* subparams = it->second;
+  sprockit::SimParameters::namespace_iterator it, end = params->nsEnd();
+  for (it=params->nsBegin(); it != end; ++it){
+    sprockit::SimParameters::ptr subparams = it->second;
     PyObject* subdict = PyDict_New();
     const char* key = it->first.c_str();
     PyDict_SetItemString(dict, key, subdict);
@@ -171,7 +157,7 @@ py_add_sub_params(PyObject* dict, sprockit::sim_parameters* params)
 }
 
 PyObject*
-py_dict_from_params(sprockit::sim_parameters* params)
+py_dict_from_params(SST::Params& params)
 {
   PyObject* dict = PyDict_New();
   sstmac::py_add_params(dict, params);
@@ -188,7 +174,7 @@ set_debug_flags(PyObject* self, PyObject* args)
   for (int i=0; i < size; ++i){
     PyObject* obj = PyTuple_GetItem(args,i);
     const char* str = PyString_AsString(obj);
-    sprockit::debug::turn_on(str);
+    sprockit::Debug::turnOn(str);
   }
   Py_RETURN_NONE;
 }
@@ -196,12 +182,12 @@ set_debug_flags(PyObject* self, PyObject* args)
 static PyObject*
 load_extern_so_file(PyObject* self, PyObject* args)
 {
-  std::string pathStr = load_extern_path_str();
+  std::string pathStr = loadExternPathStr();
   Py_ssize_t size = PyTuple_Size(args);
   for (int i=0; i < size; ++i){
     PyObject* obj = PyTuple_GetItem(args,i);
     const char* str = PyString_AsString(obj);
-    load_extern_library(str, pathStr);
+    loadExternLibrary(str, pathStr);
   }
   Py_RETURN_NONE;
 }
@@ -218,12 +204,12 @@ read_params(PyObject* self, PyObject* args)
     argv[i] = const_cast<char*>(str);
   }
 
-  sprockit::sim_parameters params;
-  sstmac::try_main(&params, argc, argv, true/*only params*/);
+  sprockit::SimParameters::ptr params = std::make_shared<sprockit::SimParameters>();
+  sstmac::tryMain(params, argc, argv, true/*only params*/);
 
   PyObject* dict = PyDict_New();
-  sstmac::py_add_params(dict, &params);
-  sstmac::py_add_sub_params(dict, &params);
+  sstmac::py_add_params(dict, params);
+  sstmac::py_add_sub_params(dict, params);
 
   delete[] argv;
 
@@ -296,10 +282,10 @@ static void* gen_sst_macro_integrated_pymodule(void)
   Py_DECREF(nproc_fxn);
   Py_DECREF(mainModule);
   //for now, the topology will not distinguish nthread from nproc
-  hw::topology::nproc = nproc*nthread;
+  hw::Topology::nproc = nproc*nthread;
 
   PyModule_AddIntConstant(module, "SwitchLogPInjectionPort", 0);
-  PyModule_AddIntConstant(module, "NICLogPInjectionPort", hw::nic::LogP);
+  PyModule_AddIntConstant(module, "NICLogPInjectionPort", hw::NIC::LogP);
 
   sstmac::py_init_system(module);
   sprockit::output::init_out0(&std::cout);
@@ -310,20 +296,20 @@ static void* gen_sst_macro_integrated_pymodule(void)
   return module;
 }
 
-extern "C" {
+class MacroPyModule : public SSTElementPythonModule {
+public:
+    MacroPyModule(const std::string& library) :
+        SSTElementPythonModule(library)
+    {
+    }
 
-ElementLibraryInfo macro_eli = {
-    "macro",
-    "SST Macroscale integrated components",
-    NULL,                  // Components
-    NULL,                              // Events
-    NULL,                              // Introspectors
-    NULL,                              // Modules
-    NULL,
-    NULL,                              // Partitioners
-    gen_sst_macro_integrated_pymodule,  // Python Module Generator
-    NULL
+    void* load() override {
+      return gen_sst_macro_integrated_pymodule();
+    }
+
+    SST_ELI_REGISTER_PYTHON_MODULE(
+      MacroPyModule,
+      "macro",
+      SST_ELI_ELEMENT_VERSION(1,0,0)
+    )
 };
-
-
-} // end extern "C"

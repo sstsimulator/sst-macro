@@ -51,7 +51,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-typedef int thread_id;
+using ThreadId = int;
 
 }
 } // end of namespace sstmac

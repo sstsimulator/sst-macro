@@ -55,69 +55,57 @@ namespace hw {
  *        using the LogGP model.  See "LogGP in Theory and Practice"
  *        by Hoefler and Schneider.
  */
-class logp_nic :
-  public nic
+class LogPNIC :
+  public NIC
 {
-  FactoryRegister("logP | simple | LogP | logp | macrels", nic, logp_nic,
-              "implements a nic that models messages via a simple latency/bandwidth injection delay")
  public:
-  logp_nic(sprockit::sim_parameters* params, node* parent);
+  SST_ELI_REGISTER_DERIVED(
+    NIC,
+    LogPNIC,
+    "macro",
+    "logp",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "implements a nic that models messages via a simple latency/bandwidth injection delay")
 
-  virtual ~logp_nic();
+  LogPNIC(SST::Params& params, Node* parent);
 
-  void handle(event *ev);
+  virtual ~LogPNIC();
 
-  virtual void connect_output(
-    sprockit::sim_parameters* params,
-    int src_outport,
-    int dst_inport,
-    event_link* link) override;
+  void handle(Event *ev);
 
-  virtual void connect_input(
-    sprockit::sim_parameters* params,
-    int src_outport,
-    int dst_inport,
-    event_link* link) override;
+  virtual void connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
 
-  void mtl_handle(event* ev) override;
+  virtual void connectInput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
 
-  void drop_event(event* ev){}
+  void mtlHandle(Event* ev) override;
 
-  virtual std::string to_string() const override {
+  void dropEvent(Event* ev){}
+
+  virtual std::string toString() const override {
     return "simple nic";
   }
 
-  link_handler* credit_handler(int port) override {
-    return new_link_handler(this, &logp_nic::drop_event);
+  LinkHandler* creditHandler(int port) override {
+    return newLinkHandler(this, &LogPNIC::dropEvent);
   }
 
-  link_handler* payload_handler(int port) override;
-
-  timestamp send_latency(sprockit::sim_parameters *params) const override;
-
-  timestamp credit_latency(sprockit::sim_parameters *params) const override;
+  LinkHandler* payloadHandler(int port) override;
 
  protected:
   /**
     Start the message sending and inject it into the network
     @param payload The network message to send
   */
-  virtual void do_send(network_message* msg) override;
+  virtual void doSend(NetworkMessage* msg) override;
 
  protected:
-  double inj_bw_inverse_;
+  Timestamp inj_byte_delay_;
 
-  timestamp inj_lat_;
+  Timestamp inj_lat_;
 
-  timestamp next_out_free_;
+  GlobalTimestamp next_out_free_;
 
-  timestamp next_in_free_;
-
-  event_handler* ack_handler_;
-
-#if !SSTMAC_INTEGRATED_SST_CORE
-  link_handler* payload_handler_;
-#endif
+  GlobalTimestamp next_in_free_;
 
 };
 

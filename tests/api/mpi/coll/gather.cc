@@ -10,7 +10,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <sprockit/debug.h>
-#include <sumi/collective_actor.h>
 
 namespace gather {
 /** Gather data from a vector to contiguous */

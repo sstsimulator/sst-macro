@@ -55,33 +55,33 @@ RegisterDebugSlot(sculpin, "print all the details of the sculpin model")
 namespace sstmac {
 namespace hw {
 
-sculpin_packet::sculpin_packet(
-  message* msg,
+SculpinPacket::SculpinPacket(
+  Flow* msg,
   uint32_t num_bytes,
   bool is_tail,
   uint64_t flow_id,
-  node_id toaddr,
-  node_id fromaddr) :
+  NodeId toaddr,
+  NodeId fromaddr) :
   priority_(0),
-  packet(msg, num_bytes, flow_id, is_tail, fromaddr, toaddr)
+  Packet(msg, num_bytes, flow_id, is_tail, fromaddr, toaddr)
 {
 }
 
 std::string
-sculpin_packet::to_string() const
+SculpinPacket::toString() const
 {
   return sprockit::printf("pkt bytes=%" PRIu32 " flow %" PRIu64 ": %s",
-                          num_bytes(), flow_id(), orig()
-                          ? sprockit::to_string(orig()).c_str()
+                          numBytes(), flowId(), orig()
+                          ? sprockit::toString(orig()).c_str()
                           : "no payload");
 
 }
 
 void
-sculpin_packet::serialize_order(serializer& ser)
+SculpinPacket::serialize_order(serializer& ser)
 {
   //routable::serialize_order(ser);
-  packet::serialize_order(ser);
+  Packet::serialize_order(ser);
   ser & arrival_;
   ser & time_to_send_;
   ser & priority_;

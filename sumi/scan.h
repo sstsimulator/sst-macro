@@ -52,29 +52,33 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-class simultaneous_btree_scan_actor :
-  public dag_collective_actor
+class SimultaneousBtreeScanActor :
+  public DagCollectiveActor
 {
 
  public:
-  std::string to_string() const override {
+  SimultaneousBtreeScanActor(CollectiveEngine* engine, void* dst, void* src, int nelems, int type_size,
+                                int tag, reduce_fxn fxn, int cq_id, Communicator* comm) :
+    DagCollectiveActor(Collective::scan, engine, dst, src, type_size, tag, cq_id, comm),
+    nelems_(nelems), fxn_(fxn)
+  {
+  }
+
+  std::string toString() const override {
     return "simultaneous btree scan";
   }
 
-  void buffer_action(void *dst_buffer, void *msg_buffer, action* ac) override;
-
-  simultaneous_btree_scan_actor(int root, reduce_fxn fxn);
+ private:
+  void bufferAction(void *dst_buffer, void *msg_buffer, Action* ac) override;
+  void finalizeBuffers() override;
+  void initBuffers() override;
+  void initDag() override;
+  void startShuffle(Action* ac) override;
 
  private:
-  void finalize_buffers() override;
-  void init_buffers(void *dst, void *src) override;
-  void init_dag() override;
-  void start_shuffle(action* ac) override;
+  int nelems_;
 
- private:
   reduce_fxn fxn_;
-
-  int root_;
 
   int num_reducing_rounds_;
 
@@ -82,39 +86,31 @@ class simultaneous_btree_scan_actor :
 
 };
 
-class simultaneous_btree_scan :
-  public dag_collective
+class SimultaneousBtreeScan :
+  public DagCollective
 {
-  FactoryRegister("sim_btree_scan", dag_collective, simultaneous_btree_scan)
  public:
-  std::string to_string() const override {
+  SimultaneousBtreeScan(CollectiveEngine* engine, void* dst, void* src, int nelems,
+                          int type_size, int tag, reduce_fxn fxn, int cq_id, Communicator* comm) :
+    DagCollective(Collective::scan, engine, dst, src, type_size, tag, cq_id, comm),
+    nelems_(nelems), fxn_(fxn)
+  {
+  }
+
+
+  std::string toString() const override {
     return "simultaneous btree scan";
   }
 
-  simultaneous_btree_scan(int root, reduce_fxn fxn);
-
-  simultaneous_btree_scan() : root_(-1) {}
-
-  virtual void init_reduce(reduce_fxn fxn) override{
-    fxn_ = fxn;
-  }
-
-  dag_collective_actor* new_actor() const override {
-    return new simultaneous_btree_scan_actor(root_, fxn_);
-  }
-
-  void init_root(int root) override {
-    root_ = root;
-  }
-
-  dag_collective* clone() const override {
-    return new simultaneous_btree_scan(root_, fxn_);
+  DagCollectiveActor* newActor() const override {
+    return new SimultaneousBtreeScanActor(engine_, dst_buffer_, src_buffer_,
+                                             nelems_, type_size_, tag_, fxn_, cq_id_, comm_);
   }
 
  private:
+  int nelems_;
   reduce_fxn fxn_;
 
-  int root_;
 
 };
 

@@ -51,28 +51,28 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace mpi {
 
-class mpi_runtime :
-  public parallel_runtime
+class MpiRuntime :
+  public ParallelRuntime
 {
-  FactoryRegister("mpi", parallel_runtime, mpi_runtime)
+  FactoryRegister("mpi", ParallelRuntime, MpiRuntime)
  public:
-  mpi_runtime(sprockit::sim_parameters* params);
+  MpiRuntime(SST::Params& params);
 
   void bcast(void *buffer, int bytes, int root) override;
 
-  int64_t allreduce_min(int64_t mintime) override;
+  int64_t allreduceMin(int64_t mintime) override;
 
-  int64_t allreduce_max(int64_t maxtime) override;
+  int64_t allreduceMax(int64_t maxtime) override;
 
-  void global_sum(int* data, int nelems, int root) override;
+  void globalSum(int* data, int nelems, int root) override;
 
-  void global_sum(long long *data, int nelems, int root) override;
+  void globalSum(long long *data, int nelems, int root) override;
 
-  void global_sum(long *data, int nelems, int root) override;
+  void globalSum(long *data, int nelems, int root) override;
 
-  void global_max(long *data, int nelems, int root) override;
+  void globalMax(long *data, int nelems, int root) override;
 
-  void global_max(int *data, int nelems, int root) override;
+  void globalMax(int *data, int nelems, int root) override;
 
   void send(int dst, void *buffer, int buffer_size) override;
 
@@ -82,9 +82,9 @@ class mpi_runtime :
 
   void allgather(void *send_buffer, int num_bytes, void *recv_buffer) override;
 
-  void init_runtime_params(sprockit::sim_parameters* params) override;
+  void initRuntimeParams(SST::Params& params) override;
 
-  timestamp send_recv_messages(timestamp vote) override;
+  Timestamp sendRecvMessages(Timestamp vote) override;
 
  protected:
   void do_reduce(void* data, int nelems, MPI_Datatype ty, MPI_Op op, int root);
@@ -92,8 +92,8 @@ class mpi_runtime :
   void finalize() override;
 
  private:
-  int init_rank(sprockit::sim_parameters* params);
-  int init_size(sprockit::sim_parameters* params);
+  int initRank(SST::Params& params);
+  int initSize(SST::Params& params);
 
  private:
   struct send_recv_vote {
@@ -111,7 +111,7 @@ class mpi_runtime :
 
   int epoch_;
 
-  static void vote_reduce_function(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype);
+  static void voteReduceFunction(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype);
 };
 
 }

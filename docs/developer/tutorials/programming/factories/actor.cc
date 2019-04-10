@@ -3,9 +3,9 @@
 namespace sstmac {
 namespace tutorial {
 
-actor::actor(sprockit::sim_parameters* params)
+actor::actor(SST::Params& params)
 {
-  biggest_fan_ = params->get_param("biggest_fan");
+  biggest_fan_ = params.find<std::string>("biggest_fan");
 }
 
 }

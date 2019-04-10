@@ -195,7 +195,7 @@ SSTMemoizeComputePragma::doReplace(SourceLocation startInsert, SourceLocation fi
     int line = ploc.getLine();
 
     std::stringstream start_sstr;
-    start_sstr << "int sstmac_thr_tag" << line << " = sstmac_start_memoize("
+    start_sstr << "int sstmac_thr_tag" << line << " = sstmac_startMemoize("
        << "\"" << token_ << "\",\"" << model_ << "\"" << "); ";
     r.InsertText(startInsert, start_sstr.str(), insertStartAfter);
     std::stringstream finish_sstr;

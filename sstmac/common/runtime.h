@@ -86,59 +86,59 @@ new_deadlock_check(T* t, Fxn f){
   return new deadlock_check_impl<T,Fxn>(t,f);
 }
 
-class runtime
+class Runtime
 {
  protected:
-  typedef std::unordered_map<sw::task_id, node_id> task_to_nodeid_map;
-  typedef std::unordered_map<sw::app_id, task_to_nodeid_map> app_to_task_map;
+  typedef std::unordered_map<sw::TaskId, NodeId> task_to_nodeid_map;
+  typedef std::unordered_map<sw::AppId, task_to_nodeid_map> app_to_task_map;
 
  public:
-  static node_id node_for_task(sw::app_id aid, sw::task_id tid);
+  static NodeId nodeForTask(sw::AppId aid, sw::TaskId tid);
 
-  static hw::topology* current_topology() {
+  static hw::Topology* currentTopology() {
     return topology_;
   }
 
-  static void set_topology(hw::topology* top) {
+  static void setTopology(hw::Topology* top) {
     topology_ = top;
   }
 
-  static void clear_statics();
+  static void clearStatics();
 
-  static void delete_statics();
+  static void deleteStatics();
 
-  static node_id current_node();
+  static NodeId current_node();
 
-  static sw::job_launcher* launcher() {
+  static sw::JobLauncher* launcher() {
     return launcher_;
   }
 
   static void finish();
 
-  static void enter_deadlock_region(){
+  static void enterDeadlockRegion(){
     do_deadlock_check_ = true;
   }
 
-  static void exit_deadlock_region(){
+  static void exitDeadlockRegion(){
     do_deadlock_check_ = false;
   }
 
-  static void check_deadlock();
+  static void checkDeadlock();
 
-  static void add_deadlock_check(deadlock_check* c){
+  static void addDeadlockCheck(deadlock_check* c){
     deadlock_checks_.push_back(c);
   }
 
-  static void set_job_launcher(sw::job_launcher* launcher){
+  static void setJoblauncher(sw::JobLauncher* launcher){
     launcher_ = launcher;
   }
 
  protected:
   static bool do_deadlock_check_;
 
-  static hw::topology* topology_;
+  static hw::Topology* topology_;
 
-  static sw::job_launcher* launcher_;
+  static sw::JobLauncher* launcher_;
 
   static std::list<deadlock_check*> deadlock_checks_;
 

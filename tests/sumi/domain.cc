@@ -49,83 +49,63 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/thread.h>
-#include <sstmac/libraries/sumi/sumi.h>
+#include <sstmac/skeleton.h>
 #include <sumi/dense_rank_map.h>
 #include <sumi/transport.h>
-#include <sstmac/skeleton.h>
+#include <sumi/sumi.h>
+
 #define sstmac_app_name user_app_cxx
 using namespace sumi;
 
 void
-run_test(communicator* dom, int todie, int nproc_live, int context, int tag)
+run_test(Communicator* dom, int todie, int nproc_live, int context, int tag)
 {
   int me = comm_rank();
   auto known_failures = comm_failed_ranks(context);
-  dense_rank_map rmap(known_failures);
-  int dense_me = rmap.dense_rank(me);
+  DenseRankMap rmap(known_failures);
+  int dense_me = rmap.denseRank(me);
   if (me == 11){
     printf("Rank 11 maps to dense rank %d with failures = %s\n",
-      dense_me, known_failures.to_string().c_str());
+      dense_me, known_failures.toString().c_str());
   }
 
-  collective_done_message* dmsg;
+  CollectiveDoneMessage* dmsg;
 
   int src[] = { dense_me };
   int dst[nproc_live];
   comm_allgather(dst, src, 1, sizeof(int), tag, true, context, dom);
 
-  dmsg = comm_collective_block(collective::allgather, tag);
+  dmsg = comm_collective_block(Collective::allgather, tag);
   if (!dmsg->succeeded()){
-    spkt_throw_printf(sprockit::illformed_error,
+    spkt_throw_printf(sprockit::IllformedError,
         "allgather collective failed with failures %s, should always succeed",
-        dmsg->failed_procs().to_string().c_str());
+        dmsg->failed_procs().toString().c_str());
   }
 
-  dense_rank_map domain_rmap(known_failures, dom);
+  DenseRankMap domain_rmap(known_failures, dom);
   for (int i=0; i < nproc_live; ++i){
-    int sparse_rank = domain_rmap.sparse_rank(i);
-    int global_rank = dom->comm_to_global_rank(sparse_rank);
-    int correct = rmap.dense_rank(global_rank);
+    int sparse_rank = domain_rmap.sparseRank(i);
+    int global_rank = dom->commToGlobalRank(sparse_rank);
+    int correct = rmap.denseRank(global_rank);
     if (dst[i] != correct){
       for (int j=0; j < nproc_live; ++j){
         std::cerr << sprockit::printf("A[%d] = %d\n", j, dst[j]);
       }
-      spkt_throw_printf(sprockit::value_error,
+      spkt_throw_printf(sprockit::ValueError,
         "Rank %d A[%d] = %d != %d for global rank %d, sparse rank %d on test nproc=%d,tag=%d",
         me, i, dst[i], correct, global_rank, sparse_rank, nproc_live, tag);
     }
   }
   printf("Rank %d passed allgather\n", me);
 
-
-  sstmac_usleep(100);
-  if (me == todie){
-    printf("Rank %d going down!\n", me);
-    comm_kill_node();
-  }
-  comm_vote<And>(1, tag, context, dom);
-
-
-  dmsg = comm_collective_block(collective::dynamic_tree_vote, tag);
-  if (me == 0){
-    auto& failed = comm_failed_ranks();
-    std::stringstream sstr;
-    sstr << "Failed = {";
-    for (auto rank : failed){
-      sstr << " " << rank;
-    }
-    sstr << " }";
-    printf("%s\n", sstr.str().c_str());
-  }
-
   sstmac_usleep(100);
 }
 
 void
-test_allreduce(communicator* dom, int tag)
+test_allreduce(Communicator* dom, int tag)
 {
   //now do a collective with payloads
-  int rank = dom->my_comm_rank();
+  int rank = dom->myCommRank();
   int nproc = dom->nproc();
   int nelems = 2*nproc;
   int numfill = 2*rank + 1;
@@ -137,11 +117,11 @@ test_allreduce(communicator* dom, int tag)
   int* dst_buffer = new int[nelems];
   comm_allreduce<int,Add>(dst_buffer, src_buffer, nelems, tag, false, options::initial_context, dom);
 
-  message* msg = comm_poll(); //wait on allreduce
-  if (msg->class_type() != message::collective_done){
-    spkt_throw_printf(sprockit::value_error,
+  Message* msg = comm_poll(); //wait on allreduce
+  if (msg->classType() != Message::collective_done){
+    spkt_throw_printf(sprockit::ValueError,
       "allreduce test: expected collective message, but got %s",
-      message::tostr(msg->class_type()));
+      Message::tostr(msg->classType()));
   }
 
   if (rank == 0){
@@ -153,11 +133,11 @@ test_allreduce(communicator* dom, int tag)
 }
 
 void
-test_allgather(communicator* dom, int tag)
+test_allgather(Communicator* dom, int tag)
 {
   int nelems = 10;
 
-  int rank = dom->my_comm_rank();
+  int rank = dom->myCommRank();
   int nproc = dom->nproc();
 
   int* src_buffer = new int[nelems];
@@ -171,11 +151,11 @@ test_allgather(communicator* dom, int tag)
 
   comm_allgather(dst_buffer, src_buffer, nelems, sizeof(int), tag, false, options::initial_context, dom);
 
-  message* msg = comm_poll(); //wait on allgather
-  if (msg->class_type() != message::collective_done){
-    spkt_throw_printf(sprockit::value_error,
+  Message* msg = comm_poll(); //wait on allgather
+  if (msg->classType() != Message::collective_done){
+    spkt_throw_printf(sprockit::ValueError,
       "allreduce test: expected collective message, but got %s",
-      message::tostr(msg->class_type()));
+      Message::tostr(msg->classType()));
   }
 
   if (rank == 0){
@@ -215,12 +195,12 @@ main(int argc, char **argv)
   int stop = start + nsubrange;
 
   if (rank >= start && rank < stop){
-    communicator* dom = new subrange_communicator(rank, start, nsubrange);
+    Communicator* dom = new SubrangeCommunicator(rank, start, nsubrange);
     //test_allgather(dom, 0);
     //test_allreduce(dom, 1);
   }
 
-  communicator* dom = new rotate_communicator(rank, nproc, 3);
+  Communicator* dom = new RotateCommunicator(rank, nproc, 3);
   //test_allgather(dom, 2);
   //test_allreduce(dom, 3);
 

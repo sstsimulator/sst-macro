@@ -22,6 +22,7 @@ libsstmac_sw_la_LIBADD =
 libsstmac_sw_la_SOURCES = \
   ami/ami.cc \
   api/api.cc \
+  process/progress_queue.cc \
   process/compute_scheduler.cc \
   process/cpuset_compute_scheduler.cc \
   process/simple_compute_scheduler.cc \
@@ -47,6 +48,7 @@ libsstmac_sw_la_SOURCES = \
   libraries/compute/lib_compute_memmove.cc \
   libraries/compute/lib_compute_time.cc \
   libraries/unblock_event.cc \
+  launch/task_mapping.cc \
   launch/launch_request.cc \
   launch/node_allocator.cc \
   launch/cart_allocation.cc \
@@ -76,6 +78,7 @@ nobase_library_include_HEADERS = \
   api/api.h \
   api/api_fwd.h \
   process/gdb.h \
+  process/progress_queue.h \
   process/simple_compute_scheduler.h \
   process/cpuset_compute_scheduler.h \
   process/compute_scheduler.h \
@@ -124,6 +127,7 @@ nobase_library_include_HEADERS = \
   libraries/unblock_event.h \
   libraries/service.h \
   libraries/service_fwd.h \
+  launch/task_mapping.h \
   launch/launch_request.h \
   launch/launch_request_fwd.h \
   launch/node_allocator.h \

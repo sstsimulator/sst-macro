@@ -44,10 +44,12 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/libraries/blas/blas_api.h>
 #include <sstmac/software/process/operating_system.h>
+#include <sstmac/software/process/key.h>
+#include <sstmac/software/process/app.h>
 #include <sstmac/software/libraries/compute/lib_compute_inst.h>
 #include <sstmac/software/libraries/compute/compute_event.h>
 #include <sprockit/keyword_registration.h>
-#include <sstmac/software/process/key.h>
+
 
 RegisterKeywords(
   { "dgemm", "" },
@@ -72,91 +74,90 @@ RegisterDebugSlot(blas);
 namespace sstmac {
 namespace sw {
 
-blas_kernel* blas_api::dgemm_kernel_;
-blas_kernel* blas_api::dgemv_kernel_;
-blas_kernel* blas_api::daxpy_kernel_;
-blas_kernel* blas_api::ddot_kernel_;
+BlasKernel* BlasAPI::dgemm_kernel_;
+BlasKernel* BlasAPI::dgemv_kernel_;
+BlasKernel* BlasAPI::daxpy_kernel_;
+BlasKernel* BlasAPI::ddot_kernel_;
 
-blas_api::blas_api(sprockit::sim_parameters* params,
-                   software_id sid,
-                   operating_system* os)
-  : api(params, "blas", sid, os)
+BlasAPI::BlasAPI(SST::Params& params, App* app, SST::Component* comp)
+  : API(params, app, comp)
 {
-  std::string libname = sprockit::printf("blas-compute%d", sid.to_string().c_str());
-  lib_compute_ = new lib_compute_inst(params, libname, sid, os);
+  std::string libname = sprockit::printf("blas-compute%d", sid().toString().c_str());
+  lib_compute_ = new LibComputeInst(params, libname, sid(), app->os());
   if (!dgemm_kernel_){
-    init_kernels(params);
+    initKernels(params);
   }
 }
 
-blas_api::~blas_api()
+BlasAPI::~BlasAPI()
 {
 }
 
 void
-blas_api::init_kernels(sprockit::sim_parameters* params)
+BlasAPI::initKernels(SST::Params& params)
 {
-  dgemm_kernel_ = blas_kernel::factory::get_optional_param("dgemm", "default_dgemm", params);
-  dgemv_kernel_ = blas_kernel::factory::get_optional_param("dgemv", "default_dgemv", params);
-  daxpy_kernel_ = blas_kernel::factory::get_optional_param("daxpy", "default_daxpy", params);
-  ddot_kernel_ = blas_kernel::factory::get_optional_param("ddot", "default_ddot", params);
+  auto* lib = BlasKernel::getBuilderLibrary("macro");
+  dgemm_kernel_ = lib->getBuilder(params.find<std::string>("dgemm", "default_dgemm"))->create(params);
+  dgemv_kernel_ = lib->getBuilder(params.find<std::string>("dgemv", "default_dgemv"))->create(params);
+  daxpy_kernel_ = lib->getBuilder(params.find<std::string>("daxpy", "default_daxpy"))->create(params);
+  ddot_kernel_ = lib->getBuilder(params.find<std::string>("ddot", "default_ddot"))->create(params);
 }
 
 void
-blas_api::ddot(int n)
+BlasAPI::ddot(int n)
 {
-  compute_event* msg = ddot_kernel_->op_1d(n);
-  lib_compute_->compute_inst(msg);
+  ComputeEvent* msg = ddot_kernel_->op_1d(n);
+  lib_compute_->computeInst(msg);
   //msg is done
   delete msg;
 }
 
 void
-blas_api::dgemm(int m, int n, int k)
+BlasAPI::dgemm(int m, int n, int k)
 {
-  compute_event* msg = dgemm_kernel_->op_3d(m, n, k);
-  lib_compute_->compute_inst(msg);
+  ComputeEvent* msg = dgemm_kernel_->op_3d(m, n, k);
+  lib_compute_->computeInst(msg);
   delete msg;
 }
 
 void
-blas_api::dgemv(int m, int n)
+BlasAPI::dgemv(int m, int n)
 {
-  compute_event* msg = dgemv_kernel_->op_2d(m,n);
-  lib_compute_->compute_inst(msg);
+  ComputeEvent* msg = dgemv_kernel_->op_2d(m,n);
+  lib_compute_->computeInst(msg);
   delete msg;
 }
 
 void
-blas_api::daxpy(int n)
+BlasAPI::daxpy(int n)
 {
-  compute_event* msg = daxpy_kernel_->op_1d(n);
-  lib_compute_->compute_inst(msg);
+  ComputeEvent* msg = daxpy_kernel_->op_1d(n);
+  lib_compute_->computeInst(msg);
   delete msg;
 }
 
-compute_event*
-blas_kernel::op_3d(int m, int k, int n)
+ComputeEvent*
+BlasKernel::op_3d(int m, int k, int n)
 {
-  spkt_throw_printf(sprockit::unimplemented_error,
+  spkt_throw_printf(sprockit::UnimplementedError,
     "blas_kernel::mult_op: %s does not implement 3D ops",
-    to_string().c_str());
+    toString().c_str());
 }
 
-compute_event*
-blas_kernel::op_2d(int m, int n)
+ComputeEvent*
+BlasKernel::op_2d(int m, int n)
 {
-  spkt_throw_printf(sprockit::unimplemented_error,
+  spkt_throw_printf(sprockit::UnimplementedError,
     "blas_kernel::mult_op: %s does not implement 2D ops",
-    to_string().c_str());
+    toString().c_str());
 }
 
-compute_event*
-blas_kernel::op_1d(int n)
+ComputeEvent*
+BlasKernel::op_1d(int n)
 {
-  spkt_throw_printf(sprockit::unimplemented_error,
+  spkt_throw_printf(sprockit::UnimplementedError,
     "blas_kernel::mult_op: %s does not implement 1D ops",
-    to_string().c_str());
+    toString().c_str());
 }
 
 

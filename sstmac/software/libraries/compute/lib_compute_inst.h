@@ -59,38 +59,38 @@ DeclareDebugSlot(lib_compute_inst);
 namespace sstmac {
 namespace sw {
 
-class lib_compute_inst :
-  public lib_compute_time
+class LibComputeInst :
+  public LibComputeTime
 {
  public:
-  lib_compute_inst(sprockit::sim_parameters* params, software_id id, operating_system* os);
+  LibComputeInst(SST::Params& params, SoftwareId id, OperatingSystem* os);
 
-  lib_compute_inst(sprockit::sim_parameters* params, const std::string& libname,
-                   software_id id, operating_system* os);
+  LibComputeInst(SST::Params& params, const std::string& libname,
+                   SoftwareId id, OperatingSystem* os);
 
-  virtual ~lib_compute_inst() { }
+  virtual ~LibComputeInst() { }
 
-  void compute_inst(compute_event* msg, int nthr = 1);
+  void computeInst(ComputeEvent* msg, int nthr = 1);
 
-  void compute_detailed(uint64_t flops,
+  void computeDetailed(uint64_t flops,
     uint64_t nintops,
     uint64_t bytes,
     int nthread = 1);
 
-  void compute_loop(uint64_t nloops,
+  void computeLoop(uint64_t nloops,
     uint32_t flops_per_loop,
     uint32_t intops_per_loop,
     uint32_t bytes_per_loop);
 
-  virtual void incoming_event(event *ev) override {
-    library::incoming_event(ev);
+  virtual void incomingEvent(Event *ev) override {
+    Library::incomingEvent(ev);
   }
 
  protected:
   double loop_overhead_;
 
  private:
-  void init(sprockit::sim_parameters* params);
+  void init(SST::Params& params);
 
 };
 

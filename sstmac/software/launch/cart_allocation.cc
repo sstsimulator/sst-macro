@@ -48,7 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/cartgrid.h>
 
 #include <sprockit/errors.h>
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <sprockit/output.h>
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
@@ -65,21 +65,21 @@ RegisterKeywords(
 namespace sstmac {
 namespace sw {
 
-cart_allocation::cart_allocation(sprockit::sim_parameters* params) :
-  node_allocator(params)
+CartAllocation::CartAllocation(SST::Params& params) :
+  NodeAllocator(params)
 {
-  if (params->has_param("cart_sizes")){
-    params->get_vector_param("cart_sizes", sizes_);
+  if (params.contains("cart_sizes")){
+    params.find_array("cart_sizes", sizes_);
     auto_allocate_ = false;
   } else {
     sizes_.resize(3, -1);
     auto_allocate_ = true;
   }
 
-  if (params->has_param("cart_offsets")){
-    params->get_vector_param("cart_offsets", offsets_);
+  if (params.contains("cart_offsets")){
+    params.find_array("cart_offsets", offsets_);
     if (sizes_.size() != offsets_.size()) {
-      spkt_throw_printf(sprockit::value_error,
+      spkt_throw_printf(sprockit::ValueError,
                      "cartesian allocator: offsets and sizes have different dimensions");
     }
   } else {
@@ -88,23 +88,23 @@ cart_allocation::cart_allocation(sprockit::sim_parameters* params) :
 }
 
 void
-cart_allocation::insert(
-  hw::cartesian_topology* regtop,
+CartAllocation::insert(
+  hw::CartesianTopology* regtop,
   const std::vector<int>& coords,
   const ordered_node_set& available,
   ordered_node_set& allocation) const
 {
-  node_id nid = regtop->node_addr(coords);
+  NodeId nid = regtop->node_addr(coords);
   debug_printf(sprockit::dbg::allocation,
       "adding node %d : %s to allocation",
-      int(nid), stl_string(coords).c_str());
+      int(nid), stlString(coords).c_str());
   allocation.insert(nid);
 }
 
 
 void
-cart_allocation::allocate_dim(
-  hw::cartesian_topology* regtop,
+CartAllocation::allocateDim(
+  hw::CartesianTopology* regtop,
   int dim,
   std::vector<int>& vec,
   const ordered_node_set& available,
@@ -119,30 +119,30 @@ cart_allocation::allocate_dim(
   int dim_offset = offsets_[dim];
   for (int i = 0; i < dim_size; ++i) {
     vec[dim] = dim_offset + i;
-    allocate_dim(regtop, dim + 1, vec, available, allocation);
+    allocateDim(regtop, dim + 1, vec, available, allocation);
   }
 }
 
 bool
-cart_allocation::allocate(
+CartAllocation::allocate(
   int nnode,
   const ordered_node_set& available,
   ordered_node_set& allocation) const
 {
-  hw::cartesian_topology* regtop = topology_->cart_topology();
+  hw::CartesianTopology* regtop = topology_->cartTopology();
 
   int ndims = regtop->ndimensions();
   //add extra dimension for concentration
   if (regtop->concentration() > 1) ++ndims;
   if (sizes_.size() != ndims){
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
        "topology ndims does not match cart_allocation: %d != %d",
        sizes_.size(), ndims);
   }
 
   if (auto_allocate_){
     std::vector<int> coords; coords.resize(3);
-    int nx, ny, nz; gen_cart_grid(nnode, nx, ny, nz);
+    int nx, ny, nz; genCartGrid(nnode, nx, ny, nz);
     for (int x=0; x < nx; ++x){
       coords[0] = x;
       for (int y=0; y < ny; ++y){
@@ -155,7 +155,7 @@ cart_allocation::allocate(
     }
   } else {
     std::vector<int> vec(sizes_.size(), 0);
-    allocate_dim(regtop, 0, vec, available, allocation);
+    allocateDim(regtop, 0, vec, available, allocation);
   }
 
   return true;

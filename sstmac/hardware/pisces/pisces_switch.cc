@@ -44,11 +44,9 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/pisces/pisces_switch.h>
-#include <sstmac/hardware/pisces/pisces_stats.h>
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/common/event_manager.h>
 #include <sstmac/common/stats/stat_spyplot.h>
-#include <sstmac/common/stats/stat_global_int.h>
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
@@ -60,8 +58,6 @@ RegisterNamespaces("switch", "router", "congestion_stats", "xbar", "link",
 RegisterKeywords(
 { "stats", "specify the statistics collection to be performed on this switch" },
 { "latency", "latency to traverse a portion of the switch - sets both credit/send" },
-{ "send_latency", "latency to send data to the next stage" },
-{ "credit_latency", "latency to send credit to the previous stage" },
 { "credits", "the number of initial credits available to switch component" },
 { "num_vc", "the number of virtual channels a switch must allow" },
 );
@@ -70,76 +66,87 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-pisces_abstract_switch::pisces_abstract_switch(
-  sprockit::sim_parameters *params, uint32_t id, event_manager *mgr) :
-  buf_stats_(nullptr),
-  xbar_stats_(nullptr),
+PiscesAbstractSwitch::PiscesAbstractSwitch(uint32_t id, SST::Params& params) :
   router_(nullptr),
-  network_switch(params, id, mgr)
+  NetworkSwitch(id, params)
 {
-  sprockit::sim_parameters* xbar_params = params->get_optional_namespace("xbar");
-  xbar_stats_ = packet_stats_callback::factory::get_optional_param("stats", "null",
-                                             xbar_params, this);
+  SST::Params xbar_params = params.find_scoped_params("xbar");
 
-  sprockit::sim_parameters* buf_params = params->get_optional_namespace("output_buffer");
-  buf_stats_ = packet_stats_callback::factory::get_optional_param("stats", "null",
-                                             buf_params, this);
+  SST::Params buf_params = params.find_scoped_params("output_buffer");
 
-  sprockit::sim_parameters* rtr_params = params->get_optional_namespace("router");
-  rtr_params->add_param_override_recursive("id", int(my_addr_));
-  router_ = router::factory::get_param("name", rtr_params, top_, this);
+  SST::Params rtr_params = params.find_scoped_params("router");
+  rtr_params.insert("id", std::to_string(my_addr_));
+  router_ = sprockit::create<Router>(
+     "macro", rtr_params.find<std::string>("name"), rtr_params, top_, this);
 
-  sprockit::sim_parameters* ej_params = params->get_optional_namespace("ejection");
-  std::vector<topology::injection_port> conns;
-  top_->endpoints_connected_to_ejection_switch(my_addr_, conns);
-  if (!ej_params->has_param("credits")){
+  SST::Params ej_params = params.find_scoped_params("ejection");
+  std::vector<Topology::InjectionPort> conns;
+  top_->endpointsConnectedToEjectionSwitch(my_addr_, conns);
+  if (!ej_params.contains("credits")){
     //never be limited by credits
-    ej_params->add_param_override("credits", "1GB");
+    ej_params.insert("credits", "1GB");
   }
-
-  pisces_sender::configure_payload_port_latency(ej_params);
-
-  for (topology::injection_port& conn : conns){
-    sprockit::sim_parameters* port_params = topology::get_port_params(params, conn.switch_port);
-    ej_params->combine_into(port_params);
-  }
-
 }
 
 
-
-pisces_abstract_switch::~pisces_abstract_switch()
+PiscesAbstractSwitch::~PiscesAbstractSwitch()
 {
-  if (buf_stats_) delete buf_stats_;
-  if (xbar_stats_) delete xbar_stats_;
   if (router_) delete router_;
 }
 
-pisces_switch::pisces_switch(
-  sprockit::sim_parameters* params,
-  uint32_t id,
-  event_manager* mgr)
-: pisces_abstract_switch(params, id, mgr),
+PiscesSwitch::PiscesSwitch(uint32_t id, SST::Params& params)
+: PiscesAbstractSwitch(id, params),
   xbar_(nullptr)
 {
-  sprockit::sim_parameters* xbar_params = params->get_namespace("xbar");
-  xbar_params->add_param_override("num_vc", router_->num_vc());
-  xbar_ = new pisces_crossbar(xbar_params, this,
-                              top_->max_num_ports(), top_->max_num_ports(),
-                              router_->num_vc(), true/*yes, update vc*/);
-  xbar_->set_stat_collector(xbar_stats_);
-  out_buffers_.resize(top_->max_num_ports());
-  inports_.resize(top_->max_num_ports());
+  SST::Params xbar_params = params.find_scoped_params("xbar");
+  SST::Params link_params = params.find_scoped_params("link");
+
+  if (params.contains("arbitrator")){
+    arbType_ = params.find<std::string>("arbitrator");
+  } else {
+    arbType_ = link_params.find<std::string>("arbitrator");
+  }
+
+  double xbar_bw = xbar_params.find<SST::UnitAlgebra>("bandwidth").getValue().toDouble();
+
+  std::string xbar_arb = xbar_params.find<std::string>("arbitrator", arbType_);
+
+  link_bw_ = link_params.find<SST::UnitAlgebra>("bandwidth").getValue().toDouble();
+  if (link_params.contains("credits")){
+    link_credits_ = link_params.find<SST::UnitAlgebra>("credits").getRoundedValue();
+  } else {
+    double lat_s = link_params.find<SST::UnitAlgebra>("latency").getValue().toDouble();
+    //use 4*RTT as buffer size
+    link_credits_ = 8*link_bw_*lat_s;
+  }
+
+  if (xbar_params.contains("credits")){
+    xbar_credits_ = xbar_params.find<SST::UnitAlgebra>("credits").getRoundedValue();
+  } else {
+    xbar_credits_ = link_credits_;
+  }
+
+  xbar_ = new PiscesCrossbar("xbar", xbar_arb, xbar_bw, this,
+                             top_->maxNumPorts(), top_->maxNumPorts(),
+                             router_->numVC(), true/*yes, update vc*/);
+  out_buffers_.resize(top_->maxNumPorts());
+  inports_.resize(top_->maxNumPorts());
   for (int i=0; i < inports_.size(); ++i){
-    input_port& inp = inports_[i];
+    InputPort& inp = inports_[i];
     inp.port = i;
     inp.parent = this;
   }
 
-  init_links(params);
+  mtu_ = params.find<SST::UnitAlgebra>("mtu").getRoundedValue();
+
+  if (link_credits_ < mtu_){
+    spkt_abort_printf("MTU %d is larger than credits %d", mtu_, link_credits_);
+  }
+
+  initLinks(params);
 }
 
-pisces_switch::~pisces_switch()
+PiscesSwitch::~PiscesSwitch()
 {
   if (xbar_) delete xbar_;
   int nbuffers = out_buffers_.size();
@@ -150,105 +157,95 @@ pisces_switch::~pisces_switch()
 }
 
 void
-pisces_switch::connect_output(
-  sprockit::sim_parameters* port_params,
+PiscesSwitch::connectOutput(
   int src_outport,
   int dst_inport,
-  event_link* link)
+  EventLink::ptr&& link)
 {
-  pisces_buffer* out_buffer = new pisces_buffer(port_params, this, router_->num_vc());
-  out_buffer->set_stat_collector(buf_stats_);
+  double scale_factor = top_->portScaleFactor(my_addr_, src_outport);
+
+  PiscesBuffer* out_buffer = new PiscesBuffer(sprockit::printf("%s:buffer%d",top_->switchIdToName(my_addr_).c_str(), src_outport),
+                                              arbType_, link_bw_ * scale_factor, mtu_,
+                                              this, router_->numVC());
   int buffer_inport = 0;
-  auto out_link = allocate_local_link(xbar_->send_latency(), this, out_buffer->payload_handler());
-  xbar_->set_output(port_params, src_outport, buffer_inport, out_link);
-  auto in_link = allocate_local_link(out_buffer->credit_latency(), this, xbar_->credit_handler());
-  out_buffer->set_input(port_params, buffer_inport, src_outport, in_link);
+  std::string out_port_name = sprockit::printf("buffer-out%d", src_outport);
+  auto out_link = allocateSubLink(out_port_name, Timestamp(), this, //don't put latency on xbar
+                newLinkHandler(out_buffer, &PiscesBuffer::handlePayload));
+  xbar_->setOutput(src_outport, buffer_inport, std::move(out_link), link_credits_ * scale_factor);
+
+  std::string in_port_name = sprockit::printf("xbar-credit%d", src_outport);
+  auto in_link = allocateSubLink(in_port_name, Timestamp(), this, xbar_->creditHandler()); //don't put latency on internal credits
+  out_buffer->setInput(buffer_inport, src_outport, std::move(in_link));
   out_buffers_[src_outport] = out_buffer;
 
-
-  out_buffer->set_output(port_params, src_outport, dst_inport, link);
+  out_buffer->setOutput(src_outport, dst_inport, std::move(link), link_credits_ * scale_factor);
   out_buffers_[src_outport] = out_buffer;
 }
 
 void
-pisces_switch::input_port::handle(event *ev)
+PiscesSwitch::InputPort::handle(Event *ev)
 {
-  pisces_packet* payload = static_cast<pisces_packet*>(ev);
-  parent->rter()->route(payload);
-  payload->reset_stages(payload->edge_outport(), 0);
-  payload->set_inport(this->port);
-  parent->xbar()->handle_payload(payload);
+  PiscesPacket* payload = static_cast<PiscesPacket*>(ev);
+  parent->router()->route(payload);
+  payload->resetStages(payload->edgeOutport(), 0);
+  payload->setInport(this->port);
+  parent->xbar()->handlePayload(payload);
 }
 
 void
-pisces_switch::connect_input(
-  sprockit::sim_parameters* port_params,
-  int src_outport,
-  int dst_inport,
-  event_link* link)
+PiscesSwitch::connectInput(int src_outport, int dst_inport, EventLink::ptr&& link)
 {
   int buffer_port = 0;
-  xbar_->set_input(port_params, dst_inport, buffer_port, link);
-}
-
-timestamp
-pisces_switch::send_latency(sprockit::sim_parameters *params) const
-{
-  return params->get_time_param("send_latency");
-}
-
-timestamp
-pisces_switch::credit_latency(sprockit::sim_parameters *params) const
-{
-  return params->get_namespace("xbar")->get_time_param("credit_latency");
-}
-
-void
-pisces_switch::compatibility_check() const
-{
-  router_->compatibility_check();
-}
-
-void
-pisces_switch::deadlock_check()
-{
-  xbar_->deadlock_check();
-}
-
-void
-pisces_switch::deadlock_check(event *ev)
-{
-  xbar_->deadlock_check(ev);
+  xbar_->setInput(dst_inport, buffer_port, std::move(link));
 }
 
 int
-pisces_switch::queue_length(int port) const
+PiscesSwitch::queueLength(int port, int vc) const
 {
-  pisces_buffer* buf = static_cast<pisces_buffer*>(out_buffers_[port]);
-  return buf->queue_length();
+  PiscesBuffer* buf = static_cast<PiscesBuffer*>(out_buffers_[port]);
+  return buf->queueLength(vc);
 }
 
 std::string
-pisces_switch::to_string() const
+PiscesSwitch::toString() const
 {
   return sprockit::printf("packet flow switch %d", int(my_addr_));
 }
 
-link_handler*
-pisces_switch::credit_handler(int port)
+void
+PiscesSwitch::setup()
+{
+  for (auto* buf : out_buffers_){
+    if (buf) buf->setup();
+  }
+  xbar_->setup();
+  PiscesAbstractSwitch::setup();
+}
+
+void
+PiscesSwitch::init(unsigned int phase)
+{
+  for (auto* buf : out_buffers_){
+    if (buf) buf->init(phase);
+  }
+  xbar_->init(phase);
+}
+
+LinkHandler*
+PiscesSwitch::creditHandler(int port)
 {
   if (port >= out_buffers_.size()){
     spkt_abort_printf("Got invalid port %d request for credit handler - max is %d",
                       port, out_buffers_.size() - 1);
   }
-  return new_link_handler(out_buffers_[port], &pisces_sender::handle_credit);
+  return newLinkHandler(out_buffers_[port], &PiscesSender::handleCredit);
 }
 
-link_handler*
-pisces_switch::payload_handler(int port)
+LinkHandler*
+PiscesSwitch::payloadHandler(int port)
 {
-  input_port* inp = &inports_[port];
-  return new_link_handler(inp, &input_port::handle);
+  InputPort* inp = &inports_[port];
+  return newLinkHandler(inp, &InputPort::handle);
 }
 
 }

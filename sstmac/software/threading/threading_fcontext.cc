@@ -33,35 +33,41 @@ fcontext_t make_fcontext(void * sp, size_t size, pfn_fcontext corofn);
 namespace sstmac {
 namespace sw {
 
-class threading_fcontext : public thread_context
+class ThreadingFContext : public ThreadContext
 {
  private:
   static void start_fcontext_thread(fcontext_transfer_t t)
   {
-    threading_fcontext* fctx = (threading_fcontext*) t.data; 
+    ThreadingFContext* fctx = (ThreadingFContext*) t.data;
     fctx->transfer_ = t.ctx;
     (*fctx->fxn_)(fctx->args_);
   }
 
  public:
-  FactoryRegister("fcontext", thread_context, threading_fcontext)
+  SST_ELI_REGISTER_DERIVED(
+    ThreadContext,
+    ThreadingFContext,
+    "macro",
+    "fcontext",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "uses fcontext for fast context switching")
 
-  virtual ~threading_fcontext() {}
+  virtual ~ThreadingFContext() {}
 
-  threading_fcontext(sprockit::sim_parameters* params){}
+  ThreadingFContext(){}
 
-  thread_context* copy() const override {
+  ThreadContext* copy() const override {
     //parameters never actually used
-    return new threading_fcontext(nullptr);
+    return new ThreadingFContext;
   }
 
-  void init_context() override {}
+  void initContext() override {}
 
-  void destroy_context() override {}
+  void destroyContext() override {}
 
-  void start_context(void *stack, size_t sz,
+  void startContext(void *stack, size_t sz,
       void (*func)(void*), void *args,
-      thread_context* from) override {
+      ThreadContext* from) override {
     fxn_ = func;
     void* stacktop = (char*) stack + sz;
     ctx_ = make_fcontext(stacktop, sz, start_fcontext_thread);
@@ -69,21 +75,21 @@ class threading_fcontext : public thread_context
     ctx_ = jump_fcontext(ctx_, this).ctx;
   }
 
-  void pause_context(thread_context* to) override {
-    threading_fcontext* fctx = static_cast<threading_fcontext*>(to);
+  void pauseContext(ThreadContext* to) override {
+    ThreadingFContext* fctx = static_cast<ThreadingFContext*>(to);
     transfer_ = jump_fcontext(transfer_, nullptr).ctx;
   }
 
-  void resume_context(thread_context* from) override {
+  void resumeContext(ThreadContext* from) override {
     auto newctx = jump_fcontext(ctx_, nullptr).ctx;
     ctx_ = newctx;
   }
 
-  void complete_context(thread_context* to) override {
+  void completeContext(ThreadContext* to) override {
     jump_fcontext(transfer_, nullptr);
   }
 
-  void jump_context(thread_context* to) override {
+  void jumpContext(ThreadContext* to) override {
     spkt_abort_printf("error: fcontext interface does not support jump_context feature\n"
                       "must set SSTMAC_THREADING=pth or ucontext");
   }

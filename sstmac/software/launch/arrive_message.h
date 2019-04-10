@@ -46,13 +46,12 @@ Questions? Contact sst-macro-help@sandia.gov
 #define SSTMAC_SOFTWARE_LIBRARIES_LAUNCH_MESSAGES_ARRIVE_MESSAGE_H_INCLUDED
 
 #include <sstmac/software/launch/launch_message.h>
-
 #include <sstmac/software/launch/launch_info.h>
 
 namespace sstmac {
 namespace sw {
 
-class arrive_message : public launch_event
+class ArriveMessage : public LaunchEvent
 {
 
  public:
@@ -60,7 +59,7 @@ class arrive_message : public launch_event
    * Stringifier
    * @return String description
    */
-  virtual std::string to_string() const override {
+  virtual std::string toString() const override {
     return "arrive_message";
   }
 

@@ -49,31 +49,31 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-fully_connected::fully_connected(sprockit::sim_parameters* params) :
-  structured_topology(params)
+FullyConnected::FullyConnected(SST::Params& params) :
+  StructuredTopology(params)
 {
   std::vector<int> args;
-  params->get_vector_param("geometry", args);
+  params.find_array("geometry", args);
   size_ = args[0];
 }
 
 void
-fully_connected::endpoints_connected_to_injection_switch(switch_id swaddr,
-                                   std::vector<injection_port>& nodes) const
+FullyConnected::endpointsConnectedToInjectionSwitch(SwitchId swaddr,
+                                   std::vector<InjectionPort>& nodes) const
 {
   nodes.resize(concentration_);
   for (int i = 0; i < concentration_; i++) {
-    injection_port& port = nodes[i];
+    InjectionPort& port = nodes[i];
     port.nid = swaddr*concentration_ + i;
-    port.switch_port = num_switches() + i;
+    port.switch_port = numSwitches() + i;
     port.ep_port = 0;
   }
 }
 
 void
-fully_connected::connected_outports(switch_id src, std::vector<connection>& conns) const
+FullyConnected::connectedOutports(SwitchId src, std::vector<Connection>& conns) const
 {
-  int n_switches = num_switches();
+  int n_switches = numSwitches();
   conns.resize(n_switches - 1);
   int cidx = 0;
   for (int i=0; i < n_switches; ++i){
@@ -85,12 +85,6 @@ fully_connected::connected_outports(switch_id src, std::vector<connection>& conn
     conns[cidx].dst_inport = src;
     ++cidx;
   }
-}
-
-void
-fully_connected::configure_individual_port_params(switch_id src, sprockit::sim_parameters *switch_params) const
-{
-  topology::configure_individual_port_params(0, num_switches(), switch_params);
 }
 
 }

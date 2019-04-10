@@ -65,32 +65,32 @@ Simulation Validation:
 Timings for Rank 0
         Timer        # Calls    Avg/Call (s)   Total (s)    % Loop
 ___________________________________________________________________
-total                      1       0.2509        0.2509      201.44
+total                      1       0.2508        0.2508      201.39
 loop                       1       0.1245        0.1245      100.00
 timestep                   1       0.1245        0.1245       99.99
   position                 1       0.0001        0.0001        0.10
   velocity                 2       0.0001        0.0002        0.19
-  redistribute             2       0.0003        0.0005        0.40
-    atomHalo               2       0.0003        0.0005        0.40
-  force                    2       0.1238        0.2476      198.78
-    eamHalo                2       0.0001        0.0002        0.13
-commHalo                  12       0.0000        0.0004        0.35
-commReduce                12       0.0000        0.0002        0.15
+  redistribute             2       0.0002        0.0004        0.35
+    atomHalo               2       0.0002        0.0004        0.35
+  force                    2       0.1238        0.2476      198.85
+    eamHalo                2       0.0000        0.0001        0.07
+commHalo                  12       0.0000        0.0003        0.24
+commReduce                12       0.0000        0.0001        0.08
 
 Timing Statistics Across 4 Ranks:
         Timer        Rank: Min(s)       Rank: Max(s)      Avg(s)    Stdev(s)
 _____________________________________________________________________________
-total                0:    0.2509       3:    0.2509      0.2509      0.0000
+total                0:    0.2508       0:    0.2508      0.2508      0.0000
 loop                 0:    0.1245       0:    0.1245      0.1245      0.0000
 timestep             0:    0.1245       0:    0.1245      0.1245      0.0000
   position           0:    0.0001       0:    0.0001      0.0001      0.0000
   velocity           0:    0.0002       0:    0.0002      0.0002      0.0000
-  redistribute       0:    0.0005       0:    0.0005      0.0005      0.0000
-    atomHalo         0:    0.0005       0:    0.0005      0.0005      0.0000
+  redistribute       0:    0.0004       0:    0.0004      0.0004      0.0000
+    atomHalo         0:    0.0004       0:    0.0004      0.0004      0.0000
   force              0:    0.2476       0:    0.2476      0.2476      0.0000
-    eamHalo          0:    0.0002       0:    0.0002      0.0002      0.0000
-commHalo             0:    0.0004       0:    0.0004      0.0004      0.0000
-commReduce           0:    0.0002       0:    0.0002      0.0002      0.0000
+    eamHalo          0:    0.0001       0:    0.0001      0.0001      0.0000
+commHalo             0:    0.0003       0:    0.0003      0.0003      0.0000
+commReduce           3:    0.0001       0:    0.0001      0.0001      0.0000
 
 ---------------------------------------------------
  Average atom update rate:       0.00 us/atom/task
@@ -106,4 +106,4 @@ commReduce           0:    0.0002       0:    0.0002      0.0002      0.0000
  Average atom rate:              0.00 atoms/us
 ---------------------------------------------------
 
-Simulation is complete, simulated time: 250.98 ms
+Simulation is complete, simulated time: 250.804 ms

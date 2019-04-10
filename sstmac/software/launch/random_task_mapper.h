@@ -54,22 +54,28 @@ namespace sw {
 /**
  * An index strategy that allocates indices using a round robin.
  */
-class random_task_mapper : public task_mapper
+class RandomTaskMapper : public TaskMapper
 {
-  FactoryRegister("random", task_mapper, random_task_mapper,
-              "randomly assigns tasks to nodes")
  public:
-  random_task_mapper(sprockit::sim_parameters* params);
+  SST_ELI_REGISTER_DERIVED(
+    TaskMapper,
+    RandomTaskMapper,
+    "macro",
+    "random",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "randomly assigns tasks to nodes")
 
-  std::string to_string() const override {
+  RandomTaskMapper(SST::Params& params);
+
+  std::string toString() const override {
     return "random task mapper";
   }
 
-  virtual ~random_task_mapper() throw ();
+  virtual ~RandomTaskMapper() throw ();
 
-  virtual void map_ranks(const ordered_node_set& nodes,
+  virtual void mapRanks(const ordered_node_set& nodes,
     int ppn,
-    std::vector<node_id> &result,
+    std::vector<NodeId> &result,
     int nproc) override;
 
  protected:

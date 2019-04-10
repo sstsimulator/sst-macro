@@ -22,7 +22,7 @@ static std::vector<std::string> split_path(const std::string& searchPath)
   return paths;
 }
 
-std::string load_extern_path_str(){
+std::string loadExternPathStr(){
   const char* libpath_str = getenv("SST_LIB_PATH");
   if (libpath_str){
     return libpath_str;
@@ -31,7 +31,7 @@ std::string load_extern_path_str(){
   }
 }
 
-void* load_extern_library(const std::string& libname, const std::string& searchPath)
+void* loadExternLibrary(const std::string& libname, const std::string& searchPath)
 {
   struct stat sbuf;
   int ret = stat(libname.c_str(), &sbuf);
@@ -68,12 +68,12 @@ void* load_extern_library(const std::string& libname, const std::string& searchP
   return handle;
 }
 
-void* load_extern_library(const std::string& libname)
+void* loadExternLibrary(const std::string& libname)
 {
-  return load_extern_library(libname, load_extern_path_str());
+  return loadExternLibrary(libname, loadExternPathStr());
 }
 
-void unload_extern_library(void* handle)
+void unloadExternLibrary(void* handle)
 {
   dlclose(handle);
 }

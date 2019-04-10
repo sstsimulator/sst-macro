@@ -51,7 +51,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sumi {
 
 bool
-mpi_api::test(MPI_Request *request, MPI_Status *status, int& tag, int& source)
+MpiApi::test(MPI_Request *request, MPI_Status *status, int& tag, int& source)
 {
   _start_mpi_call_(MPI_Test);
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request, "MPI_Test(...)");
@@ -60,29 +60,29 @@ mpi_api::test(MPI_Request *request, MPI_Status *status, int& tag, int& source)
     return true;
   }
 
-  mpi_request* reqPtr = get_request(*request);
-  if (reqPtr->is_complete()){
+  MpiRequest* reqPtr = getRequest(*request);
+  if (reqPtr->isComplete()){
     if (status != MPI_STATUS_IGNORE){
       *status = reqPtr->status();
     }
     tag = reqPtr->status().MPI_TAG;
     source = reqPtr->status().MPI_SOURCE;
-    erase_request_ptr(*request);
+    eraseRequestPtr(*request);
     *request = MPI_REQUEST_NULL;
     return true;
   } else {
     if (test_delay_us_){
-      queue_->forward_progress(test_delay_us_*1e-6);
+      queue_->forwardProgress(test_delay_us_*1e-6);
     }
     return false;
   }
 }
 
 int
-mpi_api::test(MPI_Request *request, int *flag, MPI_Status *status)
+MpiApi::test(MPI_Request *request, int *flag, MPI_Status *status)
 {
   MPI_Request req_cpy = *request;
-  auto start_clock = trace_clock();
+  auto start_clock = traceClock();
   int tag, source;
   _start_mpi_call_(MPI_Test);
   if (test(request, status, tag, source)){
@@ -91,7 +91,7 @@ mpi_api::test(MPI_Request *request, int *flag, MPI_Status *status)
   } else {
     *flag = 0;
   }
-  end_api_call();
+  endAPICall();
 
 #ifdef SSTMAC_OTF2_ENABLED
   if (otf2_writer_){
@@ -106,7 +106,7 @@ mpi_api::test(MPI_Request *request, int *flag, MPI_Status *status)
 }
 
 int
-mpi_api::testall(int count, MPI_Request array_of_requests[], int *flag, MPI_Status array_of_statuses[])
+MpiApi::testall(int count, MPI_Request array_of_requests[], int *flag, MPI_Status array_of_statuses[])
 {
 #ifdef SSTMAC_OTF2_ENABLED
   auto start_clock = trace_clock();
@@ -135,7 +135,7 @@ mpi_api::testall(int count, MPI_Request array_of_requests[], int *flag, MPI_Stat
     mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request,
       "MPI_Testall(%d,...)", count);
   }
-  end_api_call();
+  endAPICall();
 
 #ifdef SSTMAC_OTF2_ENABLED
   if (otf2_writer_){
@@ -148,7 +148,7 @@ mpi_api::testall(int count, MPI_Request array_of_requests[], int *flag, MPI_Stat
 }
 
 int
-mpi_api::testany(int count, MPI_Request array_of_requests[], int *indx, int *flag, MPI_Status *status)
+MpiApi::testany(int count, MPI_Request array_of_requests[], int *indx, int *flag, MPI_Status *status)
 {
 #ifdef SSTMAC_OTF2_ENABLED
   auto start_clock = trace_clock();
@@ -157,7 +157,7 @@ mpi_api::testany(int count, MPI_Request array_of_requests[], int *indx, int *fla
   dumpi::OTF2_Writer::mpi_status_t stat;
 #endif
 
-  start_api_call();
+  startAPICall();
   if (count == 0){
     *flag = 1;
     return MPI_SUCCESS;
@@ -176,7 +176,7 @@ mpi_api::testany(int count, MPI_Request array_of_requests[], int *indx, int *fla
       break;
     }
   }
-  end_api_call();
+  endAPICall();
 
 #ifdef SSTMAC_OTF2_ENABLED
   if (otf2_writer_){
@@ -189,7 +189,7 @@ mpi_api::testany(int count, MPI_Request array_of_requests[], int *indx, int *fla
 }
 
 int
-mpi_api::testsome(int incount, MPI_Request array_of_requests[], int *outcount,
+MpiApi::testsome(int incount, MPI_Request array_of_requests[], int *outcount,
                   int array_of_indices[], MPI_Status array_of_statuses[])
 {
 #ifdef SSTMAC_OTF2_ENABLED
@@ -199,7 +199,7 @@ mpi_api::testsome(int incount, MPI_Request array_of_requests[], int *outcount,
   std::vector<dumpi::OTF2_Writer::mpi_status_t> statuses(incount);
 #endif
 
-  start_api_call();
+  startAPICall();
   int numComplete = 0;
   bool ignore_status = array_of_statuses == MPI_STATUSES_IGNORE;
   for (int i=0; i < incount; ++i){
@@ -214,7 +214,7 @@ mpi_api::testsome(int incount, MPI_Request array_of_requests[], int *outcount,
     }
   }
   *outcount = numComplete;
-  end_api_call();
+  endAPICall();
 
 #ifdef SSTMAC_OTF2_ENABLED
   if(otf2_writer_){

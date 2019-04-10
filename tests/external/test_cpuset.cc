@@ -56,7 +56,7 @@ pthread_run(void* args){
 
 #define sstmac_app_name user_app_cxx
 
-int main(int argc, char** argv)
+int USER_MAIN(int argc, char** argv)
 {
   int nthread = 10;
   pthread_attr_t* attrs = new pthread_attr_t[nthread];

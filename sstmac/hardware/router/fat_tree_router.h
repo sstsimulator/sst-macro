@@ -57,48 +57,54 @@ namespace hw {
  * Router encapsulating the special routing computations that must occur on
  * a fat tree topology.
  */
-class fat_tree_router :
-  public router
+class FatTreeRouter : public Router
 {
-  using header = packet::header;
-  FactoryRegister("fat_tree", router, fat_tree_router)
+  using header = Packet::Header;
  public:
-  fat_tree_router(sprockit::sim_parameters* params, topology* top, network_switch* netsw);
+  SST_ELI_REGISTER_DERIVED(
+    Router,
+    FatTreeRouter,
+    "macro",
+    "fat_tree",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "router implementing fat tree routing")
 
-  virtual ~fat_tree_router() {}
+  FatTreeRouter(SST::Params& params, Topology* top, NetworkSwitch* netsw);
 
-  std::string to_string() const override {
+  virtual ~FatTreeRouter() {}
+
+  std::string toString() const override {
     return "fat tree router";
   }
 
-  void route(packet* pkt) override;
+  void route(Packet* pkt) override;
 
-  void rotate_up_next();
+  void rotateUpNext();
 
-  void rotate_subtree_next(int tree);
+  void rotateSubtreeNext(int tree);
 
-  void rotate_leaf_next(int leaf);
+  void rotateLeafNext(int leaf);
 
-  //int get_up_port(int next_tree);
-  int get_up_port();
+  //int get_upPort(int next_tree);
+  int getUpPort();
 
   /**
    * @brief get_down_port
    * @param path Either a subtree or a leaf offset
    * @return
    */
-  int get_down_port(int path);
+  int getDownPort(int path);
 
-  int num_vc() const override { return 1; }
+  int numVC() const override { return 1; }
 
  private:
 
-  fat_tree* ft_;
+  FatTree* ft_;
 
   int up_next_;
   int my_row_;
   int my_tree_;
-  int first_up_port_;
+  int firstUpPort_;
   int num_up_ports_;
 
   // routing -- down (a little more complicated)

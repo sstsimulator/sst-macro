@@ -52,21 +52,23 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/task_id.h>
 
 /** Automatically inherit the errors */
-using sprockit::illformed_error;
-using sprockit::input_error;
-using sprockit::invalid_key_error;
-using sprockit::io_error;
-using sprockit::iterator_error;
-using sprockit::library_error;
-using sprockit::memory_error;
-using sprockit::null_error;
-using sprockit::os_error;
-using sprockit::range_error;
-using sprockit::spkt_error;
+using sprockit::IllformedError;
+using sprockit::InputError;
+using sprockit::InvalidKeyError;
+using sprockit::IOError;
+using sprockit::IteratorError;
+using sprockit::LibraryError;
+using sprockit::MemoryError;
+using sprockit::NullError;
+using sprockit::OSError;
+using sprockit::RangeError;
+using sprockit::SpktError;
 
 extern "C" double sstmac_now();
+extern "C" void sstmac_sleep_precise(double secs);
 #else
 double sstmac_now();
+void sstmac_sleep_precise(double secs);
 #endif
 
 #endif

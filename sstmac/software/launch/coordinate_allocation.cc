@@ -63,19 +63,19 @@ RegisterKeywords(
 namespace sstmac {
 namespace sw {
 
-coordinate_allocation::coordinate_allocation(sprockit::sim_parameters* params) :
-  node_allocator(params)
+CoordinateAllocation::CoordinateAllocation(SST::Params& params) :
+  NodeAllocator(params)
 {
-  coord_file_ = params->get_param("coordinate_file");
+  coord_file_ = params.find<std::string>("coordinate_file");
 }
 
 void
-coordinate_allocation::read_coordinate_file(
-  parallel_runtime* rt,
+CoordinateAllocation::readCoordinateFile(
+  ParallelRuntime* rt,
   const std::string &file,
   std::vector<hw::coordinates> &node_list)
 {
-  std::istream* instr = rt->bcast_file_stream(file);
+  std::istream* instr = rt->bcastFileStream(file);
   std::istream& in = *instr;
 
   int num_nodes;
@@ -97,22 +97,22 @@ coordinate_allocation::read_coordinate_file(
 }
 
 bool
-coordinate_allocation::allocate(
+CoordinateAllocation::allocate(
   int nnode_requested,
   const ordered_node_set& available,
   ordered_node_set& allocation) const
 {
   std::vector<hw::coordinates> node_list;
-  read_coordinate_file(rt_, coord_file_, node_list);
+  readCoordinateFile(rt_, coord_file_, node_list);
 
-  hw::cartesian_topology* regtop = topology_->cart_topology();
+  hw::CartesianTopology* regtop = topology_->cartTopology();
 
   int num_coords = node_list[0].size();
   int top_ndim = regtop->ndimensions();
   int nps = regtop->concentration();
   if (nps > 1) ++top_ndim;
   if (top_ndim != num_coords){
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
         "coordinate_allocation::read_coordinate_file: mismatch between topology ndim=%d and file ncoords=%d, concentration=%d",
          top_ndim, num_coords, nps);
   }
@@ -124,10 +124,10 @@ coordinate_allocation::allocate(
 
   for (int i=0; i < nnode_requested; ++i){
     const hw::coordinates& coords = node_list[i];
-    node_id nid = regtop->node_addr(coords);
+    NodeId nid = regtop->node_addr(coords);
     debug_printf(sprockit::dbg::allocation,
         "adding node %d : %s to allocation",
-        int(nid), stl_string(coords).c_str());
+        int(nid), stlString(coords).c_str());
     allocation.insert(nid);
   }
 

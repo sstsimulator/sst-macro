@@ -42,25 +42,25 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sstmac/common/runtime.h>
 #include <sprockit/statics.h>
-#include <sprockit/delete.h>
+#include <sstmac/common/runtime.h>
 #include <sstmac/software/process/operating_system.h>
+#include <sstmac/software/launch/job_launcher.h>
+#include <sstmac/software/launch/task_mapping.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/hardware/node/node.h>
-#include <sstmac/software/launch/job_launcher.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/backends/common/parallel_runtime.h>
 
 namespace sstmac {
 
-bool runtime::do_deadlock_check_ = false;
-std::list<deadlock_check*> runtime::deadlock_checks_;
-sw::job_launcher* runtime::launcher_ = nullptr;
-hw::topology* runtime::topology_ = nullptr;
+bool Runtime::do_deadlock_check_ = false;
+std::list<deadlock_check*> Runtime::deadlock_checks_;
+sw::JobLauncher* Runtime::launcher_ = nullptr;
+hw::Topology* Runtime::topology_ = nullptr;
 
 void
-runtime::check_deadlock()
+Runtime::checkDeadlock()
 {
   if (!do_deadlock_check_) return;
 
@@ -72,21 +72,21 @@ runtime::check_deadlock()
 }
 
 void
-runtime::clear_statics()
+Runtime::clearStatics()
 {
-  //hw::interconnect::clear_static_interconnect();
-  //parallel_runtime::clear_static_runtime();
-  hw::topology::clear_static_topology();
+  //hw::interconnect::clear_staticInterconnect();
+  //parallel_runtime::clearStaticRuntime();
+  hw::Topology::clearStaticTopology();
 }
 
-node_id
-runtime::current_node()
+NodeId
+Runtime::current_node()
 {
-  return sw::operating_system::current_node_id();
+  return sw::OperatingSystem::currentNodeId();
 }
 
 void
-runtime::delete_statics()
+Runtime::deleteStatics()
 {
   //not owned by runtime - do not delete
   //if (topology_) delete topology_;
@@ -95,17 +95,17 @@ runtime::delete_statics()
     delete chk;
   }
   deadlock_checks_.clear();
-  clear_statics();
+  clearStatics();
 }
 
-node_id
-runtime::node_for_task(sw::app_id aid, sw::task_id tid)
+NodeId
+Runtime::nodeForTask(sw::AppId aid, sw::TaskId tid)
 {
-  return sstmac::sw::task_mapping::global_mapping(aid)->rank_to_node(tid);
+  return sstmac::sw::TaskMapping::globalMapping(aid)->rankToNode(tid);
 }
 
 void
-runtime::finish()
+Runtime::finish()
 {
 }
 

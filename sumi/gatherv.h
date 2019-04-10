@@ -52,65 +52,60 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-class btree_gatherv_actor :
-  public dag_collective_actor
+class BtreeGathervActor :
+  public DagCollectiveActor
 {
 
  public:
-  std::string
-  to_string() const override {
+  std::string toString() const override {
     return "btree gatherv actor";
   }
 
-  btree_gatherv_actor(int root, int* recv_counts) :
-    root_(root), recv_counts_(recv_counts) {}
+  BtreeGathervActor(CollectiveEngine* engine, int root, void *dst, void *src,
+                      int sendcnt, int *recv_counts, int type_size, int tag, int cq_id, Communicator* comm) :
+    DagCollectiveActor(Collective::gatherv, engine, dst, src, type_size, tag, cq_id, comm),
+    root_(root), sendcnt_(sendcnt), recv_counts_(recv_counts) {}
 
  protected:
-  void finalize_buffers() override;
-  void init_buffers(void *dst, void *src) override;
-  void init_dag() override;
-  void init_tree() override;
+  void finalizeBuffers() override;
+  void initBuffers() override;
+  void initDag() override;
+  void initTree() override;
 
-  void buffer_action(void *dst_buffer, void *msg_buffer, action* ac) override;
+  void bufferAction(void *dst_buffer, void *msg_buffer, Action* ac) override;
 
  private:
   int root_;
   int midpoint_;
   int log2nproc_;
+  int sendcnt_;
   int* recv_counts_;
 
 };
 
-class btree_gatherv :
-  public dag_collective
+class BtreeGatherv :
+  public DagCollective
 {
 
  public:
-  btree_gatherv(int root) : root_(root){}
+  BtreeGatherv(CollectiveEngine* engine, int root, void *dst, void *src,
+                int sendcnt, int *recv_counts, int type_size, int tag, int cq_id, Communicator* comm)
+    : DagCollective(gatherv, engine, dst, src, type_size, tag, cq_id, comm),
+      recv_counts_(recv_counts), sendcnt_(sendcnt), root_(root){}
 
-  btree_gatherv() : root_(-1){}
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "btree gatherv";
   }
 
-  dag_collective_actor* new_actor() const override {
-    return new btree_gatherv_actor(root_, recv_counts_);
-  }
+  DagCollectiveActor* newActor() const override {
+    return new BtreeGathervActor(engine_, root_, dst_buffer_, src_buffer_, sendcnt_,
+                                   recv_counts_, type_size_, tag_, cq_id_, comm_);
 
-  dag_collective* clone() const override {
-    return new btree_gatherv(root_);
-  }
-
-  void init_root(int root) override {
-    root_ = root;
-  }
-
-  void init_recv_counts(int* counts) override {
-    recv_counts_ = counts;
   }
 
  private:
+  int sendcnt_;
   int* recv_counts_;
   int root_;
 

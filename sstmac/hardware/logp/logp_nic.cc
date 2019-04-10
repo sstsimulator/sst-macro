@@ -46,6 +46,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/logp/logp_switch.h>
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/hardware/node/node.h>
+#include <sstmac/software/process/operating_system.h>
 #include <sstmac/common/event_callback.h>
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
@@ -54,110 +55,79 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-logp_nic::logp_nic(sprockit::sim_parameters* params, node* parent) :
-  next_out_free_(0),
-  nic(params, parent)
+LogPNIC::LogPNIC(SST::Params& params, Node* parent) :
+  next_out_free_(),
+  NIC(params, parent)
 {
-  ack_handler_ = new_handler(parent, &node::handle);
-  sprockit::sim_parameters* inj_params = params->get_namespace("injection");
-  double inj_bw = inj_params->get_bandwidth_param("bandwidth");
-  inj_bw_inverse_ = 1.0/inj_bw;
-  inj_lat_ = inj_params->get_time_param("latency");
+  SST::Params inj_params = params.find_scoped_params("injection");
+  inj_byte_delay_ = Timestamp(inj_params.find<SST::UnitAlgebra>("bandwidth").getValue().inverse().toDouble());
+  inj_lat_ = Timestamp(inj_params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
 }
 
-timestamp
-logp_nic::send_latency(sprockit::sim_parameters *params) const
+LogPNIC::~LogPNIC()
 {
-  return params->get_time_param("latency");
-}
-
-timestamp
-logp_nic::credit_latency(sprockit::sim_parameters *params) const
-{
-  return params->get_time_param("latency");
-}
-
-logp_nic::~logp_nic()
-{
-  if (ack_handler_) delete ack_handler_;
 }
 
 void
-logp_nic::mtl_handle(event *ev)
+LogPNIC::mtlHandle(Event *ev)
 {
-  timestamp now_ = now();
-  message* msg = static_cast<message*>(ev);
-  if (msg->byte_length() < negligible_size_){
-    recv_message(msg);
+  GlobalTimestamp now_ = now();
+  NicEvent* nev = static_cast<NicEvent*>(ev);
+  NetworkMessage* msg = nev->msg();
+  delete nev;
+  if (msg->byteLength() < negligibleSize_){
+    recvMessage(msg);
   } else {
-    timestamp time_to_recv = inj_bw_inverse_*msg->byte_length();
-    timestamp recv_start = now_ - time_to_recv;
+    Timestamp time_to_recv = inj_byte_delay_*msg->byteLength();
+    GlobalTimestamp recv_start = now_ - time_to_recv;
     if (recv_start > next_in_free_){
       next_in_free_ = now_;
-      recv_message(msg);
+      recvMessage(msg);
     } else {
       next_in_free_ += time_to_recv;
-      send_self_event_queue(next_in_free_, new_callback(this, &nic::recv_message, msg));
+      sendExecutionEvent(next_in_free_, newCallback(this, &NIC::recvMessage, msg));
     }
   }
 }
 
 void
-logp_nic::do_send(network_message* msg)
+LogPNIC::doSend(NetworkMessage* msg)
 {
-  uint64_t num_bytes = msg->byte_length();
-  timestamp now_ = now();
-  timestamp start_send = now_ > next_out_free_ ? now_ : next_out_free_;
-  nic_debug("logp injection queued at %8.4e, sending at %8.4e for message %s",
-            now_.sec(), start_send.sec(), msg->to_string().c_str());
+  uint64_t num_bytes = msg->byteLength();
+  GlobalTimestamp now_ = now();
+  GlobalTimestamp start_send = now_ > next_out_free_ ? now_ : next_out_free_;
+  nic_debug("logp injection queued at %8.4e, sending at %8.4e for %s",
+            now_.sec(), start_send.sec(), msg->toString().c_str());
 
-  timestamp time_to_inject = inj_lat_ + timestamp(inj_bw_inverse_ * num_bytes);
+  Timestamp time_to_inject = inj_lat_ + inj_byte_delay_ * num_bytes;
   next_out_free_ = start_send + time_to_inject;
 
-  if (msg->needs_ack()){
-    network_message* acker = msg->clone_injection_ack();
-    auto ack_ev = new_callback(parent_, &node::handle, acker);
-    parent_->send_self_event_queue(next_out_free_, ack_ev);
+  if (msg->needsAck()){
+    NetworkMessage* acker = msg->cloneInjectionAck();
+    auto ack_ev = newCallback(parent_, &Node::handle, acker);
+    parent_->sendExecutionEvent(next_out_free_, ack_ev);
   }
 
-#if SSTMAC_INTEGRATED_SST_CORE
-  timestamp extra_delay = start_send - now_;
-  logp_switch_->send_extra_delay(extra_delay, msg);
-#else
-  logp_switch_->send(start_send, msg);
-#endif
+  Timestamp extra_delay = start_send - now_;
+  logp_link_->send(extra_delay, new NicEvent(msg));
 }
 
 void
-logp_nic::connect_output(
-  sprockit::sim_parameters* params,
-  int src_outport,
-  int dst_inport,
-  event_link* link)
+LogPNIC::connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link)
 {
-#if SSTMAC_INTEGRATED_SST_CORE
-  logp_switch_ = link;
-#endif
+  logp_link_ = std::move(link);
 }
 
 void
-logp_nic::connect_input(
-  sprockit::sim_parameters* params,
-  int src_outport,
-  int dst_inport,
-  event_link* link)
+LogPNIC::connectInput(int src_outport, int dst_inport, EventLink::ptr&& link)
 {
   //nothing needed
 }
 
-link_handler*
-logp_nic::payload_handler(int port)
+LinkHandler*
+LogPNIC::payloadHandler(int port)
 {
-#if SSTMAC_INTEGRATED_SST_CORE
-  return new_link_handler(this, &nic::mtl_handle);
-#else
-  return mtl_handler();
-#endif
+  return newLinkHandler(this, &NIC::mtlHandle);
 }
 
 }

@@ -53,33 +53,33 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-stack_alloc::chunk_set stack_alloc::chunks_;
-size_t stack_alloc::suggested_chunk_ = 0;
-size_t stack_alloc::stacksize_ = 0;
+StackAlloc::chunk_set StackAlloc::chunks_;
+size_t StackAlloc::suggested_chunk_ = 0;
+size_t StackAlloc::stacksize_ = 0;
+bool StackAlloc::protect_stacks_ = false;
 
 void
-stack_alloc::init(sprockit::sim_parameters *params)
+StackAlloc::init(SST::Params& params)
 {
   if (stacksize_ != 0){
     return; //we are good
   }
 
-  sstmac_global_stacksize = params->get_optional_byte_length_param("stack_size", 1 << 17);
+  sstmac_global_stacksize = params.find<SST::UnitAlgebra>("stack_size", "131072B").getRoundedValue();
   //must be a multiple of 4096
   int stack_rem = sstmac_global_stacksize % 4096;
-  if (stack_rem){
+  if (stack_rem != 0){
     sstmac_global_stacksize += (4096 - stack_rem);
   }
-
-  long suggested_chunk_size = 1<22;
-  long min_chunk_size = 8*sstmac_global_stacksize;
-  long default_chunk_size = std::max(suggested_chunk_size, min_chunk_size);
-  suggested_chunk_ = params->get_optional_byte_length_param("stack_chunk_size", default_chunk_size);
+  std::string chunk = sprockit::printf("%dB", 8*sstmac_global_stacksize);
+  suggested_chunk_ = params.find<SST::UnitAlgebra>("stack_chunk_size", chunk).getRoundedValue();
   stacksize_ = sstmac_global_stacksize;
+
+  protect_stacks_ = params.find<bool>("protect_stacks", false);
 }
 
 void
-stack_alloc::chunk_set::clear()
+StackAlloc::chunk_set::clear()
 {
   for (chunk* ch : allocations){
     delete ch;
@@ -92,22 +92,22 @@ stack_alloc::chunk_set::clear()
 // Get a stack memory region.
 //
 void*
-stack_alloc::alloc()
+StackAlloc::alloc()
 {
   static thread_lock lock;
   lock.lock();
   if (stacksize_ == 0) {
-    spkt_throw_printf(sprockit::value_error, "stackalloc::stacksize was not initialized");
+    spkt_throw_printf(sprockit::ValueError, "stackalloc::stacksize was not initialized");
   }
 
   if(chunks_.available.empty()){
     // grab a new chunk.
-    chunk* new_chunk = new chunk(stacksize_, suggested_chunk_);
+    chunk* new_chunk = new chunk(stacksize_, suggested_chunk_, protect_stacks_);
     chunks_.allocations.push_back(new_chunk);
-    void* buf = new_chunk->get_next_stack();
-    while (buf){
+    void* buf = new_chunk->getNextStack();
+    while (buf != nullptr){
       chunks_.available.push_back(buf);
-      buf = new_chunk->get_next_stack();
+      buf = new_chunk->getNextStack();
     }
   }
   void *buf = chunks_.available.back();
@@ -119,7 +119,7 @@ stack_alloc::alloc()
 //
 // Return the given memory region.
 //
-void stack_alloc::free(void* buf)
+void StackAlloc::free(void* buf)
 {
   static thread_lock lock; 
   lock.lock();
@@ -128,5 +128,5 @@ void stack_alloc::free(void* buf)
 }
 
 
-}
+} // end pf namespace sw
 } // end of namespace sstmac

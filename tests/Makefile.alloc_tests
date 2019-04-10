@@ -3,15 +3,12 @@ if !INTEGRATED_SST_CORE
 #  Allocation tests                                                                     {{{#
 #------------------------------------------------------------------------------------------#
 
-if BUILD_SUMI_MPI
+
 ALLOCTESTS = \
   test_allocation_cart \
   test_allocation_coordinate \
   test_allocation_greedy_dfly \
   test_allocation_node_id
-else
-ALLOCTESTS = 
-endif
 
 test_allocation_%.$(CHKSUF): $(SSTMACEXEC)
 	$(PYRUNTEST) 5 $(top_srcdir) $@ 't > 5 and t < 5.2' \

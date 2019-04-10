@@ -47,10 +47,10 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/replacements/mpi.h>
 #include <sstmac/common/runtime.h>
 #include <sstmac/software/process/backtrace.h>
-#include <sumi-mpi/mpi_api.h>
 #include <sstmac/skeleton.h>
 #include <sstmac/compute.h>
 #include <sprockit/keyword_registration.h>
+#include <mpi.h>
 
 #define sstmac_app_name mpi_all_collectives
 
@@ -64,7 +64,7 @@ int USER_MAIN(int argc, char** argv)
 
   MPI_Alltoall(nullptr, 100, MPI_INT, nullptr, 100, MPI_INT, MPI_COMM_WORLD);
   MPI_Allgather(nullptr, 1000, MPI_DOUBLE, nullptr, 1000, MPI_DOUBLE, MPI_COMM_WORLD);
-  MPI_Allreduce(nullptr, nullptr, 400, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+  //MPI_Allreduce(nullptr, nullptr, 400, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 
   MPI_Finalize();
   return 0;

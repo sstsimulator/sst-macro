@@ -43,6 +43,7 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sstmac/hardware/common/connection.h>
+#include <sprockit/sim_parameters.h>
 #include <sprockit/debug.h>
 
 DeclareDebugSlot(timestamp)
@@ -53,13 +54,13 @@ namespace hw {
 static bool checked_prefix_fxn = false;
 
 class timestamp_prefix_fxn :
-  public sprockit::debug_prefix_fxn
+  public sprockit::DebugPrefixFxn
 {
  public:
-  timestamp_prefix_fxn(sprockit::sim_parameters* params, event_scheduler* mgr) :
+  timestamp_prefix_fxn(SST::Params& params, EventScheduler* mgr) :
     mgr_(mgr)
   {
-    units_ = params->get_optional_param("timestamp_print_units", "s");
+    units_ = params.find<std::string>("timestamp_print_units", "s");
     if (units_ == "ns"){
       mult_ = 1e9;
     } else if (units_ == "us"){
@@ -79,21 +80,18 @@ class timestamp_prefix_fxn :
   }
 
  private:
-  event_scheduler* mgr_;
+  EventScheduler* mgr_;
   std::string units_;
   double mult_;
 
 };
 
-connectable_component::connectable_component(sprockit::sim_parameters* params,
-                      uint32_t cid,
-                      event_manager* mgr)
-  : event_component(params, cid, mgr)
+ConnectableComponent::ConnectableComponent(uint32_t cid, SST::Params& params)
+  : Component(cid, params)
 {
   if (!checked_prefix_fxn){
-    if (sprockit::debug::slot_active(sprockit::dbg::timestamp)){
-      sprockit::debug_prefix_fxn* fxn = new timestamp_prefix_fxn(params, this);
-      sprockit::debug::prefix_fxn = fxn;
+    if (sprockit::Debug::slotActive(sprockit::dbg::timestamp)){
+      sprockit::Debug::prefix_fxn = std::unique_ptr<sprockit::DebugPrefixFxn>(new timestamp_prefix_fxn(params, this));
     }
     checked_prefix_fxn = true;
   }

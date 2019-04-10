@@ -49,8 +49,8 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 namespace sw {
-extern void api_lock();
-extern void api_unlock();
+extern void apiLock();
+extern void apiUnlock();
 } }
 
 namespace sumi {
@@ -134,104 +134,104 @@ struct ldcomplex {
 };
 
 void
-mpi_api::commit_builtin_types()
+MpiApi::commitBuiltinTypes()
 {
-  sstmac::sw::api_lock();
+  sstmac::sw::apiLock();
 
-  bool need_init = !mpi_type::mpi_null->committed();
+  bool need_init = !MpiType::mpi_null->committed();
 
 #define int_precommit_type(datatype, typeObj, id) \
   if (need_init) typeObj->init_integer<datatype>(#id); \
-  commit_builtin_type(typeObj, id)
+  commitBuiltinType(typeObj.get(), id)
 
 #define op_precommit_type(datatype, typeObj, id) \
   if (need_init) typeObj->init_with_ops<datatype>(#id); \
-  commit_builtin_type(typeObj, id)
+  commitBuiltinType(typeObj.get(), id)
 
 #define noop_precommit_type(size, typeObj, id) \
-  if (need_init) typeObj->init_no_ops(#id, size); \
-  commit_builtin_type(typeObj, id)
+  if (need_init) typeObj->initNoOps(#id, size); \
+  commitBuiltinType(typeObj.get(), id)
 
 #define index_precommit_type(datatype, typeObj, id) \
-  if (need_init) typeObj->init_no_ops(#id, sizeof(datatype)); \
-  if (need_init) typeObj->init_op(MPI_MAXLOC, &ReduceOp<MaxLocPair,datatype>::op); \
-  if (need_init) typeObj->init_op(MPI_MINLOC, &ReduceOp<MinLocPair,datatype>::op); \
-  commit_builtin_type(typeObj, id);
+  if (need_init) typeObj->initNoOps(#id, sizeof(datatype)); \
+  if (need_init) typeObj->initOp(MPI_MAXLOC, &ReduceOp<MaxLocPair,datatype>::op); \
+  if (need_init) typeObj->initOp(MPI_MINLOC, &ReduceOp<MinLocPair,datatype>::op); \
+  commitBuiltinType(typeObj.get(), id);
 
 #define precommit_builtin(size) \
-  if (need_init) mpi_type::builtins[size].init_no_ops("builtin-" #size, size); \
-  allocate_type_id(&mpi_type::builtins[size])
+  if (need_init) MpiType::builtins[size].initNoOps("builtin-" #size, size); \
+  allocateTypeId(&MpiType::builtins[size])
 
 
-  noop_precommit_type(0, mpi_type::mpi_null, MPI_NULL);
+  noop_precommit_type(0, MpiType::mpi_null, MPI_NULL);
 
-  int_precommit_type(char, mpi_type::mpi_char, MPI_CHAR);
+  int_precommit_type(char, MpiType::mpi_char, MPI_CHAR);
 
-  int_precommit_type(unsigned char, mpi_type::mpi_unsigned_char, MPI_UNSIGNED_CHAR);
+  int_precommit_type(unsigned char, MpiType::mpi_unsigned_char, MPI_UNSIGNED_CHAR);
 
-  int_precommit_type(char, mpi_type::mpi_signed_char, MPI_SIGNED_CHAR);
+  int_precommit_type(char, MpiType::mpi_signed_char, MPI_SIGNED_CHAR);
 
-  int_precommit_type(char16_t, mpi_type::mpi_wchar, MPI_WCHAR);
+  int_precommit_type(char16_t, MpiType::mpi_wchar, MPI_WCHAR);
 
-  int_precommit_type(unsigned long long, mpi_type::mpi_unsigned_long_long, MPI_UNSIGNED_LONG_LONG);
+  int_precommit_type(unsigned long long, MpiType::mpi_unsigned_long_long, MPI_UNSIGNED_LONG_LONG);
 
-  noop_precommit_type(0, mpi_type::mpi_lb, MPI_LB);
+  noop_precommit_type(0, MpiType::mpi_lb, MPI_LB);
 
-  noop_precommit_type(0, mpi_type::mpi_ub, MPI_UB);
+  noop_precommit_type(0, MpiType::mpi_ub, MPI_UB);
 
-  int_precommit_type(char, mpi_type::mpi_byte, MPI_BYTE);
+  int_precommit_type(char, MpiType::mpi_byte, MPI_BYTE);
 
-  int_precommit_type(int, mpi_type::mpi_int, MPI_INT);
+  int_precommit_type(int, MpiType::mpi_int, MPI_INT);
 
-  int_precommit_type(unsigned, mpi_type::mpi_unsigned, MPI_UNSIGNED);
+  int_precommit_type(unsigned, MpiType::mpi_unsigned, MPI_UNSIGNED);
 
-  int_precommit_type(short, mpi_type::mpi_short, MPI_SHORT);
+  int_precommit_type(short, MpiType::mpi_short, MPI_SHORT);
 
-  int_precommit_type(unsigned short, mpi_type::mpi_unsigned_short, MPI_UNSIGNED_SHORT);
+  int_precommit_type(unsigned short, MpiType::mpi_unsigned_short, MPI_UNSIGNED_SHORT);
 
-  int_precommit_type(long, mpi_type::mpi_long, MPI_LONG);
+  int_precommit_type(long, MpiType::mpi_long, MPI_LONG);
 
-  int_precommit_type(long long, mpi_type::mpi_long_long_int, MPI_LONG_LONG_INT);
+  int_precommit_type(long long, MpiType::mpi_long_long_int, MPI_LONG_LONG_INT);
 
-  int_precommit_type(unsigned long, mpi_type::mpi_unsigned_long, MPI_UNSIGNED_LONG);
+  int_precommit_type(unsigned long, MpiType::mpi_unsigned_long, MPI_UNSIGNED_LONG);
 
-  int_precommit_type(char, mpi_type::mpi_packed, MPI_PACKED);
+  int_precommit_type(char, MpiType::mpi_packed, MPI_PACKED);
 
   //fortran nonsense
-  noop_precommit_type(2*sizeof(float), mpi_type::mpi_complex, MPI_COMPLEX);
+  noop_precommit_type(2*sizeof(float), MpiType::mpi_complex, MPI_COMPLEX);
 
-  noop_precommit_type(2*sizeof(double), mpi_type::mpi_double_complex, MPI_DOUBLE_COMPLEX);
+  noop_precommit_type(2*sizeof(double), MpiType::mpi_double_complex, MPI_DOUBLE_COMPLEX);
 
-  op_precommit_type(float, mpi_type::mpi_float, MPI_FLOAT);
-  op_precommit_type(float, mpi_type::mpi_real, MPI_REAL);
-  op_precommit_type(double, mpi_type::mpi_double_precision, MPI_DOUBLE_PRECISION);
-  op_precommit_type(double, mpi_type::mpi_double, MPI_DOUBLE);
-  op_precommit_type(float, mpi_type::mpi_real4, MPI_REAL4);
-  op_precommit_type(double, mpi_type::mpi_real8, MPI_REAL8);
-  op_precommit_type(long double, mpi_type::mpi_long_double, MPI_LONG_DOUBLE);
+  op_precommit_type(float, MpiType::mpi_float, MPI_FLOAT);
+  op_precommit_type(float, MpiType::mpi_real, MPI_REAL);
+  op_precommit_type(double, MpiType::mpi_double_precision, MPI_DOUBLE_PRECISION);
+  op_precommit_type(double, MpiType::mpi_double, MPI_DOUBLE);
+  op_precommit_type(float, MpiType::mpi_real4, MPI_REAL4);
+  op_precommit_type(double, MpiType::mpi_real8, MPI_REAL8);
+  op_precommit_type(long double, MpiType::mpi_long_double, MPI_LONG_DOUBLE);
 
-  int_precommit_type(bool, mpi_type::mpi_cxx_bool, MPI_CXX_BOOL);
-  int_precommit_type(int, mpi_type::mpi_integer, MPI_INTEGER);
-  int_precommit_type(char, mpi_type::mpi_integer1, MPI_INTEGER1);
-  int_precommit_type(int16_t, mpi_type::mpi_integer2, MPI_INTEGER2);
-  int_precommit_type(int32_t, mpi_type::mpi_integer4, MPI_INTEGER4);
-  int_precommit_type(int64_t, mpi_type::mpi_integer8, MPI_INTEGER8);
-  int_precommit_type(int8_t, mpi_type::mpi_int8_t, MPI_INT8_T);
-  int_precommit_type(int16_t, mpi_type::mpi_int16_t, MPI_INT16_T);
-  int_precommit_type(int32_t, mpi_type::mpi_int32_t, MPI_INT32_T);
-  int_precommit_type(int64_t, mpi_type::mpi_int64_t, MPI_INT64_T);
-  int_precommit_type(uint8_t, mpi_type::mpi_uint8_t, MPI_UINT8_T);
-  int_precommit_type(uint16_t, mpi_type::mpi_uint16_t, MPI_UINT16_T);
-  int_precommit_type(uint32_t, mpi_type::mpi_uint32_t, MPI_UINT32_T);
-  int_precommit_type(uint64_t, mpi_type::mpi_uint64_t, MPI_UINT64_T);
-  int_precommit_type(char, mpi_type::mpi_character, MPI_CHARACTER);
+  int_precommit_type(bool, MpiType::mpi_cxx_bool, MPI_CXX_BOOL);
+  int_precommit_type(int, MpiType::mpi_integer, MPI_INTEGER);
+  int_precommit_type(char, MpiType::mpi_integer1, MPI_INTEGER1);
+  int_precommit_type(int16_t, MpiType::mpi_integer2, MPI_INTEGER2);
+  int_precommit_type(int32_t, MpiType::mpi_integer4, MPI_INTEGER4);
+  int_precommit_type(int64_t, MpiType::mpi_integer8, MPI_INTEGER8);
+  int_precommit_type(int8_t, MpiType::mpi_int8_t, MPI_INT8_T);
+  int_precommit_type(int16_t, MpiType::mpi_int16_t, MPI_INT16_T);
+  int_precommit_type(int32_t, MpiType::mpi_int32_t, MPI_INT32_T);
+  int_precommit_type(int64_t, MpiType::mpi_int64_t, MPI_INT64_T);
+  int_precommit_type(uint8_t, MpiType::mpi_uint8_t, MPI_UINT8_T);
+  int_precommit_type(uint16_t, MpiType::mpi_uint16_t, MPI_UINT16_T);
+  int_precommit_type(uint32_t, MpiType::mpi_uint32_t, MPI_UINT32_T);
+  int_precommit_type(uint64_t, MpiType::mpi_uint64_t, MPI_UINT64_T);
+  int_precommit_type(char, MpiType::mpi_character, MPI_CHARACTER);
 
-  index_precommit_type(int_int_t, mpi_type::mpi_2int, MPI_2INT);
-  index_precommit_type(double_int_t, mpi_type::mpi_double_int, MPI_DOUBLE_INT);
-  index_precommit_type(float_int_t, mpi_type::mpi_float_int, MPI_FLOAT_INT);
-  index_precommit_type(long_int_t, mpi_type::mpi_long_int, MPI_LONG_INT);
-  index_precommit_type(short_int_t, mpi_type::mpi_short_int, MPI_SHORT_INT);
-  index_precommit_type(long_double_int_t, mpi_type::mpi_long_double_int, MPI_LONG_DOUBLE_INT);
+  index_precommit_type(int_int_t, MpiType::mpi_2int, MPI_2INT);
+  index_precommit_type(double_int_t, MpiType::mpi_double_int, MPI_DOUBLE_INT);
+  index_precommit_type(float_int_t, MpiType::mpi_float_int, MPI_FLOAT_INT);
+  index_precommit_type(long_int_t, MpiType::mpi_long_int, MPI_LONG_INT);
+  index_precommit_type(short_int_t, MpiType::mpi_short_int, MPI_SHORT_INT);
+  index_precommit_type(long_double_int_t, MpiType::mpi_long_double_int, MPI_LONG_DOUBLE_INT);
 
   precommit_builtin(1);
   precommit_builtin(2);
@@ -246,14 +246,14 @@ mpi_api::commit_builtin_types()
   precommit_builtin(64);
 
 
-  sstmac::sw::api_unlock();
+  sstmac::sw::apiUnlock();
 
 }
 
 int
-mpi_api::pack_size(int incount, MPI_Datatype datatype, MPI_Comm comm, int *size)
+MpiApi::packSize(int incount, MPI_Datatype datatype, MPI_Comm comm, int *size)
 {
-  type_map::iterator it = known_types_.find(datatype);
+  auto it = known_types_.find(datatype);
   if (it == known_types_.end()){
       return MPI_ERR_TYPE;
   }
@@ -263,12 +263,12 @@ mpi_api::pack_size(int incount, MPI_Datatype datatype, MPI_Comm comm, int *size)
 }
 
 int
-mpi_api::type_set_name(MPI_Datatype id, const char* name)
+MpiApi::typeSetName(MPI_Datatype id, const char* name)
 {
   mpi_api_debug(sprockit::dbg::mpi,
                 "MPI_Type_set_name(%s,%s)",
-                type_str(id).c_str(), name);
-  type_map::iterator it = known_types_.find(id);
+                typeStr(id).c_str(), name);
+  auto it = known_types_.find(id);
   if (it == known_types_.end()){
       return MPI_ERR_TYPE;
   }
@@ -278,12 +278,12 @@ mpi_api::type_set_name(MPI_Datatype id, const char* name)
 }
 
 int
-mpi_api::type_get_name(MPI_Datatype id, char* name, int* resultlen)
+MpiApi::typeGetName(MPI_Datatype id, char* name, int* resultlen)
 {
   mpi_api_debug(sprockit::dbg::mpi,
                 "MPI_Type_get_name(%s)",
-                type_str(id).c_str());
-  type_map::iterator it = known_types_.find(id);
+                typeStr(id).c_str());
+  auto it = known_types_.find(id);
   if (it == known_types_.end()){
       return MPI_ERR_TYPE;
   }
@@ -295,10 +295,10 @@ mpi_api::type_get_name(MPI_Datatype id, char* name, int* resultlen)
 }
 
 int
-mpi_api::op_create(MPI_User_function *user_fn, int commute, MPI_Op *op)
+MpiApi::opCreate(MPI_User_function *user_fn, int commute, MPI_Op *op)
 {
   if (!commute){
-    spkt_throw_printf(sprockit::unimplemented_error,
+    spkt_throw_printf(sprockit::UnimplementedError,
                       "mpi_api::op_create: non-commutative operations");
   }
   *op = next_op_id_++;
@@ -307,39 +307,41 @@ mpi_api::op_create(MPI_User_function *user_fn, int commute, MPI_Op *op)
 }
 
 int
-mpi_api::op_free(MPI_Op *op)
+MpiApi::opFree(MPI_Op *op)
 {
   custom_ops_.erase(*op);
   return MPI_SUCCESS;
 }
 
 int
-mpi_api::do_type_hvector(int count, int blocklength, MPI_Aint stride,
-                         mpi_type* old, MPI_Datatype* new_type)
+MpiApi::doTypeHvector(int count, int blocklength, MPI_Aint stride,
+                         MpiType* old, MPI_Datatype* new_type)
 {
   std::stringstream ss;
   ss << "vector-" << old->label << "\n";
 
-  mpi_type* new_type_obj = new mpi_type;
+  MpiType* new_type_obj = new MpiType;
   new_type_obj->init_vector(ss.str(), old,
                         count, blocklength, stride);
 
-  allocate_type_id(new_type_obj);
+  allocateTypeId(new_type_obj);
   *new_type = new_type_obj->id;
   mpi_api_debug(sprockit::dbg::mpi,
                 "MPI_Type_vector(%d,%d,%d,%s,*%s)",
                 count, blocklength, stride,
-                type_str(old->id).c_str(), type_str(*new_type).c_str());
+                typeStr(old->id).c_str(), typeStr(*new_type).c_str());
+
+  allocatedTypes_[new_type_obj->id] = MpiType::ptr(new_type_obj);
 
   return MPI_SUCCESS;
 }
 
 int
-mpi_api::type_hvector(int count, int blocklength, MPI_Aint stride,
+MpiApi::typeHvector(int count, int blocklength, MPI_Aint stride,
                      MPI_Datatype old_type, MPI_Datatype* new_type)
 {
-  mpi_type* ty = type_from_id(old_type);
-  int rc = do_type_hvector(count, blocklength, stride, ty, new_type);
+  MpiType* ty = typeFromId(old_type);
+  int rc = doTypeHvector(count, blocklength, stride, ty, new_type);
 #ifdef SSTMAC_OTF2_ENABLED
   if (otf2_writer_) {
     otf2_writer_->writer().register_type(*new_type, count*ty->packed_size());
@@ -350,12 +352,12 @@ mpi_api::type_hvector(int count, int blocklength, MPI_Aint stride,
 
 /// Creates a vector (strided) datatype
 int
-mpi_api::type_vector(int count, int blocklength, int stride,
+MpiApi::typeVector(int count, int blocklength, int stride,
                      MPI_Datatype old_type, MPI_Datatype* new_type)
 {
-  mpi_type* old = type_from_id(old_type);
+  MpiType* old = typeFromId(old_type);
   MPI_Aint byte_stride = stride * old->extent();
-  int rc = do_type_hvector(count, blocklength, byte_stride, old, new_type);
+  int rc = doTypeHvector(count, blocklength, byte_stride, old, new_type);
 #ifdef SSTMAC_OTF2_ENABLED
   if (otf2_writer_) {
     otf2_writer_->writer().register_type(*new_type, count*old->packed_size());
@@ -365,11 +367,11 @@ mpi_api::type_vector(int count, int blocklength, int stride,
 }
 
 int
-mpi_api::do_type_hindexed(int count, const int lens[],
-                          const MPI_Aint* displs, mpi_type *in_type_obj,
+MpiApi::doTypeHindexed(int count, const int lens[],
+                          const MPI_Aint* displs, MpiType *in_type_obj,
                           MPI_Datatype *outtype)
 {
-  mpi_type* out_type_obj = new mpi_type;
+  MpiType* out_type_obj = new MpiType;
 
   inddata* idata = new inddata;
   int packed_size = 0;
@@ -398,22 +400,24 @@ mpi_api::do_type_hindexed(int count, const int lens[],
 
   out_type_obj->init_indexed(in_type_obj->label, idata, packed_size, extent);
 
-  allocate_type_id(out_type_obj);
+  allocateTypeId(out_type_obj);
   *outtype = out_type_obj->id;
 
   mpi_api_debug(sprockit::dbg::mpi,
                 "MPI_Type_indexed(%d,<...>,<...>,%s,*%s)",
-                count, type_str(in_type_obj->id).c_str(), type_str(*outtype).c_str());
+                count, typeStr(in_type_obj->id).c_str(), typeStr(*outtype).c_str());
+
+  allocatedTypes_[out_type_obj->id] = MpiType::ptr(out_type_obj);
 
   return MPI_SUCCESS;
 }
 
 int
-mpi_api::type_hindexed(int count, const int lens[], const MPI_Aint* displs,
+MpiApi::typeHindexed(int count, const int lens[], const MPI_Aint* displs,
                       MPI_Datatype intype, MPI_Datatype* outtype)
 {
-  mpi_type* ty = type_from_id(intype);
-  int rc = do_type_hindexed(count, lens, displs, ty, outtype);
+  MpiType* ty = typeFromId(intype);
+  int rc = doTypeHindexed(count, lens, displs, ty, outtype);
 #ifdef SSTMAC_OTF2_ENABLED
   if (otf2_writer_){
     otf2_writer_->writer().register_type(*outtype, count*ty->packed_size());
@@ -423,17 +427,17 @@ mpi_api::type_hindexed(int count, const int lens[], const MPI_Aint* displs,
 }
 
 int
-mpi_api::type_indexed(int count, const int lens[], const int* displs,
+MpiApi::typeIndexed(int count, const int lens[], const int* displs,
                       MPI_Datatype intype, MPI_Datatype* outtype)
 {
-  mpi_type* in_type_obj = type_from_id(intype);
+  MpiType* in_type_obj = typeFromId(intype);
   int type_extent = in_type_obj->extent();
   MPI_Aint byte_displs[count];
   for (int i=0; i < count; ++i){
     byte_displs[i] = displs[i] * type_extent;
   }
 
-  int rc = do_type_hindexed(count, lens, byte_displs, in_type_obj, outtype);
+  int rc = doTypeHindexed(count, lens, byte_displs, in_type_obj, outtype);
 #ifdef SSTMAC_OTF2_ENABLED
   if (otf2_writer_){
     otf2_writer_->writer().register_type(*outtype, count*in_type_obj->packed_size());
@@ -443,9 +447,9 @@ mpi_api::type_indexed(int count, const int lens[], const int* displs,
 }
 
 std::string
-mpi_api::type_label(MPI_Datatype tid)
+MpiApi::typeLabel(MPI_Datatype tid)
 {
-  mpi_type* ty = type_from_id(tid);
+  MpiType* ty = typeFromId(tid);
   return ty->label;
 }
 
@@ -453,17 +457,18 @@ mpi_api::type_label(MPI_Datatype tid)
 // A datatype object has to be committed before use in communication.
 //
 int
-mpi_api::type_commit(MPI_Datatype* type)
+MpiApi::typeCommit(MPI_Datatype* type)
 {
-  mpi_type* type_obj = type_from_id(*type);
+  MpiType* type_obj = typeFromId(*type);
   type_obj->set_committed(true);
   return MPI_SUCCESS;
 }
 
 void
-mpi_api::allocate_type_id(mpi_type* type)
+MpiApi::allocateTypeId(MpiType* type)
 {
-  type_map::iterator it, end = known_types_.end();
+  auto end = known_types_.end();
+  auto it = end;
   while ((it = known_types_.find(next_type_id_)) != end){
     ++next_type_id_;
   }
@@ -472,10 +477,10 @@ mpi_api::allocate_type_id(mpi_type* type)
 }
 
 void
-mpi_api::commit_builtin_type(mpi_type* type, MPI_Datatype id)
+MpiApi::commitBuiltinType(MpiType* type, MPI_Datatype id)
 {
   if (known_types_.find(id) != known_types_.end()){
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
       "mpi_api::precommit_type: %d already exists", id);
   }
   type->id = id;
@@ -494,17 +499,17 @@ mpi_api::commit_builtin_type(mpi_type* type, MPI_Datatype id)
 // Creates a contiguous datatype
 //
 int
-mpi_api::type_contiguous(int count, MPI_Datatype old_type,
+MpiApi::typeContiguous(int count, MPI_Datatype old_type,
                          MPI_Datatype* new_type)
 {
-  mpi_type* new_type_obj = new mpi_type;
-  mpi_type* old_type_obj = type_from_id(old_type);
+  MpiType* new_type_obj = new MpiType;
+  MpiType* old_type_obj = typeFromId(old_type);
   MPI_Aint byte_stride = count * old_type_obj->extent();
   new_type_obj->init_vector("contiguous-" + old_type_obj->label,
                         old_type_obj,
                         count, 1, byte_stride);
 
-  allocate_type_id(new_type_obj);
+  allocateTypeId(new_type_obj);
   *new_type = new_type_obj->id;
 
 #ifdef SSTMAC_OTF2_ENABLED
@@ -513,11 +518,13 @@ mpi_api::type_contiguous(int count, MPI_Datatype old_type,
   }
 #endif
 
+  allocatedTypes_[*new_type] = MpiType::ptr(new_type_obj);
+
   return MPI_SUCCESS;
 }
 
 int
-mpi_api::type_create_struct(const int count, const int* blocklens,
+MpiApi::typeCreateStruct(const int count, const int* blocklens,
                      const MPI_Aint* indices, const MPI_Datatype* old_types,
                      MPI_Datatype* newtype)
 {
@@ -525,18 +532,18 @@ mpi_api::type_create_struct(const int count, const int* blocklens,
   for (int i=0; i < count; ++i){
     new_ind[i] = indices[i];
   }
-  return type_create_struct(count, blocklens, new_ind, old_types, newtype);
+  return typeCreateStruct(count, blocklens, new_ind, old_types, newtype);
 }
 
 //
 // Creates a struct datatype
 //
 int
-mpi_api::type_create_struct(const int count, const int* blocklens,
+MpiApi::typeCreateStruct(const int count, const int* blocklens,
                      const int* indices, const MPI_Datatype* old_types,
                      MPI_Datatype* newtype)
 {
-  mpi_type* new_type_obj = new mpi_type;
+  MpiType* new_type_obj = new MpiType;
 
   inddata* idata = new inddata;
 
@@ -555,7 +562,7 @@ mpi_api::type_create_struct(const int count, const int* blocklens,
 
   for (int i = 0; i < count; i++) {
     if (blocklens[i] > 0) {
-      mpi_type* old_type_obj = type_from_id(old_types[i]);
+      MpiType* old_type_obj = typeFromId(old_types[i]);
       ind_block& next = idata->blocks[index];
       next.base = old_type_obj;
       next.byte_disp = indices[i];
@@ -568,12 +575,12 @@ mpi_api::type_create_struct(const int count, const int* blocklens,
 
   new_type_obj->init_indexed("struct", idata, packed_size, extent);
 
-  allocate_type_id(new_type_obj);
+  allocateTypeId(new_type_obj);
   *newtype = new_type_obj->id;
 
   mpi_api_debug(sprockit::dbg::mpi,
                 "MPI_Type_struct(%d,<...>,<...>,<...>,*%s)",
-                count, type_str(*newtype).c_str());
+                count, typeStr(*newtype).c_str());
 
 #ifdef SSTMAC_OTF2_ENABLED
   if (otf2_writer_){
@@ -581,32 +588,34 @@ mpi_api::type_create_struct(const int count, const int* blocklens,
   }
 #endif
 
+  allocatedTypes_[new_type_obj->id] = MpiType::ptr(new_type_obj);
+
   return MPI_SUCCESS;
 }
 
 int
-mpi_api::type_size(MPI_Datatype type, int* size)
+MpiApi::typeSize(MPI_Datatype type, int* size)
 {
-  *size = type_from_id(type)->packed_size();
+  *size = typeFromId(type)->packed_size();
   return MPI_SUCCESS;
 }
 
 int
-mpi_api::type_extent(MPI_Datatype type, MPI_Aint *extent)
+MpiApi::typeExtent(MPI_Datatype type, MPI_Aint *extent)
 {
-  *extent = type_from_id(type)->extent();
+  *extent = typeFromId(type)->extent();
   return MPI_SUCCESS;
 }
 
 int
-mpi_api::type_dup(MPI_Datatype intype, MPI_Datatype* outtype)
+MpiApi::typeDup(MPI_Datatype intype, MPI_Datatype* outtype)
 {
-  mpi_type* new_type_obj = type_from_id(intype);
-  allocate_type_id(new_type_obj);
+  MpiType* new_type_obj = typeFromId(intype);
+  allocateTypeId(new_type_obj);
   *outtype = new_type_obj->id;
   mpi_api_debug(sprockit::dbg::mpi,
                 "MPI_Type_dup(%s,*%s)",
-                type_str(intype).c_str(), type_str(*outtype).c_str());
+                typeStr(intype).c_str(), typeStr(*outtype).c_str());
   return MPI_SUCCESS;
 }
 
@@ -615,29 +624,29 @@ mpi_api::type_dup(MPI_Datatype intype, MPI_Datatype* outtype)
 // Mark datatype for deallocation.
 //
 int
-mpi_api::type_free(MPI_Datatype* type)
+MpiApi::typeFree(MPI_Datatype* type)
 {
   mpi_api_debug(sprockit::dbg::mpi,
                 "MPI_Type_free(%s)",
-                type_str(*type).c_str());
-  auto iter = known_types_.find(*type);
-  if (iter != known_types_.end()){
-    mpi_type* obj = iter->second;
-    known_types_.erase(iter);
-    delete obj;
-  }
+                typeStr(*type).c_str());
+
+  //these maps are separated because all known types
+  //are not necessarily allocated by this rank
+  known_types_.erase(*type);
+  allocatedTypes_.erase(*type);
+
   return MPI_SUCCESS;
 }
 
 //
 // Get the derived mpitype mapped to an id
 //
-mpi_type*
-mpi_api::type_from_id(MPI_Datatype id)
+MpiType*
+MpiApi::typeFromId(MPI_Datatype id)
 {
-  type_map::iterator it = known_types_.find(id);
+  auto it = known_types_.find(id);
   if (it == known_types_.end()){
-    spkt_throw_printf(sprockit::invalid_key_error,
+    spkt_throw_printf(sprockit::InvalidKeyError,
         "mpi_api: unknown type id %d",
         int(id));
   }

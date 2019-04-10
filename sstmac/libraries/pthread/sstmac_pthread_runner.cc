@@ -49,26 +49,26 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-pthread_runner::pthread_runner(software_id id, app* parent,
-                               start_fxn start_routine, void* arg,
-                               operating_system* os,
-                               int detach_state)
-  : thread(parent->params(), id, os),
+PthreadRunner::PthreadRunner(SoftwareId id, App* parent,
+                             start_fxn start_routine, void* arg,
+                             OperatingSystem* os,
+                             int detach_state)
+  : Thread(parent->params(), id, os),
     start_routine_(start_routine),
     arg_(arg)
 {
   parent_app_ = parent;
   if (detach_state == SSTMAC_PTHREAD_CREATE_DETACHED){
-    set_detach_state(DETACHED);
+    setDetachState(DETACHED);
   } else {
-    set_detach_state(JOINABLE);
+    setDetachState(JOINABLE);
   }
 }
 
 void
-pthread_runner::run()
+PthreadRunner::run()
 {
-  p_txt_ = parent_app_->get_process_context();
+  p_txt_ = parent_app_->getProcessContext();
   start_routine_(arg_);
   finished_ = true;
 }

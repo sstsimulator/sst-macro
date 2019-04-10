@@ -99,12 +99,12 @@ MpiCall::Trigger() {
   app->EndMpi(GetEnd());
 }
 
-sstmac::timestamp
+sstmac::Timestamp
 MpiCall::convert_time(const OTF2_TimeStamp ts) const
 {
   const auto start_offset = app->otf2_clock_properties.globalOffset;
   const auto ticks_per_second = app->otf2_clock_properties.timerResolution;
-  return sstmac::timestamp(((double(ts) - start_offset)/ticks_per_second));
+  return sstmac::Timestamp(((double(ts) - start_offset)/ticks_per_second));
 }
 
 const char*

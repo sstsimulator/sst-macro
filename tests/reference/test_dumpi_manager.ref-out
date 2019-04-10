@@ -1,4 +1,3 @@
-hostname_allocation: reading map file testparsedumpi.map
 nrank: 4
 dumpi_task_mapper: rank 0 is on hostname hadalst-mbp.ca.sandia.gov at nid=9
 dumpi_task_mapper: rank 1 is on hostname hadalst-mbp.ca.sandia.gov at nid=9
@@ -19,4 +18,4 @@ DUMPI trace  77 percent complete: testtrace-0000.bin
 DUMPI trace  88 percent complete: testtrace-0000.bin
 DUMPI trace 100 percent complete: testtrace-0000.bin
 Parsedumpi finalized on rank 0 - trace testtrace.meta successful!
-Estimated total runtime of           0.00009300 seconds
+Estimated total runtime of           0.00010019 seconds

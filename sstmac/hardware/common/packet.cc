@@ -44,19 +44,19 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/hardware/common/packet.h>
 #include <sstmac/hardware/common/unique_id.h>
-#include <sstmac/common/messages/sst_message.h>
+#include <sstmac/hardware/common/flow.h>
 #include <sprockit/serializer.h>
 
 namespace sstmac {
 namespace hw {
 
-packet::packet(
+Packet::Packet(
   serializable* orig,
   uint32_t num_bytes,
   uint64_t flow_id,
   bool is_tail,
-  node_id fromaddr,
-  node_id toaddr) :
+  NodeId fromaddr,
+  NodeId toaddr) :
  num_bytes_(num_bytes),
  payload_(orig),
  flow_id_(flow_id),
@@ -66,14 +66,14 @@ packet::packet(
   ::memset(rtr_metadata_, 0, sizeof(rtr_metadata_));
   ::memset(stats_metadata_, 0, sizeof(stats_metadata_));
   ::memset(nic_metadata_, 0, sizeof(nic_metadata_));
-  auto hdr = rtr_header<header>();
+  auto hdr = rtrHeader<Header>();
   hdr->is_tail = is_tail;
 }
 
 void
-packet::serialize_order(serializer& ser)
+Packet::serialize_order(serializer& ser)
 {
-  event::serialize_order(ser);
+  Event::serialize_order(ser);
   ser & payload_;
   ser & num_bytes_;
   ser & flow_id_;

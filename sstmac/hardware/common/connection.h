@@ -48,88 +48,72 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/event_scheduler.h>
 #include <sprockit/sim_parameters_fwd.h>
 
-#define connectable_type_invalid(ty) \
-   spkt_throw_printf(sprockit::value_error, "invalid connectable type %s", connectable::str(ty))
+#define Connectable_type_invalid(ty) \
+   spkt_throw_printf(sprockit::value_error, "invalid Connectable type %s", Connectable::str(ty))
 
 #define connect_str_case(x) case x: return #x
 
 namespace sstmac {
 namespace hw {
 
-class connectable {
+class Connectable {
  public:
-  virtual std::string to_string() const = 0;
+  virtual std::string toString() const = 0;
 
   static const int any_port = -1;
 
   /**
-   * @brief connect_output
+   * @brief connectOutput
    * Invoked by interconnect setup routine to notify device
    * that all payloads sent out on given port should be sent to given payload handler
-   * @param params
    * @param src_outport
    * @param dst_inport
-   * @param payload_handler
+   * @param payloadHandler
    */
-  virtual void connect_output(
-    sprockit::sim_parameters* params,
-    int src_outport,
-    int dst_inport,
-    event_link* payload_link) = 0;
+  virtual void connectOutput(int src_outport, int dst_inport, EventLink::ptr&& payload_link) = 0;
 
   /**
-   * @brief connect_input
+   * @brief connectInput
    * Invoked by interconnect setup routine to notify device
    * that all credits sent back to a given port should be sent to given credit handler
-   * @param params
    * @param src_outport
    * @param dst_inport
-   * @param credit_handler Can be null, if no credits are ever sent
+   * @param creditHandler Can be null, if no credits are ever sent
    */
-  virtual void connect_input(
-    sprockit::sim_parameters* params,
-    int src_outport,
-    int dst_inport,
-    event_link* credit_link) = 0;
-
-  virtual timestamp send_latency(sprockit::sim_parameters* params) const = 0;
-
-  virtual timestamp credit_latency(sprockit::sim_parameters* params) const = 0;
+  virtual void connectInput(int src_outport, int dst_inport, EventLink::ptr&& credit_link) = 0;
 
   /**
-   * @brief credit_handler
+   * @brief creditHandler
    * @param port
    * @return Can be null, if no credits are ever to be received
    */
-  virtual link_handler* credit_handler(int port) = 0;
+  virtual LinkHandler* creditHandler(int port) = 0;
 
   /**
-   * @brief payload_handler
+   * @brief payloadHandler
    * @param port
    * @return A new handler for incoming payloads on the given port
    */
-  virtual link_handler* payload_handler(int port) = 0;
+  virtual LinkHandler* payloadHandler(int port) = 0;
 
 };
 
-class connectable_component :
-  public event_component,
-  public connectable
+class ConnectableComponent :
+  public Component,
+  public Connectable
 {
  protected:
-  connectable_component(sprockit::sim_parameters* params,
-                        uint32_t cid,
-                        event_manager* mgr);
+  ConnectableComponent(uint32_t cid, SST::Params& params);
 
 };
 
-class connectable_subcomponent :
-  public event_subcomponent,
-  public connectable
+class ConnectableSubcomponent :
+  public SubComponent,
+  public Connectable
 {
  protected:
-  connectable_subcomponent(event_scheduler* parent)
-    : event_subcomponent(parent)
+  ConnectableSubcomponent(const std::string& selfname, SST::Component* parent)
+    : SubComponent(selfname, parent)
   {
   }
 

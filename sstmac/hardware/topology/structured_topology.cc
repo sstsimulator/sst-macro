@@ -53,19 +53,19 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-structured_topology::structured_topology(sprockit::sim_parameters* params) :
-  topology(params)
+StructuredTopology::StructuredTopology(SST::Params& params) :
+  Topology(params)
 {
-  concentration_ = params->get_optional_int_param("concentration",1);
+  concentration_ = params.find<int>("concentration",1);
 
-  injection_redundancy_ = params->get_optional_int_param("injection_redundant", 1);
+  injection_redundancy_ = params.find<int>("injection_redundant", 1);
 }
 
 void
-structured_topology::endpoints_connected_to_ejection_switch(switch_id swaddr,
-                                   std::vector<injection_port>& nodes) const
+StructuredTopology::endpointsConnectedToEjectionSwitch(SwitchId swaddr,
+                                   std::vector<InjectionPort>& nodes) const
 {
-  endpoints_connected_to_injection_switch(swaddr, nodes);
+  endpointsConnectedToInjectionSwitch(swaddr, nodes);
 }
 
 }

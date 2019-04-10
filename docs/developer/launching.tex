@@ -55,16 +55,16 @@ There are three important components to build.
 \end{itemize}
 
 \subsection{Event Manager}\label{sec:eventMan}
-The \inlinecode{event_manager} object is a polymorphic type that depends on 1) what sort of parallelism is being used and 2) what sort of data structure is being used.
-Some allowed values include \inlineshell{event_map} or \inlineshell{event_calendar} via the \inlineshell{event_manager} variable in the input file.
+The \inlinecode{EventManager} object is a polymorphic type that depends on 1) what sort of parallelism is being used and 2) what sort of data structure is being used.
+Some allowed values include \inlineshell{event_map} or \inlineshell{event_calendar} via the \inlineshell{EventManager} variable in the input file.
 For parallel simulation, only the \inlineshell{event_map} data structure is currently supported.
-For MPI parallel simulations, the \inlineshell{event_manager} parameter should be set to \inlineshell{clock_cycle_parallel}.
+For MPI parallel simulations, the \inlineshell{EventManager} parameter should be set to \inlineshell{clock_cycle_parallel}.
 For multithreaded simulations (single process or coupled with MPI), this should be set to \inlineshell{multithread}.
 In most cases, \sstmacro chooses a sensible default based on the configuration and installation.
 
 As of right now, the event manager is also responsible for partitioning the simulation.
 This may be refactored in future versions.
-This creates something of a circular dependency between the \inlinecode{event_manager} and the \inlinecode{interconnect} objects.
+This creates something of a circular dependency between the \inlinecode{EventManager} and the \inlinecode{interconnect} objects.
 When scheduling events and sending events remotely,
 it is highly convenient to have the partition information accessible by the event manager.
 For now, the event manager reads the topology information from the input file.
@@ -73,11 +73,11 @@ This partitioning object is passed on to the interconnect.
 
 \subsection{Interconnect}\label{subsec:interconnect}
 The interconnect is the workhorse for building all hardware components.
-After receiving the partition information from the \inlinecode{event_manager},
+After receiving the partition information from the \inlinecode{EventManager},
 the interconnect creates all the nodes, switches, and NICs the current MPI rank is responsible for.
 In parallel runs, each MPI rank only gets assigned a unique, disjoint subset of the components.
-The interconnect then also creates all the connections between components that are linked based on the topology input (see Section \ref{sec:connectables}).
-For components that are not owned by the current MPI rank, the interconnect inserts a dummy handler that informs the \inlinecode{event_manager}
+The interconnect then also creates all the connections between components that are linked based on the topology input (see Section \ref{sec:Connectables}).
+For components that are not owned by the current MPI rank, the interconnect inserts a dummy handler that informs the \inlinecode{EventManager}
 that the message needs to be re-routed to another MPI rank.
 
 \subsection{Applications}\label{subsec:apps}
@@ -87,7 +87,7 @@ The interconnect builds a set of node objects corresponding to compute nodes in 
 In the constructor for \inlinecode{node} we have:
 
 \begin{CppCode}
-job_launcher_ = job_launcher::static_job_launcher(params, mgr;
+JobLauncher_ = JobLauncher::static_JobLauncher(params, mgr;
 \end{CppCode}
 
 This job launcher roughly corresponds to SLURM, PBS, or MOAB - some process manager that will allocate nodes to a job request and spawn processes on the nodes. For implementation reasons, each node grabs a reference to a static job launcher.  After construction, each node will have its \inlinecode{init} function invoked.
@@ -106,7 +106,7 @@ The \inlinecode{build_launchers} will detect all the launch requests from the in
 void node::schedule_launches()
 {
   for (app_launch* appman : launchers_){
-    schedule(appman->time(), new_callback(this, &node::job_launch, appman));
+    schedule(appman->time(), newCallback(this, &node::job_launch, appman));
   }
 }
 \end{CppCode}
@@ -117,7 +117,7 @@ When the time for a job launch request is reached, the callback function is invo
 \begin{CppCode}
 void node::job_launch(app_launch* appman)
 {
-  job_launcher_->handle_new_launch_request(appman, this);
+  JobLauncher_->handle_new_launch_request(appman, this);
 }
 \end{CppCode}
 For the default job launcher (in most cases SST/macro only simulates a single job in which case no scheduler is needed) the job launches immediately. 
@@ -126,7 +126,7 @@ The code for the default job launcher is:
 \begin{CppCode}
 ordered_node_set allocation;
 appman->request_allocation(available_, allocation);
-for (const node_id& nid : allocation){
+for (const NodeId& nid : allocation){
   if (available_.find(nid) == available_.end()){
     spkt_throw_printf(sprockit::value_error,
                       "allocation requested node %d, but it's not available",
@@ -158,7 +158,7 @@ In most cases, only a single application is being used, in which case the applic
 
 \section{Running}\label{sec:running}
 Now that all hardware components have been created and all application objects have been assigned to physical nodes,
-the \inlinecode{event_manager} created above is started.
+the \inlinecode{EventManager} created above is started.
 It begins looping through all events in the queue ordered by timestamp and runs them.
 As stated above, all events originate from application code.
 Thus, the first events to run are always the application launch events generated from the launch messages sent to the nodes generated the job launcher.

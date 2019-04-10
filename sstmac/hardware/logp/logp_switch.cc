@@ -61,11 +61,13 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
+#include <sstmac/hardware/nic/nic.h>
 #include <sstmac/common/event_manager.h>
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
 #include <sstmac/software/launch/launch_event.h>
+#include <random>
 
 MakeDebugSlot(logp)
 
@@ -81,56 +83,62 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-logp_switch::logp_switch(sprockit::sim_parameters *params, uint32_t cid, event_manager* mgr) :
-  connectable_component(params, cid, mgr), rng_(nullptr)
+LogPSwitch::LogPSwitch(uint32_t cid, SST::Params& params) :
+  ConnectableComponent(cid, params),
+  rng_(nullptr), contention_model_(nullptr)
 {
-  top_ = topology::static_topology(nullptr);
+  SST::Params topParams;
+  top_ = Topology::staticTopology(topParams);
 
-  double net_bw = params->get_bandwidth_param("bandwidth");
-  inverse_bw_ = 1.0/net_bw;
+  std::string net_bw = params.find<std::string>("bandwidth");
+  byte_delay_ = Timestamp(SST::UnitAlgebra(net_bw).getValue().inverse().toDouble());
 
-  double inj_bw = params->get_optional_namespace("ejection")->get_optional_bandwidth_param("bandwidth", net_bw);
-  inj_bw_inverse_ = 1.0/inj_bw;
+  hop_latency_ = Timestamp(params.find<SST::UnitAlgebra>("hop_latency").getValue().toDouble());
 
-  inv_min_bw_ = std::max(inverse_bw_, inj_bw_inverse_);
+  out_in_lat_ = Timestamp(params.find<SST::UnitAlgebra>("out_in_latency").getValue().toDouble());
 
-  hop_latency_ = params->get_time_param("hop_latency");
-
-  out_in_lat_ = params->get_time_param("out_in_latency");
-
-  if (params->has_param("random_seed")){
-    random_seed_ = params->get_int_param("random_seed");
+  if (params.contains("random_seed")){
+    random_seed_ = params.find<int>("random_seed");
     rng_ = RNG::MWC::construct();
-    random_max_extra_latency_ = params->get_time_param("random_max_extra_latency");
-    random_max_extra_byte_delay_ = params->get_time_param("random_max_extra_byte_delay");
+    random_max_extra_latency_ = Timestamp(params.find<SST::UnitAlgebra>("random_max_extra_latency").getValue().toDouble());
+    random_max_extra_byte_delay_ = Timestamp(params.find<SST::UnitAlgebra>("random_max_extra_byte_delay").getValue().toDouble());
   }
 
+  SST::Params contention_params = params.find_scoped_params("contention");
+  if (contention_params.contains("model")){
+    contention_model_ = sprockit::create<ContentionModel>(
+      "macro", contention_params.find<std::string>("model"), contention_params);
+  }
 
-  nic_links_.resize(top_->num_nodes());
+  nic_links_.resize(top_->numNodes());
 
-  init_links(params);
+  initLinks(params);
 }
 
-logp_switch::~logp_switch()
+LogPSwitch::~LogPSwitch()
 {
   if (rng_) delete rng_;
-  for (event_link* link : nic_links_){
-    delete link;
-  }
+  // JJW 4/10/19 these are now owned by the interconnect
+  //for (auto* link : nic_links_){
+  //  delete link;
+  //}
 }
 
 void
-logp_switch::send_event(event *ev)
+LogPSwitch::sendEvent(Event *ev)
 {
-  send(now(), dynamic_cast<message*>(ev));
+  NicEvent* nev = dynamic_cast<NicEvent*>(ev);
+  NetworkMessage* msg = nev->msg();
+  delete nev;
+  send(now(), msg);
 }
 
 void
-logp_switch::send(timestamp start, message* msg)
+LogPSwitch::send(GlobalTimestamp start, NetworkMessage* msg)
 {
-  timestamp delay;
+  Timestamp delay;
   if (rng_){
-    uint64_t t = start.ticks();
+    uint64_t t = start.time.ticks();
     t = ((t*random_seed_) << 5) + random_seed_;
     uint32_t z = (uint32_t)((t & 0xFFFFFFFF00000000LL) >> 32);
     uint32_t w = (uint32_t)(t & 0xFFFFFFFFLL);
@@ -138,24 +146,80 @@ logp_switch::send(timestamp start, message* msg)
     double lat_inc = rng_->realvalue();
     delay += lat_inc * random_max_extra_latency_;
     double bw_inc = rng_->realvalue();
-    delay += msg->byte_length() * bw_inc * random_max_extra_byte_delay_;
+    delay += msg->byteLength() * bw_inc * random_max_extra_byte_delay_;
+  } else if (contention_model_) {
+    double contention = contention_model_->value();
+    delay += msg->byteLength() * byte_delay_ * contention;
   }
 
-  node_id dst = msg->toaddr();
-  delay += inv_min_bw_ * msg->byte_length(); //bw term
-  int num_hops = top_->num_hops_to_node(msg->fromaddr(), dst);
+  NodeId dst = msg->toaddr();
+  delay += byte_delay_ * msg->byteLength(); //bw term
+  int num_hops = top_->numHopsToNode(msg->fromaddr(), dst);
   delay += num_hops * hop_latency_;
   debug_printf(sprockit::dbg::logp,
-               "sending message over %d hops with extra delay %12.8e and inj lat %12.8e: %s",
-               num_hops, delay.sec(), out_in_lat_.sec(), msg->to_string().c_str());
+               "sending message over %d hops with extra delay %12.8e and inj lat %12.8e for byte delay %12.8e/bw %12.8e on size %d: %s",
+               num_hops, delay.sec(), out_in_lat_.sec(),
+               byte_delay_.sec(), 1.0/byte_delay_.sec(),
+               msg->byteLength(), msg->toString().c_str());
 
-  timestamp extra_delay = start - now() + delay;
+  Timestamp extra_delay = start - now() + delay;
 
-  event_link* lnk = nic_links_[dst];
-  lnk->multi_send_extra_delay(extra_delay, msg, this);
+  nic_links_[dst]->send(extra_delay, new NicEvent(msg));
 }
 
+struct SlidingContentionModel : public LogPSwitch::ContentionModel
+{
+ public:
+  SST_ELI_REGISTER_DERIVED(
+    LogPSwitch::ContentionModel,
+    SlidingContentionModel,
+    "macro",
+    "sliding",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "")
 
+  SlidingContentionModel(SST::Params& params) : LogPSwitch::ContentionModel(params)
+  {
+    range_ = params.find<int>("range", 100);
+    if (params.contains("cutoffs")){
+      params.find_array("cutoffs", cutoffs_);
+    } else {
+      cutoffs_.resize(2);
+      cutoffs_[0] = 60;
+      cutoffs_[1] = 90;
+    }
+
+    std::random_device rd;  //Will be used to obtain a seed for the random number engine
+    std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+    state_ = gen();
+  }
+
+  double value() override {
+    int num = xorshift64() % range_;
+    for (int i=cutoffs_.size() - 1; i >= 0; --i){
+      if (num > cutoffs_[i]){
+        return i + 1;
+      }
+    }
+    return 0; //no contention
+  }
+
+ private:
+  uint64_t xorshift64()
+  {
+    uint64_t x = state_;
+    x^= x << 13;
+    x^= x >> 7;
+    x^= x << 17;
+    state_ = x;
+    return x;
+  }
+
+  int range_;
+  std::vector<int> cutoffs_;
+  uint64_t state_;
+
+};
 
 
 }

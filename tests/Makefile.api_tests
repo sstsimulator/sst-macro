@@ -3,7 +3,6 @@
 #  API tests (MPI and globals)                                                          {{{#
 #------------------------------------------------------------------------------------------#
 
-if BUILD_SUMI_MPI
 MPITESTEXEC=$(top_builddir)/tests/api/mpi/testexec
 GLOBALSTESTEXEC=$(top_builddir)/tests/api/globals/testexec
 
@@ -129,6 +128,4 @@ testsuite_globals_%.$(CHKSUF): $(GLOBALS_TEST_DEPS)
     -p node.app1.testsuite_testmode=$*
 
 #------------------------------------------------------------------------------------------#
-else
-APITESTS = 
-endif
+

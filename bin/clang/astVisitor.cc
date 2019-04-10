@@ -1700,19 +1700,19 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
       //well, crap, we have to register a constructor to call
       PrettyPrinter pp;
       if (D->getStorageClass() == SC_Static) pp.os << "static ";
-      pp.os << "sstmac::CppGlobal* " << D->getNameAsString() << "_sstmac_ctor"
-           << " = sstmac::new_cpp_global<"
+      std::string tlsStr = threadLocal ? "true" : "false";
+      pp.os << "sstmac::CppGlobalHolder "
+            << D->getNameAsString() << "_sstmac_ctor(sstmac::new_cpp_global<"
            << GetAsString(D->getType())
-           << "," << (threadLocal ? "true" : "false")
+           << "," << tlsStr
            << ">(" << "__offset_" << scopeUniqueVarName;
-
       CXXConstructExpr* ctor = getCtor(D);
       if (ctor){
         //need leading comma if there are arguments
         addCppGlobalCtorString(pp, ctor, true);
       }
 
-      pp.os << "); ";
+      pp.os << ")," << tlsStr << ");";
 
       std::string str = pp.os.str();
       auto pos = str.find("struct "); //clang, why do you put struct everywhere

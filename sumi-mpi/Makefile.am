@@ -38,7 +38,6 @@ libsstmac_mpi_la_SOURCES = \
   mpi_comm/mpi_comm_cart.cc \
   mpi_queue/mpi_queue_probe_request.cc \
   mpi_queue/mpi_queue_recv_request.cc \
-  mpi_queue/mpi_queue_send_request.cc \
   mpi_queue/mpi_queue.cc \
   mpi_protocol/mpi_protocol.cc \
   mpi_protocol/eager1.cc \
@@ -72,10 +71,8 @@ nobase_library_include_HEADERS = \
   mpi_comm/mpi_group.h \
   mpi_queue/mpi_queue_probe_request_fwd.h \
   mpi_queue/mpi_queue_recv_request_fwd.h \
-  mpi_queue/mpi_queue_send_request_fwd.h \
   mpi_queue/mpi_queue_probe_request.h \
   mpi_queue/mpi_queue_recv_request.h \
-  mpi_queue/mpi_queue_send_request.h \
   mpi_queue/mpi_queue.h \
   mpi_queue/mpi_queue_fwd.h \
   mpi_protocol/mpi_protocol.h \

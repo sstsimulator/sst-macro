@@ -20,7 +20,7 @@ test_serialize_LDADD = \
   ../sprockit/libsprockit.la
 
 check-local: 
-	$(top_srcdir)/bin/runtest 2 test_serialize.out ./test_serialize
+	./test_serialize notime
 endif
 
 

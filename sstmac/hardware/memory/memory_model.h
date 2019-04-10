@@ -46,11 +46,12 @@ Questions? Contact sst-macro-help@sandia.gov
 #define MEMORYMODEL_H_
 
 #include <sstmac/hardware/common/connection.h>
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <sprockit/debug.h>
 
 #include <sstmac/hardware/node/node_fwd.h>
 #include <sstmac/hardware/memory/memory_id.h>
+#include <sstmac/sst_core/integrated_component.h>
 
 DeclareDebugSlot(memory)
 #define mem_debug(...) \
@@ -59,51 +60,57 @@ DeclareDebugSlot(memory)
 namespace sstmac {
 namespace hw {
 
-class memory_model :
-  public event_subcomponent
+class MemoryModel : public SubComponent
 {
-  DeclareFactory(memory_model,node*)
  public:
-  memory_model(sprockit::sim_parameters* params,
-               node* node);
+  SST_ELI_DECLARE_BASE(MemoryModel)
+  SST_ELI_DECLARE_DEFAULT_INFO()
+  SST_ELI_DECLARE_CTOR(SST::Params&,Node*)
 
-  static void delete_statics();
+  MemoryModel(SST::Params& params, Node* Node);
 
-  virtual ~memory_model();
+  static void deleteStatics();
 
-  virtual void access(long bytes, double max_bw, callback* cb) = 0;
+  virtual ~MemoryModel();
 
-  virtual std::string to_string() const = 0;
+  virtual void access(uint64_t bytes, Timestamp byte_delay, Callback* cb) = 0;
 
-  virtual double max_single_bw() const = 0;
+  virtual std::string toString() const = 0;
 
-  node_id addr() const;
+  virtual Timestamp minFlowByteDelay() const = 0;
+
+  NodeId addr() const;
 
  protected:
-  memory_model();
+  MemoryModel();
 
  protected:
-  node_id nodeid_;
-  node* parent_node_;
-  event_handler* done_;
+  NodeId nodeid_;
+  Node* parent_node_;
 
 };
 
-class null_memory_model : public memory_model
+class NullMemoryModel : public MemoryModel
 {
  public:
-  FactoryRegister("null", memory_model, null_memory_model)
+  SST_ELI_REGISTER_DERIVED(
+    MemoryModel,
+    NullMemoryModel,
+    "macro",
+    "null",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "implements a memory model that models nothing")
 
-  null_memory_model(sprockit::sim_parameters* params, node* nd) :
-    memory_model(params, nd)
+  NullMemoryModel(SST::Params& params, Node* nd) :
+    MemoryModel(params, nd)
   {
   }
 
-  std::string to_string() const override { return "null memory"; }
+  std::string toString() const override { return "null memory"; }
 
-  double max_single_bw() const override { return 1e9; }
+  Timestamp minFlowByteDelay() const override { return Timestamp(1e-9); } //use 1 ns
 
-  void access(long bytes, double max_bw, callback *cb) override {}
+  void access(uint64_t bytes, Timestamp byte_delay, Callback *cb) override {}
 };
 
 }

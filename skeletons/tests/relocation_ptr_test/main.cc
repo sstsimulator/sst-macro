@@ -61,22 +61,22 @@ xPtr xGlobalArr[] = { { &x }, 0 };
 
 int main(int argc, char** argv)
 {
-  auto tport = sumi::sumi_api();
-  tport->init();
-  int rank = tport->rank();
+  auto engine = sumi::sumi_engine();
+  engine->tport()->init();
+  int rank = engine->tport()->rank();
   *xGlobal.x = rank;
-  tport->wait_barrier(0);
+  engine->waitBarrier(0);
   printf("Rank %d is %d\n", rank, x);
 
   *xGlobalArr[0].x *= 10;
-  tport->wait_barrier(1);
+  engine->waitBarrier(1);
   printf("Rank %d is %d\n", rank, *xGlobal.x);
 
   x *= 10;
-  tport->wait_barrier(2);
+  engine->waitBarrier(2);
   printf("Rank %d is %d\n", rank, *xGlobalArr[0].x);
 
-  tport->finish();
+  engine->tport()->finish();
   return 0;
 }
 

@@ -46,7 +46,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/compute.h>
 #include <sstmac/replacements/mpi.h>
-#include <sprockit/sim_parameters.h>
 #include <math.h>
 
 static int max_pt2pt_count = 64000;
@@ -80,11 +79,10 @@ int USER_MAIN(int argc, char** argv)
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-  sprockit::sim_parameters* params = get_params();
-  max_pt2pt_count = params->get_optional_int_param("max_pt2pt_count", max_pt2pt_count);
-  max_all_count = params->get_optional_int_param("max_all_count", max_all_count);
-  max_root_count = params->get_optional_int_param("max_root_count", max_root_count);
-  min_root_count = params->get_optional_int_param("min_root_count", min_root_count);
+  max_pt2pt_count = sstmac::getParam<int>("max_pt2pt_count", max_pt2pt_count);
+  max_all_count = sstmac::getParam<int>("max_all_count", max_all_count);
+  max_root_count = sstmac::getParam<int>("max_root_count", max_root_count);
+  min_root_count = sstmac::getParam<int>("min_root_count", min_root_count);
 
   test_all(MPI_COMM_WORLD);
 

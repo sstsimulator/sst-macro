@@ -55,10 +55,10 @@ static void run(){
 
 int main(int argc, char** argv)
 {
-  double wall_start = sstmac_wall_time();
+  double wall_start = sstmacWallTime();
   double vir_start = sstmac_virtual_time();
   run();
-  double wall_stop = sstmac_wall_time();
+  double wall_stop = sstmacWallTime();
   double vir_stop = sstmac_virtual_time();
   double t_vir = round(vir_stop - vir_start);
   double t_wall = round(wall_stop - wall_start);

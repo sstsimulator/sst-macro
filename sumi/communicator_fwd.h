@@ -46,7 +46,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #define sumi_DOMAIN_FWD_H
 
 namespace sumi {
-class communicator;
+class Communicator;
 }
 
 

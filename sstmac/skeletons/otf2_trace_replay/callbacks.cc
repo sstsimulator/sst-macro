@@ -182,7 +182,7 @@ OTF2_CallbackCode def_group(
 
   if (groupType == OTF2_GROUP_TYPE_COMM_SELF){
     int me = app->rank();
-    app->GetMpi()->group_create_with_id(id, 1, &me);
+    app->GetMpi()->groupCreateWithId(id, 1, &me);
     app->otf2_groups[id] = true; //yes, needed
   } else {
     std::vector<int> member_vect(numberOfMembers);
@@ -190,7 +190,7 @@ OTF2_CallbackCode def_group(
       member_vect[i] = members[i];
     }
 
-    bool included = app->GetMpi()->group_create_with_id(id, numberOfMembers, member_vect.data());
+    bool included = app->GetMpi()->groupCreateWithId(id, numberOfMembers, member_vect.data());
     app->otf2_groups[id] = included;
   }
 
@@ -212,15 +212,15 @@ OTF2_CallbackCode def_comm(
   app->GetMpi()->set_generate_ids(false);
   bool need_comm = app->otf2_groups[group];
   if (need_comm){
-    app->GetMpi()->comm_create_with_id(MPI_COMM_WORLD, group, local_comm_id);
+    app->GetMpi()->commCreateWithId(MPI_COMM_WORLD, group, local_comm_id);
   } else {
     auto& str = app->otf2_string_table[name];
     if (str == "MPI_COMM_WORLD"){
       MPI_Comm output = local_comm_id;
-      app->GetMpi()->comm_dup(MPI_COMM_WORLD, &output);
+      app->GetMpi()->commDup(MPI_COMM_WORLD, &output);
     } else if (str == "MPI_COMM_SELF"){
       MPI_Comm output = local_comm_id;
-      app->GetMpi()->comm_dup(MPI_COMM_SELF, &output);
+      app->GetMpi()->commDup(MPI_COMM_SELF, &output);
     } else {
     }
   }
@@ -538,7 +538,7 @@ OTF2_CallbackCode event_mpi_collective_end(
     uint64_t            sizeReceived ) {
 
     auto app = (OTF2TraceReplayApp*)userData;
-    auto comm_size = app->GetMpi()->get_comm(comm)->size();
+    auto comm_size = app->GetMpi()->getComm(comm)->size();
 #define HANDLE_CASE(op, ...) case op : { \
             auto& call = app->GetCallQueue().PeekBack(); \
             __VA_ARGS__; \
@@ -598,7 +598,7 @@ OTF2_CallbackCode event_mpi_collective_end(
       std::vector<int> recv_sizes(comm_size);
       for (auto& recv_size : recv_sizes) recv_size = avg_size;
       // Cannot reconstruct reduce_scatter from OTF2, only a rough approximation
-      app->GetMpi()->reduce_scatter(recv_sizes.data(), MPI_BYTE, OTF2_OP, comm);
+      app->GetMpi()->reduceScatter(recv_sizes.data(), MPI_BYTE, OTF2_OP, comm);
     })
     HANDLE_CASE(OTF2_COLLECTIVE_OP_SCAN,      call.on_trigger = [=]() {app->GetMpi()->scan((sizeSent+sizeReceived)/comm_size, MPI_BYTE, OTF2_OP, comm);})
 

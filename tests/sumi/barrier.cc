@@ -43,24 +43,24 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sprockit/test/test.h>
-#include <sstmac/libraries/sumi/sumi.h>
-#include <sstmac/libraries/sumi/sumi_transport.h>
-#include <sstmac/common/runtime.h>
-#include <sumi/transport.h>
-
 #include <sprockit/output.h>
+#include <sstmac/common/runtime.h>
 #include <sstmac/util.h>
 #include <sstmac/skeleton.h>
 #include <sstmac/compute.h>
+#include <sumi/transport.h>
+#include <sumi/sumi.h>
+
+
 
 #define sstmac_app_name user_app_cxx
 using namespace sumi;
 
 void
-run_test(transport* tport, int tag)
+run_test(Transport* tport, int tag)
 {
-  tport->barrier(tag);
-  collective_done_message* msg = tport->collective_block(collective::barrier, tag);
+  tport->engine()->barrier(tag, sumi::Message::default_cq);
+  tport->engine()->blockUntilNext(sumi::Message::default_cq);
   if (tport->rank() == 0){
     printf("Cleared barrier %d\n", tag);
   }
@@ -69,17 +69,12 @@ run_test(transport* tport, int tag)
 int
 main(int argc, char **argv)
 {
-  transport* tport = sumi_api();
+  Transport* tport = sumi_api();
   tport->init();
-
-  sstmac::runtime::add_deadlock_check(
-    sstmac::new_deadlock_check(sumi_api(), &sumi::transport::deadlock_check));
-
-  sstmac::runtime::enter_deadlock_region();
   run_test(tport,0);
   run_test(tport,1);
   run_test(tport,2);
   tport->finish();
-  sstmac::runtime::exit_deadlock_region();
+
   return 0;
 }

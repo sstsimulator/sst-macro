@@ -56,48 +56,48 @@ namespace sumi {
 /**
  * Construct mpi communicators.
  */
-class mpi_comm_factory  {
+class MpiCommFactory  {
 
  public:
-  mpi_comm_factory(software_id sid, mpi_api* parent);
+  MpiCommFactory(SoftwareId sid, MpiApi* parent);
 
-  ~mpi_comm_factory();
+  ~MpiCommFactory();
 
   void init(int rank, int nproc);
 
  public:
-  mpi_comm* world() const {
+  MpiComm* world() const {
     return worldcomm_;
   }
 
-  mpi_comm* self() const {
+  MpiComm* self() const {
     return selfcomm_;
   }
 
-  mpi_comm* comm_dup(mpi_comm* caller);
+  MpiComm* comm_dup(MpiComm* caller);
 
-  mpi_comm* comm_create(mpi_comm* caller, mpi_group* group);
+  MpiComm* commCreate(MpiComm* caller, MpiGroup* group);
 
-  mpi_comm* comm_create_group(mpi_comm* caller, mpi_group* group);
+  MpiComm* commCreateGroup(MpiComm* caller, MpiGroup* group);
 
-  mpi_comm* comm_split(mpi_comm* caller, int color, int key);
+  MpiComm* commSplit(MpiComm* caller, int color, int key);
 
-  mpi_comm* create_cart(mpi_comm* caller, int ndims,
+  MpiComm* createCart(MpiComm* caller, int ndims,
                         const int *dims, const int *periods, int reorder);
 
  private:
-  MPI_Comm comm_new_id_agree(mpi_comm* old);
+  MPI_Comm commNewIdAgree(MpiComm* old);
 
  private:
-  mpi_api* parent_;
+  MpiApi* parent_;
 
-  app_id aid_;
+  AppId aid_;
 
   /// The next available communicator index.
   MPI_Comm next_id_;
 
-  mpi_comm* worldcomm_;
-  mpi_comm* selfcomm_;
+  MpiComm* worldcomm_;
+  MpiComm* selfcomm_;
 };
 
 }

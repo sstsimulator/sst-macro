@@ -69,11 +69,11 @@ protected:
   std::vector<YAML_Element *> children; //!< children elements of this element
 
 private:
-  std::string convert_double_to_string(double value_arg);
-  std::string convert_int_to_string(int value_arg);
+  std::string convert_double_toString(double value_arg);
+  std::string convert_int_toString(int value_arg);
 #ifndef HPCG_NO_LONG_LONG
-  std::string convert_long_long_to_string(long long value_arg);
+  std::string convert_long_long_toString(long long value_arg);
 #endif
-  std::string convert_size_t_to_string(size_t value_arg);
+  std::string convert_size_t_toString(size_t value_arg);
 };
 #endif // YAML_ELEMENT_HPP

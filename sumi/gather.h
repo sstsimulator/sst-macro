@@ -52,61 +52,56 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-class btree_gather_actor :
-  public dag_collective_actor
+class BtreeGatherActor :
+  public DagCollectiveActor
 {
 
  public:
-  std::string
-  to_string() const override {
+  BtreeGatherActor(CollectiveEngine* engine, int root, void* dst, void* src,
+                     int nelems, int type_size, int tag, int cq_id, Communicator* comm)
+    : DagCollectiveActor(Collective::gather, engine, dst, src, type_size, tag, cq_id, comm),
+      root_(root), nelems_(nelems) {}
+
+  std::string toString() const override {
     return "btree gather actor";
   }
 
-  btree_gather_actor(int root) : root_(root) {}
-
  protected:
-  void finalize_buffers() override;
-  void init_buffers(void *dst, void *src) override;
-  void init_dag() override;
-  void init_tree() override;
-  void start_shuffle(action *ac) override;
-  void buffer_action(void *dst_buffer, void *msg_buffer, action* ac) override;
+  void finalizeBuffers() override;
+  void initBuffers() override;
+  void initDag() override;
+  void initTree() override;
+  void startShuffle(Action *ac) override;
+  void bufferAction(void *dst_buffer, void *msg_buffer, Action* ac) override;
 
  private:
   int root_;
+  int nelems_;
   int midpoint_;
   int log2nproc_;
 
 };
 
-class btree_gather :
-  public dag_collective
+class BtreeGather : public DagCollective
 {
-
  public:
-  btree_gather(int root) : root_(root){}
+  BtreeGather(CollectiveEngine* engine, int root, void* dst, void* src,
+               int nelems, int type_size, int tag, int cq_id, Communicator* comm)
+   : DagCollective(gather, engine, dst, src, type_size, tag, cq_id, comm),
+     root_(root), nelems_(nelems) {}
 
-  btree_gather() : root_(-1){}
-
-  std::string to_string() const override {
+  std::string toString() const override {
     return "btree gather";
   }
 
-  dag_collective_actor* new_actor() const override {
-    return new btree_gather_actor(root_);
-  }
-
-  dag_collective* clone() const override {
-    return new btree_gather(root_);
-  }
-
-  void init_root(int root) override{
-    root_ = root;
+  DagCollectiveActor* newActor() const override {
+    return new BtreeGatherActor(engine_, root_, dst_buffer_, src_buffer_, nelems_, type_size_,
+                                  tag_, cq_id_, comm_);
   }
 
  private:
-  int* recv_counts_;
   int root_;
+  int nelems_;
 
 };
 

@@ -63,10 +63,10 @@ RegisterDebugSlot(pthread)
 
 #define pthread_debug(...) debug_printf(sprockit::dbg::pthread, __VA_ARGS__)
 
-thread* current_thread()
+Thread* currentThread()
 {
   //this can be null in certain situations
-  thread* t = operating_system::current_thread();
+  Thread* t = OperatingSystem::currentThread();
   return t;
 }
 
@@ -80,27 +80,27 @@ SSTMAC_pthread_create(sstmac_pthread_t* pthread,
                       (*start_routine)(void *), void * arg)
 {
   pthread_debug("pthread_create");
-  thread* thr = current_thread();
-  operating_system* os = thr->os();
-  app* parent_app = thr->parent_app();
+  Thread* thr = currentThread();
+  OperatingSystem* os = thr->os();
+  App* parent_app = thr->parentApp();
 
-  thread_id unknown_thrid(-1);
-  software_id newid(parent_app->aid(), parent_app->tid(), unknown_thrid);
-  pthread_runner* tr = new pthread_runner(newid,
+  ThreadId unknown_thrid(-1);
+  SoftwareId newid(parent_app->aid(), parent_app->tid(), unknown_thrid);
+  PthreadRunner* tr = new PthreadRunner(newid,
                            parent_app,
                            start_routine, arg, os,
                            attr ? attr->detach_state : SSTMAC_PTHREAD_CREATE_JOINABLE);
 
-  parent_app->add_subthread(tr);
-  *pthread = tr->thread_id();
+  parent_app->addSubthread(tr);
+  *pthread = tr->threadId();
 
   if (attr){
-    tr->set_cpumask(attr->cpumask);
+    tr->setCpumask(attr->cpumask);
   }
   
   pthread_debug("starting pthread %ld:%p on thread %ld:%p in app %d",
-               tr->thread_id(), tr, thr->thread_id(), thr, int(parent_app->tid()));
-  os->start_thread(tr);
+               tr->threadId(), tr, thr->threadId(), thr, int(parent_app->tid()));
+  os->startThread(tr);
 
   return 0;
 }
@@ -117,7 +117,7 @@ extern "C" void
 SSTMAC_pthread_exit(void *retval)
 {
   pthread_debug("pthread_exit");
-  thread* current = current_thread();
+  Thread* current = currentThread();
   current->kill();
 }
 
@@ -136,21 +136,21 @@ extern "C" int
 SSTMAC_pthread_join(sstmac_pthread_t pthread, void ** status)
 {
   pthread_debug("pthread_join");
-  thread* current_thr = current_thread();
-  operating_system* os = current_thr->os();
-  app* parent_app = current_thr->parent_app();
-  thread* joiner = parent_app->get_subthread(pthread);
+  Thread* current_thr = currentThread();
+  OperatingSystem* os = current_thr->os();
+  App* parent_app = current_thr->parentApp();
+  Thread* joiner = parent_app->getSubthread(pthread);
 
   pthread_debug("joining pthread %ld:%p on thread %ld:%p in app %d",
-               pthread, joiner, current_thr->thread_id(), current_thr, int(parent_app->tid()));
+               pthread, joiner, current_thr->threadId(), current_thr, int(parent_app->tid()));
 
   if (joiner){
-    os->join_thread(joiner);
+    os->joinThread(joiner);
   } else {
     //the thread has already finished - no need to join
   }
 
-  parent_app->remove_subthread(pthread);
+  parent_app->removeSubthread(pthread);
   return 0;
 }
 
@@ -165,8 +165,8 @@ extern "C" sstmac_pthread_t
 SSTMAC_pthread_self()
 {
   pthread_debug("pthread_self");
-  thread* t = current_thread();
-  return t->thread_id();
+  Thread* t = currentThread();
+  return t->threadId();
 }
 
 extern "C" int
@@ -209,11 +209,11 @@ SSTMAC_pthread_mutex_init(sstmac_pthread_mutex_t * mutex,
                           const sstmac_pthread_mutexattr_t *attr)
 {
   pthread_debug("pthread_mutex_init");
-  thread* thr = current_thread();
-  app* parent_app = thr->parent_app();
-  *mutex = parent_app->allocate_mutex();
+  Thread* thr = currentThread();
+  App* parent_app = thr->parentApp();
+  *mutex = parent_app->allocateMutex();
   pthread_debug("initialized mutex %d for thread %ld app %d",
-                *mutex, thr->thread_id(), int(parent_app->tid()));
+                *mutex, thr->threadId(), int(parent_app->tid()));
   return 0;
 }
 
@@ -231,9 +231,9 @@ SSTMAC_pthread_mutex_destroy(sstmac_pthread_mutex_t * mutex)
     return 0; //nothing to do here
 
 
-  thread* thr = current_thread();
-  app* a = thr->parent_app();
-  bool found = a->erase_mutex(*mutex);
+  Thread* thr = currentThread();
+  App* a = thr->parentApp();
+  bool found = a->eraseMutex(*mutex);
   if (found){
     return EINVAL;
   } else {
@@ -266,10 +266,10 @@ SSTMAC_pthread_mutex_lock(sstmac_pthread_mutex_t* mutex)
     return rc;
   }
 
-  thread* thr = current_thread();
+  Thread* thr = currentThread();
   pthread_debug("locking mutex %d for thread %ld for app %d",
-                *mutex, thr->thread_id(), int(thr->parent_app()->tid()));
-  mutex_t* mut = thr->parent_app()->get_mutex(*mutex);
+                *mutex, thr->threadId(), int(thr->parentApp()->tid()));
+  mutex_t* mut = thr->parentApp()->getMutex(*mutex);
   if (mut == 0){
     return EINVAL;
   } else if (mut->locked) {
@@ -297,8 +297,8 @@ SSTMAC_pthread_mutex_trylock(sstmac_pthread_mutex_t * mutex)
     return rc;
   }
 
-  thread* thr = current_thread();
-  mutex_t* mut = thr->parent_app()->get_mutex(*mutex);
+  Thread* thr = currentThread();
+  mutex_t* mut = thr->parentApp()->getMutex(*mutex);
   if (mut == nullptr){
     return EINVAL;
   } else if (mut->locked){
@@ -323,12 +323,12 @@ SSTMAC_pthread_mutex_unlock(sstmac_pthread_mutex_t * mutex)
     return rc;
   }
 
-  thread* thr = current_thread();
-  mutex_t* mut = thr->parent_app()->get_mutex(*mutex);
+  Thread* thr = currentThread();
+  mutex_t* mut = thr->parentApp()->getMutex(*mutex);
   if (mut == 0 || !mut->locked){
     return EINVAL;
   } else if (!mut->waiters.empty()){
-    thread* blocker = mut->waiters.front();
+    Thread* blocker = mut->waiters.front();
     mut->waiters.pop_front();
     thr->os()->unblock(blocker);
   } else {
@@ -337,18 +337,17 @@ SSTMAC_pthread_mutex_unlock(sstmac_pthread_mutex_t * mutex)
   return 0;
 }
 
-class unblock_event : public event_queue_entry
+class UnblockEvent : public ExecutionEvent
 {
  public:
-  unblock_event(mutex_t* mut, operating_system* os)
+  UnblockEvent(mutex_t* mut, OperatingSystem* os)
     : mutex_(mut),
-    os_(os),
-    event_queue_entry(os->component_id(), os->component_id())
+    os_(os)
   {
   }
 
   void execute(){
-    thread* blocker = mutex_->waiters.front();
+    Thread* blocker = mutex_->waiters.front();
     mutex_->waiters.pop_front();
     os_->unblock(blocker);
   }
@@ -356,7 +355,7 @@ class unblock_event : public event_queue_entry
  protected:
   mutex_t* mutex_;
 
-  operating_system* os_;
+  OperatingSystem* os_;
 
 };
 
@@ -381,8 +380,8 @@ SSTMAC_pthread_cond_init(sstmac_pthread_cond_t * cond,
 {
   pthread_debug("pthread_cond_init");  
   //just intialize it
-  thread* thr = current_thread();
-  *cond = thr->parent_app()->allocate_condition();
+  Thread* thr = currentThread();
+  *cond = thr->parentApp()->allocateCondition();
   return 0; //no op for now
 }
 
@@ -402,8 +401,8 @@ SSTMAC_pthread_cond_destroy(sstmac_pthread_cond_t * cond)
   if (*cond == SSTMAC_PTHREAD_COND_INITIALIZER)
     return 0;
 
-  thread* thr = current_thread();
-  thr->parent_app()->erase_condition(*cond);
+  Thread* thr = currentThread();
+  thr->parentApp()->eraseCondition(*cond);
   return 0;
 }
 
@@ -425,21 +424,21 @@ SSTMAC_pthread_cond_timedwait(sstmac_pthread_cond_t * cond,
     return rc;
   }
 
-  thread* thr = current_thread();
-  condition_t* pending = thr->parent_app()->get_condition(*cond);
+  Thread* thr = currentThread();
+  condition_t* pending = thr->parentApp()->getCondition(*cond);
   if (pending == 0){
     return EINVAL;
   }
 
-  mutex_t* mut = thr->parent_app()->get_mutex(*mutex);
+  mutex_t* mut = thr->parentApp()->getMutex(*mutex);
   if (mut == 0){
     return EINVAL;
   }
 
-  operating_system* myos = thr->os();
+  OperatingSystem* myos = thr->os();
   (*pending)[*mutex] = mut;
   if (!mut->waiters.empty()){
-    myos->send_now_self_event_queue(new unblock_event(mut, myos));
+    myos->sendExecutionEventNow(new UnblockEvent(mut, myos));
   } else {
     //unlock - nobody waiting on this
     mut->locked = false;
@@ -449,20 +448,20 @@ SSTMAC_pthread_cond_timedwait(sstmac_pthread_cond_t * cond,
   if (abstime){
     //schedule a timed wait unblock
     double secs = abstime->tv_sec + 1e-9*abstime->tv_nsec;
-    timestamp delay(secs);
+    Timestamp delay(secs);
     //this key may be used to unblock twice
     //if it does, make sure it doesn't get deleted
-    myos->block_timeout(delay);
+    myos->blockTimeout(delay);
   } else {
     myos->block();
   }
 
-  if (abstime && thr->timed_out()){
+  if (abstime && thr->timedOut()){
     //the cond signal never fired, remove myself from the list
     //delete the key and move on
     auto end = mut->conditionals.end();
     for (auto it=mut->conditionals.begin(); it != end; ++it){
-      thread* next = *it;
+      Thread* next = *it;
       if (next == thr){
         mut->conditionals.erase(it);
         break;
@@ -481,19 +480,19 @@ SSTMAC_pthread_cond_signal(sstmac_pthread_cond_t * cond)
     return rc;
   }
 
-  thread* thr = current_thread();
-  condition_t* pending = thr->parent_app()->get_condition(*cond);
+  Thread* thr = currentThread();
+  condition_t* pending = thr->parentApp()->getCondition(*cond);
   if (pending == 0){
     return EINVAL;
   }
   condition_t::iterator it, end = pending->end();
-  operating_system* myos = thr->os();
+  OperatingSystem* myos = thr->os();
   for (it=pending->begin(); it != end; ++it){
     mutex_t* mut = it->second;
     if (mut->conditionals.empty()){
         sprockit::abort("pthread::mutex signaled, but there are no waiting threads");
     }
-    thread* thr = mut->conditionals.front();
+    Thread* thr = mut->conditionals.front();
     mut->conditionals.pop_front();
     mut->locked = true;
     myos->unblock(thr);
@@ -505,7 +504,7 @@ extern "C" int
 SSTMAC_pthread_cond_broadcast(sstmac_pthread_cond_t * cond)
 {
   pthread_debug("pthread_cond_broadcast");  
-  spkt_throw_printf(sprockit::unimplemented_error,
+  spkt_throw_printf(sprockit::UnimplementedError,
                    "pthread::pthread_cond_broadcast not implemented");
 }
 
@@ -543,15 +542,15 @@ SSTMAC_pthread_key_create(sstmac_pthread_key_t * key, void
                           (*dest_routine)(void *))
 {
   pthread_debug("pthread_key_create");
-  app* current = current_thread()->parent_app();
-  *key = current->allocate_tls_key(dest_routine);
+  App* current = currentThread()->parentApp();
+  *key = current->allocateTlsKey(dest_routine);
   return 0;
 }
 
 extern "C" int
 SSTMAC_pthread_key_delete(sstmac_pthread_key_t key)
 {
-  pthread_debug("delete key %d on tid=%d", key, current_thread()->tid());
+  pthread_debug("delete key %d on tid=%d", key, currentThread()->tid());
   //this is really a no-op
   return 0;
 }
@@ -559,17 +558,17 @@ SSTMAC_pthread_key_delete(sstmac_pthread_key_t key)
 extern "C" int
 SSTMAC_pthread_setspecific(sstmac_pthread_key_t key, const void * pointer)
 {
-  thread* current = current_thread();
+  Thread* current = currentThread();
   pthread_debug("set key %d to pointer %p on tid=%d",
                 key, pointer, current->tid());
-  current->set_tls_value(key, const_cast<void*>(pointer));
+  current->setTlsValue(key, const_cast<void*>(pointer));
   return 0;
 }
 
 extern "C" void *
 SSTMAC_pthread_getspecific(sstmac_pthread_key_t key)
 {
-  thread* current = current_thread();
+  Thread* current = currentThread();
   if (current == nullptr){
     //why are you calling this function?
     //are you in cxa finalize? write better code
@@ -578,7 +577,7 @@ SSTMAC_pthread_getspecific(sstmac_pthread_key_t key)
     return NULL;
   }
 
-  void* ptr = current->get_tls_value(key);
+  void* ptr = current->getTlsValue(key);
   pthread_debug("got key %d to pointer %p on tid=%d",
                 key, ptr, current->tid());
   return ptr;
@@ -631,7 +630,7 @@ extern "C" int
 SSTMAC_pthread_attr_getstack(sstmac_pthread_attr_t *attr, void **stack, size_t *stacksize)
 {
   *stack = nullptr;
-  *stacksize = sstmac::sw::operating_system::stacksize();
+  *stacksize = sstmac::sw::OperatingSystem::stacksize();
   return 0;
 }
 
@@ -639,7 +638,7 @@ extern "C" int
 SSTMAC_pthread_attr_getstacksize(sstmac_pthread_attr_t *attr,
                                  size_t * stacksize)
 {
-  spkt_throw_printf(sprockit::unimplemented_error,
+  spkt_throw_printf(sprockit::UnimplementedError,
                    "pthread::pthread_attr_getstacksize not implemented");
 }
 
@@ -647,7 +646,7 @@ extern "C" int
 SSTMAC_pthread_attr_setstacksize(sstmac_pthread_attr_t *attr, size_t stacksize)
 {
   return EPERM;
-  spkt_throw_printf(sprockit::unimplemented_error,
+  spkt_throw_printf(sprockit::UnimplementedError,
                    "pthread::pthread_attr_setstacksize not implemented");
 }
 
@@ -686,9 +685,9 @@ SSTMAC_pthread_attr_getscope(sstmac_pthread_attr_t*, int* scope)
 extern "C" int
 SSTMAC_pthread_detach(sstmac_pthread_t thr)
 {
-  app* parent_app = current_thread()->parent_app();
-  thread* joiner = parent_app->get_subthread(thr);
-  joiner->set_detach_state(thread::DETACHED);
+  App* parent_app = currentThread()->parentApp();
+  Thread* joiner = parent_app->getSubthread(thr);
+  joiner->setDetachState(Thread::DETACHED);
   return 0;
 }
 
@@ -750,16 +749,16 @@ SSTMAC_pthread_rwlockattr_destroy(sstmac_pthread_rwlockattr_t *attr)
 extern "C" int
 SSTMAC_pthread_setconcurrency(int level)
 {
-  thread* thr = current_thread();
-  thr->set_pthread_concurrency(level);
+  Thread* thr = currentThread();
+  thr->setPthreadConcurrency(level);
   return 0;
 }
 
 extern "C" int
 SSTMAC_pthread_getconcurrency()
 {
-  thread* thr = current_thread();
-  return thr->pthread_concurrency();
+  Thread* thr = currentThread();
+  return thr->pthreadConcurrency();
 }
 
 extern "C" int

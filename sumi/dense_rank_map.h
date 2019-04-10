@@ -60,20 +60,20 @@ namespace sumi {
 * 0 -> 0
 * 2 -> 1
 */
-class dense_rank_map {
+class DenseRankMap {
 
  public:
-  int dense_rank(int sparse_rank) const;
+  int denseRank(int sparseRank) const;
 
-  int sparse_rank(int dense_rank) const;
+  int sparseRank(int denseRank) const;
 
-  dense_rank_map();
+  DenseRankMap();
 
-  dense_rank_map(const std::set<int>& failed, communicator* dom = nullptr);
+  DenseRankMap(const std::set<int>& failed, Communicator* dom = nullptr);
 
-  ~dense_rank_map();
+  ~DenseRankMap();
 
-  void init(const std::set<int>& failed, communicator* dom = nullptr);
+  void init(const std::set<int>& failed, Communicator* dom = nullptr);
 
  protected:
   static const int tree_cutoff = 4;
@@ -83,7 +83,7 @@ class dense_rank_map {
    * @param sparse_rank
    * @return
    */
-  int linear_find_rank(int sparse_rank) const;
+  int linearFindRank(int sparseRank) const;
 
   /**
    * O(log N) search algorithm for new rank,
@@ -91,8 +91,8 @@ class dense_rank_map {
    * @param sparse_rank
    * @return
    */
-  int tree_find_rank(
-    int sparse_rank,
+  int treeFindRank(
+    int sparseRank,
     int offset,
     int num_failed_ranks,
     int* failed_array) const;

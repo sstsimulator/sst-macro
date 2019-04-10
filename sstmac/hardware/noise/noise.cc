@@ -56,31 +56,31 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-gaussian_noise_model::~gaussian_noise_model()
+GaussianNoiseModel::~GaussianNoiseModel()
 {
   if (rng_) delete rng_;
 }
 
 double
-gaussian_noise_model::value()
+GaussianNoiseModel::value()
 {
   return rng_->value();
 }
 
-gaussian_noise_model::gaussian_noise_model(double mean, double stdev,
+GaussianNoiseModel::GaussianNoiseModel(double mean, double stdev,
                                            double maxz, int seed)
   : rng_(nullptr)
 {
   rng_ = new RNG::NormalDistribution(mean, stdev, maxz, seed);
 }
 
-gaussian_noise_model::gaussian_noise_model(sprockit::sim_parameters *params)
-  : noise_model(params)
+GaussianNoiseModel::GaussianNoiseModel(SST::Params& params)
+  : NoiseModel(params)
 {
-  double mean = params->get_quantity("mean");
-  double stdev = params->get_quantity("stdev");
-  int seed = params->get_optional_int_param("seed", 0);
-  double maxz = params->get_optional_double_param("maxz", 100);
+  double mean = params.find<SST::UnitAlgebra>("mean").getValue().toDouble();
+  double stdev = params.find<SST::UnitAlgebra>("stdev").getValue().toDouble();
+  int seed = params.find<int>("seed", 0);
+  double maxz = params.find<double>("maxz", 100);
   rng_ = new RNG::NormalDistribution(mean, stdev, maxz, seed);
 }
 
