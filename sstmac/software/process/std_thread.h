@@ -113,6 +113,8 @@ class std_thread_standin {
 }
 }
 
+#include <functional>
+
 namespace std {
 
 template <> struct hash<sstmac::sw::std_thread_standin::id> {
