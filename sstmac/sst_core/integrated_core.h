@@ -47,7 +47,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sst_config.h>
 
-#include <sst/core/element.h>
 #include <sst/core/params.h>
 
 #include <unordered_map>

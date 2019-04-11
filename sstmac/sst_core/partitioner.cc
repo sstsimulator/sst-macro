@@ -43,7 +43,6 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sst/core/part/sstpart.h>
-#include <sst/core/elementinfo.h>
 #include <sst_config.h>
 #include <sst/core/configGraph.h>
 #include <sprockit/sim_parameters.h>

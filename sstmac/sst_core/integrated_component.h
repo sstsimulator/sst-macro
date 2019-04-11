@@ -63,8 +63,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sst/core/link.h>
 #include <sst/core/linkMap.h>
 #include <sst/core/params.h>
-#include <sst/core/element.h>
-#include <sst/core/elementinfo.h>
 #include <sst/core/component.h>
 #include <sst/core/subcomponent.h>
 

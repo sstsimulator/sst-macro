@@ -45,7 +45,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/main/sstmac.h>
 
-#include <sst/core/element.h>
 #include <sstmac/common/event_scheduler.h>
 #include <sstmac/sst_core/integrated_core.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
