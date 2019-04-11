@@ -43,6 +43,7 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sumi-mpi/mpi_debug.h>
+#include <memory>
 
 RegisterDebugSlot(mpi,
     "print all the basic operations that occur on each rank - only API calls are logged, not any implementation details")

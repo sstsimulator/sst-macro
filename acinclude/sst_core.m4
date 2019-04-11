@@ -50,7 +50,7 @@ if test "X$have_integrated_core" = "Xyes"; then
 
   AC_CHECK_HEADERS([Python.h], [],
       [AC_MSG_ERROR([Could not locate Python installation needed by SST core])])
-  AC_CHECK_HEADERS([sst/core/element.h], [],
+  AC_CHECK_HEADERS([sst/core/component.h], [],
       [AC_MSG_ERROR([Could not locate SST core header files at $SST])])
 
   SUMI_CPPFLAGS="$SST_INCLUDES"
