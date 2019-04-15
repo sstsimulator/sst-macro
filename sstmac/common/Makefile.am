@@ -28,9 +28,10 @@ libsstmac_common_la_SOURCES = \
   lodepng.cc \
   sstmac_env.cc \
   thread_lock.cc \
-  stats/stat_collector.cc \
-  stats/stat_spyplot.cc \
-  stats/stat_histogram.cc 
+  stats/stat_collector.cc 
+
+#  stats/stat_spyplot.cc 
+#  stats/stat_histogram.cc 
 
 nodist_library_include_HEADERS = sstmac_config.h config.h
 
@@ -64,12 +65,13 @@ nobase_library_include_HEADERS = \
   thread_lock.h \
   sim_thread_lock.h \
   serializable.h \
-  stats/stat_spyplot.h \
-  stats/stat_spyplot_fwd.h \
   stats/stat_collector.h \
-  stats/stat_collector_fwd.h \
-  stats/stat_histogram.h \
-  stats/stat_histogram_fwd.h 
+  stats/stat_collector_fwd.h 
+
+#stats/stat_spyplot.h 
+#stats/stat_spyplot_fwd.h 
+#stats/stat_histogram.h 
+#stats/stat_histogram_fwd.h 
 
 if !INTEGRATED_SST_CORE
 nobase_library_include_HEADERS += \

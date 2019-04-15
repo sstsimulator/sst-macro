@@ -96,7 +96,7 @@ class StatHistogram : public SST::Statistics::MultiStatistic<BinType,CountType>
     counts_[bin] += count;
   }
 
-  void registerOutputFields(SST::Statistics::StatisticOutput* statOutput) override {
+  void registerOutputFields(SST::Statistics::StatisticFieldsOutput* statOutput) override {
     int fid = 0;
     statOutput->outputField(fields_[fid++], int(counts_.size()));
     statOutput->outputField(fields_[fid++], bin_size_);
@@ -105,7 +105,7 @@ class StatHistogram : public SST::Statistics::MultiStatistic<BinType,CountType>
     }
   }
 
-  void outputStatisticData(SST::Statistics::StatisticOutput* statOutput, bool EndOfSimFlag) override {
+  void outputStatisticData(SST::Statistics::StatisticFieldsOutput* statOutput, bool EndOfSimFlag) override {
     fields_.push_back(statOutput->registerField<int>("numBins"));
     fields_.push_back(statOutput->registerField<double>("binSize"));
     for (int i=0; i < counts_.size(); ++i){
@@ -149,11 +149,11 @@ class SimpleStatHistogram : public Statistic<BinType> {
     hist_.addData_impl(value, 1);
   }
 
-  void registerOutputFields(SST::Statistics::StatisticOutput* statOutput) override {
+  void registerOutputFields(SST::Statistics::StatisticFieldsOutput* statOutput) override {
     hist_.registerOutputFields(statOutput);
   }
 
-  void outputStatisticData(SST::Statistics::StatisticOutput* statOutput, bool EndOfSimFlag) override {
+  void outputStatisticData(SST::Statistics::StatisticFieldsOutput* statOutput, bool EndOfSimFlag) override {
     hist_.outputStatisticData(statOutput, EndOfSimFlag);
   }
 

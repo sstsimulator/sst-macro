@@ -90,7 +90,8 @@ PiscesBuffer::PiscesBuffer(const std::string& selfname,
     queues_(num_vc),
     credits_(num_vc, 0),
     initial_credits_(num_vc,0),
-    packet_size_(packet_size)
+    packet_size_(packet_size),
+    xmit_wait_(nullptr)
 {
   arb_ = sprockit::create<PiscesBandwidthArbitrator>(
         "macro", arb, bw);
@@ -104,7 +105,7 @@ PiscesBuffer::collectIdleTicks()
   GlobalTimestamp time_now = now();
   if (time_now > last_tail_left_){
     Timestamp time_waiting = time_now - last_tail_left_;
-    xmit_wait_->addData(time_waiting.sec());
+    if (xmit_wait_) xmit_wait_->addData(time_waiting.sec());
   }
 }
 

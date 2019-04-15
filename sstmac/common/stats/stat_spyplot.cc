@@ -78,7 +78,7 @@ StatSpyplot::addData_impl(int source, int dest, uint64_t num)
 }
 
 void
-StatSpyplot::registerOutputFields(StatisticOutput *output)
+StatSpyplot::registerOutputFields(StatisticFieldsOutput *output)
 {
   for (int i=0; i < n_dst_; ++i){
     auto str = sprockit::printf("spy%d", i);
@@ -87,7 +87,7 @@ StatSpyplot::registerOutputFields(StatisticOutput *output)
 }
 
 void
-StatSpyplot::outputStatisticData(StatisticOutput *output, bool endOfSim)
+StatSpyplot::outputStatisticData(StatisticFieldsOutput *output, bool endOfSim)
 {
   for (int i=0; i < n_dst_; ++i){
     output->outputField(fields_[i], vals_[i]);

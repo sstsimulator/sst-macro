@@ -148,6 +148,7 @@ class FTQCalendar : public SST::Statistics::MultiStatistic<int,int,int,uint64_t,
 {
   using Parent = SST::Statistics::MultiStatistic<int,int,int,uint64_t,uint64_t>;
  public:
+  /**
   SST_ELI_REGISTER_CUSTOM_STATISTIC(
       Parent,
       FTQCalendar,
@@ -155,6 +156,7 @@ class FTQCalendar : public SST::Statistics::MultiStatistic<int,int,int,uint64_t,
       "ftq",
       SST_ELI_ELEMENT_VERSION(1,0,0),
       "fixed-time quanta activity of individual processes")
+  */
 
   FTQCalendar(SST::BaseComponent* comp, const std::string& name,
               const std::string& subName, SST::Params& params);
@@ -162,10 +164,6 @@ class FTQCalendar : public SST::Statistics::MultiStatistic<int,int,int,uint64_t,
   void init(uint64_t nticks_per_epoch);
 
   virtual ~FTQCalendar();
-
-  void registerOutputFields(SST::Statistics::StatisticOutput *statOutput) override;
-
-  void outputStatisticData(SST::Statistics::StatisticOutput *statOutput, bool EndOfSimFlag) override;
 
   void addData_impl(int event_typeid, int aid, int tid,
           uint64_t ticks_begin, uint64_t num_ticks) override;

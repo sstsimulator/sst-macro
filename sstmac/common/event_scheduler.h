@@ -218,10 +218,16 @@ class EventScheduler : public sprockit::printable
   registerStatisticType(Params& params, const std::string& name, const std::string& subId){
     auto scoped_params = params.find_scoped_params(name);
     auto type = scoped_params.template find<std::string>("type", "null");
-    Stat* stat = Stat::getBuilderLibrary("macro")
-        ->getBuilder(type)->create(this, name, "", scoped_params);
-    registerStatisticCore(stat);
-    return stat;
+    auto* lib = Stat::getBuilderLibrary("macro");
+    if (lib){
+      auto* builder = lib->getBuilder(type);
+      if (builder){
+        Stat* stat = builder->create(this, name, "", scoped_params);
+        registerStatisticCore(stat);
+        return stat;
+      }
+    }
+    return nullptr;
   }
 
   void sendDelayedExecutionEvent(Timestamp delay, ExecutionEvent* ev){

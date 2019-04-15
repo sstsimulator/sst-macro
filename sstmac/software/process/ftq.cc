@@ -85,18 +85,6 @@ FTQCalendar::init(uint64_t nticks_per_epoch)
 }
 
 void
-FTQCalendar::registerOutputFields(StatisticOutput *statOutput)
-{
-  spkt_abort_printf("unimpelemented: FTQCalendar::registerOutputFields");
-}
-
-void
-FTQCalendar::outputStatisticData(StatisticOutput *statOutput, bool EndOfSimFlag)
-{
-  spkt_abort_printf("unimplemented: FTQCalendar::outputStatisticData");
-}
-
-void
 FTQCalendar::registerApp(int aid, const std::string& appname)
 {
   static thread_lock lock;

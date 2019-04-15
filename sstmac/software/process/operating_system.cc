@@ -150,7 +150,7 @@ struct NullImplicitState : public OperatingSystem::ImplicitState
 
 struct NullRegression : public OperatingSystem::ThreadSafeTimerModel<double>
 {
-
+  /**
   SST_ELI_REGISTER_DERIVED(
     OperatingSystem::RegressionModel,
     NullRegression,
@@ -158,6 +158,7 @@ struct NullRegression : public OperatingSystem::ThreadSafeTimerModel<double>
     "null",
     SST_ELI_ELEMENT_VERSION(1,0,0),
     "a regression model that does nothing")
+  */
 
   using Parent = OperatingSystem::ThreadSafeTimerModel<double>;
 
@@ -172,14 +173,6 @@ struct NullRegression : public OperatingSystem::ThreadSafeTimerModel<double>
       computeMean();
     }
     return mean_;
-  }
-
-  void outputStatisticData(StatisticOutput *statOutput, bool EndOfSimFlag) override {
-    sprockit::abort("unimplemented: NullRegression::outputStatisticData");
-  }
-
-  void registerOutputFields(StatisticOutput *statOutput) override {
-    sprockit::abort("unimplemented: NullRegression::registerOutputFields");
   }
 
   int startCollection() override {
@@ -218,6 +211,7 @@ struct NullRegression : public OperatingSystem::ThreadSafeTimerModel<double>
 
 struct LinearRegression : public OperatingSystem::ThreadSafeTimerModel<std::pair<double,double>>
 {
+  /**
   SST_ELI_REGISTER_DERIVED(
     OperatingSystem::RegressionModel,
     LinearRegression,
@@ -225,6 +219,7 @@ struct LinearRegression : public OperatingSystem::ThreadSafeTimerModel<std::pair
     "linear",
     SST_ELI_ELEMENT_VERSION(1,0,0),
     "a simple linear regression model")
+  */
 
   using parent = OperatingSystem::ThreadSafeTimerModel<std::pair<double,double>>;
   LinearRegression(SST::BaseComponent* comp, const std::string& key,
@@ -243,14 +238,6 @@ struct LinearRegression : public OperatingSystem::ThreadSafeTimerModel<std::pair
     double val = m_*params[0] + b_;
     //std::cout << "Computed " << key() << "->f(" << params[0] << ") = " << val << std::endl;
     return val;
-  }
-
-  void outputStatisticData(StatisticOutput *statOutput, bool EndOfSimFlag) override {
-    sprockit::abort("unimplemented: LinearRegression::outputStatisticData");
-  }
-
-  void registerOutputFields(StatisticOutput *statOutput) override {
-    sprockit::abort("unimplemented: LinearRegression::registerOutputFields");
   }
 
   int startCollection() override {

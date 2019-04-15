@@ -50,7 +50,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/common/event_manager.h>
 #include <sstmac/common/event_callback.h>
-#include <sstmac/common/stats/stat_spyplot.h>
 #include <sprockit/errors.h>
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
