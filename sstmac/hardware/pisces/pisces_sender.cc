@@ -46,7 +46,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/router/router.h>
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/hardware/topology/topology.h>
-#include <sstmac/common/stats/stat_spyplot.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/output.h>
 #include <sprockit/util.h>

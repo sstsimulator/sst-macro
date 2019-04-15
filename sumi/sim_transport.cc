@@ -93,7 +93,7 @@ RegisterKeywords(
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/common/event_callback.h>
 #include <sstmac/common/runtime.h>
-#include <sstmac/common/stats/stat_spyplot.h>
+//#include <sstmac/common/stats/stat_spyplot.h>
 #include <sprockit/output.h>
 
 using namespace sprockit::dbg;
@@ -340,10 +340,11 @@ SimTransport::send(Message* m)
 {
 #if SSTMAC_COMM_SYNC_STATS
   msg->setTimeSent(wall_time());
-#endif
+
   if (spy_num_messages_){
     spy_num_messages_->addData(m->sender(), m->recver(), 1);
   }
+
   if (spy_bytes_){
     switch(m->sstmac::hw::NetworkMessage::type()){
     case sstmac::hw::NetworkMessage::payload:
@@ -357,7 +358,7 @@ SimTransport::send(Message* m)
       break;
     }
   }
-
+#endif
   switch(m->sstmac::hw::NetworkMessage::type()){
     case sstmac::hw::NetworkMessage::payload:
       if (m->recver() == rank_){

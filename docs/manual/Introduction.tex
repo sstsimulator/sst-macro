@@ -22,7 +22,7 @@ Trace extrapolation can extend the usefulness of off-line simulation by estimati
 having to collect a trace, but it is limited.
 
 We turn to on-line simulation when the hardware or applications parameters need to change.
-On-line simulators instead run real application code, allowing native C/C++/Fortran to be compiled directly into the simulator.
+On-line simulators instead run real application code, allowing native C/C++ to be compiled directly into the simulator.
 \sstmacro intercepts certain function calls, estimating how much time passes rather than actually executing the function.
 In MPI programs, for example, calls to MPI\_Send are linked to the simulator instead of passing to the real MPI library.
 If desired, \sstmacro can actually be a full MPI \emph{emulator}, delivering messages between ranks and replicating the behavior of a full MPI implementation.
@@ -58,9 +58,9 @@ This will lead to compile errors with an obvious ``not implement'' compiler mess
 Suppose you have the basic MPI application below that executes a simple send/recv operation.
 One could use \inlineshell{mpicc} or \inlineshell{mpic++} to compile and run as an actual MPI program.
 This requires spawning all the processes and running them in parallel.
-Suppose, however, you wanted to simulate an entire MPI job launch within a single process.
+Suppose, however, you wanted to simulate an entire MPI job launch within a single simulator process.
 This might prove very useful for debugging since you could just run GDB or Valgrind on a single process.
-It might take a while, but for small runs (16 ranks or so) you could debug right on your laptop the same you do for a serial program.
+It might take a while, but for small runs (16 ranks or so) you could debug right on your laptop just as you do for a serial program.
 
 \begin{CppCode}
 int size = atoi(argv[1]);
@@ -93,11 +93,7 @@ node {
  }
 }
 \end{ViFile}
-Rather than launching your code using \inlineshell{mpirun} or similar, you put all your command line parameters into a \inlineshell{parameters.ini} file and run:
-
-\begin{ShellCmd}
-shell> sstmac -f parameters.ini
-\end{ShellCmd}
+Rather than launching your code using \inlineshell{mpirun} or similar, you put all your command line parameters into a \inlineshell{parameters.ini} file.
 The simulator then executes your application exactly as if you had been a real system and run:
 
 \begin{ShellCmd}

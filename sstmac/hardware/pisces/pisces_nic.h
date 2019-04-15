@@ -49,7 +49,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
 #include <sstmac/hardware/pisces/pisces_switch.h>
 #include <sstmac/hardware/common/recv_cq.h>
-#include <sstmac/common/stats/stat_histogram.h>
 
 namespace sstmac {
 namespace hw {

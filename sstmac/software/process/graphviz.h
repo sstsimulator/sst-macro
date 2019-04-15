@@ -112,6 +112,7 @@ class GraphViz :
 {
   using Parent=SST::Statistics::MultiStatistic<uint64_t,sw::Thread*>;
  public:
+  /**
   SST_ELI_REGISTER_CUSTOM_STATISTIC(
       Parent,
       GraphViz,
@@ -119,15 +120,12 @@ class GraphViz :
       "graph_viz",
       SST_ELI_ELEMENT_VERSION(1,0,0),
       "collect graphviz call trace")
+  */
 
   GraphViz(SST::BaseComponent* comp, const std::string& name,
            const std::string& subName, SST::Params& params);
 
   virtual ~GraphViz();
-
-  void outputStatisticData(SST::Statistics::StatisticOutput *statOutput, bool EndOfSimFlag) override;
-
-  void registerOutputFields(SST::Statistics::StatisticOutput *statOutput) override;
 
   void addData_impl(uint64_t count, sw::Thread* thr) override;
 

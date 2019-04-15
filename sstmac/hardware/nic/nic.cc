@@ -48,8 +48,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/hardware/logp/logp_switch.h>
 #include <sstmac/software/process/operating_system.h>
-#include <sstmac/common/stats/stat_spyplot.h>
-#include <sstmac/common/stats/stat_histogram.h>
 #include <sstmac/common/event_manager.h>
 #include <sstmac/common/event_callback.h>
 #include <sstmac/hardware/memory/memory_model.h>
@@ -287,15 +285,15 @@ NIC::recordMessage(NetworkMessage* netmsg)
   }
 
   if (spy_num_messages_) {
-    spy_num_messages_->addData(netmsg->fromaddr(), netmsg->toaddr(), 1);
+    //spy_num_messages_->addData(netmsg->fromaddr(), netmsg->toaddr(), 1);
   }
 
   if (spy_bytes_) {
-    spy_bytes_->addData(netmsg->fromaddr(), netmsg->toaddr(), netmsg->byteLength());
+    //spy_bytes_->addData(netmsg->fromaddr(), netmsg->toaddr(), netmsg->byteLength());
   }
 
   if (msg_sizes_) {
-    msg_sizes_->addData(netmsg->byteLength());
+    //msg_sizes_->addData(netmsg->byteLength());
   }
 }
 

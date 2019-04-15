@@ -108,18 +108,6 @@ GraphViz::Trace::include() const
   return self_;
 }
 
-void
-GraphViz::registerOutputFields(StatisticOutput *statOutput)
-{
-  sprockit::abort("unimplemented: GraphViz::registerOutputFields");
-}
-
-void
-GraphViz::outputStatisticData(StatisticOutput *statOutput, bool EndOfSimFlag)
-{
-  sprockit::abort("unimplemented: GraphViz::outputStatisticData");
-}
-
 std::string
 GraphViz::Trace::summary(const char* fxn) const
 {

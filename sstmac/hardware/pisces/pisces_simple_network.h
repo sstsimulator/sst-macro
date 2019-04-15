@@ -48,7 +48,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
 #include <sstmac/hardware/pisces/pisces_switch.h>
-#include <sstmac/common/stats/stat_histogram.h>
 #include <sstmac/hardware/network/network_message.h>
 #include <sst/core/interfaces/simpleNetwork.h>
 

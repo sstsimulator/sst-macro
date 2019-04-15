@@ -78,9 +78,9 @@ class StatSpyplot : public StatSpyplotParent
 
   void addData_impl(int source, int dest, uint64_t num) override;
 
-  void registerOutputFields(SST::Statistics::StatisticOutput* output) override;
+  void registerOutputFields(SST::Statistics::StatisticFieldsOutput* output) override;
 
-  void outputStatisticData(SST::Statistics::StatisticOutput* output, bool endOfSim) override;
+  void outputStatisticData(SST::Statistics::StatisticFieldsOutput* output, bool endOfSim) override;
 
  protected:
   std::vector<uint64_t> vals_;
