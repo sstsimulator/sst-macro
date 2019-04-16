@@ -3,7 +3,7 @@
 
 #include <sstmac/common/sstmac_config.h>
 
-#if SSTMAC_OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
 
 #include <sstmac/common/stats/stat_collector.h>
 #include <dumpi/libotf2dump/otf2writer.h>
@@ -16,7 +16,6 @@ class OTF2Writer : public SST::Statistics::CustomStatistic
 {
  public:
     SST_ELI_REGISTER_CUSTOM_STATISTIC(
-      SST::Statistics::CustomStatistic,
       OTF2Writer,
       "macro",
       "otf2writer",
@@ -40,7 +39,7 @@ class OTF2Writer : public SST::Statistics::CustomStatistic
 
   void addComm(MpiComm* comm, dumpi::mpi_comm_t parent_comm);
 
-  void assignGlobalCommIds(MpiApi* mpi);
+  void assignGlobalCommIds(MpiApi* mpi); 
 
  private:
   dumpi::OTF2_Writer writer_;
@@ -66,6 +65,10 @@ class OTF2Output : public SST::Statistics::StatisticOutput
     "Writes OTF2 traces capturing the simulation")
 
   OTF2Output(SST::Params& params);
+
+  bool supportsDynamicRegistration() const override {
+    return true;
+  }
 
   void startRegisterGroup(SST::Statistics::StatisticGroup *grp) override {}
   void stopRegisterGroup() override {}

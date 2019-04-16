@@ -71,7 +71,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi-mpi/mpi_comm/mpi_comm_factory.h>
 #include <sumi-mpi/mpi_types.h>
 
-#if SSTMAC_OTF2_ENABLED 
+#ifdef SSTMAC_OTF2_ENABLED 
 #include <sumi-mpi/otf2_output_stat.h>
 #endif
 
@@ -157,7 +157,7 @@ MpiApi::MpiApi(SST::Params& params, sstmac::sw::App* app,
 
 #ifdef SSTMAC_OTF2_ENABLED
   auto subname = sprockit::printf("App%d-Rank%d", app->sid().app_, app->sid().task_);
-  auto* stat = comp->registerMultiStatistic<>(params, "otf2", subname);
+  auto* stat = comp->registerStatistic<void>(params, "otf2", subname);
   //this will either be a null stat or an otf2 stat
   //the rest of the code will do null checks on the variable before dumping traces
   OTF2Writer_ = dynamic_cast<OTF2Writer*>(stat);

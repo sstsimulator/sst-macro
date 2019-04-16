@@ -117,6 +117,10 @@ class StatisticOutput
 
   virtual void output(StatisticBase* statistic, bool endOfSimFlag) = 0;
 
+  virtual bool supportsDynamicRegistration() const {
+    return false;
+  }
+
 };
 
 struct StatisticGroup {
@@ -481,8 +485,8 @@ using CustomStatistic = Statistic<void>;
 }
 }
 
-#define SST_ELI_REGISTER_CUSTOM_STATISTIC(parent,cls,lib,name,version,desc) \
-  SPKT_REGISTER_DERIVED(parent,cls,lib,name,desc)
+#define SST_ELI_REGISTER_CUSTOM_STATISTIC(cls,lib,name,version,desc) \
+  SPKT_REGISTER_DERIVED(SST::Statistics::CustomStatistic,cls,lib,name,desc)
 
 #define SST_ELI_INSTANTIATE_STATISTIC(cls,field) \
   struct cls##_##field##_##shortName : public cls<field> { \

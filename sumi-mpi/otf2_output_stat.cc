@@ -1,7 +1,7 @@
 
 #include <sumi-mpi/otf2_output_stat.h>
 
-#if SSTMAC_OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
 
 #include <sumi-mpi/mpi_integers.h>
 #include <sumi-mpi/mpi_comm/mpi_comm.h>
