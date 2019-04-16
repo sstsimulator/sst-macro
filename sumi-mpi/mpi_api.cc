@@ -70,7 +70,10 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi-mpi/mpi_protocol/mpi_protocol.h>
 #include <sumi-mpi/mpi_comm/mpi_comm_factory.h>
 #include <sumi-mpi/mpi_types.h>
+
+#if SSTMAC_OTF2_ENABLED 
 #include <sumi-mpi/otf2_output_stat.h>
+#endif
 
 #include <sprockit/errors.h>
 #include <sprockit/statics.h>
@@ -131,7 +134,7 @@ MpiApi::MpiApi(SST::Params& params, sstmac::sw::App* app,
   queue_(nullptr),
   generate_ids_(true),
 #ifdef SSTMAC_OTF2_ENABLED
-  otf2_writer_(nullptr),
+  OTF2Writer_(nullptr),
 #endif
   crossed_comm_world_barrier_(false),
   comm_factory_(app->sid(), this)
@@ -153,9 +156,11 @@ MpiApi::MpiApi(SST::Params& params, sstmac::sw::App* app,
 
 
 #ifdef SSTMAC_OTF2_ENABLED
-  sstmac::stat_descr_t otf2_cfg; otf2_cfg.dump_all = true;
-  otf2_writer_ = sstmac::optionalStats<otf2_writer>(os_->node(), params,
-                                              "otf2", "otf2", &otf2_cfg);
+  auto subname = sprockit::printf("App%d-Rank%d", app->sid().app_, app->sid().task_);
+  auto* stat = comp->registerMultiStatistic<>(params, "otf2", subname);
+  //this will either be a null stat or an otf2 stat
+  //the rest of the code will do null checks on the variable before dumping traces
+  OTF2Writer_ = dynamic_cast<OTF2Writer*>(stat);
 #endif
 }
 
@@ -256,8 +261,8 @@ MpiApi::init(int* argc, char*** argv)
   endAPICall();
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_){
-    otf2_writer_->init(start_clock, trace_clock(), rank_, nproc_);
+  if (OTF2Writer_){
+    OTF2Writer_->init(start_clock, traceClock(), rank_, nproc_);
   }
 #endif
 
@@ -288,9 +293,9 @@ MpiApi::finalize()
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Finalize()");
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_){
-    otf2_writer_->writer().generic_call(start_clock, trace_clock(), "MPI_Finalize");
-    otf2_writer_->assign_global_comm_ids(this);
+  if (OTF2Writer_){
+    OTF2Writer_->writer().generic_call(start_clock, traceClock(), "MPI_Finalize");
+    OTF2Writer_->assignGlobalCommIds(this);
   }
 #endif
 

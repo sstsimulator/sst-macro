@@ -3,7 +3,8 @@
 
 #include <sstmac/common/sstmac_config.h>
 
-#ifdef SSTMAC_OTF2_ENABLED
+#if SSTMAC_OTF2_ENABLED
+
 #include <sstmac/common/stats/stat_collector.h>
 #include <dumpi/libotf2dump/otf2writer.h>
 #include <sumi-mpi/mpi_comm/mpi_comm_fwd.h>
@@ -11,47 +12,35 @@
 
 namespace sumi {
 
-class OTF2Writer : public sstmac::stat_collector
+class OTF2Writer : public SST::Statistics::CustomStatistic
 {
-  FactoryRegister("otf2", stat_collector, OTF2Writer)
  public:
-  OTF2Writer(SST::Params& params);
+    SST_ELI_REGISTER_CUSTOM_STATISTIC(
+      SST::Statistics::CustomStatistic,
+      OTF2Writer,
+      "macro",
+      "otf2writer",
+      SST_ELI_ELEMENT_VERSION(1,0,0),
+      "Writes OTF2 traces capturing the simulation")
+
+  OTF2Writer(SST::BaseComponent* parent, const std::string& name,
+             const std::string& subNname, SST::Params& params);
 
   dumpi::OTF2_Writer& writer(){
     return writer_;
   }
 
-  std::string toString() const override {
-    return "OTF2 trace writer";
-  }
+  void dumpLocalData();
 
-  sstmac::stat_collector* doClone(SST::Params& params) const override {
-    spkt_abort_printf("OTF2Writer should not be cloned");
-    return nullptr;
-    //OTF2Writer* writer = new OTF2Writer(params);
-    //writer->size_ = size_;
-    //return writer;
-  }
+  void dumpGlobalData();
 
-  bool isMain() const override {
-    return rank_ == 0;
-  }
-
-  void dumpLocalData() override;
-
-  void dumpGlobalData() override;
-
-  void globalReduce(sstmac::parallel_runtime* rt) override;
-
-  void reduce(sstmac::stat_collector* stat) override;
-
-  void clear() override;
+  void reduce(OTF2Writer* stat);
 
   void init(uint64_t start, uint64_t stop, int rank, int size);
 
-  void add_comm(mpi_comm* comm, dumpi::mpi_comm_t parent_comm);
+  void addComm(MpiComm* comm, dumpi::mpi_comm_t parent_comm);
 
-  void assign_global_comm_ids(mpi_api* mpi);
+  void assignGlobalCommIds(MpiApi* mpi);
 
  private:
   dumpi::OTF2_Writer writer_;
@@ -61,10 +50,45 @@ class OTF2Writer : public sstmac::stat_collector
   uint64_t max_time_;
   std::vector<int> event_counts_;
   std::vector<dumpi::OTF2_MPI_Comm::shared_ptr> all_comms_;
+  std::string fileroot_;
+
+};
+
+class OTF2Output : public SST::Statistics::StatisticOutput
+{
+ public:
+  SST_ELI_REGISTER_DERIVED(
+    SST::Statistics::StatisticOutput,
+    OTF2Output,
+    "macro",
+    "otf2",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "Writes OTF2 traces capturing the simulation")
+
+  OTF2Output(SST::Params& params);
+
+  void startRegisterGroup(SST::Statistics::StatisticGroup *grp) override {}
+  void stopRegisterGroup() override {}
+
+  void registerStatistic(SST::Statistics::StatisticBase* stat) override {}
+
+  void startOutputGroup(SST::Statistics::StatisticGroup * grp) override;
+  void stopOutputGroup() override;
+
+  void output(SST::Statistics::StatisticBase* statistic, bool endOfSimFlag) override;
+
+  bool checkOutputParameters() override { return true; }
+  void startOfSimulation() override {}
+  void endOfSimulation() override {}
+  void printUsage() override {}
+
+ private:
+  OTF2Writer* first_in_grp_;
 
 };
 
 }
+
 #endif
 
 #endif

@@ -114,7 +114,6 @@ EventManager::EventManager(SST::Params& params, ParallelRuntime *rt) :
   stopped_(false),
   interconn_(nullptr)
 {
-  active_stat_group_.push("default");
   for (int i=0; i < num_pendingSlots; ++i){
     pending_events_[i].resize(nthread_);
   }
@@ -137,8 +136,8 @@ EventManager::~EventManager()
 {
   if (des_context_) delete des_context_;
   for (auto& pair : stat_groups_){
-    StatGroup& grp = pair.second;
-    for (auto* stat : grp.stats){
+    StatisticGroup* grp = pair.second;
+    for (auto* stat : grp->stats){
       if (stat) delete stat;
     }
   }
@@ -211,34 +210,29 @@ EventManager::serializeSchedule(char* buf)
 void
 EventManager::registerStatisticCore(StatisticBase* base)
 {
-  if (base->specialOutput()){
-    std::string grpName = active_stat_group_.back() + "." + base->name();
-    StatGroup& grp = stat_groups_[grpName];
-    grp.stats.push_back(base);
-    grp.outputName = base->name();
-  } else {
-    StatGroup& grp = stat_groups_[active_stat_group_.back()];
-    grp.stats.push_back(base);
+  StatisticGroup* grp = stat_groups_[base->group()];
+  if (!grp){
+    grp = new StatisticGroup(base->group());
+    stat_groups_[base->group()] = grp;
   }
+  grp->stats.push_back(base);
 }
 
 void
 EventManager::finalizeStatsInit()
 {
   for (auto& pair : stat_groups_){
-    StatGroup& grp = pair.second;
-    if (!grp.output){
+    StatisticGroup* grp = pair.second;
+    if (!grp->output){
       SST::Params myParams;
       myParams.insert("name", pair.first);
-      grp.output = sprockit::create<StatisticOutput>("macro", grp.outputName,myParams);
+      grp->output = sprockit::create<StatisticOutput>("macro", grp->outputName,myParams);
     }
-    grp.output->startRegisterGroup(pair.first);
-    for (auto* stat : grp.stats){
-      grp.output->startRegisterFields(stat);
-      stat->registerOutputFields(grp.output);
-      grp.output->stopRegisterFields();
+    grp->output->startRegisterGroup(grp);
+    for (auto* stat : grp->stats){
+      grp->output->registerStatistic(stat);
     }
-    grp.output->stopRegisterGroup();
+    grp->output->stopRegisterGroup();
   }
 }
 
@@ -246,14 +240,14 @@ void
 EventManager::finalizeStatsOutput()
 {
   for (auto& pair : stat_groups_){
-    StatGroup& grp = pair.second;
-    grp.output->startOutputGroup(pair.first);
-    for (auto* stat : grp.stats){
-      grp.output->startOutputEntries(stat);
-      stat->outputStatisticData(grp.output, true/*only ever end of sim*/);
-      grp.output->stopOutputEntries();
+    StatisticGroup* grp = pair.second;
+    grp->output->startOutputGroup(grp);
+    for (auto* stat : grp->stats){
+      grp->output->output(stat, true);
+      //stat->outputStatisticData(grp.output, true/*only ever end of sim*/);
+      //grp.output->stopOutputEntries();
     }
-    grp.output->stopOutputGroup();
+    grp->output->stopOutputGroup();
   }
 }
 

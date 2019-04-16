@@ -54,8 +54,15 @@ namespace mpi {
 class MpiRuntime :
   public ParallelRuntime
 {
-  FactoryRegister("mpi", ParallelRuntime, MpiRuntime)
  public:
+  SST_ELI_REGISTER_DERIVED(
+    ParallelRuntime,
+    MpiRuntime,
+    "macro",
+    "mpi",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "provides a parallel MPI runtime")
+
   MpiRuntime(SST::Params& params);
 
   void bcast(void *buffer, int bytes, int root) override;
@@ -64,15 +71,21 @@ class MpiRuntime :
 
   int64_t allreduceMax(int64_t maxtime) override;
 
-  void globalSum(int* data, int nelems, int root) override;
+  void globalSum(int32_t* data, int nelems, int root) override;
 
-  void globalSum(long long *data, int nelems, int root) override;
+  void globalSum(uint32_t* data, int nelems, int root) override;
 
-  void globalSum(long *data, int nelems, int root) override;
+  void globalSum(int64_t* data, int nelems, int root) override;
 
-  void globalMax(long *data, int nelems, int root) override;
+  void globalSum(uint64_t* data, int nelems, int root) override;
 
-  void globalMax(int *data, int nelems, int root) override;
+  void globalMax(int32_t* data, int nelems, int root) override;
+
+  void globalMax(uint32_t* data, int nelems, int root) override;
+
+  void globalMax(int64_t* data, int nelems, int root) override;
+
+  void globalMax(uint64_t* data, int nelems, int root) override;
 
   void send(int dst, void *buffer, int buffer_size) override;
 
@@ -84,10 +97,10 @@ class MpiRuntime :
 
   void initRuntimeParams(SST::Params& params) override;
 
-  Timestamp sendRecvMessages(Timestamp vote) override;
+  GlobalTimestamp sendRecvMessages(GlobalTimestamp vote) override;
 
  protected:
-  void do_reduce(void* data, int nelems, MPI_Datatype ty, MPI_Op op, int root);
+  void doReduce(void* data, int nelems, MPI_Datatype ty, MPI_Op op, int root);
 
   void finalize() override;
 

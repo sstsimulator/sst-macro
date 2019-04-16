@@ -58,10 +58,15 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/skeletons/otf2_trace_replay/structures.h>
 
 class OTF2TraceReplayApp : public sstmac::sw::App {
-  FactoryRegister("otf2_trace_replay_app | parseotf2 | otf2",
-               sstmac::sw::app, OTF2TraceReplayApp,
-               "application for parsing and simulating OTF2 traces")
  public:
+  SST_ELI_REGISTER_DERIVED(
+    sstmac::sw::App,
+    OTF2TraceReplayApp,
+    "macro",
+    "parseotf2",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "application for parsing and simulating OTF2 traces")
+
   OTF2TraceReplayApp(SST::Params& params,
                      sstmac::sw::SoftwareId sid,
                      sstmac::sw::OperatingSystem* os);

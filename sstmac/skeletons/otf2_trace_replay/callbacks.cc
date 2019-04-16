@@ -209,7 +209,7 @@ OTF2_CallbackCode def_comm(
   //As I understand it, OTF2 has already done the local to global conversion
   //All comm IDs in the trace are global IDs
   auto local_comm_id = id; //app->convertGlobalToLocalComm(id);
-  app->GetMpi()->set_generate_ids(false);
+  app->GetMpi()->setGenerateIds(false);
   bool need_comm = app->otf2_groups[group];
   if (need_comm){
     app->GetMpi()->commCreateWithId(MPI_COMM_WORLD, group, local_comm_id);

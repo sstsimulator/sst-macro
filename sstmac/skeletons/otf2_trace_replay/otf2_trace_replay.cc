@@ -139,8 +139,8 @@ OTF2TraceReplayApp::skeletonMain() {
         << metafile_ << std::endl;
   }
 
-  mpi_ = getApi<sumi::MpiApi>();
-  mpi_->set_generate_ids(false);
+  mpi_ = getApi<sumi::MpiApi>("mpi");
+  mpi_->setGenerateIds(false);
   mpi_->init(nullptr,nullptr); //force init here
 
   auto event_reader = initialize_event_reader();
@@ -157,7 +157,7 @@ OTF2TraceReplayApp::skeletonMain() {
 void
 OTF2TraceReplayApp::StartMpi(const sstmac::Timestamp wall) {
   // Time not initialized
-  if (compute_time == sstmac::Timestamp::zero) return;
+  if (compute_time.ticks() == sstmac::Timestamp::zero) return;
 
   if (PrintTimeDeltas()) {
     cout << "\u0394T " << (wall-compute_time).sec() << " seconds"<< endl;

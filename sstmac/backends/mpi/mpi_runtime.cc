@@ -93,7 +93,7 @@ MpiRuntime::allreduceMax(int64_t my_time)
 }
 
 void
-MpiRuntime::do_reduce(void* data, int nelems, MPI_Datatype ty, MPI_Op op, int root)
+MpiRuntime::doReduce(void* data, int nelems, MPI_Datatype ty, MPI_Op op, int root)
 {
   if (root == global_root){
     MPI_Allreduce(MPI_IN_PLACE, data, nelems, ty, op, MPI_COMM_WORLD);
@@ -105,50 +105,77 @@ MpiRuntime::do_reduce(void* data, int nelems, MPI_Datatype ty, MPI_Op op, int ro
 }
 
 void
-MpiRuntime::globalMax(long *data, int nelems, int root)
+MpiRuntime::globalMax(int32_t *data, int nelems, int root)
 {
   if (nproc_ == 1)
     return;
 
-  do_reduce(data, nelems, MPI_LONG, MPI_MAX, root);
+  doReduce(data, nelems, MPI_INT32_T, MPI_MAX, root);
 }
 
 void
-MpiRuntime::globalMax(int *data, int nelems, int root)
+MpiRuntime::globalMax(uint32_t *data, int nelems, int root)
 {
   if (nproc_ == 1)
     return;
 
-  do_reduce(data, nelems, MPI_INT, MPI_MAX, root);
+  doReduce(data, nelems, MPI_UINT32_T, MPI_MAX, root);
 }
 
 void
-MpiRuntime::globalSum(int* data, int nelems, int root)
+MpiRuntime::globalMax(int64_t *data, int nelems, int root)
 {
   if (nproc_ == 1)
     return;
 
-  do_reduce(data, nelems, MPI_INT, MPI_SUM, root);
-}
-
-
-void
-MpiRuntime::globalSum(long long *data, int nelems, int root)
-{
-  if (nproc_ == 1)
-    return;
-
-  do_reduce(data, nelems, MPI_LONG_LONG, MPI_SUM, root);
+  doReduce(data, nelems, MPI_INT64_T, MPI_MAX, root);
 }
 
 void
-MpiRuntime::globalSum(long *data, int nelems, int root)
+MpiRuntime::globalMax(uint64_t *data, int nelems, int root)
 {
   if (nproc_ == 1)
     return;
 
-  do_reduce(data, nelems, MPI_LONG, MPI_SUM, root);
+  doReduce(data, nelems, MPI_UINT64_T, MPI_MAX, root);
 }
+
+void
+MpiRuntime::globalSum(int32_t *data, int nelems, int root)
+{
+  if (nproc_ == 1)
+    return;
+
+  doReduce(data, nelems, MPI_INT32_T, MPI_SUM, root);
+}
+
+void
+MpiRuntime::globalSum(uint32_t *data, int nelems, int root)
+{
+  if (nproc_ == 1)
+    return;
+
+  doReduce(data, nelems, MPI_UINT32_T, MPI_SUM, root);
+}
+
+void
+MpiRuntime::globalSum(int64_t *data, int nelems, int root)
+{
+  if (nproc_ == 1)
+    return;
+
+  doReduce(data, nelems, MPI_INT64_T, MPI_SUM, root);
+}
+
+void
+MpiRuntime::globalSum(uint64_t *data, int nelems, int root)
+{
+  if (nproc_ == 1)
+    return;
+
+  doReduce(data, nelems, MPI_UINT64_T, MPI_SUM, root);
+}
+
 
 void
 MpiRuntime::initRuntimeParams(SST::Params& params)
@@ -224,8 +251,8 @@ MpiRuntime::bcast(void *buffer, int bytes, int root)
   MPI_Bcast(buffer, bytes, MPI_BYTE, root, MPI_COMM_WORLD);
 }
 
-Timestamp
-MpiRuntime::sendRecvMessages(Timestamp vote)
+GlobalTimestamp
+MpiRuntime::sendRecvMessages(GlobalTimestamp vote)
 {
   //okay - it's possible that we have pending events
   //that aren't serialized yet because we overran the buffers
@@ -251,7 +278,7 @@ MpiRuntime::sendRecvMessages(Timestamp vote)
     } else {
       votes_[i].num_sent = 0;
     }
-    votes_[i].time_vote = vote.ticks_int64();
+    votes_[i].time_vote = vote.time.ticks();
     //wait to fill this in until we know the size of all pending messages
     votes_[i].max_bytes = commSize;
   }
@@ -287,7 +314,7 @@ MpiRuntime::sendRecvMessages(Timestamp vote)
 
   std::swap(payload_tag, next_payload_tag);
   ++epoch_;
-  return Timestamp(incoming.time_vote, Timestamp::exact);
+  return GlobalTimestamp(incoming.time_vote, Timestamp::exact);
 }
 
 void

@@ -75,8 +75,8 @@ MpiApi::send(const void *buf, int count, MPI_Datatype datatype, int dest, int ta
   finish_mpi_call(MPI_Send);
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_){
-    otf2_writer_->writer().mpi_send(start_clock, trace_clock(),
+  if (OTF2Writer_){
+    OTF2Writer_->writer().mpi_send(start_clock, traceClock(),
      datatype, count, dest, comm, tag);
   }
 #endif
@@ -101,8 +101,8 @@ MpiApi::sendrecv(const void *sendbuf, int sendcount,
   finish_mpi_call(MPI_Sendrecv);
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_){
-    otf2_writer_->writer().generic_call(start_clock, trace_clock(), "MPI_Sendrecv");
+  if (OTF2Writer_){
+    OTF2Writer_->writer().generic_call(start_clock, traceClock(), "MPI_Sendrecv");
   }
 #endif
 
@@ -131,8 +131,8 @@ MpiApi::request_free(MPI_Request *req)
   *req = MPI_REQUEST_NULL;
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_){
-    otf2_writer_->writer().generic_call(start_clock, trace_clock(), "MPI_Request_free");
+  if (OTF2Writer_){
+    OTF2Writer_->writer().generic_call(start_clock, traceClock(), "MPI_Request_free");
   }
 #endif
 
@@ -168,7 +168,7 @@ MpiApi::start(MPI_Request* req)
   endAPICall();
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_writer_) {
+  if(OTF2Writer_) {
     sprockit::abort("OTF2 trace MPI_Start unimplemented");
   }
 #endif
@@ -187,7 +187,7 @@ MpiApi::startall(int count, MPI_Request* req)
   endAPICall();
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_) {
+  if (OTF2Writer_) {
     sprockit::abort("OTF2 trace MPI_Start_all unimplemented");
   }
 #endif
@@ -226,7 +226,7 @@ MpiApi::sendInit(const void *buf, int count,
   endAPICall();
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_){
+  if (OTF2Writer_){
     sprockit::abort("OTF2 trace MPI_Send_init unimplemented");
   }
 #endif
@@ -261,8 +261,8 @@ MpiApi::isend(const void *buf, int count, MPI_Datatype datatype, int dest,
   finish_mpi_call(MPI_Isend);
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_){
-    otf2_writer_->writer().mpi_isend(start_clock, trace_clock(),
+  if (OTF2Writer_){
+    OTF2Writer_->writer().mpi_isend(start_clock, traceClock(),
       datatype, count, dest, comm, tag, *request);
   }
 #endif
@@ -281,8 +281,8 @@ MpiApi::recv(void *buf, int count, MPI_Datatype datatype, int source,
   finish_mpi_call(MPI_Recv);
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_){
-    otf2_writer_->writer().mpi_recv(start_clock, trace_clock(),
+  if (OTF2Writer_){
+    OTF2Writer_->writer().mpi_recv(start_clock, traceClock(),
       datatype, count, source, comm, tag);
   }
 #endif
@@ -329,7 +329,7 @@ MpiApi::recvInit(void *buf, int count, MPI_Datatype datatype, int source,
   op->comm = comm;
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_){
+  if (OTF2Writer_){
     sprockit::abort("OTF2 trace MPI_Recv_init unimplemented");
   }
 #endif
@@ -364,8 +364,8 @@ MpiApi::irecv(void *buf, int count, MPI_Datatype datatype, int source,
   finish_mpi_call(MPI_Irecv);
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_writer_){
-    otf2_writer_->writer().mpi_irecv(start_clock, trace_clock(),
+  if(OTF2Writer_){
+    OTF2Writer_->writer().mpi_irecv(start_clock, traceClock(),
       datatype, count, source, comm, tag, *request);
   }
 #endif

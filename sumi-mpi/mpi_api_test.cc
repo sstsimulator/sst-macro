@@ -94,11 +94,11 @@ MpiApi::test(MPI_Request *request, int *flag, MPI_Status *status)
   endAPICall();
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_){
+  if (OTF2Writer_){
     dumpi::OTF2_Writer::mpi_status_t stat;
     stat.tag = tag;
     stat.source = source;
-    otf2_writer_->writer().mpi_test(start_clock, trace_clock(), req_cpy, *flag, &stat);
+    OTF2Writer_->writer().mpi_test(start_clock, traceClock(), req_cpy, *flag, &stat);
   }
 #endif
 
@@ -109,7 +109,7 @@ int
 MpiApi::testall(int count, MPI_Request array_of_requests[], int *flag, MPI_Status array_of_statuses[])
 {
 #ifdef SSTMAC_OTF2_ENABLED
-  auto start_clock = trace_clock();
+  auto start_clock = traceClock();
 
   // Make a copy of requests since they may mutate before OTF2 call
   std::vector<dumpi::mpi_request_t> requests(array_of_requests, array_of_requests + count);
@@ -138,8 +138,8 @@ MpiApi::testall(int count, MPI_Request array_of_requests[], int *flag, MPI_Statu
   endAPICall();
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_){
-    otf2_writer_->writer().mpi_testall(start_clock, trace_clock(),
+  if (OTF2Writer_){
+    OTF2Writer_->writer().mpi_testall(start_clock, traceClock(),
                           count, requests.data(), *flag, statuses.data());
   }
 #endif
@@ -151,7 +151,7 @@ int
 MpiApi::testany(int count, MPI_Request array_of_requests[], int *indx, int *flag, MPI_Status *status)
 {
 #ifdef SSTMAC_OTF2_ENABLED
-  auto start_clock = trace_clock();
+  auto start_clock = traceClock();
   // Make a copy of requests since they may mutate before OTF2 call
   std::vector<dumpi::mpi_request_t> requests(array_of_requests, array_of_requests + count);
   dumpi::OTF2_Writer::mpi_status_t stat;
@@ -179,8 +179,8 @@ MpiApi::testany(int count, MPI_Request array_of_requests[], int *indx, int *flag
   endAPICall();
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_){
-    otf2_writer_->writer().mpi_testany(start_clock, trace_clock(),
+  if (OTF2Writer_){
+    OTF2Writer_->writer().mpi_testany(start_clock, traceClock(),
                           requests.data(), *indx, *flag, &stat);
   }
 #endif
@@ -193,7 +193,7 @@ MpiApi::testsome(int incount, MPI_Request array_of_requests[], int *outcount,
                   int array_of_indices[], MPI_Status array_of_statuses[])
 {
 #ifdef SSTMAC_OTF2_ENABLED
-  auto start_clock = trace_clock();
+  auto start_clock = traceClock();
   // Make a copy of requests since they may mutate before OTF2 call
   std::vector<dumpi::mpi_request_t> requests(array_of_requests, array_of_requests + incount);
   std::vector<dumpi::OTF2_Writer::mpi_status_t> statuses(incount);
@@ -217,8 +217,8 @@ MpiApi::testsome(int incount, MPI_Request array_of_requests[], int *outcount,
   endAPICall();
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_writer_){
-    otf2_writer_->writer().mpi_testsome(start_clock, trace_clock(),
+  if(OTF2Writer_){
+    OTF2Writer_->writer().mpi_testsome(start_clock, traceClock(),
                                         requests.data(), *outcount, array_of_indices,
                                         statuses.data());
   }

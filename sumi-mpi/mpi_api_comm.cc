@@ -75,9 +75,9 @@ MpiApi::commDup(MPI_Comm input, MPI_Comm *output)
   endAPICall();
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_){
-    otf2_writer_->add_comm(outputPtr, input);
-    otf2_writer_->writer().mpi_comm_dup(start_clock, trace_clock(),
+  if (OTF2Writer_){
+    OTF2Writer_->addComm(outputPtr, input);
+    OTF2Writer_->writer().mpi_comm_dup(start_clock, traceClock(),
                                         input, *output);
   }
 #endif
@@ -99,7 +99,7 @@ MpiApi::commCreateGroup(MPI_Comm comm, MPI_Group group, int tag, MPI_Comm *newco
   //okay, this is really complicated
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_){
+  if (OTF2Writer_){
     sprockit::abort("OTF2 trace MPI_Comm_create_group unimplemented");
   }
 #endif
@@ -129,9 +129,9 @@ MpiApi::commCreate(MPI_Comm input, MPI_Group group, MPI_Comm *output)
   endAPICall();
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_){
-    otf2_writer_->add_comm(outputPtr, input);
-    otf2_writer_->writer().mpi_comm_create(start_clock, trace_clock(),
+  if (OTF2Writer_){
+    OTF2Writer_->addComm(outputPtr, input);
+    OTF2Writer_->writer().mpi_comm_create(start_clock, traceClock(),
                                            input, group, *output);
   }
 #endif
@@ -150,9 +150,9 @@ MpiApi::commCreateWithId(MPI_Comm input, MPI_Group group, MPI_Comm new_comm)
     MpiComm* newCommPtr = new MpiComm(new_comm, new_rank, groupPtr, sid().app_);
     addCommPtr(newCommPtr, &new_comm);
 #ifdef SSTMAC_OTF2_ENABLED
-    if (otf2_writer_){
+    if (OTF2Writer_){
       if (newCommPtr->rank() == 0){
-        otf2_writer_->add_comm(newCommPtr, input);
+        OTF2Writer_->addComm(newCommPtr, input);
       }
     }
 #endif
@@ -178,7 +178,7 @@ MpiApi::cartCreate(MPI_Comm comm_old, int ndims, const int dims[],
   endAPICall();
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_){
+  if (OTF2Writer_){
     sprockit::abort("OTF2 trace MPI_Cart_create unimplemented");
   }
 #endif
@@ -288,9 +288,9 @@ MpiApi::commSplit(MPI_Comm incomm, int color, int key, MPI_Comm *outcomm)
 
   endAPICall();
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_){
-    otf2_writer_->add_comm(outcommPtr, incomm);
-    otf2_writer_->writer().mpi_comm_split(start_clock, trace_clock(), incomm, color, key, *outcomm);
+  if (OTF2Writer_){
+    OTF2Writer_->addComm(outcommPtr, incomm);
+    OTF2Writer_->writer().mpi_comm_split(start_clock, traceClock(), incomm, color, key, *outcomm);
   }
 #endif
 
@@ -302,10 +302,10 @@ MpiApi::commFree(MPI_Comm* input)
 {
   start_comm_call(MPI_Comm_free,*input);
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_){
+  if (OTF2Writer_){
     //If tracing OTF2, I am not allowed to delete any communicators
     //TODO this needs to pass in the comm id
-    //otf2_writer_.generic_call(start_clock, trace_clock(), "MPI_Comm_free");
+    //OTF2Writer_.generic_call(start_clock, traceClock(), "MPI_Comm_free");
   } else
 #endif
   {

@@ -120,9 +120,9 @@ MpiApi::allgatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
            recvcounts, displs, recvtype, sendbuf, recvbuf);
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_){
-    otf2_writer_->writer().mpi_allgatherv(start_clock, trace_clock(),
-       get_comm(comm)->size(), sendcount, sendtype,
+  if (OTF2Writer_){
+    OTF2Writer_->writer().mpi_allgatherv(start_clock, traceClock(),
+       getComm(comm)->size(), sendcount, sendtype,
        recvcounts, recvtype, comm);
   }
 #endif
@@ -215,9 +215,9 @@ MpiApi::alltoallv(const void *sendbuf, const int *sendcounts,
            recvcounts, recvtype, rdispls, sendbuf, recvbuf);
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_){
-    otf2_writer_->writer().mpi_alltoallv(start_clock, trace_clock(),
-        get_comm(comm)->size(), sendcounts, sendtype,
+  if (OTF2Writer_){
+    OTF2Writer_->writer().mpi_alltoallv(start_clock, traceClock(),
+        getComm(comm)->size(), sendcounts, sendtype,
         recvcounts, recvtype, comm);
   }
 #endif
@@ -335,9 +335,9 @@ MpiApi::gatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
            recvcounts, displs, recvtype, sendbuf, recvbuf);
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_){
-    otf2_writer_->writer().mpi_gatherv(start_clock, trace_clock(),
-      get_comm(comm)->size(), sendcount, sendtype,
+  if (OTF2Writer_){
+    OTF2Writer_->writer().mpi_gatherv(start_clock, traceClock(),
+      getComm(comm)->size(), sendcount, sendtype,
       recvcounts, recvtype, root, comm);
   }
 #endif
@@ -438,9 +438,9 @@ MpiApi::scatterv(const void* sendbuf, const int* sendcounts, const int *displs, 
            recvcount, recvtype, sendbuf, recvbuf);
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_){
-    otf2_writer_->writer().mpi_scatterv(start_clock, trace_clock(),
-      get_comm(comm)->size(), sendcounts, sendtype,
+  if (OTF2Writer_){
+    OTF2Writer_->writer().mpi_scatterv(start_clock, traceClock(),
+      getComm(comm)->size(), sendcounts, sendtype,
       recvcount, recvtype, root, comm);
   }
 #endif

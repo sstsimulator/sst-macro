@@ -279,8 +279,8 @@ MpiApi::allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
           sendbuf, recvbuf);
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_){
-    otf2_writer_->writer().mpi_allgather(start_clock, trace_clock(),
+  if (OTF2Writer_){
+    OTF2Writer_->writer().mpi_allgather(start_clock, traceClock(),
             sendcount, sendtype, recvcount, recvtype, comm);
   }
 #endif
@@ -350,8 +350,8 @@ MpiApi::alltoall(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
          sendbuf, recvbuf);
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_){
-    otf2_writer_->writer().mpi_alltoall(start_clock, trace_clock(),
+  if (OTF2Writer_){
+    OTF2Writer_->writer().mpi_alltoall(start_clock, traceClock(),
                            sendcount, sendtype, recvcount, recvtype, comm);
   }
 #endif
@@ -439,8 +439,8 @@ MpiApi::allreduce(const void *src, void *dst, int count,
            count, type, mop, src, dst);
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_){
-    otf2_writer_->writer().mpi_allreduce(start_clock, trace_clock(),
+  if (OTF2Writer_){
+    OTF2Writer_->writer().mpi_allreduce(start_clock, traceClock(),
                             count, type, comm);
   }
 #endif
@@ -502,8 +502,8 @@ MpiApi::barrier(MPI_Comm comm)
   finish_mpi_call(MPI_Barrier);
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_writer_) {
-    otf2_writer_->writer().mpi_barrier(start_clock, trace_clock(), comm);
+  if(OTF2Writer_) {
+    OTF2Writer_->writer().mpi_barrier(start_clock, traceClock(), comm);
   }
 #endif
 
@@ -571,9 +571,9 @@ MpiApi::bcast(void* buffer, int count, MPI_Datatype type, int root, MPI_Comm com
            count, type, root, buffer);
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_writer_) {
-    mpi_comm* commPtr = get_comm(comm);
-    otf2_writer_->writer().mpi_bcast(start_clock, trace_clock(),
+  if(OTF2Writer_) {
+    MpiComm* commPtr = getComm(comm);
+    OTF2Writer_->writer().mpi_bcast(start_clock, traceClock(),
         count, type, root, comm);
   }
 #endif
@@ -661,8 +661,8 @@ MpiApi::gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
           recvcount, recvtype, sendbuf, recvbuf);
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_writer_){
-    otf2_writer_->writer().mpi_gather(start_clock, trace_clock(),
+  if(OTF2Writer_){
+    OTF2Writer_->writer().mpi_gather(start_clock, traceClock(),
         sendcount, sendtype, recvcount, recvtype, root, comm);
   }
 #endif
@@ -772,8 +772,8 @@ MpiApi::reduce(const void *src, void *dst, int count,
           type, root, mop, src, dst);
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_writer_){
-    otf2_writer_->writer().mpi_reduce(start_clock, trace_clock(),
+  if(OTF2Writer_){
+    OTF2Writer_->writer().mpi_reduce(start_clock, traceClock(),
       count, type, root, comm);
   }
 #endif
@@ -844,9 +844,9 @@ MpiApi::reduceScatter(const void *src, void *dst, const int *recvcnts,
           comm, recvcnts, type, mop, src, dst);
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_){
-    otf2_writer_->writer().mpi_reduce_scatter(start_clock, trace_clock(),
-          get_comm(comm)->size(), recvcnts, type, comm);
+  if (OTF2Writer_){
+    OTF2Writer_->writer().mpi_reduce_scatter(start_clock, traceClock(),
+          getComm(comm)->size(), recvcnts, type, comm);
   }
 #endif
 
@@ -967,8 +967,8 @@ MpiApi::scan(const void *src, void *dst, int count, MPI_Datatype type, MPI_Op mo
   do_coll(Scan, MPI_Scan, comm, count, type, mop, src, dst);
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_writer_){
-    otf2_writer_->writer().mpi_scan(start_clock, trace_clock(), count, type, comm);
+  if(OTF2Writer_){
+    OTF2Writer_->writer().mpi_scan(start_clock, traceClock(), count, type, comm);
   }
 #endif
 
@@ -1044,8 +1044,8 @@ MpiApi::scatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
           recvcount, recvtype, sendbuf, recvbuf);
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_){
-    otf2_writer_->writer().mpi_scatter(start_clock, trace_clock(),
+  if (OTF2Writer_){
+    OTF2Writer_->writer().mpi_scatter(start_clock, traceClock(),
       sendcount, sendtype, recvcount, recvtype, root, comm);
   }
 #endif

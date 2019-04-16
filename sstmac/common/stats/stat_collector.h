@@ -68,14 +68,16 @@ namespace sstmac {
 
 class StatisticBase {
  public:
-  virtual bool specialOutput() const { return false; }
+  virtual void registerOutputFields(StatisticFieldsOutput* statOutput) = 0;
 
-  virtual void registerOutputFields(StatisticOutput* statOutput) = 0;
-
-  virtual void outputStatisticData(StatisticOutput* output, bool endOfSimFlag) = 0;
+  virtual void outputStatisticData(StatisticFieldsOutput* output, bool endOfSimFlag) = 0;
 
   std::string name() const {
     return name_;
+  }
+
+  std::string group() const {
+    return group_;
   }
 
   virtual ~StatisticBase(){}
@@ -83,13 +85,11 @@ class StatisticBase {
  protected:
   StatisticBase(EventScheduler* parent,
                 const std::string& name, const std::string& subName,
-                SST::Params& params) :
-    name_(name)
-  {
-  }
+                SST::Params& params);
 
  private:
   std::string name_;
+  std::string group_;
 };
 
 class StatisticOutput
@@ -102,10 +102,68 @@ class StatisticOutput
   virtual ~StatisticOutput(){}
 
  public:
+  virtual bool checkOutputParameters() = 0;
+  virtual void printUsage() = 0;
+  virtual void startOfSimulation() = 0;
+  virtual void endOfSimulation() = 0;
+
+  virtual void startRegisterGroup(StatisticGroup* grp) = 0;
+  virtual void stopRegisterGroup() = 0;
+
+  virtual void registerStatistic(StatisticBase* stat) = 0;
+
+  virtual void startOutputGroup(StatisticGroup* grp) = 0;
+  virtual void stopOutputGroup() = 0;
+
+  virtual void output(StatisticBase* statistic, bool endOfSimFlag) = 0;
+
+};
+
+struct StatisticGroup {
+  std::list<StatisticBase*> stats;
+  StatisticOutput* output;
+  std::string outputName;
+  std::string name;
+  std::map<std::string, int> columns;
+  StatisticGroup(const std::string& n) :
+    output(nullptr), outputName("csv"), name(n)
+  {}
+};
+
+class StatisticFieldsOutput : public StatisticOutput
+{
+ public:
+  StatisticFieldsOutput(SST::Params& params) :
+    StatisticOutput(params),
+    active_group_(nullptr),
+    active_stat_(nullptr),
+    default_group_(new StatisticGroup("default"))
+  {
+  }
+
+  virtual ~StatisticFieldsOutput(){}
+
+ public:
   using fieldHandle_t = int;
 
   template<typename T> fieldHandle_t registerField(const char* fieldName){
     return implRegisterField(fieldName);
+  }
+
+  void startRegisterGroup(StatisticGroup* grp) override {
+    active_group_ = grp;
+  }
+
+  void stopRegisterGroup() override {
+    active_group_ = nullptr;
+  }
+
+  virtual void startOutputEntries(StatisticBase* statistic){
+    active_stat_ = statistic;
+  }
+
+  virtual void stopOutputEntries(){
+    active_stat_ = nullptr;
   }
 
   virtual void outputField(fieldHandle_t fieldHandle, int32_t data) = 0;
@@ -115,43 +173,17 @@ class StatisticOutput
   virtual void outputField(fieldHandle_t fieldHandle, float data) = 0;
   virtual void outputField(fieldHandle_t fieldHandle, double data) = 0;
 
-  void outputEntries(StatisticBase* stat, bool endOfSimFlag) {
+  void output(StatisticBase* stat, bool endOfSimFlag) override {
     startOutputEntries(stat);
     stat->outputStatisticData(this, endOfSimFlag);
     stopOutputEntries();
   }
 
-  void startRegisterGroup(const std::string& name){
-    groups_.emplace(name, Group());
-    active_group_ = &groups_[name];
-  }
-
-  void stopRegisterGroup(){
-    active_group_ = nullptr;
-  }
-
-  void startRegisterFields(StatisticBase *statistic) {
-    active_stat_ = statistic;
-  }
-
-  void stopRegisterFields() {
-    active_stat_ = nullptr;
-  }
-
-  virtual void startOutputGroup(const std::string& name) = 0;
-  virtual void stopOutputGroup() = 0;
-
-  virtual void startOutputEntries(StatisticBase* statistic) = 0;
-  virtual void stopOutputEntries() = 0;
-
- protected:
-  struct Group {
-    std::map<std::string, int> columns;
-  };
+  void registerStatistic(StatisticBase* stat) override;
 
  private:
   fieldHandle_t implRegisterField(const char* fieldName){
-    Group* grp = active_group_ ? active_group_ : &default_group_;
+    auto* grp = active_group_ ? active_group_ : default_group_;
     std::string fullName = active_stat_->name() + "." + fieldName;
     auto iter = grp->columns.find(fieldName);
     if (iter == grp->columns.end()){
@@ -163,17 +195,16 @@ class StatisticOutput
     }
   }
 
-  std::map<std::string, Group> groups_;
-
   StatisticBase* active_stat_;
 
-  Group* active_group_;
+  StatisticGroup* active_group_;
 
-  Group default_group_;
+  StatisticGroup* default_group_;
+
 
 };
 
-class StatOutputCSV : public StatisticOutput {
+class StatOutputCSV : public StatisticFieldsOutput {
  public:
   SST_ELI_REGISTER_DERIVED(
       StatisticOutput,
@@ -183,7 +214,7 @@ class StatOutputCSV : public StatisticOutput {
       SST_ELI_ELEMENT_VERSION(1,0,0),
       "writes csv output")
 
-  StatOutputCSV(SST::Params& params) : StatisticOutput(params) {}
+  StatOutputCSV(SST::Params& params) : StatisticFieldsOutput(params) {}
 
   void outputField(fieldHandle_t fieldHandle, int32_t data) override {
     output(fieldHandle, data);
@@ -209,8 +240,8 @@ class StatOutputCSV : public StatisticOutput {
     output(fieldHandle, data);
   }
 
-  void startOutputGroup(const std::string& name) override {
-    csv_out_.open(name.c_str());
+  void startOutputGroup(StatisticGroup* grp) override {
+    csv_out_.open(grp->name.c_str());
   }
 
   void startOutputEntries(StatisticBase *stat) override {
@@ -222,6 +253,12 @@ class StatOutputCSV : public StatisticOutput {
   void stopOutputGroup() override {
     csv_out_.close();
   }
+
+  bool checkOutputParameters() override { return true; }
+  void startOfSimulation() override {}
+  void endOfSimulation() override {}
+  void printUsage() override {}
+
 
  private:
   template <class T> void output(fieldHandle_t handle, T&& data){
@@ -302,6 +339,28 @@ class Statistic :
   }
 };
 
+template <>
+class Statistic<void> : public StatisticBase
+{
+
+ public:
+  SST_ELI_DECLARE_BASE(Statistic)
+  SST_ELI_DECLARE_CTOR(EventScheduler*, const std::string&, const std::string&, SST::Params&)
+  virtual ~Statistic(){}
+
+  void registerOutputFields(StatisticFieldsOutput* statOutput) override;
+
+  void outputStatisticData(StatisticFieldsOutput* output, bool endOfSimFlag) override;
+
+ protected:
+  Statistic(EventScheduler* parent,
+            const std::string& name, const std::string& subName,
+            SST::Params& params) :
+    StatisticBase(parent, name, subName, params)
+  {
+  }
+};
+
 #define SST_ELI_DECLARE_STATISTIC_TEMPLATE(cls,lib,name,version,desc,interface) \
   static const char* SPKT_getLibrary(){ \
     return lib; \
@@ -311,8 +370,7 @@ class Statistic :
   }
 
 template <class T, bool isFundamental>
-class NullStatisticBase :
-  public Statistic<T>
+class NullStatisticBase : public Statistic<T>
 {
 };
 
@@ -418,6 +476,8 @@ namespace Statistics {
 template <class... Args>
 using MultiStatistic = Statistic<std::tuple<Args...>>;
 
+using CustomStatistic = Statistic<void>;
+
 }
 }
 
@@ -473,4 +533,6 @@ using MultiStatistic = Statistic<std::tuple<Args...>>;
 
 
 #endif
+
+
 #endif
