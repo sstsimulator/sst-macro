@@ -590,8 +590,8 @@ UserAppCxxFullMain::aliasMains()
   if (main_fxns_){
     for (auto& pair : *main_fxns_){
 #if SSTMAC_INTEGRATED_SST_CORE
-    using builder_t = SST::ELI::DerivedBuilder<App,UserAppCxxFullMain,SST::Params&,SoftwareId,OperatingSystem*>;
-    lib->addBuilder(pair.first, new builder_t);
+    auto* builder = lib->getBuilder("UserAppCxxFullMain");
+    lib->addBuilder(pair.first, builder);
 #else
     using builder_t = sprockit::DerivedBuilder<App,UserAppCxxFullMain,SST::Params&,SoftwareId,OperatingSystem*>;
     lib->addBuilder(pair.first, std::unique_ptr<builder_t>(new builder_t));
@@ -624,8 +624,8 @@ UserAppCxxEmptyMain::aliasMains()
   if (empty_main_fxns_){
     for (auto& pair : *empty_main_fxns_){
 #if SSTMAC_INTEGRATED_SST_CORE
-      using builder_t = SST::ELI::DerivedBuilder<App,UserAppCxxFullMain,SST::Params&,SoftwareId,OperatingSystem*>;
-      lib->addBuilder(pair.first, new builder_t);
+      auto* builder = lib->getBuilder("UserAppCxxEmptyMain");
+      lib->addBuilder(pair.first, builder);
 #else
       using builder_t = sprockit::DerivedBuilder<App,UserAppCxxFullMain,SST::Params&,SoftwareId,OperatingSystem*>;
       lib->addBuilder(pair.first, std::unique_ptr<builder_t>(new builder_t));
