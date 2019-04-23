@@ -14,15 +14,15 @@ include $(top_srcdir)/Makefile.common
 bin_PROGRAMS = 
 
 dist_bin_SCRIPTS = \
-findHeaders \
-sst++ \
-libsst++ \
-dsst++ \
-sstcc \
-libsstcc \
-dsstcc \
-sstcclib.py \
-configlib.py
+  findHeaders \
+  sst++ \
+  libsst++ \
+  dsst++ \
+  sstcc \
+  libsstcc \
+  dsstcc \
+  sstcclib.py \
+  configlib.py
 
 if INTEGRATED_SST_CORE
 dist_bin_SCRIPTS += pysstmac
