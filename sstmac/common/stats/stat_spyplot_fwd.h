@@ -49,8 +49,6 @@ namespace sstmac {
 
 class StatSpyplot;
 
-class StatSpyplotPng;
-
 }
 
 #endif // STATS_COMMON_FWD_H
