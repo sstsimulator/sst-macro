@@ -66,12 +66,11 @@ nobase_library_include_HEADERS = \
   sim_thread_lock.h \
   serializable.h \
   stats/stat_collector.h \
-  stats/stat_collector_fwd.h 
-
-#stats/stat_spyplot.h 
-#stats/stat_spyplot_fwd.h 
-#stats/stat_histogram.h 
-#stats/stat_histogram_fwd.h 
+  stats/stat_collector_fwd.h \
+  stats/stat_spyplot.h \
+  stats/stat_spyplot_fwd.h \
+  stats/stat_histogram.h \
+  stats/stat_histogram_fwd.h 
 
 if !INTEGRATED_SST_CORE
 nobase_library_include_HEADERS += \
