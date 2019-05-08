@@ -62,6 +62,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/time.h>
+#include <sstmac/software/launch/task_mapping.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <sprockit/fileio.h>
@@ -325,27 +326,45 @@ runStandalone(int argc, char** argv)
   proc_params->addParamOverride("frequency", "1ghz");
   proc_params->addParamOverride("ncores", 1);
 
+  //put this on Node 1 to avoid a Job Launcher being built
   null_params->addParamOverride("id", 1);
   null_params->addParamOverride("name", "sstmac_app_name");
-  sstmac::sw::SoftwareId id(0,0);
+  sstmac::sw::SoftwareId id(1,0);
   sstmac::native::SerialRuntime rt(null_params);
 #if SSTMAC_INTEGRATED_SST_CORE
   sstmac::EventManager mgr(uint32_t(0));
 #else
   sstmac::EventManager mgr(null_params, &rt);
+  sstmac::EventManager::global = &mgr;
 #endif
-  sstmac::hw::SimpleNode node(1, null_params);
+
+  sstmac::hw::SimpleNode node(0, null_params);
   sstmac::sw::OperatingSystem os(null_params, &node);
+
+  node.init(0);
+  node.setup();
 
   std::stringstream argv_sstr;
   for (int i=1; i < argc; ++i){
     argv_sstr << " " << argv[i];
   }
   null_params->addParam("argv", argv_sstr.str());
-
   null_params->addParamOverride("notify", "false");
-  sstmac::sw::App* a = sstmac::sw::App::getBuilderLibrary("macro")
-      ->getBuilder("sstmac_app_name")->create(null_params, id, &os);
+
+  sw::TaskMapping::ptr mapping = std::make_shared<sw::TaskMapping>(1);
+  mapping->rankToNode().resize(1);
+  mapping->rankToNode()[0] = 1;
+  mapping->nodeToRank().resize(2);
+  mapping->nodeToRank()[1] = std::list<int>{0};
+  sw::TaskMapping::addGlobalMapping(1, "app1", mapping);
+
+  sw::UserAppCxxEmptyMain::aliasMains();
+  sw::UserAppCxxFullMain::aliasMains();
+  auto* builder = sstmac::sw::App::getBuilderLibrary("macro")->getBuilder("sstmac_app_name");
+  if (!builder){
+    spkt_abort_printf("could not find standalone app registered");
+  }
+  sstmac::sw::App* a = builder->create(null_params, id, &os);
   os.startApp(a, "");
   return a->rc();
 #else
@@ -368,19 +387,10 @@ tryMain(sprockit::SimParameters::ptr params,
     rt = sstmac::init();
   }
 
-  const char* list = getenv("SSTMAC_WHITELIST");
-  if (list != nullptr){
-    std::set<std::string> tokens;
-    tokenize(list, tokens);
-    std::string appName = argv[0];
-    //normalize to chop off ./
-    if (appName.at(0) == '.') appName.substr(2);
-    auto lastSlash = appName.find_last_of("/");
-    if (lastSlash != std::string::npos){
-      appName = appName.substr(lastSlash + 1);
-    }
-    if (tokens.find(appName) != tokens.end()){
-      //this executable is whitelisted
+  const char* cfgMode = getenv("SSTMAC_CONFIG");
+  if (cfgMode){
+    int mode = atoi(cfgMode);
+    if (mode){
       return runStandalone(argc, argv);
     }
   }
