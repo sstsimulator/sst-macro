@@ -306,7 +306,6 @@ static void tokenize(const std::string& in, std::set<std::string>& tokens){
 int
 runStandalone(int argc, char** argv)
 {
-#if !SSTMAC_INTEGRATED_SST_CORE
   std::cerr << "WARNING: running standalone executable as-is. This usually happens\n"
             << "WARNING: when running configure scripts. I hope this is what you want"
             << std::endl;
@@ -318,6 +317,8 @@ runStandalone(int argc, char** argv)
 
   SST::Params nic_params = null_params.find_scoped_params("nic");
   nic_params->addParamOverride("name", "null");
+  nic_params->addParamOverride("topology.name", "torus");
+  nic_params->addParamOverride("topology.geometry", "[2, 2]");
 
   SST::Params mem_params = null_params.find_scoped_params("memory");
   mem_params->addParamOverride("name", "null");
@@ -367,9 +368,6 @@ runStandalone(int argc, char** argv)
   sstmac::sw::App* a = builder->create(null_params, id, &os);
   os.startApp(a, "");
   return a->rc();
-#else
-  return 0;
-#endif
 }
 
 int

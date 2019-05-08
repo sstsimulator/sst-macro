@@ -165,8 +165,8 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     keepExe = flag
 
   parentProc = getProcName()
-  if parentProc == "cmake" or parentProc == "configure":
-    keepExe = True
+  if (parentProc == "cmake" or parentProc == "configure") and not keepExe:
+    sys.exit("using configure or cmake, please set SSTMAC_CONFIG=1")   
 
   haveClangSrcToSrc = bool(clangCppFlagsStr)
   clangDeglobal = None
