@@ -9,11 +9,13 @@ AC_PROG_CXX
 
 AC_RUN_IFELSE(
   [AC_LANG_PROGRAM(,
-    [[return 0;]])],
+    [[ ]])],
   [AC_MSG_RESULT([test program executed])],
   [AC_MSG_FAILURE([test program fails to execute])])
 
 CHECK_THREADING()
+
+CHECK_MPI()
 
 AC_CONFIG_FILES([
  Makefile
