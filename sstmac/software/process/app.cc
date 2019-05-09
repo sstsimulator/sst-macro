@@ -143,13 +143,13 @@ App::dlopenCheck(int aid, SST::Params& params, bool check_name)
       void* name = dlsym(entry.handle, "exe_main_name");
       if (name){
         const char* str_name = (const char*) name;
-        if (params->has_param("name")){
-          if (params->get_param("name") != std::string(str_name)){
+        if (params.contains("name")){
+          if (params.find<std::string>("name") != std::string(str_name)){
             spkt_abort_printf("if given both exe= and name= parameters for app%d, they must agree\n"
-                              "%s != %s", aid, str_name, params->get_param("name").c_str());
+                              "'%s' != '%s'", aid, str_name, params.find<std::string>("name").c_str());
           }
         } else {
-          params->add_param("name", str_name);
+          params.insert("name", str_name);
         }
       }
     }
