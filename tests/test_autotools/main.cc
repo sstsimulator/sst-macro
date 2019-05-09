@@ -43,6 +43,7 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <mpi.h>
+#include <pthread.h>
 #include <iostream>
 #include <cmath>
 
@@ -50,8 +51,20 @@ Questions? Contact sst-macro-help@sandia.gov
 
 double compute_term(int rank);
 
+double result0, result1;
+void *thread_compute_term( void *term_n )
+{
+  int id = *((int*) term_n);
+  if (id == 0)
+    result0 = compute_term(id);
+  else
+    result1 = compute_term(id);
+  return 0;
+}
+
 int main(int argc, char** argv)
 { 
+  // compute a pi approximation using MPI
   MPI_Init(&argc, &argv);
   int rank, size;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -63,8 +76,19 @@ int main(int argc, char** argv)
   MPI_Reduce(&term, &result, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
   if (rank == 0)
-    std::cout << "Pi Approximation: " << result << "\n";
+    std::cout << "MPI Pi Approximation: " << result << "\n";
 
+  // how about with a couple threads?
+  if (rank == 0) {	
+    pthread_t t1, t2;
+    int id0 = 0, id1 = 1;
+    pthread_create(&t1, NULL, thread_compute_term, &id0);
+    pthread_create(&t2, NULL, thread_compute_term, &id1);
+    pthread_join(t1, NULL);
+    pthread_join(t2, NULL); 
+    std::cout << "pthread Pi Approximation: " << result0 + result1 << "\n";
+  }
+  
   MPI_Finalize();
 
   return 0;
