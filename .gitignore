@@ -18,6 +18,24 @@ Makefile.in
 /stamp-h1
 ltmain.sh
 
+tests/test_autoconf/autom4te.cache
+tests/test_autoconf/autoscan.log
+tests/test_autoconf/autoscan-*.log
+tests/test_autoconf/aclocal.m4
+tests/test_autoconf/compile
+tests/test_autoconf/config.h.in
+tests/test_autoconf/configure
+tests/test_autoconf/configure.scan
+tests/test_autoconf/config.guess
+tests/test_autoconf/config.sub
+tests/test_autoconf/depcomp
+tests/test_autoconf/install-sh
+tests/test_autoconf/missing
+tests/test_autoconf/stamp-h1
+tests/test_autoconf/ltmain.sh
+tests/test_autoconf/test_autotools
+tests/test_autoconf/libcompute.*
+
 sst-macro.creator
 sst-macro.files
 sst-macro.creator.user
