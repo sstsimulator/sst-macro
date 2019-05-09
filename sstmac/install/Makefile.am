@@ -19,10 +19,6 @@ libsstmac_la_LDFLAGS = -version-info @SSTMAC_LIBVERSION@
 endif
 
 libsstmac_la_LIBADD = 
-#if HAVE_OTF2
-#libsstmac_la_LIBADD += $(OTF2_LDFLAGS) $(OTF2_LIBS)
-#libsstmac_la_LIBADD += ../../sst-dumpi/dumpi/libotf2dump/libotf2dump.la
-#endif
 
 libsstmac_la_SOURCES =
 nodist_EXTRA_libsstmac_la_SOURCES = dummy.cxx
@@ -41,6 +37,10 @@ libsstmac_la_LIBADD += \
   ../test_skeletons/libsstmac_test_skeletons.la \
   ../software/libsstmac_sw.la \
   ../../sumi-mpi/libsstmac_mpi.la
+
+#if HAVE_CLANG
+#libsstmac_la_LIBADD += ../llvm/libsstmac_inst.la
+#endif
 
 #if HAVE_OTF2
 #libsstmac_la_LIBADD += $(OTF2_LDFLAGS) $(OTF2_LIBS)

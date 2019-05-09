@@ -70,6 +70,33 @@ struct DeclDeleteException : public std::runtime_error
   clang::Decl* deleted;
 };
 
+struct ASTVisitorCmdLine {
+  static llvm::cl::OptionCategory sstmacCategoryOpt;
+  static llvm::cl::opt<std::string> memoizeOpt;
+  static llvm::cl::opt<std::string> skeletonizeOpt;
+  static llvm::cl::opt<bool> verboseOpt;
+  static llvm::cl::opt<bool> refactorMainOpt;
+  static llvm::cl::opt<bool> noRefactorMainOpt;
+
+  /** Wether the source to source is for memoization */
+  static bool runMemoize;
+  /** Whether the source to source is for skeletonization */
+  static bool runSkeletonize;
+  /** Whether the source to source needs extra modifications
+   *  to support LLVM analysis/transformation passes
+   *  after running source to source */
+  static bool extraMemoizePasses;
+  /** Whether the source to source needs extra modifications
+   *  to support LLVM analysis/transformation passes
+   *  after running source to source */
+  static bool extraSkeletonizePasses;
+
+  static bool refactorMain;
+
+  static void setup();
+};
+
+
 class FirstPassASTVistor : public clang::RecursiveASTVisitor<FirstPassASTVistor>
 {
  public:
@@ -91,8 +118,8 @@ class FirstPassASTVistor : public clang::RecursiveASTVisitor<FirstPassASTVistor>
   SSTPragmaList& pragmas_;
   PragmaConfig& pragmaConfig_;
   clang::Rewriter& rewriter_;
-  bool noSkeletonize_;
-  bool memoizePass_;
+  ASTVisitorCmdLine opts_;
+
 };
 
 /**
@@ -150,8 +177,6 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     globalNs_(ns), currentNs_(&ns),
     insideCxxMethod_(0), activeBinOpIdx_(-1),
     foundCMain_(false), keepGlobals_(false),
-    noSkeletonize_(true),
-    memoizePass_(false),
     refactorMain_(true),
     pragmaConfig_(cfg),
     numRelocations_(0),
@@ -160,7 +185,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     initHeaders();
     initReservedNames();
     initMPICalls();
-    initConfig();
+    opts_.setup();
     pragmaConfig_.astVisitor = this;
   }
 
@@ -207,16 +232,16 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     return iter->second.reusableText;
   }
 
-  bool noSkeletonize() const {
-    return noSkeletonize_;
+  bool skeletonize() const {
+    return opts_.runSkeletonize;
   }
 
   void setCompilerInstance(clang::CompilerInstance& c){
     ci_ = &c;
   }
 
-  bool memoizePass() const {
-    return memoizePass_;
+  bool memoize() const {
+    return opts_.runMemoize;
   }
 
   /**
@@ -465,8 +490,6 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
 
   void initMPICalls();
 
-  void initConfig();
-
   void replaceMain(clang::FunctionDecl* mainFxn);
 
   /**
@@ -711,13 +734,12 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   bool refactorMain_;
   std::string mainName_;
   bool keepGlobals_;
-  bool noSkeletonize_;
-  bool memoizePass_;
   std::set<std::string> ignoredHeaders_;
   std::set<std::string> reservedNames_;
   PragmaConfig& pragmaConfig_;
   std::set<clang::DeclRefExpr*> alreadyReplaced_;
   std::set<std::string> globalVarWhitelist_;
+  ASTVisitorCmdLine opts_;
 
   friend class PragmaActivateGuard;
 
@@ -1045,16 +1067,16 @@ struct PragmaActivateGuard {
   template <class T> //either decl/stmt
   PragmaActivateGuard(T* t, SkeletonASTVisitor* visitor, bool doVisit = true) :
     PragmaActivateGuard(t, *visitor->ci_, visitor->pragmaConfig_, visitor->rewriter_,
-      visitor->pragmas_, doVisit, false/*2nd pass*/, !visitor->noSkeletonize(),
-      visitor->memoizePass())
+      visitor->pragmas_, doVisit, false/*2nd pass*/,
+      visitor->opts_.runSkeletonize, visitor->opts_.runMemoize)
   {
   }
 
   template <class T>
   PragmaActivateGuard(T* t, FirstPassASTVistor* visitor, bool doVisit = true) :
     PragmaActivateGuard(t, visitor->ci_, visitor->pragmaConfig_, visitor->rewriter_,
-      visitor->pragmas_, doVisit, true/*1st pass*/, !visitor->noSkeletonize_,
-      visitor->memoizePass_)
+      visitor->pragmas_, doVisit, true/*1st pass*/,
+      visitor->opts_.runSkeletonize, visitor->opts_.runMemoize)
   {
   }
 
@@ -1111,6 +1133,7 @@ struct PragmaActivateGuard {
   PragmaConfig& pragmaConfig_;
   clang::Rewriter& rewriter_;
   SSTPragmaList& pragmas_;
+
 };
 
 

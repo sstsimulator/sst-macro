@@ -63,6 +63,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <clang/Lex/Preprocessor.h>
 #include <clang/Sema/Sema.h>
 #include <clang/Basic/Version.h>
+#include <llvm/Support/CommandLine.h>
 
 #define UNARYOP_LIST()                                                         \
   OPERATOR(PostInc) OPERATOR(PostDec) OPERATOR(PreInc) OPERATOR(PreDec)        \

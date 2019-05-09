@@ -57,14 +57,6 @@ def addPrefixAndRebase(prefix, path, newBase):
   folder, name = os.path.split(newPath)
   return os.path.join(newBase, name)
 
-def addClangArg(a, ret):
-  ret.append("--extra-arg=%s" % a)
-
-def addClangArgs(argList, ret):
-  for a in argList:
-    addClangArg(a,ret)
-  return ret
-  
 def runCmdArr(cmdArr,verbose):
   import sys,os
   if cmdArr:
@@ -95,6 +87,9 @@ class TempFiles:
         if self.verbose:
           sys.stderr.write("%s\n" % cmd)
         os.system(cmd)
+
+def addLlvmPasses(passList, passStr):
+  passList.extend(passStr.split(","))
 
 def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=True, runClang=True):
   extraLibsStr = extraLibs
@@ -183,7 +178,6 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
 
 
   sysargs = sys.argv[1:]
-
   asmFiles = False
   givenFlags = []
   controlArgs = []
@@ -193,11 +187,13 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   objectFiles = []
   warningArgs = []
   givenOptFlags = []
+  forwardedClangArgs = []
   objTarget = None
   ldTarget = None
   getObjTarget = False
   givenStdFlag = None
   validGccArgs = []
+  llvmPasses = []
   for arg in sysargs:
     eatArg = False
     sarg = arg.strip().strip("'")
@@ -212,14 +208,23 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         getObjTarget=False
     elif sarg == "--skeletonize":
       eatArg = True
-      os.environ["SSTMAC_SKELETONIZE"] = "1"
+      if "=" in sarg:
+        passStr = sarg.split("=")[1]
+        addLlvmPasses(llvmPasses, passStr, prefix)
+      #make sure if given twice only forwarded once
+      if not skeletonizing:
+        forwardedClangArgs.append(sarg)
       skeletonizing = True
     elif sarg == "--keep-exe":
       keepExe = True
       eatArg = True
-    elif sarg == "--memoize":
+    elif sarg.startswith("--memoize"):
+      if "=" in sarg:
+        passStr = sarg.split("=")[1]
+        addLlvmPasses(llvmPasses, passStr)
       eatArg = True
-      os.environ["SSTMAC_MEMOIZE"] = "1"
+      if not memoizing: #in case given twice
+        forwardedClangArgs.append(sarg)
       memoizing = True
     elif sarg.startswith("-Wl"):
       linkerArgs.append(sarg)
@@ -462,6 +467,17 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   if redefineSymbols: 
     extraCppFlags.insert(0,"-I%s" % repldir)
 
+  llvmPassesArr = []
+  if llvmPasses:
+    llvmPassesArr.append("-Xclang")
+    llvmPassesArr.append("-disable-O0-optnone")
+  for passName in llvmPasses:
+    llvmPassesArr.append("-Xclang")
+    llvmPassesArr.append("-load")
+    llvmPassesArr.append("-Xclang")
+    fullName = "lib%s.so" % passName
+    llvmPassesArr.append(os.path.join(prefix, "lib", fullName))
+  llvmPassesStr = " ".join(llvmPassesArr)
   
   cxxCmdArr = []
   ldCmdArr = []
@@ -618,18 +634,20 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       cxxInitSrcFile = addPrefixAndRebase("sstGlobals.pp.",srcFile,objBaseFolder) + ".cpp"
 
       clangCmdArr = [clangDeglobal]
-      if typ == "c++":
-        addClangArgs(clangCxxArgs, clangCmdArr)
-        addClangArgs(clangLibtoolingCxxFlagsStr.split(), clangCmdArr)
-      else:
-        addClangArgs(clangLibtoolingCFlagsStr.split(), clangCmdArr)
-      #oh, hell, I have to fix intrinsics
+      #don't use the clang --extra-arg anymore - put them after the '--'
+      clangCmdArr.append(ppTmpFile)
+      clangCmdArr.extend(forwardedClangArgs)
+      clangCmdArr.append("--")
+      #all of the compiler options go after the -- separator
+      #fix intrinsics which might not be known to clang if using a different compiler
       intrinsicsFixerPath = os.path.join(cleanFlag(includeDir), "sstmac", "replacements", "fixIntrinsics.h")
       intrinsicsFixer = "-include%s" % intrinsicsFixerPath
-      addClangArg(intrinsicsFixer, clangCmdArr)
-
-      clangCmdArr.append(ppTmpFile)
-      clangCmdArr.append("--")
+      clangCmdArr.append(intrinsicsFixer)
+      if typ == "c++":
+        clangCmdArr.extend(clangCxxArgs)
+        clangCmdArr.extend(clangLibtoolingCxxFlagsStr.split())
+      else:
+        clangCmdArr.extend(clangLibtoolingCFlagsStr.split())
       clangCmdArr.extend(warningArgs)
       clangCmd = " ".join(clangCmdArr)
       if verbose: sys.stderr.write("%s\n" % clangCmd)
@@ -648,6 +666,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         extraCppFlagsStr, 
         sstCppFlagsStr, 
         sstCompilerFlagsStr, 
+        llvmPassesStr,
         givenFlagsStr
       ]
 

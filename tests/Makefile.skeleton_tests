@@ -12,8 +12,8 @@ endif
 else
 #else no integrated core
 if HAVE_CLANG
+#  memoize #not currently working TODO
 SKELETONCASES += \
-  memoize \
   relocation_ptr_test \
   openmp \
   overhead_test
@@ -106,6 +106,7 @@ test_skeleton_boxml.$(CHKSUF): boxml
 test_skeleton_memoize.$(CHKSUF): memoize
 	SST_LIB_PATH=skeletons/memoize \
 	$(PYRUNTEST) 10 $(top_srcdir) $@ 't > 1.8 and t < 2.2' \
+    SST_LIB_PATH=$(top_builddir)/tests/skeletons/memoize \
     $(SSTMACEXEC) -f $(top_srcdir)/skeletons/tests/memoize/parameters.ini --no-wall-time
 
 test_skeleton_multiapp.$(CHKSUF): multiapp

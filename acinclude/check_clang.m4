@@ -16,7 +16,7 @@ else
 fi
 ])
 
-AC_DEFUN([CHECK_CLANG_LIBTOOLING], [
+AC_DEFUN([CHECK_CLANG_LLVM], [
 
 AC_ARG_WITH(clang,
   [AS_HELP_STRING(
@@ -78,6 +78,10 @@ AC_DEFINE_UNQUOTED([OFFSET_OF_MACRO], [$offset], "the definition of the offsetof
 #because clang libtooling is an abominiation hard-wired to relative paths
 CLANG_LIBTOOLING_SYSTEM_LIBS=`$clang/bin/llvm-config --system-libs`
 CLANG_LIBTOOLING_LIBS=`$clang/bin/llvm-config --libs`
+LLVM_LIBS="$CLANG_LIBTOOLING_LIBS"
+LLVM_SYSTEM_LIBS="$CLANG_LIBTOOLING_SYSTEM_LIBS"
+LLVM_CPPFLAGS="$CLANG_CPPFLAGS"
+LLVM_LDFLAGS="$CLANG_LDFLAGS"
 
 clang_compatibility=`$srcdir/bin/config_tools/check_clang_compatibility $CXX $clang $srcdir/bin/config_tools/clang_version_test.cc $CXXFLAGS $SST_CXXFLAGS`
 if test "X$clang_compatibility" != "X"; then
@@ -96,6 +100,11 @@ if test "X$clang_has_float128" = "Xyes"; then
 else
   AC_SUBST([have_float_128], [False])
 fi
+
+AC_SUBST([LLVM_LIBS])
+AC_SUBST([LLVM_SYSTEM_LIBS])
+AC_SUBST([LLVM_CPPFLAGS])
+AC_SUBST([LLVM_LDFLAGS])
 
 ])
 

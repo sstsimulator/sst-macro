@@ -1,4 +1,4 @@
-TARGET := libmemoize_sleep.so libskeleton_sleep.so
+TARGET := runmemoize runskeletonize
 
 CXX :=    sst++
 CC :=     sstcc
@@ -12,11 +12,11 @@ LDFLAGS :=  -Wl,-rpath,$(PREFIX)/lib
 
 all: $(TARGET)
 
-libmemoize_sleep.so: memoize.cc code.h
-	SSTMAC_MEMOIZE=1 $(CXX) -shared $(LIBS) $(CPPFLAGS) $(CXXFLAGS) $< -o $@
+runmemoize: memoize.cc code.h
+	$(CXX) --memoize $(LIBS) $(CPPFLAGS) $(CXXFLAGS) $< -o $@
 
-libskeleton_sleep.so: skeleton.cc code.h
-	SSTMAC_SKELETONIZE=1 $(CXX) -shared $(LIBS) $(CPPFLAGS) $(CXXFLAGS) $< -o $@
+runskeletonize: skeleton.cc code.h
+	$(CXX) --skeletonize $(LIBS) $(CPPFLAGS) $(CXXFLAGS) $< -o $@
 
 clean: 
 	rm -f $(TARGET) 

@@ -174,7 +174,7 @@ SSTPragmaHandler::configure(Token& PragmaTok, Preprocessor& PP, SSTPragma* fsp)
       pragmas_.push_back(fsp);
       break;
     default: //otherwise check if we are skeletonizing
-      if (visitor_.noSkeletonize()){
+      if (!visitor_.skeletonize()){
         return;
       }
       pragmas_.push_back(fsp);
