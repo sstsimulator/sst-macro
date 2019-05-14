@@ -96,7 +96,7 @@ class CallQueue {
 
   CallQueue(OTF2TraceReplayApp* a) : app(a) {}
 
-  MpiCall* find_latest(MPI_CALL_ID id) {
+  MpiCall* findLatest(MPI_CALL_ID id) {
     for (auto iter = call_queue.rbegin(); iter != call_queue.rend(); ++iter){
       MpiCall& call = *iter;
       if (call.id == id){
@@ -106,7 +106,7 @@ class CallQueue {
     return nullptr;
   }
 
-  MpiCall* find_earliest(MPI_CALL_ID id) {
+  MpiCall* findEarliest(MPI_CALL_ID id) {
     for (MpiCall& call : call_queue){
       if (call.id == id){
         return &call;
@@ -129,52 +129,52 @@ class CallQueue {
 
   // Notify the CallQueue handlers that a given call was finished
   // Returns the number of calls triggered
-  int CallReady(MpiCall& call){
-    return CallReady(&call);
+  int callReady(MpiCall& call){
+    return callReady(&call);
   }
 
   // Notify the CallQueue handlers that a given call was finished
   // Returns the number of calls triggered
-  int CallReady(MpiCall* call);
+  int callReady(MpiCall* call);
 
   // Returns the number of calls waiting in the queue
-  int GetDepth() const {
+  int getDepth() const {
     return call_queue.size();
   }
 
-  // Get the entry at the front of the queue
-  MpiCall& Peek() {
+  // Get the entry at the front of the queue but do not remove
+  MpiCall& peekFront() {
     return call_queue.front();
   }
 
-  // Get the entry from the back of the queue
-  MpiCall& PeekBack() {
+  // Get the entry from the back of the queue bot do not remove
+  MpiCall& peekBack() {
     return call_queue.back();
   }
 
   // Begin tracking a pending MPI call with a request
-  void AddRequest(MPI_Request req, MpiCall* cb){
+  void addRequest(MPI_Request req, MpiCall* cb){
     request_map[req] = cb;
   }
 
   // Begin tracking a pending MPI call with a request
-  void AddRequest(MPI_Request req, MpiCall& cb){
+  void addRequest(MPI_Request req, MpiCall& cb){
     request_map[req] = &cb;
   }
 
-  std::unordered_map<MPI_Request, MpiCall*>::const_iterator request_begin() const {
+  std::unordered_map<MPI_Request, MpiCall*>::const_iterator requestBegin() const {
     return request_map.begin();
   }
 
-  std::unordered_map<MPI_Request, MpiCall*>::const_iterator request_end() const {
+  std::unordered_map<MPI_Request, MpiCall*>::const_iterator requestEnd() const {
     return request_map.end();
   }
 
   // Finds an MPI call based on a request
-  MpiCall* FindRequest(MPI_Request req) const;
+  MpiCall* findRequest(MPI_Request req) const;
 
   // Stop tracking a pending MPI call
-  void RemoveRequest(MPI_Request req) {
+  void removeRequest(MPI_Request req) {
     request_map.erase(req);
   }
 

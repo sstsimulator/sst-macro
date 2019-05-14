@@ -80,6 +80,10 @@ class StatisticBase {
     return group_;
   }
 
+  std::string output() const {
+    return output_;
+  }
+
   virtual ~StatisticBase(){}
 
  protected:
@@ -90,6 +94,7 @@ class StatisticBase {
  private:
   std::string name_;
   std::string group_;
+  std::string output_;
 };
 
 class StatisticOutput
@@ -117,10 +122,6 @@ class StatisticOutput
 
   virtual void output(StatisticBase* statistic, bool endOfSimFlag) = 0;
 
-  virtual bool supportsDynamicRegistration() const {
-    return false;
-  }
-
 };
 
 struct StatisticGroup {
@@ -130,7 +131,7 @@ struct StatisticGroup {
   std::string name;
   std::map<std::string, int> columns;
   StatisticGroup(const std::string& n) :
-    output(nullptr), outputName("csv"), name(n)
+    output(nullptr), name(n)
   {}
 };
 
@@ -204,7 +205,6 @@ class StatisticFieldsOutput : public StatisticOutput
   StatisticGroup* active_group_;
 
   StatisticGroup* default_group_;
-
 
 };
 
@@ -482,6 +482,8 @@ using MultiStatistic = Statistic<std::tuple<Args...>>;
 
 using CustomStatistic = Statistic<void>;
 
+using StatisticOuput = StatisticFieldsOutput;
+
 }
 }
 
@@ -537,6 +539,6 @@ using CustomStatistic = Statistic<void>;
 
 
 #endif
-
+//not integrated core
 
 #endif

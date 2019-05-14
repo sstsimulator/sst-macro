@@ -208,13 +208,26 @@ EventManager::serializeSchedule(char* buf)
 }
 
 void
-EventManager::registerStatisticCore(StatisticBase* base)
+EventManager::registerStatisticCore(StatisticBase* base, SST::Params& params)
 {
   StatisticGroup* grp = stat_groups_[base->group()];
   if (!grp){
     grp = new StatisticGroup(base->group());
     stat_groups_[base->group()] = grp;
   }
+
+  if (grp->outputName.empty()){
+    //get the output name from the statistic
+    grp->outputName = base->output();
+  } else if (grp->outputName != base->output()){
+    spkt_abort_printf("group %s requested output name %s does not match previously requested %s",
+                      base->group().c_str(), grp->outputName.c_str(), base->output().c_str());
+  }
+
+  if (!grp->output){
+    grp->output = sprockit::create<StatisticOutput>("macro", grp->outputName, params);
+  }
+
   grp->stats.push_back(base);
 }
 
@@ -223,11 +236,6 @@ EventManager::finalizeStatsInit()
 {
   for (auto& pair : stat_groups_){
     StatisticGroup* grp = pair.second;
-    if (!grp->output){
-      SST::Params myParams;
-      myParams.insert("name", pair.first);
-      grp->output = sprockit::create<StatisticOutput>("macro", grp->outputName,myParams);
-    }
     grp->output->startRegisterGroup(grp);
     for (auto* stat : grp->stats){
       grp->output->registerStatistic(stat);

@@ -58,18 +58,18 @@ using namespace std;
  */
 
 int
-CallQueue::CallReady(MpiCall* call) {
+CallQueue::callReady(MpiCall* call) {
   int triggered = 0;
   call->isready = true;
 
   // when a call at the front of the queue is ready, there may be a
   // cascade of other ready calls behind it.
-  while (call_queue.size() > 0 && call_queue.front().IsReady()) {
+  while (call_queue.size() > 0 && call_queue.front().isReady()) {
     auto& front = call_queue.front();
-    front.Trigger();
+    front.trigger();
 
-    if (app->PrintMpiCalls()) {
-       TRIGGER_PRINT(front.ToString());
+    if (app->printMpiCalls()) {
+       TRIGGER_PRINT(front.toString());
     }
     call_queue.pop();
     triggered++;
@@ -79,28 +79,28 @@ CallQueue::CallReady(MpiCall* call) {
 }
 
 MpiCall*
-CallQueue::FindRequest(MPI_Request req) const
+CallQueue::findRequest(MPI_Request req) const
 {
   auto iter = request_map.find(req);
   if (iter == request_map.end()){
     spkt_abort_printf("Rank %d cannot find request %ld\n",
-                      app->GetMpi()->rank(), req);
+                      app->getMpi()->rank(), req);
   }
   return iter->second;
 }
 
 
 void
-MpiCall::Trigger() {
-  app->StartMpi(GetStart());
+MpiCall::trigger() {
+  app->startMpi(getStart());
   if (on_trigger){
     on_trigger();
   }
-  app->EndMpi(GetEnd());
+  app->endMpi(getEnd());
 }
 
 sstmac::Timestamp
-MpiCall::convert_time(const OTF2_TimeStamp ts) const
+MpiCall::convertTime(const OTF2_TimeStamp ts) const
 {
   const auto start_offset = app->otf2_clock_properties.globalOffset;
   const auto ticks_per_second = app->otf2_clock_properties.timerResolution;

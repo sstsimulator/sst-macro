@@ -66,10 +66,6 @@ class OTF2Output : public SST::Statistics::StatisticOutput
 
   OTF2Output(SST::Params& params);
 
-  bool supportsDynamicRegistration() const override {
-    return true;
-  }
-
   void startRegisterGroup(SST::Statistics::StatisticGroup *grp) override {}
   void stopRegisterGroup() override {}
 

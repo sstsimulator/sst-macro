@@ -63,6 +63,7 @@ StatisticBase::StatisticBase(EventScheduler *parent, const std::string &name,
   name_(name)
 {
   group_ = params.find<std::string>("group", "default");
+  output_ = params.find<std::string>("output", "csv");
 }
 
 void
@@ -74,13 +75,17 @@ StatisticFieldsOutput::registerStatistic(StatisticBase *stat)
 void
 Statistic<void>::outputStatisticData(StatisticFieldsOutput *output, bool endOfSimFlag)
 {
-  spkt_abort_printf("void statistic should never call outputStatisticData");
+  spkt_abort_printf("void statistic '%s' should never call outputStatisticData\n"
+                    "ensure that correct output is set for group '%s'",
+                    name().c_str(), group().c_str());
 }
 
 void
 Statistic<void>::registerOutputFields(StatisticFieldsOutput *statOutput)
 {
-  spkt_abort_printf("void statistic should never call registerOutputFields");
+  spkt_abort_printf("void statistic '%s' should never call registerOutputFields\n"
+                    "ensure that correct output is set for group '%s'",
+                    name().c_str(), group().c_str());
 }
 
 } // end of namespace sstmac

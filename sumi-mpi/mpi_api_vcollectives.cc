@@ -51,13 +51,13 @@ Questions? Contact sst-macro-help@sandia.gov
 #define do_vcoll(coll, fxn, ...) \
   start_mpi_call(fxn); \
   auto op = start##coll(#fxn, __VA_ARGS__); \
-  waitCollective(op); \
+  waitCollective(std::move(op)); \
   finish_mpi_call(fxn);
 
 #define start_vcoll(coll, fxn, ...) \
   start_mpi_call(fxn); \
   auto op = start##coll(#fxn, __VA_ARGS__); \
-  addImmediateCollective(op, req); \
+  addImmediateCollective(std::move(op), req); \
   finish_mpi_call(fxn)
 
 namespace sumi {
@@ -87,10 +87,10 @@ MpiApi::startAllgatherv(CollectivevOp* op)
 
 }
 
-CollectiveOpBase*
+CollectiveOpBase::ptr
 MpiApi::startAllgatherv(const char* name, MPI_Comm comm, int sendcount, MPI_Datatype sendtype,
-                          const int *recvcounts, const int *displs, MPI_Datatype recvtype,
-                          const void *sendbuf, void *recvbuf)
+                        const int *recvcounts, const int *displs, MPI_Datatype recvtype,
+                        const void *sendbuf, void *recvbuf)
 {
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
     "%s(%d,%s,<...>,%s,%s)", name,
@@ -98,10 +98,10 @@ MpiApi::startAllgatherv(const char* name, MPI_Comm comm, int sendcount, MPI_Data
     typeStr(recvtype).c_str(),
     commStr(comm).c_str());
 
-  CollectivevOp* op = new CollectivevOp(sendcount, const_cast<int*>(recvcounts),
-                                          const_cast<int*>(displs), getComm(comm));
-  startMpiCollective(Collective::allgatherv, sendbuf, recvbuf, sendtype, recvtype, op);
-  auto* msg = startAllgatherv(op);
+  auto op = CollectivevOp::create(sendcount, const_cast<int*>(recvcounts),
+                                  const_cast<int*>(displs), getComm(comm));
+  startMpiCollective(Collective::allgatherv, sendbuf, recvbuf, sendtype, recvtype, op.get());
+  auto* msg = startAllgatherv(op.get());
   if (msg){
     op->complete = true;
     delete msg;
@@ -165,21 +165,21 @@ MpiApi::startAlltoallv(CollectivevOp* op)
                   queue_->collCqId(), op->comm);
 }
 
-CollectiveOpBase*
+CollectiveOpBase::ptr
 MpiApi::startAlltoallv(const char* name, MPI_Comm comm,
-                         const int *sendcounts, MPI_Datatype sendtype, const int *sdispls,
-                         const int *recvcounts, MPI_Datatype recvtype, const int *rdispls,
-                         const void *sendbuf,  void *recvbuf)
+                       const int *sendcounts, MPI_Datatype sendtype, const int *sdispls,
+                       const int *recvcounts, MPI_Datatype recvtype, const int *rdispls,
+                       const void *sendbuf,  void *recvbuf)
 {
   if (sendbuf || recvbuf){
     mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
       "%s(<...>,%s,<...>,%s,%s)", name,
       typeStr(sendtype).c_str(), typeStr(recvtype).c_str(), commStr(comm).c_str());
-    CollectivevOp* op = new CollectivevOp(const_cast<int*>(sendcounts), const_cast<int*>(sdispls),
-                                              const_cast<int*>(recvcounts), const_cast<int*>(rdispls),
-                                              getComm(comm));
-    startMpiCollective(Collective::alltoallv, sendbuf, recvbuf, sendtype, recvtype, op);
-    auto* msg = startAlltoallv(op);
+    auto op = CollectivevOp::create(const_cast<int*>(sendcounts), const_cast<int*>(sdispls),
+                                    const_cast<int*>(recvcounts), const_cast<int*>(rdispls),
+                                    getComm(comm));
+    startMpiCollective(Collective::alltoallv, sendbuf, recvbuf, sendtype, recvtype, op.get());
+    auto* msg = startAlltoallv(op.get());
     if (msg){
       op->complete = true;
       delete msg;
@@ -196,9 +196,8 @@ MpiApi::startAlltoallv(const char* name, MPI_Comm comm,
     }
     send_count /= nproc;
     recv_count /= nproc;
-    CollectiveOpBase* op = startAlltoall(name, comm, send_count, sendtype,
-                                            recv_count, recvtype, sendbuf, recvbuf);
-    return op;
+    return startAlltoall(name, comm, send_count, sendtype,
+                         recv_count, recvtype, sendbuf, recvbuf);
   }
 }
 
@@ -277,10 +276,10 @@ MpiApi::startGatherv(CollectivevOp* op)
   //                false, options::initial_context, op->comm);
 }
 
-CollectiveOpBase*
+CollectiveOpBase::ptr
 MpiApi::startGatherv(const char* name, MPI_Comm comm, int sendcount, MPI_Datatype sendtype, int root,
-                       const int *recvcounts, const int *displs, MPI_Datatype recvtype,
-                       const void *sendbuf, void *recvbuf)
+                     const int *recvcounts, const int *displs, MPI_Datatype recvtype,
+                     const void *sendbuf, void *recvbuf)
 {
   if (sendbuf || recvbuf){
     mpi_api_debug(sprockit::dbg::mpi,
@@ -288,7 +287,7 @@ MpiApi::startGatherv(const char* name, MPI_Comm comm, int sendcount, MPI_Datatyp
       sendcount, typeStr(sendtype).c_str(),
       typeStr(recvtype).c_str(),
       int(root), commStr(comm).c_str());
-    CollectivevOp* op = new CollectivevOp(sendcount,
+    auto op = CollectivevOp::create(sendcount,
                 const_cast<int*>(recvcounts),
                 const_cast<int*>(displs), getComm(comm));
 
@@ -300,8 +299,8 @@ MpiApi::startGatherv(const char* name, MPI_Comm comm, int sendcount, MPI_Datatyp
       recvbuf = nullptr;
     }
 
-    startMpiCollective(Collective::gatherv, sendbuf, recvbuf, sendtype, recvtype, op);
-    auto* msg = startGatherv(op);
+    startMpiCollective(Collective::gatherv, sendbuf, recvbuf, sendtype, recvtype, op.get());
+    auto* msg = startGatherv(op.get());
     if (msg){
       op->complete = true;
       delete msg;
@@ -318,8 +317,8 @@ MpiApi::startGatherv(const char* name, MPI_Comm comm, int sendcount, MPI_Datatyp
       }
       recvcount = total_count / nproc;
     }
-    CollectiveOpBase* op = startGather(name, comm, sendcount, sendtype, root, recvcount, recvtype,
-                                          sendbuf, recvbuf);
+    auto op = startGather(name, comm, sendcount, sendtype, root, recvcount, recvtype,
+                          sendbuf, recvbuf);
     return op;
   }
 }
@@ -382,9 +381,9 @@ MpiApi::startScatterv(CollectivevOp* op)
   //                false, options::initial_context, op->comm);
 }
 
-CollectiveOpBase*
+CollectiveOpBase::ptr
 MpiApi::startScatterv(const char* name, MPI_Comm comm, const int *sendcounts, MPI_Datatype sendtype, int root,
-                        const int *displs, int recvcount, MPI_Datatype recvtype, const void *sendbuf, void *recvbuf)
+                      const int *displs, int recvcount, MPI_Datatype recvtype, const void *sendbuf, void *recvbuf)
 {
   if (sendbuf || recvbuf){
     mpi_api_debug(sprockit::dbg::mpi,
@@ -393,9 +392,8 @@ MpiApi::startScatterv(const char* name, MPI_Comm comm, const int *sendcounts, MP
       recvcount, typeStr(recvtype).c_str(),
       int(root), commStr(comm).c_str());
 
-    CollectivevOp* op = new CollectivevOp(const_cast<int*>(sendcounts),
-                      const_cast<int*>(displs),
-                      recvcount, getComm(comm));
+    auto op = CollectivevOp::create(const_cast<int*>(sendcounts),
+                      const_cast<int*>(displs), recvcount, getComm(comm));
     op->root = root;
     if (root == op->comm->rank()){
       //pass
@@ -404,8 +402,8 @@ MpiApi::startScatterv(const char* name, MPI_Comm comm, const int *sendcounts, MP
       sendbuf = nullptr;
     }
 
-    startMpiCollective(Collective::scatterv, sendbuf, recvbuf, sendtype, recvtype, op);
-    auto* msg = startScatterv(op);
+    startMpiCollective(Collective::scatterv, sendbuf, recvbuf, sendtype, recvtype, op.get());
+    auto* msg = startScatterv(op.get());
     if (msg){
       op->complete = true;
       delete msg;
@@ -422,9 +420,8 @@ MpiApi::startScatterv(const char* name, MPI_Comm comm, const int *sendcounts, MP
       }
       sendcount = total_count / nproc;
     }
-    CollectiveOpBase* op = startScatter(name, comm, sendcount, sendtype, root,
-                                           recvcount, recvtype, sendbuf, recvbuf);
-    return op;
+    return startScatter(name, comm, sendcount, sendtype, root,
+                        recvcount, recvtype, sendbuf, recvbuf);
   }
 }
 

@@ -331,7 +331,6 @@ MpiQueue::incomingCollectiveMessage(sumi::Message* m)
     CollectiveOpBase* op = req->collectiveData();
     api_->finishCollective(op);
     req->complete();
-    delete op;
     delete cmsg;
   }
 }

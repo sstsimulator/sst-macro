@@ -182,7 +182,7 @@ OTF2_CallbackCode def_group(
 
   if (groupType == OTF2_GROUP_TYPE_COMM_SELF){
     int me = app->rank();
-    app->GetMpi()->groupCreateWithId(id, 1, &me);
+    app->getMpi()->groupCreateWithId(id, 1, &me);
     app->otf2_groups[id] = true; //yes, needed
   } else {
     std::vector<int> member_vect(numberOfMembers);
@@ -190,7 +190,7 @@ OTF2_CallbackCode def_group(
       member_vect[i] = members[i];
     }
 
-    bool included = app->GetMpi()->groupCreateWithId(id, numberOfMembers, member_vect.data());
+    bool included = app->getMpi()->groupCreateWithId(id, numberOfMembers, member_vect.data());
     app->otf2_groups[id] = included;
   }
 
@@ -209,18 +209,18 @@ OTF2_CallbackCode def_comm(
   //As I understand it, OTF2 has already done the local to global conversion
   //All comm IDs in the trace are global IDs
   auto local_comm_id = id; //app->convertGlobalToLocalComm(id);
-  app->GetMpi()->setGenerateIds(false);
+  app->getMpi()->setGenerateIds(false);
   bool need_comm = app->otf2_groups[group];
   if (need_comm){
-    app->GetMpi()->commCreateWithId(MPI_COMM_WORLD, group, local_comm_id);
+    app->getMpi()->commCreateWithId(MPI_COMM_WORLD, group, local_comm_id);
   } else {
     auto& str = app->otf2_string_table[name];
     if (str == "MPI_COMM_WORLD"){
       MPI_Comm output = local_comm_id;
-      app->GetMpi()->commDup(MPI_COMM_WORLD, &output);
+      app->getMpi()->commDup(MPI_COMM_WORLD, &output);
     } else if (str == "MPI_COMM_SELF"){
       MPI_Comm output = local_comm_id;
-      app->GetMpi()->commDup(MPI_COMM_SELF, &output);
+      app->getMpi()->commDup(MPI_COMM_SELF, &output);
     } else {
     }
   }
@@ -291,10 +291,10 @@ void add_wait(OTF2TraceReplayApp* app, CallQueue& queue, MPI_Request requestID)
 {
 	auto wait_event = [=]() {
 		MPI_Request req = requestID;
-		app->GetMpi()->wait(&req, MPI_STATUS_IGNORE);
+		app->getMpi()->wait(&req, MPI_STATUS_IGNORE);
 	};
 
-  MpiCall& wait_call = queue.PeekBack();
+  MpiCall& wait_call = queue.peekBack();
 
   if (wait_call.on_trigger == nullptr) {
     // this is the first wait request
@@ -309,7 +309,7 @@ void add_wait(OTF2TraceReplayApp* app, CallQueue& queue, MPI_Request requestID)
 
     //the previous call should not advance any time when executing
     wait_call.end_time = wait_call.start_time;
-    queue.CallReady(wait_call);
+    queue.callReady(wait_call);
 	}
 }
 
@@ -325,14 +325,14 @@ OTF2_CallbackCode event_mpi_send(
     uint64_t            msgLength ) {
 
     auto app = (OTF2TraceReplayApp*)userData;
-    MpiCall* call = app->GetCallQueue().find_latest(ID_MPI_Send);
-    MpiCall::assert_call(call, "Lookup for MPI_Send in 'event_mpi_send' returned NULL");
+    MpiCall* call = app->getCallQueue().findLatest(ID_MPI_Send);
+    MpiCall::assertCall(call, "Lookup for MPI_Send in 'event_mpi_send' returned NULL");
 
     call->on_trigger = [=]() {
-      call->app->GetMpi()->send(nullptr, msgLength, MPI_BYTE, receiver, msgTag, communicator);
+      call->app->getMpi()->send(nullptr, msgLength, MPI_BYTE, receiver, msgTag, communicator);
     };
 
-    if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()) EVENT_PRINT("MPI SEND");
+    if (((OTF2TraceReplayApp*)userData)->printTraceEvents()) EVENT_PRINT("MPI SEND");
     return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -351,16 +351,16 @@ OTF2_CallbackCode event_mpi_isend(
     auto app = (OTF2TraceReplayApp*)userData;
 
     // event_enter has just put an isend on the top of the queue
-    MpiCall& call = app->GetCallQueue().PeekBack();
+    MpiCall& call = app->getCallQueue().peekBack();
 
-    app->GetCallQueue().AddRequest(requestID, call);
+    app->getCallQueue().addRequest(requestID, call);
     call.on_trigger = [=]() {
       MPI_Request req = requestID;
-      app->GetMpi()->isend(nullptr, msgLength, MPI_BYTE, receiver, msgTag,
+      app->getMpi()->isend(nullptr, msgLength, MPI_BYTE, receiver, msgTag,
                                 communicator, &req);
     };
 
-    if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()){
+    if (((OTF2TraceReplayApp*)userData)->printTraceEvents()){
       EVENT_PRINT("ISEND count" << msgLength << " tag " << msgTag << " id "
                   << requestID << " comm " << communicator << " dest " << receiver);
     }
@@ -377,12 +377,12 @@ OTF2_CallbackCode event_mpi_isend_complete(
 {
 
 	auto app = (OTF2TraceReplayApp*)userData;
-	auto& callqueue = app->GetCallQueue();
+	auto& callqueue = app->getCallQueue();
 
-	add_wait(app, app->GetCallQueue(), (MPI_Request)requestID);
-	callqueue.RemoveRequest((MPI_Request)requestID);
+	add_wait(app, app->getCallQueue(), (MPI_Request)requestID);
+  callqueue.removeRequest((MPI_Request)requestID);
 
-	if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()) EVENT_PRINT("ISEND COMPLETE");
+	if (((OTF2TraceReplayApp*)userData)->printTraceEvents()) EVENT_PRINT("ISEND COMPLETE");
     return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -395,11 +395,11 @@ OTF2_CallbackCode event_mpi_irecv_request(
     uint64_t            requestID ) {
 
     auto app = (OTF2TraceReplayApp*)userData;
-    MpiCall& call = app->GetCallQueue().PeekBack();
+    MpiCall& call = app->getCallQueue().peekBack();
 
-    app->GetCallQueue().AddRequest(requestID, call);
+    app->getCallQueue().addRequest(requestID, call);
 
-    if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()){
+    if (((OTF2TraceReplayApp*)userData)->printTraceEvents()){
       EVENT_PRINT("IRECV REQUEST id: " << requestID );
     }
     return OTF2_CALLBACK_SUCCESS;
@@ -420,21 +420,21 @@ OTF2_CallbackCode event_mpi_irecv(
   uint64_t            requestID )
 {
   auto app = (OTF2TraceReplayApp*)userData;
-  auto& callqueue = app->GetCallQueue();
+  auto& callqueue = app->getCallQueue();
 
   // finish off the Irecv call
-  MpiCall* call = callqueue.FindRequest((MPI_Request)requestID);
+  MpiCall* call = callqueue.findRequest((MPI_Request)requestID);
 
   call->on_trigger = [=]() {
     MPI_Request req = requestID;
-    app->GetMpi()->irecv(nullptr, msgLength, MPI_BYTE, sender, msgTag, communicator, &req);
+    app->getMpi()->irecv(nullptr, msgLength, MPI_BYTE, sender, msgTag, communicator, &req);
   };
 
-  add_wait(app, app->GetCallQueue(), (MPI_Request)requestID);
-  callqueue.RemoveRequest((MPI_Request)requestID);
-  callqueue.CallReady(call);
+  add_wait(app, app->getCallQueue(), (MPI_Request)requestID);
+  callqueue.removeRequest((MPI_Request)requestID);
+  callqueue.callReady(call);
 
-  if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()){
+  if (((OTF2TraceReplayApp*)userData)->printTraceEvents()){
     EVENT_PRINT("IRECV count: " << msgLength << " source: " << sender << " tag: " << msgTag);
   }
   return OTF2_CALLBACK_SUCCESS;
@@ -452,15 +452,15 @@ OTF2_CallbackCode event_mpi_recv(
     uint64_t            msgLength ) {
 
 	auto app = (OTF2TraceReplayApp*)userData;
-    MpiCall* call = app->GetCallQueue().find_latest(ID_MPI_Recv);
-    MpiCall::assert_call(call, "Lookup for MpiIrecvCall in 'event_mpi_irecv_request' returned NULL");
+    MpiCall* call = app->getCallQueue().findLatest(ID_MPI_Recv);
+    MpiCall::assertCall(call, "Lookup for MpiIrecvCall in 'event_mpi_irecv_request' returned NULL");
 
     call->on_trigger = [=]() {
-      app->GetMpi()->recv(nullptr, msgLength, MPI_BYTE,
+      app->getMpi()->recv(nullptr, msgLength, MPI_BYTE,
                           sender, msgTag, communicator, MPI_STATUS_IGNORE);
     };
 
-    if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()){
+    if (((OTF2TraceReplayApp*)userData)->printTraceEvents()){
       EVENT_PRINT("RECV count: " << msgLength << " source: " << sender << " tag: " << msgTag);
     }
     return OTF2_CALLBACK_SUCCESS;
@@ -475,7 +475,7 @@ OTF2_CallbackCode event_mpi_request_test(
     OTF2_AttributeList* attributes,
     uint64_t            requestID ) {
 
-	if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()) EVENT_PRINT("REQUEST TEST\n");
+	if (((OTF2TraceReplayApp*)userData)->printTraceEvents()) EVENT_PRINT("REQUEST TEST\n");
     return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -488,7 +488,7 @@ OTF2_CallbackCode event_mpi_request_cancelled(
     OTF2_AttributeList* attributes,
     uint64_t            requestID ) {
 
-	if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()) EVENT_PRINT("REQUEST CANCELLED\n");
+	if (((OTF2TraceReplayApp*)userData)->printTraceEvents()) EVENT_PRINT("REQUEST CANCELLED\n");
     return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -500,7 +500,7 @@ OTF2_CallbackCode event_mpi_collective_begin(
     void*               userData,
     OTF2_AttributeList* attributes ) {
 
-	if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()) EVENT_PRINT("COLLECTIVE BEGIN\n");
+	if (((OTF2TraceReplayApp*)userData)->printTraceEvents()) EVENT_PRINT("COLLECTIVE BEGIN\n");
     return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -538,56 +538,56 @@ OTF2_CallbackCode event_mpi_collective_end(
     uint64_t            sizeReceived ) {
 
     auto app = (OTF2TraceReplayApp*)userData;
-    auto comm_size = app->GetMpi()->getComm(comm)->size();
+    auto comm_size = app->getMpi()->getComm(comm)->size();
 #define HANDLE_CASE(op, ...) case op : { \
-            auto& call = app->GetCallQueue().PeekBack(); \
+            auto& call = app->getCallQueue().peekBack(); \
             __VA_ARGS__; \
             } break;
 
     // Each case is interlaced with output from a Scorep trace on 4 ranks sending 1 int with root 0 (where applicable)
     switch (collectiveOp) {
-    HANDLE_CASE(OTF2_COLLECTIVE_OP_BARRIER,   call.on_trigger = [=]() {app->GetMpi()->barrier(comm);})
+    HANDLE_CASE(OTF2_COLLECTIVE_OP_BARRIER,   call.on_trigger = [=]() {app->getMpi()->barrier(comm);})
     //MPI_COLLECTIVE_END                         0     7399555605472008  Operation: BCAST, Communicator: "MPI_COMM_WORLD" <0>, Root: 0 ("Master thread" <0>), Sent: 16, Received: 4
     //MPI_COLLECTIVE_END                         2     7399555605473214  Operation: BCAST, Communicator: "MPI_COMM_WORLD" <0>, Root: 0 ("Master thread" <0>), Sent: 0, Received: 4
     //MPI_COLLECTIVE_END                         1     7399555605475368  Operation: BCAST, Communicator: "MPI_COMM_WORLD" <0>, Root: 0 ("Master thread" <0>), Sent: 0, Received: 4
     //MPI_COLLECTIVE_END                         3     7399555605478615  Operation: BCAST, Communicator: "MPI_COMM_WORLD" <0>, Root: 0 ("Master thread" <0>), Sent: 0, Received: 4
-    HANDLE_CASE(OTF2_COLLECTIVE_OP_BCAST,     call.on_trigger = [=]() {app->GetMpi()->bcast(sizeReceived, MPI_BYTE, root, comm);})
+    HANDLE_CASE(OTF2_COLLECTIVE_OP_BCAST,     call.on_trigger = [=]() {app->getMpi()->bcast(sizeReceived, MPI_BYTE, root, comm);})
     //MPI_COLLECTIVE_END                         1     7556711140931805  Operation: GATHER, Communicator: "MPI_COMM_WORLD" <0>, Root: 0 ("Master thread" <0>), Sent: 4, Received: 0
     //MPI_COLLECTIVE_END                         2     7556711141055857  Operation: GATHER, Communicator: "MPI_COMM_WORLD" <0>, Root: 0 ("Master thread" <0>), Sent: 4, Received: 0
     //MPI_COLLECTIVE_END                         3     7556711141080043  Operation: GATHER, Communicator: "MPI_COMM_WORLD" <0>, Root: 0 ("Master thread" <0>), Sent: 4, Received: 0
     //MPI_COLLECTIVE_END                         0     7556711141128100  Operation: GATHER, Communicator: "MPI_COMM_WORLD" <0>, Root: 0 ("Master thread" <0>), Sent: 4, Received: 16
-    HANDLE_CASE(OTF2_COLLECTIVE_OP_GATHER,    call.on_trigger = [=]() {app->GetMpi()->gather(sizeSent, MPI_BYTE, sizeSent, MPI_BYTE, root, comm);})
+    HANDLE_CASE(OTF2_COLLECTIVE_OP_GATHER,    call.on_trigger = [=]() {app->getMpi()->gather(sizeSent, MPI_BYTE, sizeSent, MPI_BYTE, root, comm);})
     HANDLE_CASE(OTF2_COLLECTIVE_OP_GATHERV,   call.on_trigger = [=]() {std::cout << "MPI_Gatherv not implemented by Sumi-MPI" << std::endl;})
     //MPI_COLLECTIVE_END                         0     7557948283284700  Operation: SCATTER, Communicator: "MPI_COMM_WORLD" <0>, Root: 0 ("Master thread" <0>), Sent: 16, Received: 4
     //MPI_COLLECTIVE_END                         1     7557948283284988  Operation: SCATTER, Communicator: "MPI_COMM_WORLD" <0>, Root: 0 ("Master thread" <0>), Sent: 0, Received: 4
     //MPI_COLLECTIVE_END                         2     7557948283285064  Operation: SCATTER, Communicator: "MPI_COMM_WORLD" <0>, Root: 0 ("Master thread" <0>), Sent: 0, Received: 4
     //MPI_COLLECTIVE_END                         3     7557948283301477  Operation: SCATTER, Communicator: "MPI_COMM_WORLD" <0>, Root: 0 ("Master thread" <0>), Sent: 0, Received: 4
-    HANDLE_CASE(OTF2_COLLECTIVE_OP_SCATTER,   call.on_trigger = [=]() {app->GetMpi()->scatter(sizeReceived, MPI_BYTE, sizeReceived, MPI_BYTE, root, comm);})
+    HANDLE_CASE(OTF2_COLLECTIVE_OP_SCATTER,   call.on_trigger = [=]() {app->getMpi()->scatter(sizeReceived, MPI_BYTE, sizeReceived, MPI_BYTE, root, comm);})
     HANDLE_CASE(OTF2_COLLECTIVE_OP_SCATTERV,  call.on_trigger = [=]() {std::cout << "MPI_Scatterv not implemented by Sumi-MPI" << std::endl;})
     //MPI_COLLECTIVE_END                         2     7558923358856786  Operation: ALLGATHER, Communicator: "MPI_COMM_WORLD" <0>, Root: UNDEFINED, Sent: 16, Received: 16
     //MPI_COLLECTIVE_END                         0     7558923358857236  Operation: ALLGATHER, Communicator: "MPI_COMM_WORLD" <0>, Root: UNDEFINED, Sent: 16, Received: 16
     //MPI_COLLECTIVE_END                         1     7558923358857724  Operation: ALLGATHER, Communicator: "MPI_COMM_WORLD" <0>, Root: UNDEFINED, Sent: 16, Received: 16
     //MPI_COLLECTIVE_END                         3     7558923358859170  Operation: ALLGATHER, Communicator: "MPI_COMM_WORLD" <0>, Root: UNDEFINED, Sent: 16, Received: 16
-    HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLGATHER, call.on_trigger = [=]() {app->GetMpi()->allgather(sizeSent/comm_size, MPI_BYTE, sizeReceived/comm_size, MPI_BYTE, comm);})
+    HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLGATHER, call.on_trigger = [=]() {app->getMpi()->allgather(sizeSent/comm_size, MPI_BYTE, sizeReceived/comm_size, MPI_BYTE, comm);})
     HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLGATHERV,call.on_trigger = [=]() {std::cout << "MPI_Allgatherv not implemented by Sumi-MPI" << std::endl;})
     //MPI_COLLECTIVE_END                         3     7561894889294896  Operation: ALLTOALL, Communicator: "MPI_COMM_WORLD" <0>, Root: UNDEFINED, Sent: 16, Received: 16
     //MPI_COLLECTIVE_END                         1     7561894889299008  Operation: ALLTOALL, Communicator: "MPI_COMM_WORLD" <0>, Root: UNDEFINED, Sent: 16, Received: 16
     //MPI_COLLECTIVE_END                         2     7561894889326469  Operation: ALLTOALL, Communicator: "MPI_COMM_WORLD" <0>, Root: UNDEFINED, Sent: 16, Received: 16
     //MPI_COLLECTIVE_END                         0     7561894889327660  Operation: ALLTOALL, Communicator: "MPI_COMM_WORLD" <0>, Root: UNDEFINED, Sent: 16, Received: 16
-    HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLTOALL,  call.on_trigger = [=]() {app->GetMpi()->alltoall(sizeSent/comm_size, MPI_BYTE, sizeReceived/comm_size, MPI_BYTE, comm);})
+    HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLTOALL,  call.on_trigger = [=]() {app->getMpi()->alltoall(sizeSent/comm_size, MPI_BYTE, sizeReceived/comm_size, MPI_BYTE, comm);})
     HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLTOALLV, call.on_trigger = [=]() {std::cout << "MPI_Alltoallv not implemented by Sumi-MPI" << std::endl;})
     //MPI_COLLECTIVE_END                         2     7577512533313071  Operation: ALLREDUCE, Communicator: "MPI_COMM_WORLD" <0>, Root: UNDEFINED, Sent: 16, Received: 16
     //MPI_COLLECTIVE_END                         0     7577512533314445  Operation: ALLREDUCE, Communicator: "MPI_COMM_WORLD" <0>, Root: UNDEFINED, Sent: 16, Received: 16
     //MPI_COLLECTIVE_END                         1     7577512533314888  Operation: ALLREDUCE, Communicator: "MPI_COMM_WORLD" <0>, Root: UNDEFINED, Sent: 16, Received: 16
     //MPI_COLLECTIVE_END                         3     7577512533317046  Operation: ALLREDUCE, Communicator: "MPI_COMM_WORLD" <0>, Root: UNDEFINED, Sent: 16, Received: 16
     // Cannot model accurately without type size information
-    HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLREDUCE, call.on_trigger = [=]() {app->GetMpi()->allreduce((sizeReceived/comm_size)/4, MPI_INT, OTF2_OP, comm);})
+    HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLREDUCE, call.on_trigger = [=]() {app->getMpi()->allreduce((sizeReceived/comm_size)/4, MPI_INT, OTF2_OP, comm);})
     //MPI_COLLECTIVE_END                         1     7407606802153808  Operation: REDUCE, Communicator: "MPI_COMM_WORLD" <0>, Root: 2 ("Master thread" <2>), Sent: 4, Received: 0
     //MPI_COLLECTIVE_END                         3     7407606802341911  Operation: REDUCE, Communicator: "MPI_COMM_WORLD" <0>, Root: 2 ("Master thread" <2>), Sent: 4, Received: 0
     //MPI_COLLECTIVE_END                         0     7407606802394234  Operation: REDUCE, Communicator: "MPI_COMM_WORLD" <0>, Root: 2 ("Master thread" <2>), Sent: 4, Received: 0
     //MPI_COLLECTIVE_END                         2     7407606802394949  Operation: REDUCE, Communicator: "MPI_COMM_WORLD" <0>, Root: 2 ("Master thread" <2>), Sent: 4, Received: 16
     // Cannot model accurately without type size information
-    HANDLE_CASE(OTF2_COLLECTIVE_OP_REDUCE,    call.on_trigger = [=]() {app->GetMpi()->reduce(sizeSent/4, MPI_INT, OTF2_OP, root, comm);})
+    HANDLE_CASE(OTF2_COLLECTIVE_OP_REDUCE,    call.on_trigger = [=]() {app->getMpi()->reduce(sizeSent/4, MPI_INT, OTF2_OP, root, comm);})
     //MPI_COLLECTIVE_END                         2     7565304070746368  Operation: REDUCE_SCATTER, Communicator: "MPI_COMM_WORLD" <0>, Root: UNDEFINED, Sent: 4, Received: 0
     //MPI_COLLECTIVE_END                         3     7565304070843972  Operation: REDUCE_SCATTER, Communicator: "MPI_COMM_WORLD" <0>, Root: UNDEFINED, Sent: 4, Received: 0
     //MPI_COLLECTIVE_END                         1     7565304070881025  Operation: REDUCE_SCATTER, Communicator: "MPI_COMM_WORLD" <0>, Root: UNDEFINED, Sent: 4, Received: 0
@@ -598,9 +598,9 @@ OTF2_CallbackCode event_mpi_collective_end(
       std::vector<int> recv_sizes(comm_size);
       for (auto& recv_size : recv_sizes) recv_size = avg_size;
       // Cannot reconstruct reduce_scatter from OTF2, only a rough approximation
-      app->GetMpi()->reduceScatter(recv_sizes.data(), MPI_BYTE, OTF2_OP, comm);
+      app->getMpi()->reduceScatter(recv_sizes.data(), MPI_BYTE, OTF2_OP, comm);
     })
-    HANDLE_CASE(OTF2_COLLECTIVE_OP_SCAN,      call.on_trigger = [=]() {app->GetMpi()->scan((sizeSent+sizeReceived)/comm_size, MPI_BYTE, OTF2_OP, comm);})
+    HANDLE_CASE(OTF2_COLLECTIVE_OP_SCAN,      call.on_trigger = [=]() {app->getMpi()->scan((sizeSent+sizeReceived)/comm_size, MPI_BYTE, OTF2_OP, comm);})
 
     default:
         std::cerr << "ERROR: Collective not handled; " << (int)collectiveOp << endl;
@@ -608,7 +608,7 @@ OTF2_CallbackCode event_mpi_collective_end(
 
 #undef HANDLE_CASE
 #undef END_CASE
-    if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()) EVENT_PRINT("COLLECTIVE END");
+    if (((OTF2TraceReplayApp*)userData)->printTraceEvents()) EVENT_PRINT("COLLECTIVE END");
     return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -622,7 +622,7 @@ OTF2_CallbackCode event_parameter_string(
     OTF2_ParameterRef   parameter,
     OTF2_StringRef      string ) {
 
-    if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()) EVENT_PRINT("PARAMETER STRING\n");
+    if (((OTF2TraceReplayApp*)userData)->printTraceEvents()) EVENT_PRINT("PARAMETER STRING\n");
     return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -633,9 +633,9 @@ OTF2_CallbackCode event_parameter_string(
 
 #define CASE_ADD_CALL(call_id) case ID_##call_id: \
     { \
-  app->GetCallQueue().emplaceCall(time,app,ID_##call_id); \
-  if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()) \
-    EVENT_PRINT("ENTER " << app->GetCallQueue().PeekBack().ToString() << " time: " << time); \
+  app->getCallQueue().emplaceCall(time,app,ID_##call_id); \
+  if (((OTF2TraceReplayApp*)userData)->printTraceEvents()) \
+    EVENT_PRINT("ENTER " << app->getCallQueue().peekBack().toString() << " time: " << time); \
   } \
   break;
 
@@ -655,7 +655,7 @@ OTF2_CallbackCode event_enter(
 
     auto iter = app->otf2_regions.find(region);
     if (iter == app->otf2_regions.end()){
-      if (app->PrintUnknownCallback()) {
+      if (app->printUnknownCallback()) {
         std::cout << "unknown OTF2 region \""
                   << region
                   << "\"" << std::endl;
@@ -1075,14 +1075,14 @@ OTF2_CallbackCode event_enter(
 
 // Record end time and trigger the call
 #define CASE_READY(call_id, ...) case ID_##call_id : { \
- auto* call = callqueue.find_latest(ID_##call_id); \
- MpiCall::assert_call(call, "Lookup for " #call_id " in 'event_leave' returned NULL"); \
- if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()){ \
-  EVENT_PRINT("LEAVE " << call->ToString() << " time: " << time); \
+ auto* call = callqueue.findLatest(ID_##call_id); \
+ MpiCall::assertCall(call, "Lookup for " #call_id " in 'event_leave' returned NULL"); \
+ if (((OTF2TraceReplayApp*)userData)->printTraceEvents()){ \
+  EVENT_PRINT("LEAVE " << call->toString() << " time: " << time); \
  } \
  call->end_time = time; \
  __VA_ARGS__; \
- callqueue.CallReady(call); \
+ callqueue.callReady(call); \
  break; \
 }
 
@@ -1090,10 +1090,10 @@ OTF2_CallbackCode event_enter(
 // Record end time and do not trigger the call. This happens when
 // there is not enough information yet available in the callback.
 #define CASE_NOT_READY(call_id) case ID_##call_id : { \
-  auto* call = callqueue.find_latest(ID_##call_id); \
-  MpiCall::assert_call(call, "Lookup for " #call_id " in 'event_leave' returned NULL"); \
-  if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()) \
-    EVENT_PRINT("LEAVE " << call->ToString() << " time: " << time); \
+  auto* call = callqueue.findLatest(ID_##call_id); \
+  MpiCall::assertCall(call, "Lookup for " #call_id " in 'event_leave' returned NULL"); \
+  if (((OTF2TraceReplayApp*)userData)->printTraceEvents()) \
+    EVENT_PRINT("LEAVE " << call->toString() << " time: " << time); \
   call->end_time = time; \
   break; \
 }
@@ -1107,11 +1107,11 @@ OTF2_CallbackCode event_leave(
   OTF2_RegionRef      region )
 {
   auto app = (OTF2TraceReplayApp*)userData;
-  CallQueue& callqueue = app->GetCallQueue();
+  CallQueue& callqueue = app->getCallQueue();
 
   auto iter = app->otf2_regions.find(region);
   if (iter == app->otf2_regions.end()){
-    if (app->PrintUnknownCallback()) {
+    if (app->printUnknownCallback()) {
       std::cerr << "unknown OTF2 region " << region << std::endl;
     }
     return OTF2_CALLBACK_SUCCESS;
@@ -1264,7 +1264,7 @@ OTF2_CallbackCode event_leave(
   CASE_READY(MPI_File_write_ordered_begin)
   CASE_READY(MPI_File_write_ordered_end)
   CASE_READY(MPI_File_write_shared)
-  CASE_READY(MPI_Finalize, call->on_trigger = [=] () {call->app->GetMpi()->finalize();})
+  CASE_READY(MPI_Finalize, call->on_trigger = [=] () {call->app->getMpi()->finalize();})
   CASE_IGNORE(MPI_Finalized)
   CASE_READY(MPI_Free_mem)
   CASE_READY(MPI_Gather)

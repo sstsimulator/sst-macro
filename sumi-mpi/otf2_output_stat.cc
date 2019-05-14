@@ -94,6 +94,11 @@ OTF2Writer::assignGlobalCommIds(MpiApi* mpi)
   //first, we have to do a parallel scan to assign globally unique ids
   //to each MPI rank
 
+  /**
+
+
+   **/
+
   auto& comm_map = writer_.all_comms();
 
   int numOwnedComms = 0;
@@ -108,10 +113,9 @@ OTF2Writer::assignGlobalCommIds(MpiApi* mpi)
 
   int myCommOffset = 0;
 
-  auto* op = mpi->startScan("OTF2 ID agree", MPI_COMM_WORLD, 1, MPI_INT,
+  auto op = mpi->startScan("OTF2_id_agree", MPI_COMM_WORLD, 1, MPI_INT,
                              MPI_SUM,  &numOwnedComms, &myCommOffset);
-  mpi->waitCollective(op);
-  delete op;
+  mpi->waitCollective(std::move(op));
 
   //this is an inclusive scan... we needed an exclusive scan
   myCommOffset -= numOwnedComms;
@@ -119,28 +123,24 @@ OTF2Writer::assignGlobalCommIds(MpiApi* mpi)
   int myCommId = myCommOffset;
 
   //now broadcast the IDs to everyone
-  std::vector<CollectiveOpBase*> ops(numComms);
+  std::vector<CollectiveOpBase::ptr> ops(numComms);
   std::vector<int> globalIds(numComms);
   int idx = 0;
   for (auto& pair : comm_map){
     auto& list = pair.second;
     for (auto& comm : list){
-      int* buffer = &globalIds[idx];
       if (comm->is_root){
         comm->global_id = globalIds[idx] = myCommId;
         comm->group->global_id = comm->global_id + 1;
         ++myCommId;
       }
       ops[idx] = mpi->startBcast("OTF2_finalize_bcast", comm->local_id,
-                                  1, MPI_INT, 0, &globalIds[idx]);
+                                 1, MPI_INT, 0, &globalIds[idx]);
       ++idx;
     }
   }
 
-  for (auto* op : ops){
-    mpi->waitCollective(op);
-    delete op;
-  }
+  mpi->waitCollectives(std::move(ops));
 
   /** all global ids have been received, log them */
   idx = 0;

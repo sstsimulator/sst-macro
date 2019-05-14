@@ -156,11 +156,13 @@ MpiApi::MpiApi(SST::Params& params, sstmac::sw::App* app,
 
 
 #ifdef SSTMAC_OTF2_ENABLED
+#if !SSTMAC_INTEGRATED_SST_CORE
   auto subname = sprockit::printf("App%d-Rank%d", app->sid().app_, app->sid().task_);
   auto* stat = comp->registerStatistic<void>(params, "otf2", subname);
   //this will either be a null stat or an otf2 stat
   //the rest of the code will do null checks on the variable before dumping traces
   OTF2Writer_ = dynamic_cast<OTF2Writer*>(stat);
+#endif
 #endif
 }
 
@@ -287,8 +289,8 @@ MpiApi::finalize()
 
   start_mpi_call(MPI_Finalize);
 
-  CollectiveOpBase* op = startBarrier("MPI_Finalize", MPI_COMM_WORLD);
-  waitCollective(op);
+  auto op = startBarrier("MPI_Finalize", MPI_COMM_WORLD);
+  waitCollective(std::move(op));
 
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Finalize()");
 

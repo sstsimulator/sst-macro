@@ -122,8 +122,8 @@ MpiCommFactory::commNewIdAgree(MpiComm* commPtr)
 {
   int inputID = next_id_;
   int outputID = 0;
-  CollectiveOpBase* op = parent_->startAllreduce(commPtr, 1, MPI_INT, MPI_MAX, &inputID, &outputID);
-  parent_->waitCollective(op);
+  auto op = parent_->startAllreduce(commPtr, 1, MPI_INT, MPI_MAX, &inputID, &outputID);
+  parent_->waitCollective(std::move(op));
 
   next_id_ = outputID + 1;
   return outputID;
@@ -252,9 +252,9 @@ MpiCommFactory::commSplit(MpiComm* caller, int my_color, int my_key)
 
   //just model the allgather
 
-  auto* op = parent_->startAllgather("MPI_Comm_split_allgather", caller->id(),
+  auto op = parent_->startAllgather("MPI_Comm_split_allgather", caller->id(),
                                       3, MPI_INT, 3, MPI_INT, nullptr, nullptr);
-  parent_->waitCollective(op);
+  parent_->waitCollective(std::move(op));
 #endif
 
   MpiComm* ret;

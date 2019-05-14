@@ -13,10 +13,11 @@ else
 #else no integrated core
 if HAVE_CLANG
 SKELETONCASES += \
-  memoize \
   relocation_ptr_test \
   openmp \
   overhead_test
+
+#  memoize 
 
 if HAVE_CPP14
 SKELETONCASES += \

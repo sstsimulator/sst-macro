@@ -85,7 +85,7 @@ class allocator
 
 };
 
-#if SPKT_VALGRIND_MODE
+#if SSTMAC_VALGRIND_MODE
 template <class T> using threadSafeAllocator = std::allocator<T>;
 #else
 template <class T>

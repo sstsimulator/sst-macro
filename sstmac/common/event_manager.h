@@ -176,7 +176,7 @@ class EventManager
     return nthread_;
   }
 
-  void registerStatisticCore(StatisticBase* base);
+  void registerStatisticCore(StatisticBase* base, SST::Params& params);
 
   virtual EventManager* threadManager(int thr) const {
     return const_cast<EventManager*>(this);
