@@ -128,7 +128,7 @@ static char* get_data_segment(SST::Params& params,
 static thread_lock dlopen_lock;
 
 void
-App::dlopenCheck(int aid, SST::Params& params)
+App::dlopenCheck(int aid, SST::Params& params, bool check_name)
 {
   if (params.contains("exe")){
     dlopen_lock.lock();
@@ -138,18 +138,22 @@ App::dlopenCheck(int aid, SST::Params& params)
     if (entry.refcount == 0){
       entry.handle = loadExternLibrary(libname, loadExternPathStr());
     }
-    void* name = dlsym(entry.handle, "exe_main_name");
-    if (name){
-      const char* str_name = (const char*) name;
-      if (params.contains("name")){
-        if (params.find<std::string>("name") != std::string(str_name)){
-          spkt_abort_printf("if given both exe= and name= parameters for app%d, they must agree\n"
-                            "%s != %s", aid, str_name, params.find<std::string>("name").c_str());
+
+    if (check_name){
+      void* name = dlsym(entry.handle, "exe_main_name");
+      if (name){
+        const char* str_name = (const char*) name;
+        if (params.contains("name")){
+          if (params.find<std::string>("name") != std::string(str_name)){
+            spkt_abort_printf("if given both exe= and name= parameters for app%d, they must agree\n"
+                              "'%s' != '%s'", aid, str_name, params.find<std::string>("name").c_str());
+          }
+        } else {
+          params.insert("name", str_name);
         }
-      } else {
-        params.insert("name", str_name);
       }
     }
+
     ++entry.refcount;
     sstmac_app_loaded(aid);
     dlopen_lock.unlock();

@@ -223,7 +223,7 @@ class App : public Thread
     unique_name_ = name;
   }
 
-  static void dlopenCheck(int aid, SST::Params& params);
+  static void dlopenCheck(int aid, SST::Params& params, bool check_name = true);
 
   static void dlcloseCheck(int aid);
 

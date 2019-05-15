@@ -130,14 +130,7 @@ JobLauncher::addLaunchRequests(SST::Params& params)
       keep_going = true;
       last_used_aid = aid;
 
-      App::dlopenCheck(aid, app_params);
-
-      //if (app_params->has_param("exe")){
-      //  //load and unload the library to bring statics in
-      //  std::string libname = app_params.find<std::string>("exe");
-      //  void* handle = load_extern_library(libname, load_extern_path_str());
-      //  unload_extern_library(handle);
-      //}
+      App::dlopenCheck(aid, app_params, false/*no name check*/);
     } else {
       keep_going = false;
     }
