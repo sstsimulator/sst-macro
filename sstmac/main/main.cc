@@ -113,7 +113,7 @@ void new_error_handler()
 }
 #endif
 
-#if !SSTMAC_INTEGRATED_SST_CORE
+//#if !SSTMAC_INTEGRATED_SST_CORE
 int
 main(int argc, char **argv)
 {
@@ -139,4 +139,4 @@ main(int argc, char **argv)
   }
   return rc;
 }
-#endif // !SSTMAC_INTEGRATED_SST_CORE
+//#endif // !SSTMAC_INTEGRATED_SST_CORE

@@ -313,30 +313,29 @@ runStandalone(int argc, char** argv)
   //this means we actually just want to run a compiled program
   //and get the hell out of dodge
   sstmac::Timestamp::initStamps(100); //100 attoseconds per tick
-  SST::Params null_params = std::make_shared<sprockit::SimParameters>();
 
+  SST::Params null_params;
   SST::Params nic_params = null_params.find_scoped_params("nic");
-  nic_params->addParamOverride("name", "null");
-  nic_params->addParamOverride("topology.name", "torus");
-  nic_params->addParamOverride("topology.geometry", "[2, 2]");
-
   SST::Params mem_params = null_params.find_scoped_params("memory");
-  mem_params->addParamOverride("name", "null");
-
   SST::Params proc_params = null_params.find_scoped_params("proc");
-  proc_params->addParamOverride("frequency", "1ghz");
-  proc_params->addParamOverride("ncores", 1);
 
+  nic_params.insert("name", "null");
+  nic_params.insert("topology.name", "torus");
+  nic_params.insert("topology.geometry", "[2, 2]");
+  mem_params.insert("name", "null");
+  proc_params.insert("frequency", "1ghz");
+  proc_params.insert("ncores", "1");
   //put this on Node 1 to avoid a Job Launcher being built
-  null_params->addParamOverride("id", 1);
-  null_params->addParamOverride("name", "sstmac_app_name");
+  null_params.insert("id", "1");
+  null_params.insert("name", "sstmac_app_name");
+
   sstmac::sw::SoftwareId id(1,0);
+
   sstmac::native::SerialRuntime rt(null_params);
-#if SSTMAC_INTEGRATED_SST_CORE
-  sstmac::EventManager mgr(uint32_t(0));
+#if !SSTMAC_INTEGRATED_SST_CORE
+    sstmac::EventManager mgr(null_params, &rt);
+    sstmac::EventManager::global = &mgr;
 #else
-  sstmac::EventManager mgr(null_params, &rt);
-  sstmac::EventManager::global = &mgr;
 #endif
 
   sstmac::hw::SimpleNode node(0, null_params);
@@ -349,8 +348,9 @@ runStandalone(int argc, char** argv)
   for (int i=1; i < argc; ++i){
     argv_sstr << " " << argv[i];
   }
-  null_params->addParam("argv", argv_sstr.str());
-  null_params->addParamOverride("notify", "false");
+
+  null_params.insert("argv", argv_sstr.str());
+  null_params.insert("notify", "false");
 
   sw::TaskMapping::ptr mapping = std::make_shared<sw::TaskMapping>(1);
   mapping->rankToNode().resize(1);
