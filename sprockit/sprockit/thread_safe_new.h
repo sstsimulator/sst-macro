@@ -2,8 +2,12 @@
 #define THREAD_SAFE_NEW_H
 
 #include <vector>
+#include <set>
+#include <sstmac/common/sstmac_config.h>
 
 #define SPKT_TLS_OFFSET 64
+
+#define SPKT_NEW_SUPER_DEBUG 1
 
 namespace sprockit {
 
@@ -43,8 +47,13 @@ struct ThreadAllocatorSet {
 
 template <class T>
 class thread_safe_new {
+
  public:
-#if SPKT_VALGRIND_MODE
+#if SSTMAC_ENABLE_SANITY_CHECK
+  static constexpr uint32_t magic_number = std::numeric_limits<uint32_t>::max();
+#endif
+
+#if SSTMAC_VALGRIND_MODE
   template <class... Args>
   static T* allocateAtBeginning(Args&&... args){
     return new T(std::forward<Args>(args)...);
@@ -69,7 +78,14 @@ class thread_safe_new {
       grow(thread);
     }
     void* ret = alloc_.available[thread].back();
+#if SSTMAC_ENABLE_SANITY_CHECK
+    (uint32_t*) casted = (uint32_t*) ret;
+    *casted = 0;
+#endif
     alloc_.available[thread].pop_back();
+#if SPKT_NEW_SUPER_DEBUG
+    all_chunks_.erase(ret);
+#endif
     return ret;
   }
 
@@ -89,6 +105,20 @@ class thread_safe_new {
   static void operator delete(void* ptr){
     int thread = currentThreadid();
     alloc_.available[thread].push_back(ptr);
+#if SSTMAC_ENABLE_SANITY_CHECK
+    (uint32_t*) casted = (uint32_t*) ptr;
+    if (*casted == magic_number){
+      spkt_abort_printf("chunk %p already freed!", ptr);
+    }
+    *casted = magic_number;
+#endif
+#if SPKT_NEW_SUPER_DEBUG
+    auto iter = all_chunks_.find(ptr);
+    if (iter != all_chunks_.end()){
+      spkt_abort_printf("freeing chunk twice-in-a-row: %p", ptr);
+    }
+    all_chunks_.insert(ptr);
+#endif
   }
 #endif
 #define SSTMAC_CACHE_ALIGNMENT 64
@@ -109,6 +139,9 @@ class thread_safe_new {
     }
     for (int i=0; i < numElems; ++i, ptr += unitSize){
       alloc_.available[thread].push_back(ptr);
+#if SPKT_NEW_SUPER_DEBUG
+      all_chunks_.insert(ptr);
+#endif
     }
     alloc_.allocations[thread].push_back(newTs);
   }
@@ -116,10 +149,15 @@ class thread_safe_new {
  private:
   static ThreadAllocatorSet alloc_;
   static int constexpr increment = 512;
-
+#if SPKT_NEW_SUPER_DEBUG
+  static std::set<void*> all_chunks_;
+#endif
 };
 
 template <class T> ThreadAllocatorSet thread_safe_new<T>::alloc_;
+#if SPKT_NEW_SUPER_DEBUG
+template <class T> std::set<void*> thread_safe_new<T>::all_chunks_;
+#endif
 
 }
 

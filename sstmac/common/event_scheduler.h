@@ -223,7 +223,7 @@ class EventScheduler : public sprockit::printable
       auto* builder = lib->getBuilder(type);
       if (builder){
         Stat* stat = builder->create(this, name, "", scoped_params);
-        registerStatisticCore(stat);
+        registerStatisticCore(stat, scoped_params);
         return stat;
       }
     }
@@ -324,7 +324,7 @@ class EventScheduler : public sprockit::printable
   static SST::TimeConverter* time_converter_;
 #else
 
-  void registerStatisticCore(StatisticBase* base);
+  void registerStatisticCore(StatisticBase* base, SST::Params& params);
 
   uint32_t id_;
   EventManager* mgr_;

@@ -176,7 +176,7 @@ class EventManager
     return nthread_;
   }
 
-  void registerStatisticCore(StatisticBase* base);
+  void registerStatisticCore(StatisticBase* base, SST::Params& params);
 
   virtual EventManager* threadManager(int thr) const {
     return const_cast<EventManager*>(this);
@@ -207,14 +207,6 @@ class EventManager
 
   hw::Interconnect* interconnect() const {
     return interconn_;
-  }
-
-  void startStatGroup(const std::string& name){
-    active_stat_group_.push(name);
-  }
-
-  void stopStatGroup(){
-    active_stat_group_.pop();
   }
 
   virtual void scheduleStop(GlobalTimestamp until);
@@ -306,18 +298,9 @@ class EventManager
                     sprockit::allocator<ExecutionEvent*>> ;
   queue_t event_queue_;
 
-  struct StatGroup {
-    std::list<StatisticBase*> stats;
-    StatisticOutput* output;
-    std::string outputName;
-    StatGroup() : output(nullptr), outputName("csv") {}
-  };
-
   StatisticOutput* dflt_stat_output_;
 
-  std::queue<std::string> active_stat_group_;
-
-  std::map<std::string, StatGroup> stat_groups_;
+  std::map<std::string, StatisticGroup*> stat_groups_;
 
 };
 

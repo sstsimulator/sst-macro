@@ -137,26 +137,20 @@ Interconnect::Interconnect(SST::Params& params, EventManager *mgr,
   logp_params.insert(switch_params.find_scoped_params("logp"));
 
   logp_switches_.resize(rt_->nthread());
-  mgr->startStatGroup("logp");
   uint32_t my_offset = rt_->me() * rt_->nthread() + top->numNodes() + top->numSwitches();
   for (int i=0; i < rt_->nthread(); ++i){
     uint32_t id = my_offset + i;
     logp_switches_[i] = new LogPSwitch(id, logp_params);
   }
-  mgr->stopStatGroup();
 
   interconn_debug("Interconnect building endpoints");
 
-  mgr->startStatGroup("node");
   buildEndpoints(node_params, nic_params, mgr);
-  mgr->stopStatGroup();
 
   connectLogP(mgr, node_params, nic_params);
   if (!logp_model){
     interconn_debug("Interconnect building switches");
-    mgr->startStatGroup("switch");
     buildSwitches(switch_params, mgr);
-    mgr->stopStatGroup();
     interconn_debug("Interconnect connecting switches");
     connectSwitches(mgr, switch_params);
     interconn_debug("Interconnect connecting endpoints");
@@ -380,7 +374,6 @@ Interconnect::buildEndpoints(SST::Params& node_params,
   int my_rank = rt_->me();
   int my_thread = mgr->thread();
 
-  mgr->startStatGroup("nodes");
   for (int i=0; i < num_switches_; ++i){
     SwitchId sid(i);
     std::vector<Topology::InjectionPort> nodes;
@@ -414,7 +407,6 @@ Interconnect::buildEndpoints(SST::Params& node_params,
       }
     }
   }
-  mgr->stopStatGroup();
 }
 
 void
@@ -424,7 +416,6 @@ Interconnect::buildSwitches(SST::Params& switch_params,
   bool simple_model = switch_params.find<std::string>("name") == "simple";
   if (simple_model) return; //nothing to do
 
-  mgr->startStatGroup("switches");
   int my_rank = rt_->me();
   int id_offset = topology_->numNodes();
   for (SwitchId i=0; i < num_switches_; ++i){
@@ -445,7 +436,6 @@ Interconnect::buildSwitches(SST::Params& switch_params,
     switch_params->removeParam("id");
     components_[i+id_offset] = switches_[i];
   }
-  mgr->stopStatGroup();
 }
 
 uint32_t

@@ -95,9 +95,9 @@ EventScheduler::getEmptyParams()
 }
 
 void
-EventScheduler::registerStatisticCore(StatisticBase *base)
+EventScheduler::registerStatisticCore(StatisticBase *base, SST::Params& params)
 {
-  mgr_->registerStatisticCore(base);
+  mgr_->registerStatisticCore(base, params);
 }
 
 void

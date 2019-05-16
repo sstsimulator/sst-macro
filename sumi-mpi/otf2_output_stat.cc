@@ -1,24 +1,29 @@
 
 #include <sumi-mpi/otf2_output_stat.h>
+
+#ifdef SSTMAC_OTF2_ENABLED
+
 #include <sumi-mpi/mpi_integers.h>
 #include <sumi-mpi/mpi_comm/mpi_comm.h>
 #include <sumi-mpi/mpi_api.h>
 #include <sstmac/backends/common/parallel_runtime.h>
+#include <sstmac/common/timestamp.h>
 #include <limits>
 
-#ifdef SSTMAC_OTF2_ENABLED
 
 namespace sumi {
 
-otf2_writer::otf2_writer(SST::Params& params) :
-  stat_collector(params),
+OTF2Writer::OTF2Writer(SST::BaseComponent* parent, const std::string& name,
+                       const std::string& subName, SST::Params& params) :
+  SST::Statistics::CustomStatistic(parent, name, subName, params),
   min_time_(std::numeric_limits<uint64_t>::max()),
   max_time_(std::numeric_limits<uint64_t>::min())
 {
+  fileroot_ = params.find<std::string>("fileroot");
 }
 
 void
-otf2_writer::init(uint64_t start, uint64_t stop, int rank, int size)
+OTF2Writer::init(uint64_t start, uint64_t stop, int rank, int size)
 {
   rank_ = rank;
   size_ = size;
@@ -29,7 +34,7 @@ otf2_writer::init(uint64_t start, uint64_t stop, int rank, int size)
   writer_.register_comm_null(MPI_COMM_NULL);
   writer_.register_null_request(MPI_REQUEST_NULL);
   writer_.open_archive(fileroot_);
-  writer_.set_clock_resolution(sstmac::timestamp(1.0).ticks());
+  writer_.set_clock_resolution(sstmac::Timestamp(1.0).ticks());
   writer_.generic_call(start, stop, "MPI_Init");
 
   std::shared_ptr<dumpi::OTF2_MPI_Comm> world(new dumpi::OTF2_MPI_Comm);
@@ -47,7 +52,7 @@ otf2_writer::init(uint64_t start, uint64_t stop, int rank, int size)
 }
 
 void
-otf2_writer::add_comm(mpi_comm* comm, dumpi::mpi_comm_t parent_id)
+OTF2Writer::addComm(MpiComm* comm, dumpi::mpi_comm_t parent_id)
 {
   dumpi::OTF2_MPI_Comm::shared_ptr stored = writer_.make_new_comm(comm->id());
 
@@ -59,10 +64,10 @@ otf2_writer::add_comm(mpi_comm* comm, dumpi::mpi_comm_t parent_id)
   stored->world_rank = comm->group()->at(comm->rank());
 
   std::shared_ptr<dumpi::OTF2_MPI_Group> group(new dumpi::OTF2_MPI_Group);
-  if (comm->group()->is_comm_world()){
+  if (comm->group()->isCommWorld()){
     group->is_comm_world = true;
   } else {
-    group->global_ranks = comm->group()->world_ranks();
+    group->global_ranks = comm->group()->worldRanks();
   }
   group->local_id = comm->group()->id();
   group->global_id = group->local_id;
@@ -70,10 +75,8 @@ otf2_writer::add_comm(mpi_comm* comm, dumpi::mpi_comm_t parent_id)
 }
 
 void
-otf2_writer::reduce(sstmac::stat_collector* contrib)
+OTF2Writer::reduce(OTF2Writer* other)
 {
-  otf2_writer* other = dynamic_cast<otf2_writer*>(contrib);
-
   auto unique_comms = other->writer().find_unique_comms();
   all_comms_.insert(all_comms_.end(), unique_comms.begin(), unique_comms.end());
 
@@ -86,10 +89,15 @@ otf2_writer::reduce(sstmac::stat_collector* contrib)
 }
 
 void
-otf2_writer::assign_global_comm_ids(mpi_api* mpi)
+OTF2Writer::assignGlobalCommIds(MpiApi* mpi)
 {
   //first, we have to do a parallel scan to assign globally unique ids
   //to each MPI rank
+
+  /**
+
+
+   **/
 
   auto& comm_map = writer_.all_comms();
 
@@ -105,10 +113,9 @@ otf2_writer::assign_global_comm_ids(mpi_api* mpi)
 
   int myCommOffset = 0;
 
-  auto* op = mpi->start_scan("OTF2 ID agree", MPI_COMM_WORLD, 1, MPI_INT,
+  auto op = mpi->startScan("OTF2_id_agree", MPI_COMM_WORLD, 1, MPI_INT,
                              MPI_SUM,  &numOwnedComms, &myCommOffset);
-  mpi->wait_collective(op);
-  delete op;
+  mpi->waitCollective(std::move(op));
 
   //this is an inclusive scan... we needed an exclusive scan
   myCommOffset -= numOwnedComms;
@@ -116,28 +123,24 @@ otf2_writer::assign_global_comm_ids(mpi_api* mpi)
   int myCommId = myCommOffset;
 
   //now broadcast the IDs to everyone
-  std::vector<collective_op_base*> ops(numComms);
+  std::vector<CollectiveOpBase::ptr> ops(numComms);
   std::vector<int> globalIds(numComms);
   int idx = 0;
   for (auto& pair : comm_map){
     auto& list = pair.second;
     for (auto& comm : list){
-      int* buffer = &globalIds[idx];
       if (comm->is_root){
         comm->global_id = globalIds[idx] = myCommId;
         comm->group->global_id = comm->global_id + 1;
         ++myCommId;
       }
-      ops[idx] = mpi->start_bcast("OTF2_finalize_bcast", comm->local_id,
-                                  1, MPI_INT, 0, &globalIds[idx]);
+      ops[idx] = mpi->startBcast("OTF2_finalize_bcast", comm->local_id,
+                                 1, MPI_INT, 0, &globalIds[idx]);
       ++idx;
     }
   }
 
-  for (auto* op : ops){
-    mpi->wait_collective(op);
-    delete op;
-  }
+  mpi->waitCollectives(std::move(ops));
 
   /** all global ids have been received, log them */
   idx = 0;
@@ -155,20 +158,7 @@ otf2_writer::assign_global_comm_ids(mpi_api* mpi)
 }
 
 void
-otf2_writer::globalReduce(sstmac::parallel_runtime* rt)
-{
-  if (rt->nproc() == 1) return;
-
-  sprockit::abort("unimplemented: OTF2 trace output global reduce");
-}
-
-void
-otf2_writer::clear()
-{
-}
-
-void
-otf2_writer::dumpLocalData()
+OTF2Writer::dumpLocalData()
 {
   writer_.write_local_def_file();
   if (rank_ != 0){
@@ -178,15 +168,50 @@ otf2_writer::dumpLocalData()
 }
 
 void
-otf2_writer::dumpGlobalData()
+OTF2Writer::dumpGlobalData()
 {
   if (rank_ != 0){
-    spkt_abort_printf("main otf2_writer::dumpGlobalData() called on rank %d != 0", rank_);
+    spkt_abort_printf("main OTF2Writer::dumpGlobalData() called on rank %d != 0", rank_);
   }
   writer_.write_global_def_file(event_counts_, all_comms_, min_time_, max_time_);
   writer_.close_archive();
 }
 
+OTF2Output::OTF2Output(SST::Params &params)
+ : first_in_grp_(nullptr),
+   StatisticOutput(params)
+{
+}
+
+void
+OTF2Output::output(SST::Statistics::StatisticBase *statistic, bool endOfSimFlag)
+{
+  auto* writer = dynamic_cast<OTF2Writer*>(statistic);
+  if (!writer){
+    spkt_abort_printf("OTF2Output received non-OTF2 stat");
+  }
+
+  writer->dumpLocalData();
+
+  if (!first_in_grp_) first_in_grp_ = writer;
+  first_in_grp_->reduce(writer);
+
+}
+
+void
+OTF2Output::startOutputGroup(SST::Statistics::StatisticGroup *grp)
+{
+  first_in_grp_ = nullptr;
+}
+
+void
+OTF2Output::stopOutputGroup()
+{
+  first_in_grp_->dumpGlobalData();
+  first_in_grp_ = nullptr;
+}
+
 }
 
 #endif
+

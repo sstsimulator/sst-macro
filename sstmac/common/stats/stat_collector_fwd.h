@@ -52,20 +52,26 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace SST {
 namespace Statistics {
 class StatisticOutput;
+class StatisticFieldsOutput;
 class StatisticBase;
+class StatisticGroup;
 }
 }
 #else
 namespace sstmac {
 class StatisticOutput;
 class StatisticBase;
+class StatisticFieldsOutput;
+class StatisticGroup;
 template <class T> class Statistic;
 }
 namespace SST {
 namespace Statistics {
 using sstmac::StatisticOutput;
 using sstmac::StatisticBase;
+using sstmac::StatisticFieldsOutput;
 using sstmac::Statistic;
+using sstmac::StatisticGroup;
 }
 }
 #endif

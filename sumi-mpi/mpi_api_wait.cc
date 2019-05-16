@@ -55,7 +55,7 @@ int
 MpiApi::wait(MPI_Request *request, MPI_Status *status)
 {
 #ifdef SSTMAC_OTF2_ENABLED
-  auto start_clock = trace_clock();
+  auto start_clock = traceClock();
   MPI_Request request_cpy = *request;
 #endif
 
@@ -67,11 +67,11 @@ MpiApi::wait(MPI_Request *request, MPI_Status *status)
   finish_mpi_call(MPI_Wait);
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_) {
+  if (OTF2Writer_) {
     dumpi::OTF2_Writer::mpi_status_t stat;
     stat.tag = tag;
     stat.source = source;
-    otf2_writer_->writer().mpi_wait(start_clock, trace_clock(), request_cpy, &stat);
+    OTF2Writer_->writer().mpi_wait(start_clock, traceClock(), request_cpy, &stat);
   }
 #endif
   return rc;
@@ -119,7 +119,7 @@ MpiApi::waitall(int count, MPI_Request array_of_requests[],
                  MPI_Status array_of_statuses[])
 {
 #ifdef SSTMAC_OTF2_ENABLED
-  auto start_clock = trace_clock();
+  auto start_clock = traceClock();
   std::vector<MPI_Request> req_cpy(array_of_requests, array_of_requests + count);
   std::vector<dumpi::OTF2_Writer::mpi_status_t> statuses(count);
 #endif
@@ -138,7 +138,7 @@ MpiApi::waitall(int count, MPI_Request array_of_requests[],
     int tag, source;
     doWait(&array_of_requests[i], status, tag, source);
 #ifdef SSTMAC_OTF2_ENABLED
-    if (otf2_writer_) {
+    if (OTF2Writer_) {
       statuses[i].tag = tag;
       statuses[i].source = source;
     }
@@ -147,8 +147,8 @@ MpiApi::waitall(int count, MPI_Request array_of_requests[],
   finish_mpi_call(MPI_Waitall);
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_) {
-    otf2_writer_->writer().mpi_waitall(start_clock, trace_clock(), count,
+  if (OTF2Writer_) {
+    OTF2Writer_->writer().mpi_waitall(start_clock, traceClock(), count,
                                        req_cpy.data(), statuses.data());
   }
 #endif
@@ -178,11 +178,11 @@ MpiApi::waitany(int count, MPI_Request array_of_requests[], int *indx,
       MpiRequest* reqPtr = getRequest(req);
       if (reqPtr->isComplete()){
 #ifdef SSTMAC_OTF2_ENABLED
-        if (otf2_writer_){
+        if (OTF2Writer_){
           dumpi::OTF2_Writer::mpi_status_t stat;
           stat.tag = reqPtr->status().MPI_TAG;
           stat.source = reqPtr->status().MPI_SOURCE;
-          otf2_writer_->writer().mpi_waitany(start_clock, trace_clock(), req, &stat);
+          OTF2Writer_->writer().mpi_waitany(start_clock, traceClock(), req, &stat);
         }
 #endif
         *indx = i;
@@ -215,11 +215,11 @@ MpiApi::waitany(int count, MPI_Request array_of_requests[], int *indx,
         MpiRequest* reqPtr = reqPtrs[numNonnull++];
         if (reqPtr->isComplete()){
 #ifdef SSTMAC_OTF2_ENABLED
-          if (otf2_writer_){
+          if (OTF2Writer_){
             dumpi::OTF2_Writer::mpi_status_t stat;
             stat.tag = reqPtr->status().MPI_TAG;
             stat.source = reqPtr->status().MPI_SOURCE;
-            otf2_writer_->writer().mpi_waitany(start_clock, trace_clock(), req, &stat);
+            OTF2Writer_->writer().mpi_waitany(start_clock, traceClock(), req, &stat);
           }
 #endif
           *indx = i;
@@ -249,7 +249,7 @@ MpiApi::waitsome(int incount, MPI_Request array_of_requests[],
   // Cache the vector before it is destroyed
   std::vector<MPI_Request> req_vect(array_of_requests, array_of_requests + incount);
   std::vector<dumpi::OTF2_Writer::mpi_status_t> statuses(incount);
-  auto start_clock = trace_clock();
+  auto start_clock = traceClock();
 #endif
 
   start_mpi_call(MPI_Waitsome);
@@ -305,8 +305,8 @@ MpiApi::waitsome(int incount, MPI_Request array_of_requests[],
   }
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_){
-    otf2_writer_->writer().mpi_waitsome(start_clock, trace_clock(),
+  if (OTF2Writer_){
+    OTF2Writer_->writer().mpi_waitsome(start_clock, traceClock(),
                                         req_vect.data(), *outcount, array_of_indices,
                                         statuses.data());
   }

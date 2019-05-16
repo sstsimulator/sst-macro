@@ -343,8 +343,8 @@ MpiApi::typeHvector(int count, int blocklength, MPI_Aint stride,
   MpiType* ty = typeFromId(old_type);
   int rc = doTypeHvector(count, blocklength, stride, ty, new_type);
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_) {
-    otf2_writer_->writer().register_type(*new_type, count*ty->packed_size());
+  if (OTF2Writer_) {
+    OTF2Writer_->writer().register_type(*new_type, count*ty->packed_size());
   }
 #endif
   return rc;
@@ -359,8 +359,8 @@ MpiApi::typeVector(int count, int blocklength, int stride,
   MPI_Aint byte_stride = stride * old->extent();
   int rc = doTypeHvector(count, blocklength, byte_stride, old, new_type);
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_) {
-    otf2_writer_->writer().register_type(*new_type, count*old->packed_size());
+  if (OTF2Writer_) {
+    OTF2Writer_->writer().register_type(*new_type, count*old->packed_size());
   }
 #endif
   return rc;
@@ -419,8 +419,8 @@ MpiApi::typeHindexed(int count, const int lens[], const MPI_Aint* displs,
   MpiType* ty = typeFromId(intype);
   int rc = doTypeHindexed(count, lens, displs, ty, outtype);
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_){
-    otf2_writer_->writer().register_type(*outtype, count*ty->packed_size());
+  if (OTF2Writer_){
+    OTF2Writer_->writer().register_type(*outtype, count*ty->packed_size());
   }
 #endif
   return rc;
@@ -439,8 +439,8 @@ MpiApi::typeIndexed(int count, const int lens[], const int* displs,
 
   int rc = doTypeHindexed(count, lens, byte_displs, in_type_obj, outtype);
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_){
-    otf2_writer_->writer().register_type(*outtype, count*in_type_obj->packed_size());
+  if (OTF2Writer_){
+    OTF2Writer_->writer().register_type(*outtype, count*in_type_obj->packed_size());
   }
 #endif
   return rc;
@@ -489,8 +489,8 @@ MpiApi::commitBuiltinType(MpiType* type, MPI_Datatype id)
   known_types_[id]->set_committed(true);
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_writer_) {
-    otf2_writer_->writer().register_type(id, type->packed_size());
+  if(OTF2Writer_) {
+    OTF2Writer_->writer().register_type(id, type->packed_size());
   }
 #endif
 }
@@ -513,8 +513,8 @@ MpiApi::typeContiguous(int count, MPI_Datatype old_type,
   *new_type = new_type_obj->id;
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_){
-    otf2_writer_->writer().register_type(*new_type, count*old_type_obj->packed_size());
+  if (OTF2Writer_){
+    OTF2Writer_->writer().register_type(*new_type, count*old_type_obj->packed_size());
   }
 #endif
 
@@ -583,8 +583,8 @@ MpiApi::typeCreateStruct(const int count, const int* blocklens,
                 count, typeStr(*newtype).c_str());
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_){
-    otf2_writer_->writer().register_type(*newtype, new_type_obj->packed_size());
+  if (OTF2Writer_){
+    OTF2Writer_->writer().register_type(*newtype, new_type_obj->packed_size());
   }
 #endif
 

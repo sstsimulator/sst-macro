@@ -72,6 +72,7 @@ class PersistentOp
 
 struct CollectiveOpBase
 {
+  using ptr = std::unique_ptr<CollectiveOpBase>;
 
   bool packed_send;
   bool packed_recv;
@@ -90,9 +91,10 @@ struct CollectiveOpBase
   int root;
   bool complete;
 
-  virtual ~CollectiveOpBase(){}
+  friend class std::default_delete<CollectiveOpBase>;
 
  protected:
+  virtual ~CollectiveOpBase(){}
   CollectiveOpBase(MpiComm* cm);
 
 };
@@ -101,26 +103,46 @@ struct CollectiveOp :
   public CollectiveOpBase,
   public sprockit::thread_safe_new<CollectiveOp>
 {
+  using ptr = std::unique_ptr<CollectiveOp>;
+
+  template <class... Args> static
+  CollectiveOp::ptr create(Args&&...args){
+    return CollectiveOp::ptr(new CollectiveOp(std::forward<Args>(args)...));
+  }
+
+ private:
+  friend class std::default_delete<CollectiveOp>;
+ ~CollectiveOp(){}
+
   CollectiveOp(int count, MpiComm* comm);
   CollectiveOp(int sendcnt, int recvcnt, MpiComm* comm);
-
-
 };
 
 struct CollectivevOp :
   public CollectiveOpBase,
   public sprockit::thread_safe_new<CollectivevOp>
 {
-  CollectivevOp(int scnt, int* recvcnts, int* disps, MpiComm* comm);
-  CollectivevOp(int* sendcnts, int* disps, int rcnt, MpiComm* comm);
-  CollectivevOp(int* sendcnts, int* sdisps,
-                 int* recvcnts, int* rdisps, MpiComm* comm);
+  using ptr = std::unique_ptr<CollectivevOp>;
+
+  template <class... Args> static
+  CollectivevOp::ptr create(Args&&...args){
+    return CollectivevOp::ptr(new CollectivevOp(std::forward<Args>(args)...));
+  }
 
   int* recvcounts;
   int* sendcounts;
   int* sdisps;
   int* rdisps;
   int size;
+
+ private:
+  friend class std::default_delete<CollectivevOp>;
+  ~CollectivevOp(){}
+
+  CollectivevOp(int scnt, int* recvcnts, int* disps, MpiComm* comm);
+  CollectivevOp(int* sendcnts, int* disps, int rcnt, MpiComm* comm);
+  CollectivevOp(int* sendcnts, int* sdisps,
+                int* recvcnts, int* rdisps, MpiComm* comm);
 };
 
 class MpiRequest :
@@ -182,12 +204,13 @@ class MpiRequest :
     return persistent_op_;
   }
 
-  void setCollective(CollectiveOpBase* op) {
-    collective_op_ = op;
+  CollectiveOpBase* setCollective(CollectiveOpBase::ptr&& op) {
+    collective_op_ = std::move(op);
+    return collective_op_.get();
   }
 
   CollectiveOpBase* collectiveData() const {
-    return collective_op_;
+    return collective_op_.get();
   }
 
   const MPI_Status& status() const {
@@ -203,7 +226,7 @@ class MpiRequest :
   }
 
   bool isCollective() const {
-    return collective_op_;
+    return bool(collective_op_);
   }
 
   op_type_t optype() const {
@@ -217,7 +240,7 @@ class MpiRequest :
   op_type_t optype_;
 
   PersistentOp* persistent_op_;
-  CollectiveOpBase* collective_op_;
+  CollectiveOpBase::ptr collective_op_;
 
 };
 

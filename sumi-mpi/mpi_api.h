@@ -660,7 +660,16 @@ class MpiApi : public sumi::SimTransport
 
   void freeTempPackBuffer(void* srcbuf);
 
-  void waitCollective(CollectiveOpBase* op);
+  /**
+   * @brief waitCollective The function takes ownership of the op.
+   *  This should only be called with a single pending collective.
+   *  If there are multiple pending collectives,
+   *  this can lead to an error condition
+   * @param op Moved collective operation
+   */
+  void waitCollective(CollectiveOpBase::ptr&& op);
+
+  void waitCollectives(std::vector<CollectiveOpBase::ptr>&& op);
 
   void freeRequests(int nreqs, MPI_Request* reqs, int* inds);
 
@@ -705,73 +714,75 @@ class MpiApi : public sumi::SimTransport
   void finishVcollectiveOp(CollectiveOpBase* op_);
 
   /* Collective operations */
-  CollectiveOpBase* startBarrier(const char* name, MPI_Comm comm);
+  CollectiveOpBase::ptr startBarrier(const char* name, MPI_Comm comm);
 
-  CollectiveOpBase* startBcast(const char* name, MPI_Comm comm, int count, MPI_Datatype datatype,
+  CollectiveOpBase::ptr startBcast(const char* name, MPI_Comm comm, int count, MPI_Datatype datatype,
                                   int root, void *buffer);
 
-  CollectiveOpBase*
+  CollectiveOpBase::ptr
   startScatter(const char* name, MPI_Comm comm, int sendcount, MPI_Datatype sendtype, int root,
            int recvcount, MPI_Datatype recvtype, const void *sendbuf, void *recvbuf);
 
-  CollectiveOpBase*
+  CollectiveOpBase::ptr
   startScatterv(const char* name, MPI_Comm comm, const int *sendcounts, MPI_Datatype sendtype, int root,
                  const int *displs, int recvcount, MPI_Datatype recvtype, const void *sendbuf, void *recvbuf);
 
-  CollectiveOpBase*
+  CollectiveOpBase::ptr
   startGather(const char* name, MPI_Comm comm, int sendcount, MPI_Datatype sendtype, int root,
                int recvcount, MPI_Datatype recvtype, const void *sendbuf, void *recvbuf);
 
-  CollectiveOpBase*
+  CollectiveOpBase::ptr
   startGatherv(const char* name, MPI_Comm comm, int sendcount, MPI_Datatype sendtype, int root,
           const int *recvcounts, const int *displs, MPI_Datatype recvtype,
           const void *sendbuf, void *recvbuf);
 
-  CollectiveOpBase*
+  CollectiveOpBase::ptr
   startAllgather(const char* name, MPI_Comm comm, int sendcount, MPI_Datatype sendtype,
             int recvcount, MPI_Datatype recvtype, const void *sendbuf, void *recvbuf);
 
-  CollectiveOpBase*
+  CollectiveOpBase::ptr
   startAllgatherv(const char* name, MPI_Comm comm, int sendcount, MPI_Datatype sendtype,
                    const int *recvcounts, const int *displs, MPI_Datatype recvtype,
                    const void *sendbuf, void *recvbuf);
 
-  CollectiveOpBase*
+  CollectiveOpBase::ptr
   startAlltoall(const char* name, MPI_Comm comm, int sendcount, MPI_Datatype sendtype,
                  int recvcount, MPI_Datatype recvtype, const void *sendbuf, void *recvbuf);
 
-  CollectiveOpBase*
+  CollectiveOpBase::ptr
   startAlltoallv(const char* name, MPI_Comm comm, const int *sendcounts, MPI_Datatype sendtype, const int *sdispls,
             const int *recvcounts, MPI_Datatype recvtype, const int *rdispls,
             const void *sendbuf,  void *recvbuf);
 
-  CollectiveOpBase*
+  CollectiveOpBase::ptr
   startReduce(const char* name, MPI_Comm comm, int count, MPI_Datatype type, int root,
                MPI_Op op, const void* src, void* dst);
 
-  CollectiveOpBase*
+  CollectiveOpBase::ptr
   startAllreduce(const char* name, MPI_Comm comm, int count, MPI_Datatype type,
                MPI_Op op, const void* src, void* dst);
 
-  CollectiveOpBase*
+  CollectiveOpBase::ptr
   startAllreduce(MpiComm* commPtr, int count, MPI_Datatype type,
                MPI_Op op, const void* src, void* dst);
 
-  CollectiveOpBase*
+  CollectiveOpBase::ptr
   startReduceScatter(const char* name, MPI_Comm comm, const int* recvcounts, MPI_Datatype type,
                        MPI_Op op, const void* src, void* dst);
 
-  CollectiveOpBase*
+  CollectiveOpBase::ptr
   startReduceScatterBlock(const char* name, MPI_Comm comm, int count, MPI_Datatype type,
                              MPI_Op op, const void* src, void* dst);
 
-  CollectiveOpBase*
+  CollectiveOpBase::ptr
   startScan(const char* name, MPI_Comm comm, int count, MPI_Datatype type,
              MPI_Op op, const void* src, void* dst);
 
   void doStart(MPI_Request req);
 
-  void addImmediateCollective(CollectiveOpBase* op, MPI_Request* req);
+  MpiRequest* addImmediateCollective(CollectiveOpBase::ptr&& op);
+
+  void addImmediateCollective(CollectiveOpBase::ptr&& op, MPI_Request* req);
 
   bool test(MPI_Request *request, MPI_Status *status, int& tag, int& source);
 

@@ -18,6 +18,8 @@ SKELETONCASES += \
   openmp \
   overhead_test
 
+#  memoize 
+
 if HAVE_CPP14
 SKELETONCASES += \
   unique_ptr_test \
