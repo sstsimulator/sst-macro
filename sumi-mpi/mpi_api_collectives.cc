@@ -266,7 +266,7 @@ MpiApi::startAllgather(const char* name, MPI_Comm comm, int sendcount, MPI_Datat
     op->complete = true;
     delete msg;
   }
-  return op;
+  return std::move(op);
 }
 
 int
@@ -348,7 +348,7 @@ MpiApi::startAlltoall(const char* name, MPI_Comm comm, int sendcount, MPI_Dataty
     op->complete = true;
     delete msg;
   }
-  return op;
+  return std::move(op);
 }
 
 int
@@ -427,7 +427,7 @@ MpiApi::startAllreduce(MpiComm* commPtr, int count, MPI_Datatype type,
     op->complete = true;
     delete msg;
   }
-  return op;
+  return std::move(op);
 }
 
 
@@ -503,7 +503,7 @@ MpiApi::startBarrier(const char* name, MPI_Comm comm)
     op->complete = true;
     delete msg;
   }
-  return op;
+  return std::move(op);
 }
 
 int
@@ -571,7 +571,7 @@ MpiApi::startBcast(const char* name, MPI_Comm comm, int count, MPI_Datatype data
     op->complete = true;
     delete msg;
   }
-  return op;
+  return std::move(op);
 }
 
 int
@@ -660,7 +660,7 @@ MpiApi::startGather(const char* name, MPI_Comm comm, int sendcount, MPI_Datatype
     op->complete = true;
     delete msg;
   }
-  return op;
+  return std::move(op);
 }
 
 int
@@ -771,7 +771,7 @@ MpiApi::startReduce(const char* name, MPI_Comm comm, int count, MPI_Datatype typ
     op->complete = true;
     delete msg;
   }
-  return op;
+  return std::move(op);
 }
 
 int
@@ -843,7 +843,7 @@ MpiApi::startReduceScatter(const char* name, MPI_Comm comm, const int* recvcount
   }
   op->op = mop;
 
-  return op;
+  return std::move(op);
 }
 
 int
@@ -902,7 +902,7 @@ MpiApi::startReduceScatterBlock(const char* name, MPI_Comm comm, int count, MPI_
     op->complete = true;
     delete msg;
   }
-  return op;
+  return std::move(op);
 }
 
 int
@@ -968,7 +968,8 @@ MpiApi::startScan(const char* name, MPI_Comm comm, int count, MPI_Datatype type,
     op->complete = true;
     delete msg;
   }
-  return op;
+  //some compiler require this, despit RVO
+  return std::move(op);
 }
 
 int
@@ -1042,7 +1043,8 @@ MpiApi::startScatter(const char* name, MPI_Comm comm, int sendcount, MPI_Datatyp
     op->complete = true;
     delete msg;
   }
-  return op;
+  //move required, instead of RVO, for some compilers
+  return std::move(op);
 }
 
 int

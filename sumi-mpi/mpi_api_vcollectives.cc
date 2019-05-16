@@ -106,7 +106,7 @@ MpiApi::startAllgatherv(const char* name, MPI_Comm comm, int sendcount, MPI_Data
     op->complete = true;
     delete msg;
   }
-  return op;
+  return std::move(op);
 }
 
 int
@@ -184,7 +184,7 @@ MpiApi::startAlltoallv(const char* name, MPI_Comm comm,
       op->complete = true;
       delete msg;
     }
-    return op;
+    return std::move(op);
   } else {
     MpiComm* commPtr = getComm(comm);
     int send_count = 0;
@@ -305,7 +305,7 @@ MpiApi::startGatherv(const char* name, MPI_Comm comm, int sendcount, MPI_Datatyp
       op->complete = true;
       delete msg;
     }
-    return op;
+    return std::move(op);
   } else {
     MpiComm* commPtr = getComm(comm);
     int recvcount = sendcount;
@@ -319,7 +319,7 @@ MpiApi::startGatherv(const char* name, MPI_Comm comm, int sendcount, MPI_Datatyp
     }
     auto op = startGather(name, comm, sendcount, sendtype, root, recvcount, recvtype,
                           sendbuf, recvbuf);
-    return op;
+    return std::move(op);
   }
 }
 
@@ -408,7 +408,8 @@ MpiApi::startScatterv(const char* name, MPI_Comm comm, const int *sendcounts, MP
       op->complete = true;
       delete msg;
     }
-    return op;
+    //move required by some compilers, despite RVO
+    return std::move(op);
   } else {
     MpiComm* commPtr = getComm(comm);
     int sendcount = recvcount;
