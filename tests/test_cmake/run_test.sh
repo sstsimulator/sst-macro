@@ -1,2 +1,2 @@
 #!/bin/bash
-mpirun --oversubscribe -n 9 test_autotools
+mpirun --oversubscribe -n 9 test_cmake

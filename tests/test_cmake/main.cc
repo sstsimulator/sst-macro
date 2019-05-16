@@ -47,7 +47,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <iostream>
 #include <cmath>
 
-#define sstmac_app_name test_autotools
+#define sstmac_app_name test_cmake
 
 double compute_term(int rank);
 
