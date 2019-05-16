@@ -180,7 +180,6 @@ Thread::Thread(const SST::Params& params, SoftwareId sid, OperatingSystem* os) :
   pthread_concurrency_(0),
   sid_(sid),
   ftag_(FTQTag::null),
-  protect_tag(false),
   tls_storage_(nullptr),
   detach_state_(DETACHED),
   active_core_mask_(0)

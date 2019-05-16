@@ -381,15 +381,7 @@ class NullStatisticBase : public Statistic<T>
 template <class T>
 class NullStatisticBase<T,false> : public Statistic<T>
 {
- public:
-  SST_ELI_DECLARE_STATISTIC_TEMPLATE(
-     NullStatistic,
-     "macro",
-     "null",
-     SST_ELI_ELEMENT_VERSION(1,0,0),
-     "a null stat that collects nothing",
-     "Statistic<...>")
-
+ protected:
   NullStatisticBase(EventScheduler* parent,
             const std::string& name, const std::string& subName,
             SST::Params& params) :
@@ -407,15 +399,7 @@ template <class... Args>
 class NullStatisticBase<std::tuple<Args...>,false> :
     public Statistic<std::tuple<Args...>>
 {
- public:
-  SST_ELI_DECLARE_STATISTIC_TEMPLATE(
-     NullStatistic,
-     "macro",
-     "null",
-     SST_ELI_ELEMENT_VERSION(1,0,0),
-     "a null stat that collects nothing",
-     "Statistic<...>")
-
+ protected:
   NullStatisticBase(EventScheduler* parent,
             const std::string& name, const std::string& subName,
             SST::Params& params) :
@@ -427,17 +411,20 @@ class NullStatisticBase<std::tuple<Args...>,false> :
 
 };
 
+template <>
+class NullStatisticBase<void,true> : public Statistic<void> {
+ protected:
+   NullStatisticBase(EventScheduler* parent,
+            const std::string& name, const std::string& subName,
+            SST::Params& params) :
+    Statistic<void>(parent, name, subName, params)
+   {
+   }
+};
+
 template <class T>
 class NullStatisticBase<T,true> : public Statistic<T> {
- public:
-  SST_ELI_DECLARE_STATISTIC_TEMPLATE(
-     NullStatistic,
-     "macro",
-     "null",
-     SST_ELI_ELEMENT_VERSION(1,0,0),
-     "a null stat that collects nothing",
-     "Statistic<...>")
-
+ protected:
   NullStatisticBase(EventScheduler* parent,
             const std::string& name, const std::string& subName,
             SST::Params& params) :
@@ -452,15 +439,23 @@ class NullStatisticBase<T,true> : public Statistic<T> {
 template <class T, bool isFund=std::is_fundamental<T>::value>
 class NullStatistic : public NullStatisticBase<T,isFund> {
  public:
+  SST_ELI_DECLARE_STATISTIC_TEMPLATE(
+     NullStatistic,
+     "macro",
+     "null",
+     SST_ELI_ELEMENT_VERSION(1,0,0),
+     "a null stat that collects nothing",
+     "Statistic<...>")
+
   NullStatistic(EventScheduler* parent, const std::string& name,
                 const std::string& subName, SST::Params& params) :
     NullStatisticBase<T,isFund>(parent, name, subName, params)
   {
   }
 
-  void outputStatisticData(StatisticOutput *output, bool endOfSimFlag) override {}
+  void outputStatisticData(SST::Statistics::StatisticOutput *output, bool endOfSimFlag) override {}
 
-  void registerOutputFields(StatisticOutput *statOutput) override {}
+  void registerOutputFields(SST::Statistics::StatisticOutput *statOutput) override {}
 
   static bool isLoaded(){
     return loaded_;
@@ -471,6 +466,13 @@ class NullStatistic : public NullStatisticBase<T,isFund> {
 };
 template <class T, bool isFund> bool NullStatistic<T,isFund>::loaded_ = true;
 
+template <class Stat>
+struct NullEquivalent { };
+
+template <class... Args>
+struct NullEquivalent<Statistic<std::tuple<Args...>>> {
+  using type = NullStatistic<std::tuple<Args...>>;
+};
 
 } // end of namespace sstmac
 
@@ -478,17 +480,30 @@ namespace SST {
 namespace Statistics {
 
 template <class... Args>
-using MultiStatistic = Statistic<std::tuple<Args...>>;
+using MultiStatistic = sstmac::Statistic<std::tuple<Args...>>;
 
-using CustomStatistic = Statistic<void>;
+using CustomStatistic = sstmac::Statistic<void>;
 
-using StatisticOuput = StatisticFieldsOutput;
+using StatisticOutput = sstmac::StatisticFieldsOutput;
 
 }
 }
 
 #define SST_ELI_REGISTER_CUSTOM_STATISTIC(cls,lib,name,version,desc) \
-  SPKT_REGISTER_DERIVED(SST::Statistics::CustomStatistic,cls,lib,name,desc)
+  SPKT_REGISTER_DERIVED(SST::Statistics::CustomStatistic,cls,lib,name,desc) \
+
+#define SST_ELI_REGISTER_MULTI_STATISTIC(parent,cls,lib,name,version,desc) \
+  bool ELI_isLoaded() { \
+    using null_eqv = sstmac::NullEquivalent<parent>::type; \
+    return sprockit::InstantiateBuilder<parent,cls>::isLoaded() && \
+      sprockit::InstantiateBuilder<parent,null_eqv>::isLoaded(); \
+  } \
+  static const std::string SPKT_getLibrary() { \
+    return lib; \
+  } \
+  static const std::string SPKT_getName() { \
+    return name; \
+  }
 
 #define SST_ELI_INSTANTIATE_STATISTIC(cls,field) \
   struct cls##_##field##_##shortName : public cls<field> { \

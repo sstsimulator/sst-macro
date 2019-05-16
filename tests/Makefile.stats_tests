@@ -14,7 +14,8 @@ if !INTEGRATED_SST_CORE
 
 STATSTESTS = \
   output_graph_torus \
-  output_graph_dragonfly 
+  output_graph_dragonfly \
+  test_stats_ftq 
 
 #STATSTESTS += \
 #  test_stats_msg_size_histogram \
@@ -31,7 +32,6 @@ STATSTESTS = \
 #  bytes_sent_torus.dat \
 #  bytes_sent_fattree.dat 
 
-#  test_stats_ftq 
 #  ftq_app1.p 
 #  ftq_app1.dat 
 

@@ -344,7 +344,13 @@ OperatingSystem::OperatingSystem(SST::Params& params, hw::Node* parent) :
           params, "callGraph", "callGraph", &stat_descr);
 #endif
 
-  //ftq_trace_ = optionalStats<FTQCalendar>(parent, params, "ftq", "ftq");
+#if !SSTMAC_INTEGRATED_SST_CORE
+  auto subname = sprockit::printf("OS%d", my_addr_);
+  auto* stat = parent->registerMultiStatistic<int,uint64_t,uint64_t>(params, "ftq", subname);
+  //this will either be a null stat or an ftq stat
+  //the rest of the code will do null checks on the variable before dumping traces
+  ftq_trace_ = dynamic_cast<FTQCalendar*>(stat);
+#endif
 
   StackAlloc::init(params);
 
@@ -479,6 +485,8 @@ OperatingSystem::deleteStatics()
 void
 OperatingSystem::sleep(Timestamp t)
 {
+  FTQScope scope(active_thread_, FTQTag::sleep);
+
   sw::UnblockEvent* ev = new sw::UnblockEvent(this, active_thread_);
   sendDelayedExecutionEvent(t, ev);
   int ncores = active_thread_->numActiveCcores();
@@ -493,6 +501,7 @@ OperatingSystem::sleepUntil(GlobalTimestamp t)
 {
   GlobalTimestamp now_ = now();
   if (t > now_){
+    FTQScope scope(active_thread_, FTQTag::sleep);
     sw::UnblockEvent* ev = new sw::UnblockEvent(this, active_thread_);
     sendExecutionEvent(t, ev);
     int ncores = active_thread_->numActiveCcores();
@@ -508,8 +517,7 @@ OperatingSystem::compute(Timestamp t)
 {
   // guard the ftq tag in this function
   const auto& cur_tag = active_thread_->tag();
-  FTQScope scope(active_thread_,
-      cur_tag.id() == FTQTag::null.id() ? FTQTag::compute:cur_tag);
+  FTQScope scope(active_thread_, FTQTag::compute);
 
   sw::UnblockEvent* ev = new sw::UnblockEvent(this, active_thread_);
   sendDelayedExecutionEvent(t, ev);
@@ -707,13 +715,12 @@ OperatingSystem::block()
     callGraph_->addData(elapsed.ticks(), active_thread_);
   }
 
+#if !SSTMAC_INTEGRATED_SST_CORE
   if (ftq_trace_){
     FTQTag tag = active_thread_->tag();
-    ftq_trace_->addData(tag.id(),
-      active_thread_->aid(), active_thread_->tid(),
-      before.time.ticks(), elapsed.ticks());
-    active_thread_->setTag(FTQTag::null);
+    ftq_trace_->addData(tag.id(), before.time.ticks(), elapsed.ticks());
   }
+#endif
 }
 
 void
@@ -978,10 +985,6 @@ OperatingSystem::startApp(App* theapp, const std::string& unique_name)
     int(theapp->tid()), int(theapp->aid()), threadId());
   //this should be called from the actual thread running it
   initThreading(params_);
-  if (ftq_trace_){
-    ftq_trace_->registerApp(theapp->aid(), sprockit::printf("app%d", int(theapp->aid())));
-  }
-
   startThread(theapp);
 }
 

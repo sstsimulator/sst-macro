@@ -58,6 +58,11 @@ RegisterKeywords(
 
 namespace sstmac {
 
+SST_ELI_INSTANTIATE_STATISTIC(NullStatistic, int)
+SST_ELI_INSTANTIATE_STATISTIC(NullStatistic, double)
+SST_ELI_INSTANTIATE_STATISTIC(NullStatistic, uint64_t)
+SST_ELI_INSTANTIATE_STATISTIC(NullStatistic, void)
+
 StatisticBase::StatisticBase(EventScheduler *parent, const std::string &name,
                              const std::string &subName, SST::Params &params) :
   name_(name)

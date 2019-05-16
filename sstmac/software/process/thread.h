@@ -366,12 +366,11 @@ class Thread
 
   void endAPICall();
 
-  void setTag(FTQTag t){
-    if (!protect_tag)
-        ftag_ = t;
+  void setTag(const FTQTag& t){
+    ftag_ = t;
   }
 
-  FTQTag tag() const {
+  const FTQTag& tag() const {
     return ftag_;
   }
 
@@ -422,8 +421,6 @@ class Thread
   ProcessContext p_txt_;
 
   FTQTag ftag_;
-
-  bool protect_tag;
 
   SoftwareId sid_;
 
