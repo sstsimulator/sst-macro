@@ -233,7 +233,7 @@ MpiApi::init(int* argc, char*** argv)
     sprockit::abort("MPI_Init cannot be called twice");
   }
 
-  start_mpi_call(MPI_Init);
+  StartMPICall(MPI_Init);
 
   sumi::SimTransport::init();
 
@@ -287,7 +287,7 @@ MpiApi::finalize()
 {
   auto start_clock = traceClock();
 
-  start_mpi_call(MPI_Finalize);
+  StartMPICall(MPI_Finalize);
 
   auto op = startBarrier("MPI_Finalize", MPI_COMM_WORLD);
   waitCollective(std::move(op));
@@ -342,7 +342,7 @@ double
 MpiApi::wtime()
 {
   auto call_start_time = (uint64_t)now().usec();
-  start_mpi_call(MPI_Wtime);
+  StartMPICall(MPI_Wtime);
   return now().sec();
 }
 
@@ -608,7 +608,7 @@ MpiApi::errorString(int errorcode, char *str, int *resultlen)
 
 #if SSTMAC_COMM_SYNC_STATS
 void
-mpi_api::startCollectiveSyncDelays()
+MpiApi::startCollectiveSyncDelays()
 {
   last_collection_ = now().sec();
 }
@@ -616,12 +616,11 @@ mpi_api::startCollectiveSyncDelays()
 GraphVizCreateTag(sync);
 
 void
-mpi_api::collectSyncDelays(double wait_start, message* msg)
+MpiApi::collectSyncDelays(double wait_start, message* msg)
 {
   //there are two possible sync delays
   //#1: For sender, synced - header_arrived
   //#2: For recver, time_sent - wait_start
-
   double sync_delay = 0;
   double start = std::max(last_collection_, wait_start);
   if (start < msg->timeSent()){
@@ -639,17 +638,17 @@ mpi_api::collectSyncDelays(double wait_start, message* msg)
      msg->timeHeaderArrived(), msg->timePayloadArrived(),
      msg->timeSynced(), sync_delay);
 
-  sstmac::timestamp sync = sstmac::timestamp(sync_delay);
+  sstmac::timestamp sync = sstmac::Timestamp(sync_delay);
   current_call_.sync += sync;
   last_collection_ = now().sec();
 
   if (os_->callGraph()){
-    os_->callGraph()->reassign(GraphVizTag(sync), sync.ticks(), os_->activeThread());
+    os_->callGraph()->reassign(CallGraphTag(sync), sync.ticks(), os_->activeThread());
   }
 }
 
 void
-mpi_api::finishLastMpiCall(MPI_function func, bool dumpThis)
+MpiApi::finishLastMpiCall(MPI_function func, bool dumpThis)
 {
   if (dumpThis && dump_comm_times_ && crossed_comm_world_barrier()){
     sstmac::timestamp total = now() - current_call_.start;

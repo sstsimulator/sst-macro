@@ -222,7 +222,7 @@ class EventScheduler : public sprockit::printable
     if (lib){
       auto* builder = lib->getBuilder(type);
       if (builder){
-        Stat* stat = builder->create(this, name, "", scoped_params);
+        Stat* stat = builder->create(this, name, subId, scoped_params);
         registerStatisticCore(stat, scoped_params);
         return stat;
       } else {

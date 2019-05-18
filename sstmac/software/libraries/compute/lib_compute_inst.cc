@@ -131,7 +131,7 @@ LibComputeInst::init(SST::Params& params)
 void
 LibComputeInst::computeInst(ComputeEvent* cmsg, int nthr)
 {
-  SSTMACBacktrace(ComputeInstructions);
+  CallGraphAppend(ComputeInstructions);
   os_->execute(ami::COMP_INSTR, cmsg, nthr);
 }
 

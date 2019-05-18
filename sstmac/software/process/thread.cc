@@ -43,10 +43,12 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sstmac/common/thread_safe_int.h>
+#include <sstmac/hardware/node/node.h>
 #include <sstmac/software/process/thread.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/key.h>
 #include <sstmac/software/process/app.h>
+#include <sstmac/software/process/ftq.h>
 #include <sstmac/software/libraries/library.h>
 #include <sstmac/software/libraries/compute/compute_event.h>
 #include <sstmac/software/api/api.h>
@@ -164,7 +166,7 @@ Thread::runRoutine(void* threadptr)
   }
 }
 
-Thread::Thread(const SST::Params& params, SoftwareId sid, OperatingSystem* os) :
+Thread::Thread(SST::Params& params, SoftwareId sid, OperatingSystem* os) :
   os_(os),
   state_(PENDING),
   bt_nfxn_(0),
@@ -178,6 +180,10 @@ Thread::Thread(const SST::Params& params, SoftwareId sid, OperatingSystem* os) :
   timed_out_(false),
   block_counter_(0),
   pthread_concurrency_(0),
+#if SSTMAC_HAVE_CALL_GRAPH
+  callGraph_(nullptr),
+#endif
+  ftq_trace_(nullptr),
   sid_(sid),
   ftag_(FTQTag::null),
   tls_storage_(nullptr),
@@ -186,6 +192,20 @@ Thread::Thread(const SST::Params& params, SoftwareId sid, OperatingSystem* os) :
 {
   //make all cores possible active
   cpumask_ = ~(cpumask_);
+
+#if !SSTMAC_INTEGRATED_SST_CORE
+  auto subname = sprockit::printf("app%d.rank%d.thread%d",
+                                  sid.app_, sid.task_, sid.thread_);
+#if SSTMAC_HAVE_CALL_GRAPH
+  auto* cg_stat = os->node()->registerStatistic<void>(params, "call_graph", subname);
+  callGraph_ = dynamic_cast<CallGraph*>(cg_stat);
+#endif
+  auto* ftq_stat = os->node()->registerMultiStatistic<int,uint64_t,uint64_t>(params, "ftq", subname);
+  //this will either be a null stat or an ftq stat
+  //the rest of the code will do null checks on the variable before dumping traces
+  ftq_trace_ = dynamic_cast<FTQCalendar*>(ftq_stat);
+#endif
+
 }
 
 void
@@ -244,7 +264,7 @@ Thread::setTlsValue(long thekey, void *ptr)
 void
 Thread::appendBacktrace(int id)
 {
-#if SSTMAC_HAVE_GRAPHVIZ
+#if SSTMAC_HAVE_CALL_GRAPH
   backtrace_[bt_nfxn_] = id;
   bt_nfxn_++;
 #else
@@ -260,7 +280,7 @@ Thread::popBacktrace()
 }
 
 void
-Thread::collectBacktrace(int nfxn)
+Thread::recordLastBacktrace(int nfxn)
 {
   last_bt_collect_nfxn_ = nfxn;
 }
@@ -332,6 +352,21 @@ Thread::computeDetailed(uint64_t flops, uint64_t nintops, uint64_t bytes, int nt
 }
 
 void
+Thread::collectStats(GlobalTimestamp start, Timestamp elapsed)
+{
+#if !SSTMAC_INTEGRATED_SST_CORE
+#if SSTMAC_HAVE_CALL_GRAPH
+  if (callGraph_) {
+    callGraph_->collect(elapsed.ticks(), this);
+  }
+#endif
+  if (ftq_trace_){
+    ftq_trace_->addData(ftag_.id(), start.time.ticks(), elapsed.ticks());
+  }
+#endif
+}
+
+void
 Thread::startThread(Thread* thr)
 {
   thr->p_txt_ = p_txt_;
@@ -342,7 +377,7 @@ void
 Thread::setCpumask(uint64_t cpumask)
 {
   cpumask_ = cpumask;
-  os_->reassign_cores(this);
+  os_->reassignCores(this);
 }
 
 void

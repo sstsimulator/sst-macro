@@ -84,7 +84,7 @@ Eager1::incomingHeader(MpiMessage* msg)
 void
 Eager1::incomingPayload(MpiMessage* msg)
 {
-  SSTMACBacktrace(MPIEager1Protocol_Handle_RDMA_Payload);
+  CallGraphAppend(MPIEager1Protocol_Handle_RDMA_Payload);
   MpiQueueRecvRequest* req = queue_->findMatchingRecv(msg);
   if (req) incoming(msg, req);
 }

@@ -51,7 +51,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #define start_comm_call(fxn,comm) \
   auto call_start_time = (uint64_t)now().usec(); \
-  start_mpi_call(fxn); \
+  StartMPICall(fxn); \
   mpi_api_debug(sprockit::dbg::mpi, "%s(%s) start", #fxn, commStr(comm).c_str())
 
 #define finish_comm_call(fxn,input,output) \

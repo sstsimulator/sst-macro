@@ -178,7 +178,7 @@ SSTMAC_sched_setaffinity (pid_t pid, size_t cpusetsize, const sstmac_cpu_set_t *
   uint64_t test_mask = cpuset->cpubits & t->activeCoreMask();
   if (test_mask != t->activeCoreMask()){
     //the currently active thread is running on cores not part of its current affinity map
-    os->reassign_cores(t);
+    os->reassignCores(t);
   }
   return 0;
 }

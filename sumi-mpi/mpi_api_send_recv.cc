@@ -49,14 +49,14 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/thread.h>
 
 #define start_pt2pt_call(fxn, count, type, partner, tag, comm) \
-  start_mpi_call(fxn); \
+  StartMPICall(fxn); \
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_pt2pt, \
    "%s(%d,%s,%s,%s,%s)", #fxn, \
    count, typeStr(type).c_str(), srcStr(partner).c_str(), \
    tagStr(tag).c_str(), commStr(comm).c_str());
 
 #define start_Ipt2pt_call(fxn,count,type,partner,tag,comm,reqPtr) \
-  start_mpi_call(fxn)
+  StartMPICall(fxn)
 
 
 namespace sumi {
@@ -163,7 +163,7 @@ MpiApi::start(MPI_Request* req)
 {
   auto start_clock = traceClock();
 
-  _start_mpi_call_(MPI_Start);
+  _StartMPICall_(MPI_Start);
   doStart(*req);
   endAPICall();
 
@@ -180,7 +180,7 @@ MpiApi::startall(int count, MPI_Request* req)
 {
   auto call_start_time = (uint64_t)now().usec();
 
-  _start_mpi_call_(MPI_Startall);
+  _StartMPICall_(MPI_Startall);
   for (int i=0; i < count; ++i){
     doStart(req[i]);
   }
@@ -202,7 +202,7 @@ MpiApi::sendInit(const void *buf, int count,
 {
   auto call_start_time = (uint64_t)now().usec();
 
-  _start_mpi_call_(MPI_Send_init);
+  _StartMPICall_(MPI_Send_init);
 
   MpiRequest* req = MpiRequest::construct(MpiRequest::Send);
   addRequestPtr(req, request);
@@ -309,7 +309,7 @@ int
 MpiApi::recvInit(void *buf, int count, MPI_Datatype datatype, int source,
                    int tag, MPI_Comm comm, MPI_Request *request)
 {
-  _start_mpi_call_(MPI_Recv_init);
+  _StartMPICall_(MPI_Recv_init);
 
   MpiRequest* req = MpiRequest::construct(MpiRequest::Recv);
   addRequestPtr(req, request);

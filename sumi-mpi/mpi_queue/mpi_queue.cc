@@ -524,7 +524,7 @@ MpiQueue::memcopy(uint64_t bytes)
 void
 MpiQueue::bufferUnexpected(MpiMessage* msg)
 {
-  SSTMACBacktrace(MPIQueueBufferUnexpectedMessage);
+  CallGraphAppend(MPIQueueBufferUnexpectedMessage);
   api_->memcopy(msg->payloadBytes());
 }
 

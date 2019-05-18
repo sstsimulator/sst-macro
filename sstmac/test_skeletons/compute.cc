@@ -55,7 +55,7 @@ RegisterKeywords(
 
 int USER_MAIN(int argc, char** argv)
 {
-  SSTMACBacktrace(main);
+  CallGraphAppend(main);
   MPI_Init(&argc, &argv);
 
   int me, nproc;

@@ -80,6 +80,14 @@ class StatisticBase {
     return group_;
   }
 
+  std::string getStatName() const {
+    return name_;
+  }
+
+  std::string getStatSubId() const {
+    return sub_id_;
+  }
+
   std::string output() const {
     return output_;
   }
@@ -95,6 +103,7 @@ class StatisticBase {
   std::string name_;
   std::string group_;
   std::string output_;
+  std::string sub_id_;
 };
 
 class StatisticOutput

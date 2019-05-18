@@ -49,13 +49,13 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/thread.h>
 
 #define do_vcoll(coll, fxn, ...) \
-  start_mpi_call(fxn); \
+  StartMPICall(fxn); \
   auto op = start##coll(#fxn, __VA_ARGS__); \
   waitCollective(std::move(op)); \
   finish_mpi_call(fxn);
 
 #define start_vcoll(coll, fxn, ...) \
-  start_mpi_call(fxn); \
+  StartMPICall(fxn); \
   auto op = start##coll(#fxn, __VA_ARGS__); \
   addImmediateCollective(std::move(op), req); \
   finish_mpi_call(fxn)

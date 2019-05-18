@@ -65,7 +65,7 @@ SST_ELI_INSTANTIATE_STATISTIC(NullStatistic, void)
 
 StatisticBase::StatisticBase(EventScheduler *parent, const std::string &name,
                              const std::string &subName, SST::Params &params) :
-  name_(name)
+  name_(name), sub_id_(subName)
 {
   group_ = params.find<std::string>("group", "default");
   output_ = params.find<std::string>("output", "csv");

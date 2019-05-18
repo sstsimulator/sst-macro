@@ -59,7 +59,7 @@ MpiApi::wait(MPI_Request *request, MPI_Status *status)
   MPI_Request request_cpy = *request;
 #endif
 
-  start_mpi_call(MPI_Wait);
+  StartMPICall(MPI_Wait);
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request, "MPI_Wait(...)");
 
   int tag, source;
@@ -124,7 +124,7 @@ MpiApi::waitall(int count, MPI_Request array_of_requests[],
   std::vector<dumpi::OTF2_Writer::mpi_status_t> statuses(count);
 #endif
 
-  start_mpi_call(MPI_Waitall);
+  StartMPICall(MPI_Waitall);
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request, 
     "MPI_Waitall(%d,...)", count);
   bool ignore_status = array_of_statuses == MPI_STATUSES_IGNORE;
@@ -165,7 +165,7 @@ MpiApi::waitany(int count, MPI_Request array_of_requests[], int *indx,
   // for caching the request in an upper scope before it is destroyed
   MPI_Request req_val = -1;
 
-  start_mpi_call(MPI_Waitany);
+  StartMPICall(MPI_Waitany);
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Waitany(...)");
   *indx = MPI_UNDEFINED;
   std::vector<MpiRequest*> reqPtrs(count);
@@ -252,7 +252,7 @@ MpiApi::waitsome(int incount, MPI_Request array_of_requests[],
   auto start_clock = traceClock();
 #endif
 
-  start_mpi_call(MPI_Waitsome);
+  StartMPICall(MPI_Waitsome);
   bool ignore_status = array_of_statuses == MPI_STATUSES_IGNORE;
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request, "MPI_Waitsome(...)");
   int numComplete = 0;

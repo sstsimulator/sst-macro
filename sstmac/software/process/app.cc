@@ -421,7 +421,7 @@ App::getPrebuiltApi(const std::string &name)
 void
 App::run()
 {
-  SSTMACBacktrace(main);
+  CallGraphAppend(main);
   os_->incrementAppRefcount();
   endAPICall(); //this initializes things, "fake" api call at beginning
   rc_ = skeletonMain();

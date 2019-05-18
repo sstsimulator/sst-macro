@@ -53,6 +53,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/errors.h>
 
 #include <sstmac/software/process/graphviz.h>
+#include <sstmac/software/process/ftq_fwd.h>
 #include <sstmac/software/process/key.h>
 #include <sstmac/software/process/app_fwd.h>
 #include <sstmac/software/process/operating_system_fwd.h>
@@ -206,7 +207,9 @@ class Thread
     return os_;
   }
 
-#if SSTMAC_HAVE_GRAPHVIZ
+  void collectStats(GlobalTimestamp start, Timestamp elapsed);
+
+#if SSTMAC_HAVE_CALL_GRAPH
   const int* backtrace() const {
     return backtrace_;
   }
@@ -241,7 +244,7 @@ class Thread
 
   void popBacktrace();
 
-  void collectBacktrace(int nfxn);
+  void recordLastBacktrace(int nfxn);
 
   void initThread(const SST::Params& params, int phyiscal_thread_id,
     ThreadContext* tocopy, void *stack, int stacksize,
@@ -376,8 +379,14 @@ class Thread
 
   void spawnOmpParallel();
 
+#if SSTMAC_HAVE_CALL_GRAPH
+  CallGraph* callGraph() const {
+    return callGraph_;
+  }
+#endif
+
  protected:
-  Thread(const SST::Params& params,
+  Thread(SST::Params& params,
          SoftwareId sid, OperatingSystem* os);
 
  private:
@@ -429,8 +438,8 @@ class Thread
  private:
   API* getAppApi(const std::string& name) const;
 
-#if SSTMAC_HAVE_GRAPHVIZ
-  graphviz_trace backtrace_; //each function is labeled by unique integer
+#if SSTMAC_HAVE_CALL_GRAPH
+  CallGraphTrace backtrace_; //each function is labeled by unique integer
 #endif
 
   int bt_nfxn_;
@@ -462,6 +471,12 @@ class Thread
   detach_t detach_state_;
 
   std::list<omp_context> omp_contexts_;
+
+#if SSTMAC_HAVE_CALL_GRAPH
+  CallGraph* callGraph_;
+#endif
+
+  FTQCalendar* ftq_trace_;
 
 };
 

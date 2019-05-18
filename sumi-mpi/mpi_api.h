@@ -892,22 +892,22 @@ MpiApi* sstmac_mpi();
 
 }
 
-#define _start_mpi_call_(fxn) \
-  SSTMACBacktrace(fxn); \
+#define _StartMPICall_(fxn) \
+  CallGraphAppend(fxn); \
   sstmac::sw::FTQScope scope(activeThread(), mpi_tag); \
   startAPICall()
 
 #if SSTMAC_COMM_SYNC_STATS
-  #define start_mpi_call(fxn) \
-    _start_mpi_call_(fxn); \
+  #define StartMPICall(fxn) \
+    _StartMPICall_(fxn); \
     setNewMpiCall(Call_ID_##fxn)
   #define finish_mpi_call(fxn) \
     mpi_api_debug(sprockit::dbg::mpi, #fxn " finished"); \
     finishLastMpiCall(Call_ID_##fxn); \
     endAPICall()
 #else
-  #define start_mpi_call(fxn) _start_mpi_call_(fxn)
-  #define start_wait_call(fxn,...) _start_mpi_call_(fxn)
+  #define StartMPICall(fxn) _StartMPICall_(fxn)
+  #define start_wait_call(fxn,...) _StartMPICall_(fxn)
   #define finish_mpi_call(fxn) \
     mpi_api_debug(sprockit::dbg::mpi, #fxn " finished"); \
     endAPICall()

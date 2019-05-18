@@ -321,10 +321,7 @@ OperatingSystem::OperatingSystem(SST::Params& params, hw::Node* parent) :
 #endif
   node_(parent),
   active_thread_(nullptr),
-  callGraph_(nullptr),
-  callGraph_active_(true), //on by default
   des_context_(nullptr),
-  ftq_trace_(nullptr),
   compute_sched_(nullptr),
   SubComponent("os", parent),
   params_(params)
@@ -335,22 +332,6 @@ OperatingSystem::OperatingSystem(SST::Params& params, hw::Node* parent) :
   compute_sched_ = sprockit::create<ComputeScheduler>(
     "macro", params.find<std::string>("compute_scheduler", "simple"),
     params, this, node_ ? node_->proc()->ncores() : 1, node_ ? node_->nsocket() : 1);
-
-#if SSTMAC_HAVE_GRAPHVIZ
-  stat_descr_t stat_descr;
-  stat_descr.dump_all = false;
-  stat_descr.unique_tag = &cg_tag;
-  callGraph_ = optionalStats<graph_viz>(parent,
-          params, "callGraph", "callGraph", &stat_descr);
-#endif
-
-#if !SSTMAC_INTEGRATED_SST_CORE
-  auto subname = sprockit::printf("OS%d", my_addr_);
-  auto* stat = parent->registerMultiStatistic<int,uint64_t,uint64_t>(params, "ftq", subname);
-  //this will either be a null stat or an ftq stat
-  //the rest of the code will do null checks on the variable before dumping traces
-  ftq_trace_ = dynamic_cast<FTQCalendar*>(stat);
-#endif
 
   StackAlloc::init(params);
 
@@ -440,10 +421,8 @@ OperatingSystem::~OperatingSystem()
   }
   if (compute_sched_) delete compute_sched_;
 
-#if SSTMAC_HAVE_GRAPHVIZ
-  if (callGraph_) delete callGraph_;
-#endif
-
+  //these are owned now by the stats system - don't delete here
+  //if (callGraph_) delete callGraph_;
   //if (ftq_trace_) delete ftq_trace_;
 }
 
@@ -485,6 +464,7 @@ OperatingSystem::deleteStatics()
 void
 OperatingSystem::sleep(Timestamp t)
 {
+  CallGraphAppend(sleep);
   FTQScope scope(active_thread_, FTQTag::sleep);
 
   sw::UnblockEvent* ev = new sw::UnblockEvent(this, active_thread_);
@@ -673,7 +653,7 @@ OperatingSystem::computeMemoize(const char *token, int n_params, double params[]
 }
 
 void
-OperatingSystem::reassign_cores(Thread *thr)
+OperatingSystem::reassignCores(Thread *thr)
 {
   int ncores = thr->numActiveCcores();
   //this is not equivalent to a no-op
@@ -711,16 +691,9 @@ OperatingSystem::block()
   GlobalTimestamp after = now();
   Timestamp elapsed = after - before;
 
-  if (callGraph_ && callGraph_active_) {
-    callGraph_->addData(elapsed.ticks(), active_thread_);
+  if (elapsed.ticks()){
+    active_thread_->collectStats(before, elapsed);
   }
-
-#if !SSTMAC_INTEGRATED_SST_CORE
-  if (ftq_trace_){
-    FTQTag tag = active_thread_->tag();
-    ftq_trace_->addData(tag.id(), before.time.ticks(), elapsed.ticks());
-  }
-#endif
 }
 
 void

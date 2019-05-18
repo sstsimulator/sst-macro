@@ -49,13 +49,13 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/thread.h>
 
 #define do_coll(coll, fxn, ...) \
-  start_mpi_call(fxn); \
+  StartMPICall(fxn); \
   auto op = start##coll(#fxn, __VA_ARGS__); \
   waitCollective(std::move(op)); \
   finish_mpi_call(fxn);
 
 #define start_coll(coll, fxn, ...) \
-  start_mpi_call(fxn); \
+  StartMPICall(fxn); \
   auto op = start##coll(#fxn, __VA_ARGS__); \
   addImmediateCollective(std::move(op), req); \
   finish_mpi_call(fxn)
@@ -510,7 +510,7 @@ int
 MpiApi::barrier(MPI_Comm comm)
 {
   auto start_clock = traceClock();
-  start_mpi_call(MPI_Barrier);
+  StartMPICall(MPI_Barrier);
   waitCollective( startBarrier("MPI_Barrier", comm) );
   finish_mpi_call(MPI_Barrier);
 
@@ -526,7 +526,7 @@ MpiApi::barrier(MPI_Comm comm)
 int
 MpiApi::ibarrier(MPI_Comm comm, MPI_Request *req)
 {
-  start_mpi_call(MPI_Ibarrier);
+  StartMPICall(MPI_Ibarrier);
   addImmediateCollective(startBarrier("MPI_Ibarrier", comm), req);
   finish_mpi_call(MPI_Ibarrier);
   return MPI_SUCCESS;
