@@ -145,6 +145,8 @@ class SimTransport : public Transport, public sstmac::sw::API {
     return now().sec();
   }
 
+  sstmac::GlobalTimestamp now() const override;
+
   void* allocatePublicBuffer(uint64_t size) override {
     return ::malloc(size);
   }
@@ -261,7 +263,7 @@ class SimTransport : public Transport, public sstmac::sw::API {
 
   std::queue<int> free_cq_ids_;
 
-  sstmac::hw::Node* node_;
+  sstmac::sw::App* parent_app_;
 
   sstmac::sw::TaskMapping::ptr rank_mapper_;
 

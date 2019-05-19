@@ -64,7 +64,7 @@ MpiApi::wait(MPI_Request *request, MPI_Status *status)
 
   int tag, source;
   int rc = doWait(request, status, tag, source);
-  finish_mpi_call(MPI_Wait);
+  FinishMPICall(MPI_Wait);
 
 #ifdef SSTMAC_OTF2_ENABLED
   if (OTF2Writer_) {
@@ -144,7 +144,7 @@ MpiApi::waitall(int count, MPI_Request array_of_requests[],
     }
 #endif
   }
-  finish_mpi_call(MPI_Waitall);
+  FinishMPICall(MPI_Waitall);
 
 #ifdef SSTMAC_OTF2_ENABLED
   if (OTF2Writer_) {
@@ -188,7 +188,7 @@ MpiApi::waitany(int count, MPI_Request array_of_requests[], int *indx,
         *indx = i;
         req_val = req;
         finalizeWaitRequest(reqPtr, &array_of_requests[i], status);
-        finish_mpi_call(MPI_Waitany);
+        FinishMPICall(MPI_Waitany);
 
         call_completed = true;
         break;
@@ -225,7 +225,7 @@ MpiApi::waitany(int count, MPI_Request array_of_requests[], int *indx,
           *indx = i;
           req_val = req;
           finalizeWaitRequest(reqPtr, &array_of_requests[i], status);
-          finish_mpi_call(MPI_Waitany);
+          FinishMPICall(MPI_Waitany);
           call_completed = true;
           break;
         }
@@ -301,7 +301,7 @@ MpiApi::waitsome(int incount, MPI_Request array_of_requests[],
       }
     }
     *outcount = numComplete;
-    finish_mpi_call(MPI_Waitsome);
+    FinishMPICall(MPI_Waitsome);
   }
 
 #ifdef SSTMAC_OTF2_ENABLED

@@ -207,7 +207,7 @@ SimTransport::SimTransport(SST::Params& params, sstmac::sw::App* parent, SST::Co
   completion_queues_(1),
   default_progress_queue_(parent->os()),
   nic_ioctl_(parent->os()->nicDataIoctl()),
-  node_(parent->os()->node())
+  parent_app_(parent)
 {
   completion_queues_[0] = std::bind(&DefaultProgressQueue::incoming,
                                     &default_progress_queue_, 0, std::placeholders::_1);
@@ -339,8 +339,10 @@ void
 SimTransport::send(Message* m)
 {
 #if SSTMAC_COMM_SYNC_STATS
-  msg->setTimeSent(wall_time());
+  m->setTimeSent(parent_app_->now());
+#endif
 
+#if 0
   if (spy_num_messages_){
     spy_num_messages_->addData(m->sender(), m->recver(), 1);
   }
@@ -449,7 +451,7 @@ SimTransport::incomingMessage(Message *msg)
 {
 #if SSTMAC_COMM_SYNC_STATS
   if (msg){
-    msg->get_payload()->setTimeArrived(wall_time());
+    msg->setTimeArrived(parent_app_->now());
   }
 #endif
 
@@ -465,6 +467,12 @@ SimTransport::incomingMessage(Message *msg)
     debug_printf(sprockit::dbg::sumi, "Dropping message without CQ: %s", msg->toString().c_str());
     delete msg;
   }
+}
+
+sstmac::GlobalTimestamp
+SimTransport::now() const
+{
+  return parent_app_->now();
 }
 
 CollectiveEngine::CollectiveEngine(SST::Params& params, Transport *tport) :

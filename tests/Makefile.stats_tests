@@ -42,9 +42,9 @@ STATSTESTS = \
 if COMM_SYNC_STATS
 if DO_CALL_GRAPH_TEST
 #don't do this test unless also including comm sync stats
-SINGLETESTS += test_stat_call_graph
+SINGLETESTS += test_stats_call_graph
 endif
-SINGLETESTS += test_sync_stats
+SINGLETESTS += test_stats_sync
 endif
 
 

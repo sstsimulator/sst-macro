@@ -82,7 +82,7 @@ Eager0::incoming(MpiMessage *msg, MpiQueueRecvRequest *req)
     ::memcpy(req->recv_buffer_, msg->smsgBuffer(), msg->byteLength());
   }
 #if SSTMAC_COMM_SYNC_STATS
-  msg->setTimeSynced(queue->now());
+  msg->setTimeSynced(mpi_->now());
 #endif
   queue_->notifyProbes(msg);
   queue_->memcopy(msg->payloadBytes());

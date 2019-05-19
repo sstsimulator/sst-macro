@@ -52,13 +52,13 @@ Questions? Contact sst-macro-help@sandia.gov
   StartMPICall(fxn); \
   auto op = start##coll(#fxn, __VA_ARGS__); \
   waitCollective(std::move(op)); \
-  finish_mpi_call(fxn);
+  FinishMPICall(fxn);
 
 #define start_coll(coll, fxn, ...) \
   StartMPICall(fxn); \
   auto op = start##coll(#fxn, __VA_ARGS__); \
   addImmediateCollective(std::move(op), req); \
-  finish_mpi_call(fxn)
+  FinishMPICall(fxn)
 
 namespace sumi {
 
@@ -512,7 +512,7 @@ MpiApi::barrier(MPI_Comm comm)
   auto start_clock = traceClock();
   StartMPICall(MPI_Barrier);
   waitCollective( startBarrier("MPI_Barrier", comm) );
-  finish_mpi_call(MPI_Barrier);
+  FinishMPICall(MPI_Barrier);
 
 #ifdef SSTMAC_OTF2_ENABLED
   if(OTF2Writer_) {
@@ -528,7 +528,7 @@ MpiApi::ibarrier(MPI_Comm comm, MPI_Request *req)
 {
   StartMPICall(MPI_Ibarrier);
   addImmediateCollective(startBarrier("MPI_Ibarrier", comm), req);
-  finish_mpi_call(MPI_Ibarrier);
+  FinishMPICall(MPI_Ibarrier);
   return MPI_SUCCESS;
 }
 

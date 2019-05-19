@@ -211,6 +211,13 @@ CallGraph::reassign(int fxnId, uint64_t count, Thread* thr)
   int nfxn_total = thr->backtraceNumFxn();
   int stack_end = nfxn_total - 1;
   int fxn = thr->backtrace()[stack_end];
+  if (traces_[fxn].selfTime() < count){
+    spkt_abort_printf(
+     "Bad reassignment on task %d - function %s only has %llu ticks, but %s wants to reassign %llu",
+     thr->tid(), CallGraphRegistration::name(fxn), traces_[fxn].selfTime(),
+     CallGraphRegistration::name(fxnId), count);
+  }
+
   traces_[fxn].reassignSelf(fxnId, count);
   traces_[fxnId].addSelf(count);
 }

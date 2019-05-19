@@ -156,7 +156,7 @@ RendezvousGet::incoming(MpiMessage *msg, MpiQueueRecvRequest* req)
   mpi_queue_protocol_debug("RDMA get matched payload %s", msg->toString().c_str());
 #if SSTMAC_COMM_SYNC_STATS
   //this is a bit of a hack
-  msg->setTimeSynced(queue->now());
+  msg->setTimeSynced(mpi_->now());
 #endif
   mpi_->pinRdma(msg->payloadBytes());
   mpi_queue_action_debug(

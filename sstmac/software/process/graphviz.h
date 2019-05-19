@@ -55,7 +55,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #define CallGraphCreateTag(name) \
   struct graph_viz_##name : public sstmac::sw::CallGraphID<graph_viz_##name> {}; \
-  static sstmac::sw::CallGraphRegistration graph_viz_reg(#name, graph_viz_##name::id)
+  static sstmac::sw::CallGraphRegistration graph_viz_reg_##name(#name, graph_viz_##name::id)
 
 #define CallGraphTag(name) graph_viz_##name::id
 

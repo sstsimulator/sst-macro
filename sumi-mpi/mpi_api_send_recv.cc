@@ -72,7 +72,7 @@ MpiApi::send(const void *buf, int count, MPI_Datatype datatype, int dest, int ta
   queue_->send(req, count, datatype, dest, tag, commPtr, const_cast<void*>(buf));
   queue_->progressLoop(req);
   delete req;
-  finish_mpi_call(MPI_Send);
+  FinishMPICall(MPI_Send);
 
 #ifdef SSTMAC_OTF2_ENABLED
   if (OTF2Writer_){
@@ -98,7 +98,7 @@ MpiApi::sendrecv(const void *sendbuf, int sendcount,
   doRecv(recvbuf, recvcount, recvtype, source, recvtag, comm, status);
   queue_->progressLoop(req);
   delete req;
-  finish_mpi_call(MPI_Sendrecv);
+  FinishMPICall(MPI_Sendrecv);
 
 #ifdef SSTMAC_OTF2_ENABLED
   if (OTF2Writer_){
@@ -258,7 +258,7 @@ MpiApi::isend(const void *buf, int count, MPI_Datatype datatype, int dest,
     count, typeStr(datatype).c_str(), int(dest),
     tagStr(tag).c_str(), commStr(comm).c_str(), *request);
   queue_->nonblockingProgress();
-  finish_mpi_call(MPI_Isend);
+  FinishMPICall(MPI_Isend);
 
 #ifdef SSTMAC_OTF2_ENABLED
   if (OTF2Writer_){
@@ -278,7 +278,7 @@ MpiApi::recv(void *buf, int count, MPI_Datatype datatype, int source,
 
   start_pt2pt_call(MPI_Recv,count,datatype,source,tag,comm);
   int rc = doRecv(buf,count,datatype,source,tag,comm,status);
-  finish_mpi_call(MPI_Recv);
+  FinishMPICall(MPI_Recv);
 
 #ifdef SSTMAC_OTF2_ENABLED
   if (OTF2Writer_){
@@ -361,7 +361,7 @@ MpiApi::irecv(void *buf, int count, MPI_Datatype datatype, int source,
 
   queue_->recv(req, count, datatype, source, tag, commPtr, buf);
   queue_->nonblockingProgress();
-  finish_mpi_call(MPI_Irecv);
+  FinishMPICall(MPI_Irecv);
 
 #ifdef SSTMAC_OTF2_ENABLED
   if(OTF2Writer_){

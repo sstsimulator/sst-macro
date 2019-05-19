@@ -457,7 +457,7 @@ MpiQueue::progressLoop(MpiRequest* req)
     incomingMessage(msg);
 #if SSTMAC_COMM_SYNC_STATS
     if (req->isComplete()){
-      api_->collectSyncDelays(wait_start.sec(), msg);
+      api_->collectSyncDelays(wait_start, msg);
     }
 #endif
   }

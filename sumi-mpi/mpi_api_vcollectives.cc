@@ -52,13 +52,13 @@ Questions? Contact sst-macro-help@sandia.gov
   StartMPICall(fxn); \
   auto op = start##coll(#fxn, __VA_ARGS__); \
   waitCollective(std::move(op)); \
-  finish_mpi_call(fxn);
+  FinishMPICall(fxn);
 
 #define start_vcoll(coll, fxn, ...) \
   StartMPICall(fxn); \
   auto op = start##coll(#fxn, __VA_ARGS__); \
   addImmediateCollective(std::move(op), req); \
-  finish_mpi_call(fxn)
+  FinishMPICall(fxn)
 
 namespace sumi {
 
