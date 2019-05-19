@@ -53,33 +53,33 @@ namespace sstmac {
 namespace sw {
 
 
-class dumpi_meta  {
+class DumpiMeta  {
 
  public:
-  dumpi_meta(const std::string &filename);
+  DumpiMeta(const std::string &filename);
 
-  void parse_numprocs(const std::deque<std::string> &token);
-  void parse_fileprefix(const std::deque<std::string> &token);
+  void parseNumProcs(const std::deque<std::string> &token);
+  void parseFilePrefix(const std::deque<std::string> &token);
 
   void parsemeta();
   bool openfile();
   int getnumprocs();
 
-  int num_procs() const {
+  int numProcs() const {
     return numprocs_;
   }
 
   std::string fileprefix_;
   std::string dirplusfileprefix_;
 
-  virtual ~dumpi_meta() throw();
+  virtual ~DumpiMeta() throw();
 
  protected:
   std::string metafile_; //trace meta filename
   std::ifstream infile_;
-  void init_callbacks();
+  void initCallbacks();
 
-  typedef void (dumpi_meta::*parsefun_t)(const
+  typedef void (DumpiMeta::*parsefun_t)(const
       std::deque<std::string>&);
   typedef std::map<std::string, parsefun_t> CallMap_t;
   CallMap_t callback_;

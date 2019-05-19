@@ -56,7 +56,7 @@ namespace sstmac {
 namespace mpi {
 
 void
-mpi_runtime::vote_reduce_function(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype)
+MpiRuntime::voteReduceFunction(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype)
 {
   send_recv_vote* in = (send_recv_vote*) invec;
   send_recv_vote* out = (send_recv_vote*) inoutvec;
@@ -69,7 +69,7 @@ mpi_runtime::vote_reduce_function(void *invec, void *inoutvec, int *len, MPI_Dat
 }
 
 int64_t
-mpi_runtime::allreduce_min(int64_t my_time)
+MpiRuntime::allreduceMin(int64_t my_time)
 {
   if (nproc_ == 1)
     return my_time;
@@ -81,7 +81,7 @@ mpi_runtime::allreduce_min(int64_t my_time)
 }
 
 int64_t
-mpi_runtime::allreduce_max(int64_t my_time)
+MpiRuntime::allreduceMax(int64_t my_time)
 {
   if (nproc_ == 1)
     return my_time;
@@ -93,7 +93,7 @@ mpi_runtime::allreduce_max(int64_t my_time)
 }
 
 void
-mpi_runtime::do_reduce(void* data, int nelems, MPI_Datatype ty, MPI_Op op, int root)
+MpiRuntime::doReduce(void* data, int nelems, MPI_Datatype ty, MPI_Op op, int root)
 {
   if (root == global_root){
     MPI_Allreduce(MPI_IN_PLACE, data, nelems, ty, op, MPI_COMM_WORLD);
@@ -105,67 +105,94 @@ mpi_runtime::do_reduce(void* data, int nelems, MPI_Datatype ty, MPI_Op op, int r
 }
 
 void
-mpi_runtime::global_max(long *data, int nelems, int root)
+MpiRuntime::globalMax(int32_t *data, int nelems, int root)
 {
   if (nproc_ == 1)
     return;
 
-  do_reduce(data, nelems, MPI_LONG, MPI_MAX, root);
+  doReduce(data, nelems, MPI_INT32_T, MPI_MAX, root);
 }
 
 void
-mpi_runtime::global_max(int *data, int nelems, int root)
+MpiRuntime::globalMax(uint32_t *data, int nelems, int root)
 {
   if (nproc_ == 1)
     return;
 
-  do_reduce(data, nelems, MPI_INT, MPI_MAX, root);
+  doReduce(data, nelems, MPI_UINT32_T, MPI_MAX, root);
 }
 
 void
-mpi_runtime::global_sum(int* data, int nelems, int root)
+MpiRuntime::globalMax(int64_t *data, int nelems, int root)
 {
   if (nproc_ == 1)
     return;
 
-  do_reduce(data, nelems, MPI_INT, MPI_SUM, root);
+  doReduce(data, nelems, MPI_INT64_T, MPI_MAX, root);
 }
 
-
 void
-mpi_runtime::global_sum(long long *data, int nelems, int root)
+MpiRuntime::globalMax(uint64_t *data, int nelems, int root)
 {
   if (nproc_ == 1)
     return;
 
-  do_reduce(data, nelems, MPI_LONG_LONG, MPI_SUM, root);
+  doReduce(data, nelems, MPI_UINT64_T, MPI_MAX, root);
 }
 
 void
-mpi_runtime::global_sum(long *data, int nelems, int root)
+MpiRuntime::globalSum(int32_t *data, int nelems, int root)
 {
   if (nproc_ == 1)
     return;
 
-  do_reduce(data, nelems, MPI_LONG, MPI_SUM, root);
+  doReduce(data, nelems, MPI_INT32_T, MPI_SUM, root);
 }
 
 void
-mpi_runtime::init_runtime_params(sprockit::sim_parameters* params)
+MpiRuntime::globalSum(uint32_t *data, int nelems, int root)
+{
+  if (nproc_ == 1)
+    return;
+
+  doReduce(data, nelems, MPI_UINT32_T, MPI_SUM, root);
+}
+
+void
+MpiRuntime::globalSum(int64_t *data, int nelems, int root)
+{
+  if (nproc_ == 1)
+    return;
+
+  doReduce(data, nelems, MPI_INT64_T, MPI_SUM, root);
+}
+
+void
+MpiRuntime::globalSum(uint64_t *data, int nelems, int root)
+{
+  if (nproc_ == 1)
+    return;
+
+  doReduce(data, nelems, MPI_UINT64_T, MPI_SUM, root);
+}
+
+
+void
+MpiRuntime::initRuntimeParams(SST::Params& params)
 {
   requests_.resize(2*nproc_);
   statuses_.resize(2*nproc_);
   votes_.resize(nproc_);
-  parallel_runtime::init_runtime_params(params);
+  ParallelRuntime::initRuntimeParams(params);
 }
 
-mpi_runtime::mpi_runtime(sprockit::sim_parameters* params) :
-  parallel_runtime(params,
-  init_rank(params),
-  init_size(params))
+MpiRuntime::MpiRuntime(SST::Params& params) :
+  ParallelRuntime(params,
+  initRank(params),
+  initSize(params))
 {
   epoch_ = 0;
-  int rc = MPI_Op_create(&vote_reduce_function, 1, &vote_op_);
+  int rc = MPI_Op_create(&voteReduceFunction, 1, &vote_op_);
   if (rc != MPI_SUCCESS){
     sprockit::abort("failed making vote MPI op");
   }
@@ -179,7 +206,7 @@ mpi_runtime::mpi_runtime(sprockit::sim_parameters* params) :
 }
 
 int
-mpi_runtime::init_size(sprockit::sim_parameters* params)
+MpiRuntime::initSize(SST::Params& params)
 {
   int inited;
   MPI_Initialized(&inited);
@@ -196,7 +223,7 @@ mpi_runtime::init_size(sprockit::sim_parameters* params)
 }
 
 int
-mpi_runtime::init_rank(sprockit::sim_parameters* params)
+MpiRuntime::initRank(SST::Params& params)
 {
   int inited;
   MPI_Initialized(&inited);
@@ -213,19 +240,19 @@ mpi_runtime::init_rank(sprockit::sim_parameters* params)
 }
 
 void
-mpi_runtime::bcast(void *buffer, int bytes, int root)
+MpiRuntime::bcast(void *buffer, int bytes, int root)
 {
   if (bytes < 0 || bytes > 1e9){
     spkt_throw_printf(
-        sprockit::value_error,
+        sprockit::ValueError,
         "Illegbal number of bytes %d in broadcast\n",
         bytes);
   }
   MPI_Bcast(buffer, bytes, MPI_BYTE, root, MPI_COMM_WORLD);
 }
 
-timestamp
-mpi_runtime::send_recv_messages(timestamp vote)
+GlobalTimestamp
+MpiRuntime::sendRecvMessages(GlobalTimestamp vote)
 {
   //okay - it's possible that we have pending events
   //that aren't serialized yet because we overran the buffers
@@ -234,7 +261,7 @@ mpi_runtime::send_recv_messages(timestamp vote)
   static int payload_tag = 42;
   static int next_payload_tag = 43;
   for (int i=0; i < nproc_; ++i){
-    comm_buffer& comm = send_buffers_[i];
+    CommBuffer& comm = send_buffers_[i];
     int commSize = comm.totalBytes();
     if (commSize){
       char* buffer = comm.buffer();
@@ -251,7 +278,7 @@ mpi_runtime::send_recv_messages(timestamp vote)
     } else {
       votes_[i].num_sent = 0;
     }
-    votes_[i].time_vote = vote.ticks_int64();
+    votes_[i].time_vote = vote.time.ticks();
     //wait to fill this in until we know the size of all pending messages
     votes_[i].max_bytes = commSize;
   }
@@ -263,13 +290,13 @@ mpi_runtime::send_recv_messages(timestamp vote)
   debug_printf(sprockit::dbg::parallel, "LP %d receiving %d messages from partners",
                me_, incoming.num_sent);
   for (int i=0; i < incoming.num_sent; ++i){
-    comm_buffer& comm = recv_buffers_[i];
+    CommBuffer& comm = recv_buffers_[i];
     comm.ensureSpace(incoming.max_bytes);
     debug_printf(sprockit::dbg::parallel, "LP %d receiving maximum %lu bytes from sender %d",
                  me_, incoming.max_bytes, i);
     MPI_Irecv(comm.buffer(), incoming.max_bytes, MPI_INT, MPI_ANY_SOURCE,
               payload_tag, MPI_COMM_WORLD, &requests_[reqIdx++]);
-    ++num_recvs_done_;
+    ++numRecvsDone_;
   }
 
   int num_pending_requests = reqIdx;
@@ -287,37 +314,37 @@ mpi_runtime::send_recv_messages(timestamp vote)
 
   std::swap(payload_tag, next_payload_tag);
   ++epoch_;
-  return timestamp(incoming.time_vote, timestamp::exact);
+  return GlobalTimestamp(incoming.time_vote, Timestamp::exact);
 }
 
 void
-mpi_runtime::send(int dst, void *buffer, int buffer_size)
+MpiRuntime::send(int dst, void *buffer, int buffer_size)
 {
   int tag = me_; //the source of the message is the tag
   MPI_Send(buffer, buffer_size, MPI_BYTE, dst, tag, MPI_COMM_WORLD);
 }
 
 void
-mpi_runtime::recv(int src, void *buffer, int buffer_size)
+MpiRuntime::recv(int src, void *buffer, int buffer_size)
 {
   int tag = src;
   MPI_Recv(buffer, buffer_size, MPI_BYTE, src, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 }
 
 void
-mpi_runtime::gather(void *send_buffer, int num_bytes, void *recv_buffer, int root)
+MpiRuntime::gather(void *send_buffer, int num_bytes, void *recv_buffer, int root)
 {
   MPI_Gather(send_buffer, num_bytes, MPI_BYTE, recv_buffer, num_bytes, MPI_BYTE, root, MPI_COMM_WORLD);
 }
 
 void
-mpi_runtime::allgather(void *send_buffer, int num_bytes, void *recv_buffer)
+MpiRuntime::allgather(void *send_buffer, int num_bytes, void *recv_buffer)
 {
   MPI_Allgather(send_buffer, num_bytes, MPI_BYTE, recv_buffer, num_bytes, MPI_BYTE, MPI_COMM_WORLD);
 }
 
 void
-mpi_runtime::finalize()
+MpiRuntime::finalize()
 {
   MPI_Barrier(MPI_COMM_WORLD);
   MPI_Finalize();

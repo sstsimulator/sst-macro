@@ -12,6 +12,13 @@
 
 namespace std {
 using thread = sstmac::sw::std_thread_standin;
+template <class T> using lock_guard = sstmac::sw::lock_guard_standin<T>;
+}
+
+namespace std {
+namespace this_thread {
+template <class T=void> T yield(){}
+}
 }
 
 #ifdef THREAD_OWNS_STL

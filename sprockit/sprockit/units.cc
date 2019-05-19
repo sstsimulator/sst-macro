@@ -88,7 +88,7 @@ multiply64(int64_t a, int64_t b, bool &errorflag)
 }
 
 void
-populate_bandwidth_names(std::map<std::string, int64_t> &abbrname,
+populateBandwidthNames(std::map<std::string, int64_t> &abbrname,
                          std::map<std::string, int64_t> &fullname)
 {
   abbrname["bps"] = abbrname["b/s"] = abbrname["b/sec"] = fullname["bits/s"]
@@ -232,7 +232,7 @@ populate_bandwidth_names(std::map<std::string, int64_t> &abbrname,
 
 
 double
-get_bandwidth(const char *value, bool &errorflag, bool print_errors)
+getBandwidth(const char *value, bool &errorflag, bool print_errors)
 {
   // This map does case-sensitive matching of abbreviated names
   static std::map<std::string, int64_t> abbrname;
@@ -242,7 +242,7 @@ get_bandwidth(const char *value, bool &errorflag, bool print_errors)
   // We store the multipliers in bits/second to make everything integers.
   // Bits per second.
   if (abbrname.empty() || fullname.empty()) {
-    populate_bandwidth_names(abbrname, fullname);
+    populateBandwidthNames(abbrname, fullname);
   }
   // Go.
   char *endptr = NULL;
@@ -277,25 +277,26 @@ get_bandwidth(const char *value, bool &errorflag, bool print_errors)
     for (unsigned i = 0; i < lcunits.size(); ++i) {
       lcunits[i] = tolower(lcunits[i]);
     }
-    if (abbrname.find(units) != abbrname.end()) {
+    if (abbrname.find(units) != abbrname.end()) { //abbr ARE case-sensitive
       multiplier = abbrname[units];
     } else if (fullname.find(lcunits) != fullname.end()) {
-      multiplier = fullname[units];
+      multiplier = fullname[lcunits];
     } else {
       errorflag = true;
       if (print_errors) cerr0 << "No match for the bandwidth units " << units << "\n";
       return -1;
     }
+    val *= multiplier;
+    //the names are populated based on bits/s - but we return bytes/sec
+    val /= 8;
+  } else {
+    //no units - assume bytes/sec
   }
-
-  val *= multiplier;
-  val /= 8.0; // because the simulator works in bytes/sec.
-
   return val;
 }
 
 void
-populate_frequency_names(std::map<std::string, int64_t> &value)
+populateFrequencyNames(std::map<std::string, int64_t> &value)
 {
   // Accept ps, ns, us, ms, and s with various (lower-case) forms
   // Store time in picoseconds.
@@ -326,7 +327,7 @@ populate_length_names(std::map<std::string, int64_t> &value)
 }
 
 void
-populate_timestamp_names(std::map<std::string, double> &value)
+populateTimestampNames(std::map<std::string, double> &value)
 {
   // Accept ps, ns, us, ms, and s with various (lower-case) forms
   // Store time in picoseconds.
@@ -338,7 +339,7 @@ populate_timestamp_names(std::map<std::string, double> &value)
 }
 
 long
-byte_length(const char* value, bool& errorflag, bool print_errors)
+byteLength(const char* value, bool& errorflag, bool print_errors)
 {
   static std::map<std::string, int64_t> mulmap;
   if (mulmap.empty()) {
@@ -389,11 +390,11 @@ byte_length(const char* value, bool& errorflag, bool print_errors)
 /// Get a timestamp possiblly suffixed with any of the identifiers
 /// psec, nsec, usec, msec, sec, ps, ns, us, ms, s
 double
-get_timestamp(const char *value, bool &errorflag, bool print_errors)
+getTimestamp(const char *value, bool &errorflag, bool print_errors)
 {
   static std::map<std::string, double> mulmap;
   if (mulmap.empty()) {
-    populate_timestamp_names(mulmap);
+    populateTimestampNames(mulmap);
   }
 
   char *endptr = NULL;
@@ -443,11 +444,11 @@ get_timestamp(const char *value, bool &errorflag, bool print_errors)
 /// Get a frequency possibly suffixed with any of the identifiers
 /// hz, khz, mhz, ghz, Mhz, Khz, Ghz, Hz, MHz, KHz, GHz
 double
-get_frequency(const char *value, bool &errorflag, bool print_errors)
+getFrequency(const char *value, bool &errorflag, bool print_errors)
 {
   static std::map<std::string, int64_t> mulmap;
   if (mulmap.empty()) {
-    populate_frequency_names(mulmap);
+    populateFrequencyNames(mulmap);
   }
 
   char *endptr = NULL;
@@ -496,10 +497,10 @@ get_frequency(const char *value, bool &errorflag, bool print_errors)
 }
 
 double
-get_bandwidth(const char *value)
+getBandwidth(const char *value)
 {
   bool err = false;
-  return get_bandwidth(value, err, false);
+  return getBandwidth(value, err, false);
 }
 
 }

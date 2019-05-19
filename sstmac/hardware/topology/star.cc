@@ -49,35 +49,28 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-star::star(sprockit::sim_parameters* params) :
-  structured_topology(params)
+Star::Star(SST::Params& params) :
+  StructuredTopology(params)
 {
 }
 
 void
-star::connected_outports(switch_id src, std::vector<connection>& conns) const
+Star::connectedOutports(SwitchId src, std::vector<Connection>& conns) const
 {
   conns.resize(0);
 }
 
 void
-star::endpoints_connected_to_injection_switch(switch_id swaddr,
-                                   std::vector<injection_port>& nodes) const
+Star::endpointsConnectedToInjectionSwitch(SwitchId swaddr,
+                                   std::vector<InjectionPort>& nodes) const
 {
   nodes.resize(concentration_);
   for (int i = 0; i < concentration_; i++) {
-    injection_port& port = nodes[i];
+    InjectionPort& port = nodes[i];
     port.nid = swaddr*concentration_ + i;
     port.switch_port = i;
     port.ep_port = 0;
   }
-}
-
-void
-star::configure_individual_port_params(
-    switch_id src, sprockit::sim_parameters *switch_params) const
-{
-  topology::configure_individual_port_params(0, num_switches(), switch_params);
 }
 
 }

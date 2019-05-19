@@ -57,36 +57,41 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/skeletons/otf2_trace_replay/callqueue.h>
 #include <sstmac/skeletons/otf2_trace_replay/structures.h>
 
-class OTF2TraceReplayApp : public sstmac::sw::app {
-  FactoryRegister("otf2_trace_replay_app | parseotf2 | otf2",
-               sstmac::sw::app, OTF2TraceReplayApp,
-               "application for parsing and simulating OTF2 traces")
+class OTF2TraceReplayApp : public sstmac::sw::App {
  public:
-  OTF2TraceReplayApp(sprockit::sim_parameters* params,
-                     sstmac::sw::software_id sid,
-                     sstmac::sw::operating_system* os);
+  SST_ELI_REGISTER_DERIVED(
+    sstmac::sw::App,
+    OTF2TraceReplayApp,
+    "macro",
+    "parseotf2",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "application for parsing and simulating OTF2 traces")
 
-  sumi::mpi_api* GetMpi(){
+  OTF2TraceReplayApp(SST::Params& params,
+                     sstmac::sw::SoftwareId sid,
+                     sstmac::sw::OperatingSystem* os);
+
+  sumi::MpiApi* getMpi(){
     return mpi_;
   }
 
-  CallQueue& GetCallQueue(){
+  CallQueue& getCallQueue(){
     return call_queue_;
   }
 
-  bool PrintTraceEvents() const {
+  bool printTraceEvents() const {
     return print_trace_events_;
   }
 
-  bool PrintMpiCalls() const {
+  bool printMpiCalls() const {
     return print_mpi_calls_;
   }
 
-  bool PrintTimeDeltas() const {
+  bool printTimeDeltas() const {
     return print_time_deltas_;
   }
 
-  bool PrintUnknownCallback() const {
+  bool printUnknownCallback() const {
     return print_unknown_callback_;
   }
 
@@ -111,11 +116,11 @@ class OTF2TraceReplayApp : public sstmac::sw::app {
     }
   }
 
-  int skeleton_main() override;
+  int skeletonMain() override;
 
-  void StartMpi(const sstmac::timestamp);
+  void startMpi(sstmac::Timestamp);
 
-  void EndMpi(const sstmac::timestamp);
+  void endMpi(sstmac::Timestamp);
 
   OTF2_ClockProperties otf2_clock_properties;
   std::map<OTF2_StringRef, std::string> otf2_string_table;
@@ -126,19 +131,19 @@ class OTF2TraceReplayApp : public sstmac::sw::app {
   ~OTF2TraceReplayApp() throw()	{ }
 
  private:
-  OTF2_Reader* initialize_event_reader();
-  void initiate_trace_replay(OTF2_Reader*);
-  void verify_replay_success();
+  OTF2_Reader* initializeEventReader();
+  void initiateTraceReplay(OTF2_Reader*);
+  void verifyReplaySuccess();
 
 
  private:
   CallQueue call_queue_;
 
-  sstmac::timestamp compute_time;
+  sstmac::Timestamp compute_time;
 
   std::map<MPI_Comm, MPI_Comm> global_to_local_comm_;
 
-  sumi::mpi_api* mpi_;
+  sumi::MpiApi* mpi_;
 
   double timescale_;
   double terminate_percent_;

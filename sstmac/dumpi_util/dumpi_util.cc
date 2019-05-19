@@ -51,7 +51,7 @@ namespace sstmac {
 namespace sw {
 
 std::string
-dumpi_file_name(int rank, std::string fileroot_)
+dumpiFileName(int rank, std::string fileroot_)
 {
   // Figure out our input file name.
   // Try fileroot-"%01d", fileroot-"%02d", ... up to some reasonable length
@@ -73,20 +73,20 @@ dumpi_file_name(int rank, std::string fileroot_)
     } else {
       if (errno !=
           ENOENT) { //if the error is anything else than a no such file or directory, crash
-        spkt_throw_printf(sprockit::io_error,
+        spkt_throw_printf(sprockit::IOError,
             "dumpi_file_name: error opening file %s: %s",
             fname, ::strerror(errno));
       }
     }
   }
   // If we get here, then no file was found.
-  spkt_throw_printf(sprockit::io_error,
+  spkt_throw_printf(sprockit::IOError,
     "failed to a find a dumpi file for rank %d starting from the fileroot %s",
     rank, fileroot_.c_str());
 }
 
 int
-getnumprocs(dumpi_meta* dmeta_)
+getnumprocs(DumpiMeta* dmeta_)
 {
   if (dmeta_) {
     return dmeta_->getnumprocs();
@@ -94,12 +94,12 @@ getnumprocs(dumpi_meta* dmeta_)
   int nrank = 0;
   try {
     while (true) {
-      std::string fname = dumpi_file_name(nrank,
+      std::string fname = dumpiFileName(nrank,
                                 dmeta_->dirplusfileprefix_);
       nrank++;
     }
   }
-  catch (sprockit::io_error&) {
+  catch (sprockit::IOError&) {
     //ioerror is thrown when no more trace files can be found
   }
   return nrank;

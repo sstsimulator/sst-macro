@@ -47,7 +47,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/debug.h>
 #include <sprockit/basic_string_tokenizer.h>
 #include <sprockit/statics.h>
-#include <sprockit/delete.h>
 #include <iostream>
 
 DeclareDebugSlot(timestamp);
@@ -55,15 +54,17 @@ RegisterDebugSlot(timestamp, "turns on timestamps on all debug statements");
 
 namespace sprockit {
 
-static need_delete_statics<debug> del_statics;
+static NeedDeletestatics<Debug> del_statics;
 
 
-debug_prefix_fxn* debug::prefix_fxn = nullptr;
-debug_int debug::current_bitmask_;
-debug_int debug::start_bitmask_;
-std::map<std::string, debug_int*>* debug::debug_ints_ = nullptr;
-std::map<std::string, std::string>* debug::docstrings_ = nullptr;
-int debug::num_bits_assigned = 1; //the zeroth bit is reserved empty
+std::unique_ptr<DebugPrefixFxn> Debug::prefix_fxn;
+DebugInt Debug::current_bitmask_;
+DebugInt Debug::start_bitmask_;
+std::unique_ptr<std::map<std::string, DebugInt*>> Debug::debug_ints_;
+std::unique_ptr<std::map<std::string, std::string>> Debug::docstrings_;
+std::map<std::string, DebugInt*>* Debug::debug_ints_init_ = nullptr;
+std::map<std::string, std::string>* Debug::docstrings_init_ = nullptr;
+int Debug::num_bits_assigned = 1; //the zeroth bit is reserved empty
 
 #if SPROCKIT_ENABLE_DEBUG
 debug_indent::debug_indent() : level(0)
@@ -78,20 +79,17 @@ debug_indent::debug_indent() : level(0)
 #endif
 
 void
-debug::delete_statics()
+Debug::deleteStatics()
 {
-  free_static_ptr(debug_ints_);
-  free_static_ptr(docstrings_);
-  if (prefix_fxn) delete prefix_fxn;
 }
 
 void
-debug::turn_off(){
-  current_bitmask_ = debug_int(); //clear it
+Debug::turnOff(){
+  current_bitmask_ = DebugInt(); //clear it
 }
 
 void
-debug::print_debug_string(const std::string &str, std::ostream& os)
+Debug::printDebugString(const std::string &str, std::ostream& os)
 {
   std::string strToPrint;
   if (prefix_fxn){
@@ -104,7 +102,7 @@ debug::print_debug_string(const std::string &str, std::ostream& os)
 }
 
 std::string
-debug_int::to_string() const {
+DebugInt::toString() const {
   std::stringstream sstr;
   sstr << fields  << " ";
   std::stringstream actives;
@@ -123,36 +121,50 @@ debug_int::to_string() const {
 }
 
 void
-debug::turn_on(){
+Debug::turnOn(){
   current_bitmask_ = start_bitmask_;
 }
 
 void
-debug::turn_off(debug_int& dint){
+Debug::turnOff(DebugInt& dint){
   if (dint.fields == 0){
     //was never turned on
     return;
   }
-  debug_int offer = ~dint;
+  DebugInt offer = ~dint;
   start_bitmask_ = start_bitmask_ & offer;
   current_bitmask_ = current_bitmask_ & offer;
 }
 
 void
-debug::turn_on(debug_int& dint){
+Debug::turnOn(DebugInt& dint){
   if (dint.fields == 0){
-    assign_slot(dint);
+    assignSlot(dint);
   }
   start_bitmask_ = start_bitmask_ | dint;
   current_bitmask_ = current_bitmask_ | dint;
 }
 
 void
-debug::assign_slot(debug_int& dint)
+Debug::checkInit()
 {
+  if (!debug_ints_){
+    debug_ints_ = std::unique_ptr<std::map<std::string,DebugInt*>>(debug_ints_init_);
+    debug_ints_init_ = nullptr;
+  }
+  if (!docstrings_){
+    docstrings_ = std::unique_ptr<std::map<std::string,std::string>>(docstrings_init_);
+    docstrings_init_ = nullptr;
+  }
+}
+
+void
+Debug::assignSlot(DebugInt& dint)
+{
+  checkInit();
   //has not been assigned a bitfield
   if (num_bits_assigned > MAX_DEBUG_SLOT){
-    spkt_throw_printf(illformed_error,
+    spkt_throw_printf(IllformedError,
       "Too many debug slots turned on! Max is %d", MAX_DEBUG_SLOT);
   }
   int slot = num_bits_assigned++;
@@ -160,27 +172,26 @@ debug::assign_slot(debug_int& dint)
 }
 
 void
-debug::turn_on(const std::string& str){
-  std::map<std::string, debug_int*>::iterator it = debug_ints_->find(str);
+Debug::turnOn(const std::string& str){
+  checkInit();
+  auto it = debug_ints_->find(str);
   if (it == debug_ints_->end()){
-    spkt_throw_printf(input_error,
+    spkt_throw_printf(InputError,
         "debug::turn_on: unknown debug flag %s",
         str.c_str());
   }
-  debug_int& dint = *(it->second);
-  turn_on(dint);
+  turnOn(*it->second);
 }
 
 void
-debug::register_debug_slot(const std::string& str,
-                           debug_int* dint_ptr,
-                           const std::string& docstring){
-  if (!debug_ints_){
-    debug_ints_ = new std::map<std::string, debug_int*>;
-    docstrings_ = new std::map<std::string, std::string>;
+Debug::registerDebugSlot(const std::string& str, DebugInt* dint,
+                         const std::string& docstring){
+  if (!debug_ints_init_){
+    debug_ints_init_ = new std::map<std::string, DebugInt*>;
+    docstrings_init_ = new std::map<std::string, std::string>;
   }
-  (*debug_ints_)[str] = dint_ptr;
-  (*docstrings_)[str] = docstring;
+  (*debug_ints_init_)[str] = dint;
+  (*docstrings_init_)[str] = docstring;
 }
 
 static void
@@ -211,7 +222,7 @@ normalize_string(const std::string& thestr,
 }
 
 void
-debug::print_all_debug_slots(std::ostream& os)
+Debug::printAllDebugSlots(std::ostream& os)
 {
   std::string indent = printf("%22s", "");
   os << "Valid debug flags are:\n";
@@ -228,12 +239,12 @@ debug::print_all_debug_slots(std::ostream& os)
 
 
 bool
-debug::slot_active(const debug_int& allowed){
-  debug_int bitmask = current_bitmask_ & allowed;
+Debug::slotActive(const DebugInt& allowed){
+  DebugInt bitmask = current_bitmask_ & allowed;
   return bool(bitmask);
 }
 
-debug_prefix_fxn::~debug_prefix_fxn()
+DebugPrefixFxn::~DebugPrefixFxn()
 {
 }
 

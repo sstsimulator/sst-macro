@@ -7,33 +7,33 @@ SKELETONCASES=
 
 if INTEGRATED_SST_CORE
 if HAVE_CLANG
-if BUILD_SUMI_MPI
 SKELETONCASES += liblulesh libhpcg libcomd libpic
 endif
-endif
 else
+#else no integrated core
 if HAVE_CLANG
+#  memoize #not currently working TODO
 SKELETONCASES += \
-  memoize \
   relocation_ptr_test \
   openmp \
   overhead_test
+
+#  memoize 
 
 if HAVE_CPP14
 SKELETONCASES += \
   unique_ptr_test \
   template_global_test 
 endif
+#end cpp14
 
-if BUILD_SUMI_MPI
 SKELETONCASES += lulesh2.0.3 hpcg-3.0 CoMD pic
 endif
-endif
+#end have clang
 
-SKELETONCASES += \
-  boxml 
+#SKELETONCASES += \
+#  boxml 
 
-if BUILD_SUMI_MPI
 SKELETONCASES += \
   sst_component_example \
   traffic \
@@ -43,10 +43,8 @@ SKELETONCASES += \
 if !HAVE_UBUNTU
 SKELETONCASES +=  matmul 
 endif
-endif
 
-endif 
-#### SUMI MPI
+endif #Integrated core
 
 SKELETONTESTS = $(SKELETONCASES:%=test_skeleton_%)
 
@@ -105,11 +103,12 @@ test_skeleton_boxml.$(CHKSUF): boxml
     $(SSTMACEXEC) --exe=./skeletons/boxml/runboxml \
     -f $(top_srcdir)/skeletons/boxml/example/parameters.ini \
     -p node.app1.boxml_boxfile=$(top_srcdir)/skeletons/boxml/example/ks.4.new.boxes.xml \
-    -p node.app1.boxml_eventfiles=$(top_srcdir)/skeletons/boxml/example/test-mlmg-4-4.xml 
+    -p node.app1.boxml_eventfiles=[$(top_srcdir)/skeletons/boxml/example/test-mlmg-4-4.xml]
 
 test_skeleton_memoize.$(CHKSUF): memoize
 	SST_LIB_PATH=skeletons/memoize \
 	$(PYRUNTEST) 10 $(top_srcdir) $@ 't > 1.8 and t < 2.2' \
+    SST_LIB_PATH=$(top_builddir)/tests/skeletons/memoize \
     $(SSTMACEXEC) -f $(top_srcdir)/skeletons/tests/memoize/parameters.ini --no-wall-time
 
 test_skeleton_multiapp.$(CHKSUF): multiapp
@@ -133,4 +132,5 @@ test_skeleton_sst_component_example.$(CHKSUF): sst_component_example $(SSTMACEXE
 
 
 endif
+#end integrated core check
 

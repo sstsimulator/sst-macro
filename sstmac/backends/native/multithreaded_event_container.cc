@@ -58,7 +58,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/thread_safe.h>
 #include <cinttypes>
 
-RegisterDebugSlot(multithread_event_manager);
+RegisterDebugSlot(multithread_EventManager);
 RegisterDebugSlot(cpu_affinity);
 
 RegisterKeywords(
@@ -87,7 +87,7 @@ namespace native {
   (add_int64_atomic(int32_t(0), x) == 0)
   //*x == 0
 
-static inline void wait_on_child_completion(thread_queue* q, timestamp& min_time)
+static inline void wait_on_child_completion(threadQueue* q, GlobalTimestamp& min_time)
 {
   bool done = atomic_is_zero(q->delta_t);
   while (!done){
@@ -100,8 +100,8 @@ static inline void wait_on_child_completion(thread_queue* q, timestamp& min_time
 static void
 pthread_run_worker_thread(void* args)
 {
-  thread_queue* q = (thread_queue*) args;
-  timestamp horizon;
+  threadQueue* q = (threadQueue*) args;
+  GlobalTimestamp horizon;
   uint64_t epoch = 0;
   while(1){
     bool stillZero = atomic_is_zero(q->delta_t);
@@ -112,8 +112,8 @@ pthread_run_worker_thread(void* args)
       if (delta_t == terminate_sentinel){
         return;
       } else if (delta_t != 0) {
-        horizon += timestamp(delta_t, timestamp::exact);
-        timestamp new_min_time = q->mgr->run_events(horizon);
+        horizon += Timestamp(delta_t, Timestamp::exact);
+        GlobalTimestamp new_min_time = q->mgr->runEvents(horizon);
         q->min_time = new_min_time;
       }
       if (q->child1) wait_on_child_completion(q->child1, q->min_time);
@@ -129,8 +129,8 @@ pthread_run_worker_thread(void* args)
 
 static void*
 spin_up_pthread_work(void* args){
-  thread_queue* q = (thread_queue*) args;
-  q->mgr->spin_up(pthread_run_worker_thread, q);
+  threadQueue* q = (threadQueue*) args;
+  q->mgr->spinUp(pthread_run_worker_thread, q);
   return 0;
 }
 
@@ -154,9 +154,9 @@ print_backtrace(int sig)
   exit(1);
 }
 
-multithreaded_event_container::multithreaded_event_container(
-  sprockit::sim_parameters* params, parallel_runtime* rt) :
-  clock_cycle_event_map(params, rt)
+MultithreadedEventContainer::MultithreadedEventContainer(
+  SST::Params& params, ParallelRuntime* rt) :
+  ClockCycleEventMap(params, rt)
 {
   //set the signal handler
   //signal(SIGSEGV, print_backtrace);
@@ -167,12 +167,12 @@ multithreaded_event_container::multithreaded_event_container(
 
   me_ = rt_->me();
   nproc_ = rt_->nproc();
-  if (params->has_param("cpu_affinity")) {
-    params->get_vector_param("cpu_affinity", cpu_affinity_);
+  if (params->hasParam("cpu_affinity")) {
+    params.find_array("cpu_affinity", cpu_affinity_);
     //it would be nice to check that size of cpu_offsets matches task per node
   }
 
-  busy_loop_count = params->get_optional_int_param("busy_loop_count", busy_loop_count);
+  busy_loop_count = params.find<int>("busy_loop_count", busy_loop_count);
 
   num_subthreads_ = rt->nthread() - 1;
 
@@ -182,10 +182,10 @@ multithreaded_event_container::multithreaded_event_container(
   thread_managers_.resize(num_subthreads_);
 
   for (int i=0; i < num_subthreads_; ++i){
-    thread_managers_[i] = new event_manager(params, rt);
-    thread_managers_[i]->set_thread(i);
+    thread_managers_[i] = new EventManager(params, rt);
+    thread_managers_[i]->setThread(i);
   }
-  set_thread(num_subthreads_);
+  setThread(num_subthreads_);
 
   for (int i=0; i < queues_.size(); ++i){
     queues_[i].mgr = thread_managers_[i];
@@ -200,21 +200,21 @@ multithreaded_event_container::multithreaded_event_container(
 }
 
 void
-multithreaded_event_container::schedule_stop(timestamp until)
+MultithreadedEventContainer::scheduleStop(GlobalTimestamp until)
 {
   for (int i=0; i < num_subthreads_; ++i){
-    event_manager* mgr = thread_managers_[i];
-    mgr->schedule_stop(until);
+    EventManager* mgr = thread_managers_[i];
+    mgr->scheduleStop(until);
   }
-  event_manager::schedule_stop(until);
+  EventManager::scheduleStop(until);
 }
 
 void
-multithreaded_event_container::run_work()
+MultithreadedEventContainer::run_work()
 {
   //make the binary spanning tree for the thread barrier
-  thread_queue* child1 = nullptr;
-  thread_queue* child2 = nullptr;
+  threadQueue* child1 = nullptr;
+  threadQueue* child2 = nullptr;
   if (num_subthreads_ >= 1){
     child1 = &queues_[0]; 
   }
@@ -232,7 +232,7 @@ multithreaded_event_container::run_work()
       int parent_offset = child_offset / 2;
       int child_number = child_offset % 2;
       int parent = last_level_offset + parent_offset;
-      thread_queue& parentQ = queues_[parent];
+      threadQueue& parentQ = queues_[parent];
       if (child_number == 0){
         parentQ.child1 = &queues_[c];
       } else {
@@ -244,8 +244,8 @@ multithreaded_event_container::run_work()
     level_size *= 2;
   }
   
-  timestamp last_horizon;
-  timestamp lower_bound;
+  GlobalTimestamp last_horizon;
+  GlobalTimestamp lower_bound;
   uint64_t epoch = 0;
   int num_loops_left = num_profile_loops_;
   if (num_loops_left){
@@ -261,8 +261,8 @@ multithreaded_event_container::run_work()
     printf("Running parallel simulation with lookahead %10.6fus\n", lookahead_.usec());
   }
   while (lower_bound != no_events_left_time || num_loops_left > 0){
-    timestamp horizon = lower_bound + lookahead_;
-    int64_t delta_t = horizon.ticks() - last_horizon.ticks();
+    GlobalTimestamp horizon = lower_bound + lookahead_;
+    int64_t delta_t = (horizon - last_horizon).ticks();
     if (num_loops_left != 0){
       if (delta_t == 0){
         delta_t = 1;
@@ -275,14 +275,14 @@ multithreaded_event_container::run_work()
     if (child2) add_int64_atomic(delta_t, child2->delta_t);
 
     auto t_start = rdtsc();
-    timestamp min_time = run_events(horizon);
+    GlobalTimestamp min_time = runEvents(horizon);
     auto t_run = rdtsc();
 
     if (child1) wait_on_child_completion(child1, min_time);
     if (child2) wait_on_child_completion(child2, min_time);
 
 
-    lower_bound = receive_incoming_events(min_time);
+    lower_bound = receiveIncomingEvents(min_time);
     if (num_loops_left > 0) --num_loops_left;
     last_horizon = horizon;
     auto t_stop = rdtsc();
@@ -292,8 +292,8 @@ multithreaded_event_container::run_work()
     barrier_cycles += barrier;
     if (epoch % epoch_print_interval == 0 && rt_->me() == 0){
       printf("Epoch %13" PRIu64 " ran %13" PRIu64 ", %13" PRIu64 " cumulative %13" PRIu64 ", %13" PRIu64
-             " until horizon %13" PRIu64 "\n",
-             epoch, event, barrier, event_cycles, barrier_cycles, horizon.ticks());
+             " until horizon %13" PRIu64 ":%13" PRIu64 "\n",
+             epoch, event, barrier, event_cycles, barrier_cycles, horizon.epochs, horizon.time.ticks());
       fflush(stdout);
     }
     ++epoch;
@@ -307,16 +307,16 @@ multithreaded_event_container::run_work()
 }
 
 void
-multithreaded_event_container::run()
+MultithreadedEventContainer::run()
 {
   interconn_->setup();
 
   for (auto mgr : thread_managers_){
-    mgr->set_interconnect(interconn_);
+    mgr->setInterconnect(interconn_);
   }
 
   int nthread_ = nthread();
-  debug_printf(sprockit::dbg::event_manager,
+  debug_printf(sprockit::dbg::EventManager,
     "starting %d event manager threads",
     nthread_);
  
@@ -371,7 +371,7 @@ multithreaded_event_container::run()
 
   run_work();
 
-  timestamp final_time = now_;
+  GlobalTimestamp final_time = now_;
 
   for (int i=0; i < num_subthreads_; ++i){
     void* ignore;
@@ -382,7 +382,7 @@ multithreaded_event_container::run()
     final_time = std::max(final_time, thread_managers_[i]->now());
   }
 
-  compute_final_time(final_time);
+  computeFinalTime(final_time);
 }
 
 

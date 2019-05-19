@@ -46,9 +46,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #define PACKETFLOW_H
 
 #include <sstmac/hardware/common/packet.h>
-#include <sstmac/common/messages/sst_message.h>
+#include <sstmac/hardware/common/flow.h>
 #include <sprockit/thread_safe_new.h>
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <sprockit/debug.h>
 
 DeclareDebugSlot(pisces)
@@ -64,27 +64,27 @@ namespace hw {
  same path between endpoints.  This is usually one fraction of
  a larger message.
  */
-class pisces_packet :
-  public packet,
-  public sprockit::thread_safe_new<pisces_packet>
+class PiscesPacket :
+  public Packet,
+  public sprockit::thread_safe_new<PiscesPacket>
 {
  public:
-  ImplementSerializable(pisces_packet)
+  ImplementSerializable(PiscesPacket)
 
   static const double uninitialized_bw;
 
  public:
-  pisces_packet(
+  PiscesPacket(
     serializable* msg,
-    uint32_t num_bytes,
-    uint64_t flow_id,
-    bool is_tail,
-    node_id fromaddr,
-    node_id toaddr);
+    uint32_t numBytes,
+    uint64_t flowId,
+    bool isTail,
+    NodeId fromaddr,
+    NodeId toaddr);
 
-  std::string to_string() const override;
+  std::string toString() const override;
 
-  virtual ~pisces_packet() {}
+  virtual ~PiscesPacket() {}
 
   /**
     Needed because of routable_message ambiguity
@@ -97,22 +97,22 @@ class pisces_packet :
    * @brief reset_stages Configure the internal ports to traverse on a switch
    * @param port0
    */
-  void reset_stages(uint8_t port0){
+  void resetStages(uint8_t port0){
     stage_ = 0;
     outports_[0] = port0;
   }
 
-  void reset_stages(uint8_t port0, uint8_t port1){
-    reset_stages(port0);
+  void resetStages(uint8_t port0, uint8_t port1){
+    resetStages(port0);
     outports_[1] = port1;
   }
 
-  void reset_stages(uint8_t port0, uint8_t port1, uint8_t port2){
-    reset_stages(port0, port1);
+  void resetStages(uint8_t port0, uint8_t port1, uint8_t port2){
+    resetStages(port0, port1);
     outports_[2] = port2;
   }
 
-  void advance_stage(){
+  void advanceStage(){
     inport_ = outports_[stage_];
     ++stage_;
   }
@@ -121,84 +121,61 @@ class pisces_packet :
     return stage_;
   }
 
-  int next_local_outport() const {
+  int nextLocalOutport() const {
     return outports_[stage_];
   }
 
-  int next_local_inport() const {
+  int nextLocalInport() const {
     return inport_;
   }
 
-  int next_vc() const {
-    return rtr_header<packet::header>()->deadlock_vc;
+  int nextVC() const {
+    return rtrHeader<Packet::Header>()->deadlock_vc;
   }
 
-  void update_vc() {
-    current_vc_ = next_vc();
+  void updateVC() {
+    current_vc_ = nextVC();
   }
 
-  void set_inport(int port) {
+  void setInport(int port) {
     inport_ = port;
   }
 
-  timestamp arrival() const {
+  GlobalTimestamp arrival() const {
     return arrival_;
   }
 
-  void set_arrival(timestamp time) {
+  void setArrival(GlobalTimestamp time) {
     arrival_ = time;
   }
 
-  void init_bw(double bw) {
-    bw_ = bw_ == uninitialized_bw ? bw : bw_;
+  void initByteDelay(Timestamp delay){
+    if (byte_delay_.ticks() == 0){
+      byte_delay_ = delay;
+    }
   }
 
-  void set_max_bw(double bw){
-    init_bw(bw);
-    bw_ = std::min(bw_, bw);
+  Timestamp byteDelay() const {
+    return byte_delay_;
   }
 
-  /**
-   @return The bandwidth in number of bytes per second
-   */
-  double bw() const {
-    return bw_;
+  void setByteDelay(Timestamp delay){
+    byte_delay_ = delay;
   }
 
-  /**
-   @param The bandwidth in number of bytes per second
-   */
-  void set_bw(double bw) {
-    bw_ = bw;
-  }
-
-  /**
-   * @brief max_incoming_bw The maximum bandwidth a packet
-   *        could have on its current component (always > #bw())
-   * @return
-   */
-  double max_incoming_bw() const {
-    return max_in_bw_;
-  }
-
-  void set_max_incoming_bw(double bw) {
-    max_in_bw_ = bw;
-  }
-
-  double ser_delay() const {
-    return byte_length() / bw_;
+  void setMinByteDelay(Timestamp delay){
+    initByteDelay(delay);
+    byte_delay_ = std::max(delay, byte_delay_);
   }
 
   void serialize_order(serializer& ser) override;
 
  private:
-  pisces_packet(){} //for serialization
+  PiscesPacket(){} //for serialization
 
-  double bw_;
+  Timestamp byte_delay_;
 
-  double max_in_bw_;
-
-  timestamp arrival_;
+  GlobalTimestamp arrival_;
 
   int current_vc_;
 
@@ -208,21 +185,23 @@ class pisces_packet :
 
   uint16_t inport_;
 
+
+
 };
 
-class pisces_credit :
-  public event,
+class PiscesCredit :
+  public Event,
   public sprockit::printable,
-  public sprockit::thread_safe_new<pisces_credit>
+  public sprockit::thread_safe_new<PiscesCredit>
 {
 
  public:
-  ImplementSerializable(pisces_credit)
+  ImplementSerializable(PiscesCredit)
 
  public:
-  pisces_credit(){} //for serialization
+  PiscesCredit(){} //for serialization
 
-  pisces_credit(
+  PiscesCredit(
     int port,
     int vc,
     int num_credits)
@@ -240,21 +219,11 @@ class pisces_credit :
     return port_;
   }
 
-#if !SSTMAC_INTEGRATED_SST_CORE
-  bool is_payload() const override {
-    return false;
-  }
-
-  bool is_ack() const override {
-    return true;
-  }
-#endif
-
-  int num_credits() const {
+  int numCredits() const {
     return num_credits_;
   }
 
-  std::string to_string() const override;
+  std::string toString() const override;
 
   void serialize_order(serializer& ser) override;
 

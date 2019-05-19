@@ -50,19 +50,24 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-class random_allocation : public node_allocator
+class RandomAllocation : public NodeAllocator
 {
-  FactoryRegister("random", node_allocator, random_allocation,
-              "Allocate a random set of nodes from the list of available nodes."
-              "This will give a non-contiguous allocation")
  public:
-  random_allocation(sprockit::sim_parameters *params);
+  SST_ELI_REGISTER_DERIVED(
+    NodeAllocator,
+    RandomAllocation,
+    "macro",
+    "random",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "Allocate a random set of nodes from the list of available nodes")
 
-  std::string to_string() const override {
+  RandomAllocation(SST::Params& params);
+
+  std::string toString() const override {
     return "random allocation";
   }
 
-  virtual ~random_allocation() throw ();
+  virtual ~RandomAllocation() throw ();
 
   bool allocate(
     int nnode_requested,

@@ -43,10 +43,10 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sstmac/software/process/ftq.h>
-#include <sstmac/common/thread_lock.h>
 #include <sstmac/software/process/thread.h>
 #include <sstmac/backends/common/parallel_runtime.h>
-#include <sprockit/delete.h>
+#include <sstmac/common/thread_lock.h>
+#include <sstmac/common/event_scheduler.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
 #include <sprockit/keyword_registration.h>
@@ -59,69 +59,68 @@ RegisterKeywords(
 namespace sstmac {
 namespace sw {
 
-std::unordered_map<int, app_ftq_calendar*> ftq_calendar::calendars_;
-const long app_ftq_calendar::allocation_num_epochs = 10000;
+std::unordered_map<int, AppFTQCalendar*> FTQCalendar::calendars_;
+const uint64_t AppFTQCalendar::allocation_num_epochs = 10000;
 
-ftq_calendar::ftq_calendar(sprockit::sim_parameters* params) :
+FTQCalendar::FTQCalendar(SST::BaseComponent* comp, const std::string& name,
+                         const std::string& statName, SST::Params& params) :
   num_ticks_epoch_(0),
-  stat_collector(params)
+  Parent(comp, name, statName, params)
 {
-  num_ticks_epoch_ = timestamp(params->get_time_param("epoch")).ticks_int64();
+  num_ticks_epoch_ = Timestamp(params.find<SST::UnitAlgebra>("epoch").getValue().toDouble()).ticks();
 }
 
-ftq_calendar::~ftq_calendar()
+FTQCalendar::~FTQCalendar()
 {
-  sprockit::delete_vals(calendars_);
+  for (auto& pair : calendars_){
+    if (pair.second) delete pair.second;
+  }
   calendars_.clear();
 }
 
 void
-ftq_calendar::init(long nticks_per_epoch)
+FTQCalendar::init(uint64_t nticks_per_epoch)
 {
   num_ticks_epoch_ = nticks_per_epoch;
 }
 
 void
-ftq_calendar::register_app(int aid, const std::string& appname)
+FTQCalendar::registerApp(int aid, const std::string& appname)
 {
   static thread_lock lock;
   lock.lock();
-  app_ftq_calendar*& cal = calendars_[aid];
+  AppFTQCalendar*& cal = calendars_[aid];
   if (!cal){
-    cal = new app_ftq_calendar(aid, appname, num_ticks_epoch_);
+    cal = new AppFTQCalendar(aid, appname, num_ticks_epoch_);
   }
   lock.unlock();
 }
 
+/**
 void
-ftq_calendar::clear()
-{
-}
-
-void
-app_ftq_calendar::global_reduce(parallel_runtime* rt)
+AppFTQCalendar::globalReduce(ParallelRuntime* rt)
 {
   sprockit::abort("app_ftq_calendar::global_reduce: not implemented");
   //make a big buffer
-  long my_num_epochs = max_epoch_;
-  long max_num_epochs = rt->global_max(my_num_epochs);
+  uint64_t my_num_epochs = max_epoch_;
+  uint64_t max_num_epochs = rt->globalMax(my_num_epochs);
   int num_keys = 0;//key::num_categories();
-  long buffer_length = max_num_epochs * long(num_keys);
+  uint64_t buffer_length = max_num_epochs * uint64_t(num_keys);
 
-  long long* reduce_buffer = new long long[buffer_length];
-  ::memset(reduce_buffer, 0, buffer_length * sizeof(long long));
-  long long* bufptr = reduce_buffer;
-  for (long i=0; i < my_num_epochs; ++i){
-   ftq_epoch& my_epoch = epochs_[i];
+  uint64_t* reduce_buffer = new uint64_t[buffer_length];
+  ::memset(reduce_buffer, 0, buffer_length * sizeof(uint64_t));
+  uint64_t* bufptr = reduce_buffer;
+  for (uint64_t i=0; i < my_num_epochs; ++i){
+   FTQEpoch& my_epoch = epochs_[i];
    for (int k=0; k < num_keys; ++k, ++bufptr){
-     *bufptr = my_epoch.event_time(k);
+     *bufptr = my_epoch.eventTime(k);
    }
   }
 
   int root = 0;
-  rt->global_sum(reduce_buffer, buffer_length, root);
+  rt->globalSum(reduce_buffer, buffer_length, root);
 
-  rt->global_sum(aggregate_.totals_, num_keys, root);
+  rt->globalSum(aggregate_.totals_, num_keys, root);
 
   if (rt->me() != root){
     delete[] reduce_buffer;
@@ -129,13 +128,13 @@ app_ftq_calendar::global_reduce(parallel_runtime* rt)
   }
 
   //now loop back through
-  allocate_epochs(max_num_epochs);
+  allocateEpochs(max_num_epochs);
 
   bufptr = reduce_buffer;
   for (long i=0; i < max_num_epochs; ++i){
-   ftq_epoch& my_epoch = epochs_[i];
+   FTQEpoch& my_epoch = epochs_[i];
    for (int k=0; k < num_keys; ++k, ++bufptr){
-     my_epoch.set_event_time(k, *bufptr);
+     my_epoch.setEventTime(k, *bufptr);
    }
   }
 
@@ -145,32 +144,33 @@ app_ftq_calendar::global_reduce(parallel_runtime* rt)
 }
 
 void
-ftq_calendar::global_reduce(parallel_runtime *rt)
+FTQCalendar::globalReduce(ParallelRuntime *rt)
 {
   if (rt->nproc() == 1)
     return;
 
-  std::unordered_map<int, app_ftq_calendar*>::iterator it, end = calendars_.end();
+  std::unordered_map<int, AppFTQCalendar*>::iterator it, end = calendars_.end();
   for (it=calendars_.begin(); it != end; ++it){
-    app_ftq_calendar* cal = it->second;
-    cal->global_reduce(rt);
+    AppFTQCalendar* cal = it->second;
+    cal->globalReduce(rt);
   }
 }
+*/
 
 void
-app_ftq_calendar::reduce(app_ftq_calendar* cal)
+AppFTQCalendar::reduce(AppFTQCalendar* cal)
 {
   /**
   int num_keys = key::num_categories();
   int num_epochs = cal->epochs_.size();
 
-  allocate_epochs(num_epochs); //make sure we have enough
+  allocateEpochs(num_epochs); //make sure we have enough
 
   for (int e=0; e < num_epochs; ++e){
     ftq_epoch& my_epoch = epochs_[e];
     ftq_epoch& his_epoch = cal->epochs_[e];
     for (int k=0; k < num_keys; ++k){
-      my_epoch.collect(k, his_epoch.event_time(k));
+      my_epoch.collect(k, his_epoch.eventTime(k));
     }
   }
 
@@ -180,8 +180,9 @@ app_ftq_calendar::reduce(app_ftq_calendar* cal)
   */
 }
 
+#if 0
 void
-ftq_calendar::reduce(stat_collector* coll)
+FTQCalendar::reduce(StatCollector* coll)
 {
   //nothing to do for now... we are using statics
   /**
@@ -195,22 +196,23 @@ ftq_calendar::reduce(stat_collector* coll)
 }
 
 void
-ftq_calendar::dump_local_data()
+FTQCalendar::dumpLocalData()
 {
 }
 
 void
-ftq_calendar::dump_global_data()
+FTQCalendar::dumpGlobalData()
 {
-  std::unordered_map<int, app_ftq_calendar*>::iterator it, end = calendars_.end();
+  std::unordered_map<int, AppFTQCalendar*>::iterator it, end = calendars_.end();
   for (it=calendars_.begin(); it != end; ++it) {
     it->second->dump(fileroot_);
   }
 }
+#endif
 
 void
-ftq_calendar::collect(int event_typeid, int aid, int tid, long ticks_begin,
-                      long num_ticks)
+FTQCalendar::addData_impl(int event_typeid, int aid, int tid, uint64_t ticks_begin,
+                     uint64_t num_ticks)
 {
   static thread_lock lock;
   lock.lock();
@@ -218,19 +220,18 @@ ftq_calendar::collect(int event_typeid, int aid, int tid, long ticks_begin,
   lock.unlock();
 }
 
-app_ftq_calendar*
-ftq_calendar::get_calendar(int aid) const
+AppFTQCalendar*
+FTQCalendar::getCalendar(int aid) const
 {
   auto it = calendars_.find(aid);
   if (it == calendars_.end()) {
-    spkt_throw_printf(sprockit::value_error, "no FTQ calendar found for app %d", aid);
+    spkt_throw_printf(sprockit::ValueError, "no FTQ calendar found for app %d", aid);
   }
   return it->second;
 }
 
-app_ftq_calendar::app_ftq_calendar(int aid,
-                                   const std::string& appname,
-                                   long nticks_epoch)
+AppFTQCalendar::AppFTQCalendar(int aid, const std::string& appname,
+                                   uint64_t nticks_epoch)
   : epochs_(0),
     aid_(aid),
     max_tid_(0),
@@ -239,30 +240,30 @@ app_ftq_calendar::app_ftq_calendar(int aid,
     num_ticks_epoch_(nticks_epoch),
     appname_(appname)
 {
-  int num_categories = ftq_tag::num_categories();
-  aggregate_.totals_ = new long long[num_categories];
+  int num_categories = FTQTag::num_categories();
+  aggregate_.totals_ = new uint64_t[num_categories];
   for (int i=0; i < num_categories; ++i) {
     aggregate_.totals_[i] = 0;
   }
 }
 
-app_ftq_calendar::~app_ftq_calendar()
+AppFTQCalendar::~AppFTQCalendar()
 {
-  sprockit::delete_all(buffers_);
+  for (auto* buf : buffers_) if (buf) delete buf;
   delete aggregate_.totals_;
 }
 
 void
-app_ftq_calendar::allocate_epochs(long max_epoch)
+AppFTQCalendar::allocateEpochs(uint64_t max_epoch)
 {
   while (max_epoch >= max_epoch_allocated_) {
-    long epoch_start = max_epoch_allocated_;
+    uint64_t epoch_start = max_epoch_allocated_;
     max_epoch_allocated_ += allocation_num_epochs;
     epochs_.resize(max_epoch_allocated_);
 
-    int num_categories = ftq_tag::num_categories();
-    long long* buffer = new long long[num_categories * allocation_num_epochs];
-    long long* buffer_ptr = buffer;
+    int num_categories = FTQTag::num_categories();
+    uint64_t* buffer = new uint64_t[num_categories * allocation_num_epochs];
+    uint64_t* buffer_ptr = buffer;
     for (long epoch=epoch_start; epoch < max_epoch_allocated_;
          buffer_ptr += num_categories, ++epoch) {
       epochs_[epoch].init(num_categories, buffer_ptr);
@@ -272,26 +273,26 @@ app_ftq_calendar::allocate_epochs(long max_epoch)
 }
 
 void
-app_ftq_calendar::collect(int event_typeid, int tid, long ticks_begin,
-                          long num_ticks)
+AppFTQCalendar::collect(int event_typeid, int tid, uint64_t ticks_begin,
+                        uint64_t num_ticks)
 {
   /** aggregate for all time intervals and all threads for given event type */
   aggregate_.totals_[event_typeid] += num_ticks;
-  long ticks_end = ticks_begin + num_ticks;
-  long max_epoch = ticks_end / num_ticks_epoch_ +
+  uint64_t ticks_end = ticks_begin + num_ticks;
+  uint64_t max_epoch = ticks_end / num_ticks_epoch_ +
                    1; //just always assume a remainder
-  allocate_epochs(max_epoch);
+  allocateEpochs(max_epoch);
 
-  long first_epoch = ticks_begin / num_ticks_epoch_;
-  long nticks_first_epoch = num_ticks_epoch_ - ticks_begin % num_ticks_epoch_;
+  uint64_t first_epoch = ticks_begin / num_ticks_epoch_;
+  uint64_t nticks_first_epoch = num_ticks_epoch_ - ticks_begin % num_ticks_epoch_;
   // this might not go until the end of the epoch
   nticks_first_epoch = std::min(nticks_first_epoch, num_ticks);
   /** aggregate for all threads for given time interval and event type */
   epochs_[first_epoch].collect(event_typeid, nticks_first_epoch);
   num_ticks -= nticks_first_epoch;
   //t_epoch[epoch].collect(event_typeid, nticks_next_epoch);
-  for (long epoch=first_epoch+1; epoch <= max_epoch; ++epoch) {
-    long nticks_this_epoch = std::min(num_ticks, num_ticks_epoch_);
+  for (uint64_t epoch=first_epoch+1; epoch <= max_epoch; ++epoch) {
+    uint64_t nticks_this_epoch = std::min(num_ticks, num_ticks_epoch_);
     epochs_[epoch].collect(event_typeid, nticks_this_epoch);
     //t_epoch[epoch].collect(event_typeid, nticks_next_epoch);
     num_ticks -= nticks_this_epoch;
@@ -361,7 +362,7 @@ static const char* matplotlib_histogram_text_footer =
     "    plt.show()\n";
 
 void
-app_ftq_calendar::dump_matplotlib_histogram(const std::string& fileroot)
+AppFTQCalendar::dumpMatplotlibHistogram(const std::string& fileroot)
 {
   std::string fname_prefix = sprockit::printf("%s_app%d", fileroot.c_str(), aid_);
   std::string fname = sprockit::printf("%s.py", fname_prefix.c_str());
@@ -371,9 +372,9 @@ app_ftq_calendar::dump_matplotlib_histogram(const std::string& fileroot)
 }
 
 void
-app_ftq_calendar::dump(const std::string& fileroot)
+AppFTQCalendar::dump(const std::string& fileroot)
 {
-  int num_categories = ftq_tag::num_categories();
+  int num_categories = FTQTag::num_categories();
   std::string fname = sprockit::printf("%s_app%d.dat", fileroot.c_str(), aid_);
   std::ofstream out(fname.c_str());
   //print the first line header
@@ -382,7 +383,7 @@ app_ftq_calendar::dump(const std::string& fileroot)
   //sort the categories
   std::map<std::string, int> sorted_keys;
   for (int i=0; i < num_categories; ++i){
-    sorted_keys[ftq_tag::name(i)] = i;
+    sorted_keys[FTQTag::name(i)] = i;
   }
 
   int nonzero_categories[num_categories];
@@ -402,8 +403,8 @@ app_ftq_calendar::dump(const std::string& fileroot)
 
   std::stringstream sstr;
   sstr << "\n";
-  timestamp one_ms(1e-3);
-  int64_t ticks_ms = one_ms.ticks_int64();
+  Timestamp one_ms(1e-3);
+  int64_t ticks_ms = one_ms.ticks();
   for (int ep=0; ep < max_epoch_; ++ep) {
     //figure out how many us
     double num_ms = double(ep * num_ticks_epoch_) / (double) ticks_ms;
@@ -411,7 +412,7 @@ app_ftq_calendar::dump(const std::string& fileroot)
     long total_ticks = 0;
     for (int i=0; i < num_nonzero_cats; ++i) {
       int cat_id = nonzero_categories[i];
-      long num_ticks = epochs_[ep].event_time(cat_id);
+      long num_ticks = epochs_[ep].eventTime(cat_id);
       sstr << sprockit::printf(" %12ld", num_ticks);
       total_ticks += num_ticks;
     }
@@ -421,10 +422,10 @@ app_ftq_calendar::dump(const std::string& fileroot)
   out << sstr.str();
   out.close();
 
-  dump_matplotlib_histogram(fileroot);
+  dumpMatplotlibHistogram(fileroot);
 
-  timestamp stamp_sec(1, timestamp::seconds);
-  int64_t ticks_s = stamp_sec.ticks_int64();
+  Timestamp stamp_sec(1.0);
+  int64_t ticks_s = stamp_sec.ticks();
   std::cout << sprockit::printf("Average time stats for application %s: \n",
                                      appname_.c_str());
   /** print the stat totals */
@@ -440,17 +441,17 @@ app_ftq_calendar::dump(const std::string& fileroot)
   }
 }
 
-ftq_epoch::ftq_epoch()
+FTQEpoch::FTQEpoch()
   : totals_(nullptr)
 {
 }
 
-ftq_epoch::~ftq_epoch()
+FTQEpoch::~FTQEpoch()
 {
 }
 
 void
-ftq_epoch::init(int num_events, long long *buffer)
+FTQEpoch::init(int num_events, uint64_t *buffer)
 {
   totals_ = buffer;
   for (int i=0; i < num_events; ++i) {
@@ -459,26 +460,26 @@ ftq_epoch::init(int num_events, long long *buffer)
 }
 
 // ftq_scope member functions
-ftq_scope::ftq_scope(thread* _thread, ftq_tag _tag): _previous_tag(_thread->tag()) {
+FTQScope::FTQScope(Thread* _thread, FTQTag _tag): _previous_tag(_thread->tag()) {
     this->_thread = _thread;
     _tag_previously_protected = _thread->protect_tag;
 
     // Ignoring nested tags is now an expected behavior
-    //if (_thread->protect_tag == true) std::cerr << "WARNING: An 'ftq_scope' is already active. Nested guards are ignored.";
+    //if (_thread->protect_tag == true) std::cerr << "WARNING: An 'FTQScope' is already active. Nested guards are ignored.";
 
-    _thread->set_tag(_tag);
+    _thread->setTag(_tag);
     _thread->protect_tag = true;
 }
 
-ftq_scope::ftq_scope(thread* _thread): ftq_scope(_thread, _thread->tag()) {}
+FTQScope::FTQScope(Thread* _thread): FTQScope(_thread, _thread->tag()) {}
 
 
-ftq_scope::~ftq_scope() {
+FTQScope::~FTQScope() {
     _thread->protect_tag = _tag_previously_protected;
-    _thread->set_tag(_previous_tag);
+    _thread->setTag(_previous_tag);
 }
 
-void* ftq_scope::operator new(size_t size) throw() {
+void* FTQScope::operator new(size_t size) throw() {
     return nullptr;
 }
 

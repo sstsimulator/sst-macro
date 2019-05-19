@@ -58,29 +58,29 @@ using namespace sprockit::dbg;
 namespace sumi {
 
 void
-halving_reduce_scatter_actor::finalize_buffers()
+HalvingReduceScatterActor::finalizeBuffers()
 {
 }
 
 void
-halving_reduce_scatter_actor::init_buffers(void* dst, void* src)
+HalvingReduceScatterActor::initBuffers()
 {
 }
 
 void
-halving_reduce_scatter_actor::init_dag()
+HalvingReduceScatterActor::initDag()
 {
   sprockit::abort("halving_reduce_scatter: not implemented");
 }
 
 bool
-halving_reduce_scatter_actor::is_lower_partner(int virtual_me, int partner_gap)
+HalvingReduceScatterActor::isLowerPartner(int virtual_me, int partner_gap)
 {
   return false;
 }
 
 void
-halving_reduce_scatter_actor::buffer_action(void *dst_buffer, void *msg_buffer, action* ac)
+HalvingReduceScatterActor::bufferAction(void *dst_buffer, void *msg_buffer, Action* ac)
 {
 }
 

@@ -19,10 +19,6 @@ libsstmac_la_LDFLAGS = -version-info @SSTMAC_LIBVERSION@
 endif
 
 libsstmac_la_LIBADD = 
-#if HAVE_OTF2
-#libsstmac_la_LIBADD += $(OTF2_LDFLAGS) $(OTF2_LIBS)
-#libsstmac_la_LIBADD += ../../sst-dumpi/dumpi/libotf2dump/libotf2dump.la
-#endif
 
 libsstmac_la_SOURCES =
 nodist_EXTRA_libsstmac_la_SOURCES = dummy.cxx
@@ -33,20 +29,18 @@ libsstmac_la_LIBADD += \
   ../common/libsstmac_common.la \
   ../dumpi_util/libsstmac_dumpi.la \
   ../hardware/libsstmac_hw.la \
-  ../libraries/uq/libsstmac_uq.la \
   ../libraries/machines/libsstmac_machines.la \
   ../libraries/pthread/libsstmac_pthread.la \
   ../libraries/omp/libsstmac_omp.la \
-  ../libraries/sumi/libsstmac_sumi.la \
   ../main/libsstmac_driver.la \
   ../skeletons/libsstmac_skeletons.la \
   ../test_skeletons/libsstmac_test_skeletons.la \
-  ../software/libsstmac_sw.la 
-
-if BUILD_SUMI_MPI
-libsstmac_la_LIBADD += \
+  ../software/libsstmac_sw.la \
   ../../sumi-mpi/libsstmac_mpi.la
-endif
+
+#if HAVE_CLANG
+#libsstmac_la_LIBADD += ../llvm/libsstmac_inst.la
+#endif
 
 #if HAVE_OTF2
 #libsstmac_la_LIBADD += $(OTF2_LDFLAGS) $(OTF2_LIBS)
@@ -62,6 +56,8 @@ DIST_SUBDIRS = $(STD_SUBDIRS)
 
 
 
+
+
 if INTEGRATED_SST_CORE
 lib_LTLIBRARIES = libmacro.la
 libsstmac_la_LIBADD += ../sst_core/libsstmac_sst_core.la
@@ -73,6 +69,11 @@ libmacro_la_LIBADD = \
   libsstmac.la
 
 libmacro_la_LDFLAGS = -module -shared -version-info @SSTMAC_LIBVERSION@
+
+SST_REGISTER_TOOL=@sst_prefix@/bin/sst-register
+
+register:
+	  $(SST_REGISTER_TOOL) SST_MACRO SST_MACRO_LIBDIR=@libdir@
 
 endif
 

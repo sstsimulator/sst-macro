@@ -48,9 +48,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/replacements/mpi.h>
 #include <sstmac/common/runtime.h>
 #include <sstmac/software/process/backtrace.h>
-#include <sumi-mpi/mpi_api.h>
 #include <sstmac/skeleton.h>
 #include <sprockit/keyword_registration.h>
+#include <mpi.h>
 
 #define sstmac_app_name mpi_progress
 
@@ -64,9 +64,9 @@ int USER_MAIN(int argc, char** argv)
   MPI_Comm_rank(MPI_COMM_WORLD, &me);
   MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 
-  int send_size = get_params()->get_byte_length_param("send_size");
-  double send_delay = get_params()->get_time_param("send_delay");
-  int num_sends = get_params()->get_int_param("num_sends");
+  int send_size = sstmac::getUnitParam<int>("send_size");
+  double send_delay = sstmac::getUnitParam<double>("send_delay");
+  int num_sends = sstmac::getUnitParam<int>("num_sends");
   int send_to = (me + 1) % nproc;
   int recv_from = (me - 1 + nproc) % nproc;
   MPI_Request send_reqs[10];

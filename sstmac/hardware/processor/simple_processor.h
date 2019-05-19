@@ -47,7 +47,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/hardware/processor/processor.h>
 #include <sstmac/common/timestamp.h>
-#include <sstmac/common/messages/timed_event.h>
 
 namespace sstmac {
 namespace hw {
@@ -56,19 +55,25 @@ namespace hw {
 /**
  * A very simple processor model
  */
-class simple_processor :
-  public processor
+class SimpleProcessor :
+  public Processor
 {
-  FactoryRegister("simple", processor, simple_processor,
-              "Basic processor that only does timed_message computes")
  public:
-  simple_processor(sprockit::sim_parameters* params,
-                   memory_model* mem, node* nd) :
-    processor(params, mem, nd) {}
+  SST_ELI_REGISTER_DERIVED(
+    Processor,
+    SimpleProcessor,
+    "macro",
+    "simple",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "Basic processor that only does timed_message computes")
 
-  virtual ~simple_processor() {}
+  SimpleProcessor(SST::Params& params,
+                   MemoryModel* mem, Node* nd) :
+    Processor(params, mem, nd) {}
 
-  void compute(event* ev, callback* cb) override;
+  virtual ~SimpleProcessor() {}
+
+  void compute(Event* ev, ExecutionEvent* cb) override;
 
 };
 

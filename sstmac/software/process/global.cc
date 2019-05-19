@@ -145,13 +145,25 @@ GlobalVariableContext::append(const int size, const char* name, const void *init
   return offset;
 }
 
-void registerCppGlobal(CppGlobal* g, bool tls){
+CppGlobalHolder::CppGlobalHolder(CppGlobal *glbl, bool tls) :
+  glbl_(glbl), tls_(tls)
+{
   if (tls){
-    GlobalVariable::tlsCtx.registerCtor(g);
+    GlobalVariable::tlsCtx.registerCtor(glbl);
   } else {
-    GlobalVariable::glblCtx.registerCtor(g);
+    GlobalVariable::glblCtx.registerCtor(glbl);
   }
 }
+
+CppGlobalHolder::~CppGlobalHolder()
+{
+  if (tls_){
+    GlobalVariable::tlsCtx.unregisterCtor(glbl_);
+  } else {
+    GlobalVariable::glblCtx.unregisterCtor(glbl_);
+  }
+}
+
 
 void
 GlobalVariableContext::registerRelocation(void* srcPtr, void* srcBasePtr, int& srcOffset,
@@ -227,6 +239,12 @@ GlobalVariableContext::initGlobalSpace(void* ptr, int size, int offset)
   //also do the global init for any new threads spawned
   char* dst = ((char*)globalInits) + offset;
   ::memcpy(dst, ptr, size);
+}
+
+void
+GlobalVariableContext::unregisterCtor(CppGlobal *g)
+{
+  cppCtors.remove(g);
 }
 
 }

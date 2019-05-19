@@ -1,11 +1,11 @@
 ---
-title: Manual for SST-Macro 8.0.x
+title: Manual for SST-Macro 9.0.x
 published: true
 category: SSTDocumentation
 ---
 
 
-# SST/macro 8.0: Developer's Reference
+# SST/macro 9.0: Developer's Reference
 
 
 ![](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/sstlogo.png) 
@@ -29,7 +29,7 @@ category: SSTDocumentation
          - [2.1.1: Usage](#subsec:usage)
          - [2.1.2: Base Class](#subsec:baseClass)
          - [2.1.3: Child Class](#subsec:childClass)
-   - [Chapter 3: SST-macro Connectable Interface](#chapter:connectables)
+   - [Chapter 3: SST-macro Connectable Interface](#chapter:Connectables)
    - [Chapter 4: SProCKit](#chapter:sprockit)
       - [Section 4.1: Debug](#sec:debug)
       - [Section 4.2: Serialization](#sec:serialize)
@@ -49,7 +49,7 @@ category: SSTDocumentation
          - [6.3.1: Coordinating servers and clients](#subsec:coordinatingServersClients)
    - [Chapter 7: Hardware Models](#chapter:hardware)
       - [Section 7.1: Overview](#sec:topOverview)
-      - [Section 7.2: Connectables](#sec:connectables)
+      - [Section 7.2: Connectables](#sec:Connectables)
       - [Section 7.3: Topology](#sec:topology)
       - [Section 7.4: Router](#sec:router)
       - [Section 7.5: Network Switch: Flow Control](#sec:networkSwitch)
@@ -99,7 +99,7 @@ SST-macro is therefore designed for specific cost/accuracy tradeoffs.
 
 The developer's manual broadly covers the two main aspects of creating new components.
 
--   Setting up components to match the `connectable` interface linking components together via ports and event handlers
+-   Setting up components to match the `Connectable` interface linking components together via ports and event handlers
 -   Registering components with the factory system to make them usable in simulation input files
 
 \section{What To Expect In The Developer's Manual}
@@ -167,7 +167,7 @@ The simulation progresses with different modules (classes) exchanging events.
 In general, when module 1 sends a message to module 2, module 1 only sees an abstract interface for module 2.
 The polymorphic type of module 2 can vary freely to employ different physics or congestions models without affecting the implementation of module 1. 
 Polymorphism, while greatly simplifying modularity and interchangeability, does have some consequences.
-The "workhorse" of SST/macro is the base `event`, `event_component`, and `event_handler` classes.
+The "workhorse" of SST/macro is the base `event`, `Component`, and `EventHandler` classes.
 To increase polymorphism and flexibility, every SST/macro module that receives events does so via the generic function
 
 ````
@@ -177,10 +177,10 @@ void handle(event* ev){
 ````
 The prototype therefore accepts any event type. 
 The interaction of these types is illustrated in Figure~[2](#fig:abstractHandlers)).
-Event handlers are created as dispatch wrappers to member functions of an en `event_component`.
+Event handlers are created as dispatch wrappers to member functions of an en `Component`.
 There are special helper functions and template classes in SST/macro designed to simplify this process.
 A `link` is created connecting two components.
-An `event_handler` is created that dispatches to the `Listener::recv` member function.
+An `EventHandler` is created that dispatches to the `Listener::recv` member function.
 When events are pushed onto the link by `Pinger`,
 the simulation core computes the correct link delay.
 After advancing virtual simulation time,
@@ -289,7 +289,7 @@ From here it should be apparent that we defined a new application with name `rob
 Inside the main function, we create an object of type `actor`.
 
 ````
-actor* the_guy = actor_factory::get_param("actor_name", get_params());
+actor* the_guy = actor_factory::getParam("actor_name", getParams());
 the_guy->act();
 return 0;
 ````
@@ -362,7 +362,7 @@ We now define the public interface for the actor class
 
 ````
 public:
-  actor(sprockit::sim_parameters* params);
+  actor(SST::Params& params);
 
   virtual void act() = 0;
 
@@ -392,9 +392,9 @@ Moving to the `actor.cc` file, we see the implementation
 namespace sstmac {
     namespace tutorial {
 
-actor::actor(sprockit::sim_parameters* params)
+actor::actor(SST::Params& params)
 {
-  biggest_fan_ = params->get_param("biggest_fan");
+  biggest_fan_ = params.find<std::string>("biggest_fan");
 }
 ````
 We initialize the member variable from the parameter object.  We additionally need a macro
@@ -420,7 +420,7 @@ class mandy_patinkin :
     public actor
 {
  public:
-  mandy_patinkin(sprockit::sim_parameters* params);
+  mandy_patinkin(SST::Params& params);
 
   FactoryRegister("patinkin", actor, mandy_patinkin,
     "He's on one of those shows now... NCIS? CSI?");
@@ -437,7 +437,7 @@ This is a complete type that can be instantiated.
 To create the class we will need the constructor:
 
 ````
-mandy_patinkin(sprockit::sim_parameters* params);
+mandy_patinkin(SST::Params& params);
 ````
 
 And finally, to satisfy the `actor` public interface, we need
@@ -455,10 +455,10 @@ Finally, a documentation string should be given with a brief description.
 We can now implement the constructor:
 
 ````
-mandy_patinkin::mandy_patinkin(sprockit::sim_parameters* params) :
+mandy_patinkin::mandy_patinkin(SST::Params& params) :
   actor(params)
 {
-  sword_hand_ = params->get_param("sword_hand");
+  sword_hand_ = params.find<std::string>("sword_hand");
 
   if (sword_hand_ == "left"){
     sprockit::abort("I am not left handed!");
@@ -486,7 +486,7 @@ Another example `guest.h` and `guest.cc` in the code folder shows the implementa
 
 
 
-## Chapter 3: SST-macro Connectable Interface<a name="chapter:connectables"></a>
+## Chapter 3: SST-macro Connectable Interface<a name="chapter:Connectables"></a>
 
 
 
@@ -507,15 +507,15 @@ In SST core, ports are labeled by strings.
 Similarly, payload and credit handlers are not automatically set up in SST core.
 SST-macro forces links and handlers to be set up automatically.
 
-Every hardware component in SST-macro should inherit from `connectable_component` in `connection.h`
+Every hardware component in SST-macro should inherit from `ConnectableComponent` in `connection.h`
 There are four critical abstract functions in the virtual interface. First:
 
 ````
-virtual void connect_output(
-    sprockit::sim_parameters* params,
+virtual void connectOutput(
+    SST::Params& params,
     int src_outport,
     int dst_inport,
-    event_link* payload_handler) = 0;
+    EventLink* payloadHandler) = 0;
 ````
 This is invoked on the source component of a link giving the port numbers on either end of the link.
 It gives the source component the payload handler that will be invoked on the destination component.
@@ -527,13 +527,13 @@ Parameter namespaces are covered in the user's manual.
 
 The next connection function is:
 ````
-virtual void connect_input(
-    sprockit::sim_parameters* params,
+virtual void connectInput(
+    SST::Params& params,
     int src_outport,
     int dst_inport,
-    event_link* credit_handler) = 0;
+    EventLink* creditHandler) = 0;
 ````
-Similar to `connect_output`, this is invoked on the destination component of a link.
+Similar to `connectOutput`, this is invoked on the destination component of a link.
 Instead of giving a payload handler to receive new events,
 it receives a credit handler that the destination should send acks and credits to.
 The parameters work the same way as the output parameters.
@@ -541,34 +541,34 @@ The parameters work the same way as the output parameters.
 But where do the handlers come from? Connectable objects must implement:
 
 ````
-virtual link_handler* credit_handler(int port) = 0;
+virtual LinkHandler* creditHandler(int port) = 0;
 
-virtual link_handler* payload_handler(int port) = 0;
+virtual LinkHandler* payloadHandler(int port) = 0;
 ````
 
-These `link_handler` objects are a special instance of `event_handler`.
+These `LinkHandler` objects are a special instance of `EventHandler`.
 Each class must return the correct payload and credit handlers for each valid port.
-The handler and port will then be passed to the corresponding `connect_output` or `connect_input` function.
+The handler and port will then be passed to the corresponding `connectOutput` or `connectInput` function.
 
-`link_handler` objects are created as functors for particular member functions of a class.
+`LinkHandler` objects are created as functors for particular member functions of a class.
 They are created through the helper function:
 
 ````
 template <class T, class Fxn>
-link_handler* new_link_handler(const T* t, Fxn fxn){
-  return new_handler<T,Fxn>(const_cast<T*>(t), fxn);
+LinkHandler* newLinkHandler(const T* t, Fxn fxn){
+  return newHandler<T,Fxn>(const_cast<T*>(t), fxn);
 }
 ````
 Given a class `Test` with a member function
 
 ````
-void Test::handle_payload(event* ev)
+void Test::handlePayload(event* ev)
 ````
-we could create the appropriate `link_handler` as
+we could create the appropriate `LinkHandler` as
 
 ````
-link_handler* Test::payload_handler(int port) const {
-  return new_link_handler(this, &Test::handle);
+LinkHandler* Test::payloadHandler(int port) const {
+  return newLinkHandler(this, &Test::handle);
 }
 ````
 
@@ -639,7 +639,7 @@ makeBiNetworkLink(comp1,comp1Id,port,
                   comp2,comp2Id,port,
                   latency)
 ````
-The code in the Python script causes `connect_output` and `connect_input` to be invoked on port 0 for each of the components.
+The code in the Python script causes `connectOutput` and `connectInput` to be invoked on port 0 for each of the components.
 
 \subsection{Makefile}
 The Makefile uses compiler wrappers installed with SST-macro.
@@ -917,7 +917,7 @@ Events are stored in a queue (sorted by time)
 ````
 namespace sstmac {
 
-class event_queue_entry
+class ExecutionEvent
 {
  public:
   virtual void execute() = 0;
@@ -926,20 +926,20 @@ class event_queue_entry
 };
 ````
 
-The execute function is invoked by the `event_manager` to run the underlying event.
+The execute function is invoked by the `EventManager` to run the underlying event.
 There are generally two basic event types in SST-macro, which we now introduce.
 
 #### 5.1.1: Event Handlers<a name="subsec:eventHandlers"></a>
 
 
-In most cases, the event is represented as an event sent to an object called an `event_handler at a specific simulation time.
-In handling the event, the event handlers change their internal state and may cause more events
+In most cases, the event is represented as an event sent to an object called an `EventHandler at a specific simulation time.
+In handling the Event, the event handlers change their internal state and may cause more events
 by scheduling new events at other event handlers (or scheduling messages to itself) at a future time.
-The workhorses for SST-macro are therefore classes that inherit from \inlinecode{event_handler.
+The workhorses for SST-macro are therefore classes that inherit from \inlinecode{EventHandler.
 The only method that must be implemented is
 
 ````
-void handle(event* ev);
+void handle(Event* ev);
 ````
 The function is the common interface for numerous different operations from network injection to memory access to MPI operations.
 In general, objects have two "directions" for the action - send or receive.
@@ -952,15 +952,15 @@ Some event handlers will always receive and then send, such as network switches 
 In most cases, events are created by calling the function
 
 ````
-void schedule(timestamp t,
-  event_handler* handler,
-  event* ev);
+void schedule(Timestamp t,
+  EventHandler* handler,
+  Event* ev);
 ````
 
-This then creates a class of type `event_queue_entry`, for which the execute function is
+This then creates a class of type `ExecutionEvent`, for which the execute function is
 
 ````
-void handler_event_queue_entry::execute()
+void HandlerExecutionEvent::execute()
 {
   if (!canceled_) {
     handler_->handle(ev_to_deliver_);
@@ -970,16 +970,16 @@ void handler_event_queue_entry::execute()
 
 Handler are created by on-the-fly creation through C++ templates.
 The interface does not actually expose C++ templates.
-The function `new_handler` defined in `event_callback.h` has the prototype:
+The function `newHandler` defined in `event_callback.h` has the prototype:
 
 ````
 template<class Cls, typename Fxn, class... Args>
-event_handler* 
-new_handler(Cls* cls, Fxn fxn, const Args&... args);
+EventHandler* 
+newHandler(Cls* cls, Fxn fxn, const Args&... args);
 ````
 
 Here `Fxn` is a member function pointer.
-When an `event* ev` is scheduled to the event handler, the member function pointer gets invoked:
+When an `event* ev` is scheduled to the Event handler, the member function pointer gets invoked:
 
 ````
 (cls->*fxn)(ev, args...);
@@ -988,18 +988,18 @@ When an `event* ev` is scheduled to the event handler, the member function point
 For example, given a class `actor` with the member function `act`
 
 ````
-void actor::actor(event* ev, int ev_id){...}
+void actor::actor(Event* ev, int ev_id){...}
 ````
 we can create an event handler
 
 ````
 actor* a = ....;
-event_handler* handler = new_handler(a, &actor::act, 42);
+EventHandler* handler = newHandler(a, &actor::act, 42);
 ...
 event* ev = ....;
 schedule(time, handler, ev);
 ````
-When the time arrives for the event, the member function will be invoked
+When the time arrives for the Event, the member function will be invoked
 
 ````
 a->act(ev, 42);
@@ -1011,7 +1011,7 @@ a->act(ev, 42);
 
 The major distinction between different event containers is the data structured used.
 The simplest data structure is an event heap or ordered event map.
-The event manager needs to always be processing the minimum event time, which maps naturally onto a min-heap structure.
+The event manager needs to always be processing the minimum Event time, which maps naturally onto a min-heap structure.
 Insertion and removal are therefore log(N) operations where N is the number of currently scheduled events.
 For most cases, the number and length of events is such that the min-heap is fine.
 
@@ -1019,14 +1019,14 @@ For most cases, the number and length of events is such that the min-heap is fin
 
 
 The simulation is partitioned into objects that are capable of scheduling events.
-Common examples of `event_scheduler` objects are nodes, NICs, memory systems, or the operating system.
-In serial runs, an event scheduler is essentially just a wrapper for the `event_manager` and the class is not strictly necessary.
-There are two types of event scheduler: `event_component` and `event_subcomponent`.
+Common examples of `EventScheduler` objects are nodes, NICs, memory systems, or the operating system.
+In serial runs, an event scheduler is essentially just a wrapper for the `EventManager` and the class is not strictly necessary.
+There are two types of Event scheduler: `Component` and `SubComponent`.
 In parallel simulation, though, the simulation must be partitioned into different scheduling units.
 Scheduling units are then distributed amongst the parallel processes.
 Components are the basic unit.  Currently only nodes and network switches are components.
 All other devices (NIC, memory, OS) are subcomponents that must be linked to a parent component.
-Even though components and subcomponents can both schedule events (both inherit from `event_scheduler`),
+Even though components and subcomponents can both schedule events (both inherit from `EventScheduler`),
 all subcomponents must belong to a component.  A subcomponent cannot be separated from its parent component during parallel simulation.
 
 
@@ -1069,7 +1069,7 @@ This therefore requires the Clang source-to-source compiler to redirect all glob
 
 
 
-In a standard discrete event simulation (DES), you have only components and events.
+In a standard discrete Event simulation (DES), you have only components and events.
 Components send events to other components, which may in turn create and send more events.
 Each event has an arrival time associated with it.
 Components must process events in time-order and keep a sorted queue of events.
@@ -1108,7 +1108,7 @@ When necessary, SST/macro will block the active user-space thread and context-sw
 
 We can illustrate time advancing with a simple `MPI_Send` example.
 We have discussed that a user-space thread is allocated for each virtual MPI rank.
-The discrete event core, however, still runs on the main application thread (stack).
+The discrete Event core, however, still runs on the main application thread (stack).
 Generally, the main thread (DES thread) will handle hardware events while the user-space threads will handle software events (this is relaxed in some places for optimization purposes).
 Figure [3](#fig:desThreadsMPISend), shows a flow chart for execution of the send.
 Operations occurring on the application user-space thread are shaded in blue while operations on the DES thread are shaded in pink.
@@ -1120,9 +1120,9 @@ Virtual time in the simulation therefore advances inside the `MPI_Send` call,
 but the details of how this happens are not apparent in the skeleton app.
 
 
-![Figure 3: Flow of events for completing a send operation.  Shows basic function calls, block/unblock context switches, and event schedules. User-space thread (application) operations are shown in blue. Main event thread (OS/kernel) operations are shown in pink.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/DES) 
+![Figure 3: Flow of events for completing a send operation.  Shows basic function calls, block/unblock context switches, and Event schedules. User-space thread (application) operations are shown in blue. Main event thread (OS/kernel) operations are shown in pink.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/DES) 
 
-*Figure 3: Flow of events for completing a send operation.  Shows basic function calls, block/unblock context switches, and event schedules. User-space thread (application) operations are shown in blue. Main event thread (OS/kernel) operations are shown in pink.*
+*Figure 3: Flow of events for completing a send operation.  Shows basic function calls, block/unblock context switches, and Event schedules. User-space thread (application) operations are shown in blue. Main event thread (OS/kernel) operations are shown in pink.*
 
 
 
@@ -1164,12 +1164,12 @@ SST/macro redirects to a member function `send` on an `mpi_api` object that is s
 
 
 The creating and handling of software events is managed through `library` objects.
-Each `node` has an `operating_system` member variable that will manage software events on a virtual compute node.
+Each `node` has an `OperatingSystem` member variable that will manage software events on a virtual compute node.
 Each library object is stored in a lookup table in the operating system,
 allowing the operating system to access specific libraries at specific times.
 
 ````
-class operating_system {
+class OperatingSystem {
   ...
   map<string,library*> libs_;
   ...
@@ -1192,9 +1192,9 @@ Here the operating system acts as a service and never blocks.
 Conversely, each `library` must provide a `incoming_event` method that allows the operating system to call back to the library
 
 ````
-void incoming_event(event* ev){...}
+void incoming_event(Event* ev){...}
 ````
-Generally speaking, event notifications will arrive from the NIC (new messages, ACKs), memory system (data arrived), processor (computation complete), etc.
+Generally speaking, Event notifications will arrive from the NIC (new messages, ACKs), memory system (data arrived), processor (computation complete), etc.
 These hardware events must be routed to the correct software library for processing.
 
 The operating system provides an abstract interface (independent of the exact implementation of threading library) through `key` objects.
@@ -1214,8 +1214,8 @@ os->unblock(k);
 ````
 
 ````
-void operating_system::handle_event(event* ev) {
-  library* lib = libs_[ev->lib_name()];
+void OperatingSystem::handleEvent(Event* ev) {
+  library* lib = libs_[ev->libName()];
   lib->incoming_event(ev);
 }
 ````
@@ -1244,7 +1244,7 @@ T* get_api();
 for which the implementation is
 
 ````
-thread* thr = operating_system::current_thread();
+thread* thr = OperatingSystem::currentThread();
 return thr->get_api<T>();
 ````
 which converts the global template function into a thread-specific accessor.
@@ -1328,7 +1328,7 @@ In many HPC simulations, the only thing being simulated is a single MPI applicat
 The default `send` function in `sumi_transport` assumes messages are being sent within a given application.
 
 ````
-void send_payload(int dst, message* msg, bool needs_ack);
+void sendPayload(int dst, message* msg, bool needs_ack);
 ````
 The only thing that must be specified is a destination rank, which is the virtual ID within a given session layer.
 The transport layer itself will map that to the correct physical node address and deliver the message.
@@ -1338,7 +1338,7 @@ An alternative function exists for sending from client to server:
 ````
 void client_server_send(
   int dest_rank,
-  node_id dest_node,
+  NodeId dest_node,
   app_id dest_app,
   sumi::message* msg);
 ````
@@ -1364,7 +1364,7 @@ In this case, the function `shutdown_server` can be called by a client applicati
 ````
 void shutdown_server(
   int dest_rank,
-  node_id dest_node,
+  NodeId dest_node,
   app_id dest_app);
 ````
 
@@ -1409,7 +1409,7 @@ In general, sending data across the network (as in, e.g.., MPI), requires the fo
 -   Network topology: handled by `topology` class. Defines the geometry of the network, determining how nodes are connected to switches and how switches are interconnected. It also defines which ports are used for each connection.
 -   Fabric management (not yet implemented in SST)
 -   Routing: handled by `router` class. Using the defined topology, compute the path that should be taken by a packet. The path is defined by the port numbers that should be taken.
--   Flow control and congestion: handled by `network_switch` class. Once a path is defined by the router, arbitrate packets (flits) when they contend for bandwidth.
+-   Flow control and congestion: handled by `NetworkSwitch` class. Once a path is defined by the router, arbitrate packets (flits) when they contend for bandwidth.
 As much as possible, these components try to be independent. However, there are inter-dependencies, as shown in Figure [4](#fig:dependencies).
 The router requires topology information to compute paths. For adaptive routing decisions, the router also requires contention information from the network switch.
 The network switch requires the computed paths (ports) from the router.
@@ -1472,11 +1472,11 @@ struct routing_header  {
 };
 ````
 The 54 bits here store the information needed by a router to implement progressive adaptive routing (PAR). 
-For flow control on a particular type of switch, e.g. PISCES (see User's manual), we have a type `pisces_packet`
+For flow control on a particular type of switch, e.g. PISCES (see User's manual), we have a type `PiscesPacket`
 that inherits from `packet` and adds the following fields:
 
 ````
-class pisces_packet : public packet {
+class PiscesPacket : public packet {
 ....
 uint8_t stage;
 uint8_t outports[3];
@@ -1502,8 +1502,8 @@ which returns the raw bytes cast to the correct C++ bitset type.
 There is some universal information needed by all packets, which is not stored in the bitset:
 
 ````
-node_id toaddr_;
-node_id fromaddr_;
+NodeId toaddr_;
+NodeId fromaddr_;
 uint64_t flow_id_;
 uint32_t num_bytes_;
 serializable* payload_;
@@ -1522,7 +1522,7 @@ To summarize, we have: \\
 | Flow control | Subclass of `packet` | Dynamic cast `packet` | 
 
 
-### Section 7.2: Connectables<a name="sec:connectables"></a>
+### Section 7.2: Connectables<a name="sec:Connectables"></a>
 
 
 With a basic overview of how the simulation proceeds, we can now look at the actual SST/macro class types.
@@ -1531,24 +1531,24 @@ it generally allows any set of components to be connected.
 As discussed in Chapter [5](#chapter:des), the simulation proceeds by having event components exchange events,
 each scheduled to arrive at a specific time.
 SST-macro provides a generic interface for any set of hardware components to be linked together.
-Any hardware component that connects to other components and exchanges events must inherit from the `connectable` class.
-The `connectable` class presents a standard virtual interface
+Any hardware component that connects to other components and exchanges events must inherit from the `Connectable` class.
+The `Connectable` class presents a standard virtual interface
 
 ````
-class connectable
+class Connectable
 {
  public:
-  virtual void connect_output(
-    sprockit::sim_parameters* params,
+  virtual void connectOutput(
+    SST::Params& params,
     int src_outport,
     int dst_inport,
-    event_link* link) = 0;
+    EventLink* link) = 0;
 
-  virtual void connect_input(
-    sprockit::sim_parameters* params,
+  virtual void connectInput(
+    SST::Params& params,
     int src_outport,
     int dst_inport,
-    event_link* link) = 0;
+    EventLink* link) = 0;
 };
 ````
 
@@ -1558,16 +1558,16 @@ The connection must be configured at both source and destination.
 The function is called twice for each side of the connection. If we have a source and destination:
 
 ````
-connectable* src = ...
-connectable* dst = ...
-sprockit::sim_parameters* params = ...
-src->connect_output(params, inport, outport, Output, dst);
-dst->connect_input(params, inport, outport, Input, src);
+Connectable* src = ...
+Connectable* dst = ...
+SST::Params& params = ...
+src->connectOutput(params, inport, outport, Output, dst);
+dst->connectInput(params, inport, outport, Input, src);
 ````
 
-A certain style and set of rules is recommended for all connectables.
+A certain style and set of rules is recommended for all Connectables.
 If these rules are ignored, setting up connections can quicky become confusing and produce difficult to maintain code.
-The first and most important rule is that `connectables` never make their own connections.
+The first and most important rule is that `Connectables` never make their own connections.
 Some "meta"-object should create connections between objects.
 In general, this work is left to a `interconnect` object.
 An object should never be responsible for knowing about the "world" outside itself.
@@ -1581,8 +1581,8 @@ If you need a bidirectional link (A \rightarrow B, B \rightarrow A),
 two separate function calls should be made
 
 ````
-A->connect_output(B);
-B->connect_input(A);
+A->connectOutput(B);
+B->connectInput(A);
 ````
 
 rather than having, e.g. A create a bidirectional link.
@@ -1591,7 +1591,7 @@ The first two rules should be considered rigorous.
 A third recommended rule is that all port numbers should be non-negative, and, in most cases, should start numbering from zero.
 
 
-Combining the factory system for polymorphic types and the connectable system for building arbitrary machine links and topologies,
+Combining the factory system for polymorphic types and the Connectable system for building arbitrary machine links and topologies,
 SST-macro provides flexibility for building essentially any machine model you want.
 However, SST-macro provides a recommended machine structure to guide constructing machine models.
 
@@ -1618,42 +1618,42 @@ virtual bool uniform_network_ports() const = 0;
 
 virtual bool uniform_switches_non_uniform_network_ports() const = 0;
 
-virtual bool uniform_switches() const = 0;
+virtual bool uniformSwitches() const = 0;
 
-virtual void connected_outports(switch_id src, std::vector<topology::connection>& conns) const = 0;
+virtual void connectedOutports(SwitchId src, std::vector<topology::connection>& conns) const = 0;
 
-virtual void configure_individual_port_params(switch_id src,
+virtual void configureIndividualPortParams(SwitchId src,
       sprockit::sim_parameters* switch_params) const = 0;
 
-virtual in num_switches() const = 0;
+virtual in numSwitches() const = 0;
 
-virtual int num_nodes() const = 0;
+virtual int numNodes() const = 0;
 
 virtual int num_endpoints() const = 0;
 
-virtual int max_num_ports() const = 0;
+virtual int maxNumPorts() const = 0;
 
-virtual int num_hops_to_node(node_id src, node_id dst) const = 0;
+virtual int numHopsToNode(NodeId src, NodeId dst) const = 0;
 
-virtual void endpoints_connected_to_injection_switch(switch_id swid,
+virtual void endpointsConnectedToInjectionSwitch(SwitchId swid,
                       std::vector<injection_port>& nodes) const = 0;
 
-virtual void endpoints_connected_to_ejection_switch(switch_id swid,
+virtual void endpointsConnectedToEjectionSwitch(SwitchId swid,
                       std::vector<injection_port>& nodes) const = 0;
 ````
 
 These functions are documented in the `topology.h` header file.
 The first few functions just give the number of switches, number of nodes, and finally which nodes are connected to a given switch.
 Each compute node will be connected to an injector switch and an ejector switch (often the same switch).
-The most important functions are `endpoints_connected_to_injection_switch` - which nodes are connected to which switches and which ports make the links -
+The most important functions are `endpointsConnectedToInjectionSwitch` - which nodes are connected to which switches and which ports make the links -
 and also `connected_outports` - which switches are connected to which switches and which ports make the links.
 
 The `connection` struct is:
 
 ````
 struct connection {
-    switch_id src;
-    switch_id dst;
+    SwitchId src;
+    SwitchId dst;
     int src_outport;
     int dst_inport;
 };
@@ -1663,7 +1663,7 @@ Similarly, the struct `injection_port` is:
 
 ````
 struct injection_port {
-  node_id nid;
+  NodeId nid;
   int switch_port;
   int ep_port;
 };
@@ -1695,7 +1695,7 @@ For adaptive routing, a bit more work is done.
 Each router is connect to a switch object which holds all the information about queue lengths, e.g.
 
 ````
-int test_length = get_switch()->queue_length(paths[i].outport);
+int test_length = get_switch()->queueLength(paths[i].outport);
 ````
 allowing the router to select an alternate path if the congestion is too high. 
 
@@ -1719,24 +1719,24 @@ Congestion is modeled via flow control - choosing which packets or flits move ac
 The basic scheme for most switches follows the code below for the `pisces` model.
 
 ````
-void pisces_switch::handle_credit(event *ev)
+void PiscesSwitch::handleCredit(event *ev)
 {
   pisces_credit* credit = static_cast<pisces_credit*>(ev);
-  out_buffers_[credit->port()]->handle_credit(credit);
+  out_buffers_[credit->port()]->handleCredit(credit);
 }
 
-void pisces_switch::handle_payload(event *ev)
+void PiscesSwitch::handlePayload(event *ev)
 {
   pisces_payload* payload = static_cast<pisces_payload*>(ev);
   router_->route(payload);
-  xbar_->handle_payload(payload);
+  xbar_->handlePayload(payload);
 }
 ````
 The arriving event is sent to either a credit handler or a payload handler,
 which is configured during simulation setup.
 If a payload packet (rather than a credit), the router object selects the next destination (port).
 The packet is then passed to the crossbar for arbitration.
-A switch inherits from `connectable`, requiring it to implement the `connect_output/connect_input` and `payload_handler/credit_handler` functions.
+A switch inherits from `Connectable`, requiring it to implement the `connectOutput/connectInput` and `payloadHandler/creditHandler` functions.
 
 ### Section 7.6: Interconnect: Putting it all together<a name="sec:topInterconnect"></a>
 
@@ -1751,56 +1751,56 @@ To illustrate, here is the code for the interconnect that creates the node objec
 The interconnect is itself a factory object, configured from a parameter file.
 
 ````
-interconnect::interconnect(sprockit::sim_parameters* params, event_manager* mgr, 
+interconnect::interconnect(SST::Params& params, EventManager* mgr, 
 	partition* part, parallel_runtime* rt)
 {
-  sprockit::sim_parameters* top_params = params->get_namespace("topology");
-  topology_ = topology_factory::get_param("name", top_params);
-  num_nodes_ = topology_->num_nodes();
-  num_switches_ = topology_->num_switches();
+  sprockit::sim_parameters* top_params = params.find_scoped_params("topology");
+  topology_ = topology_factory::getParam("name", top_params);
+  num_nodes_ = topology_->numNodes();
+  num_switches_ = topology_->numSwitches();
 
   switches_.resize(num_switches_);
   nodes_.resize(num_nodes_);
 
-  sprockit::sim_parameters* node_params = params->get_namespace("node");
-  sprockit::sim_parameters* switch_params = params->get_namespace("switch");
+  sprockit::sim_parameters* node_params = params.find_scoped_params("node");
+  sprockit::sim_parameters* switch_params = params.find_scoped_params("switch");
 
-  sprockit::sim_parameters* nic_params = node_params->get_namespace("nic");
-  sprockit::sim_parameters* inj_params = nic_params->get_namespace("injection");
-  sprockit::sim_parameters* ej_params = switch_params->get_namespace("ejection"); 
+  sprockit::sim_parameters* nic_params = node_params.find_scoped_params("nic");
+  sprockit::sim_parameters* inj_params = nic_params.find_scoped_params("injection");
+  sprockit::sim_parameters* ej_params = switch_params.find_scoped_params("ejection"); 
 
-  build_endpoints(node_params, nic_params, mgr);
-  build_switches(switch_params, mgr);
-  connect_endpoints(inj_params, ej_params);
-  connect_switches(switch_params); 
+  buildEndpoints(node_params, nic_params, mgr);
+  buildSwitches(switch_params, mgr);
+  connectEndpoints(inj_params, ej_params);
+  connectSwitches(switch_params); 
 }
 ````
 
 For full details of the functions that build/connect endpoints and switches, consult the source code.
-In general, the `interconnect` object uses the connectable interface to setup all the connections.
+In general, the `interconnect` object uses the Connectable interface to setup all the connections.
 It uses the topology interface to determine which connections are required, e.g.
 
 ````
-switch_id src = ...
+SwitchId src = ...
 std::vector<topology::connection> outports;
-topology_->connected_outports(src, outports);
+topology_->connectedOutports(src, outports);
 for (auto& conn : outports){
-  network_switch* dst_sw = switches_[conn.dst];
-  src_sw->connect_output(params, conn.src_outport, conn.dst_inport,
-  					 dst_sw->payload_handler(conn.dst_inport));
-  dst_sw->connect_input(params, conn.src_outport, conn.dst_inport,
-  				       src_sw->credit_handler(conn.src_outport));
+  NetworkSwitch* dst_sw = switches_[conn.dst];
+  src_sw->connectOutput(params, conn.src_outport, conn.dst_inport,
+  					 dst_sw->payloadHandler(conn.dst_inport));
+  dst_sw->connectInput(params, conn.src_outport, conn.dst_inport,
+  				       src_sw->creditHandler(conn.src_outport));
 }
 ````
 The `connected_outports` function takes a given source switch and returns all the connections that the
-switch is supposed to make.  Each switch must provide `payload_handler` and `ack_handler` functions to return
-the `event_handler` that should receive either new packets (payload) or credits (ack) for the connections.
+switch is supposed to make.  Each switch must provide `payloadHandler` and `ack_handler` functions to return
+the `EventHandler` that should receive either new packets (payload) or credits (ack) for the connections.
 
 ### Section 7.7: Node<a name="sec:node"></a>
 
 
 Although the `node` can be implemented as a very complex model, it fundamentally only requires a single set of functions to meet the public interface.
-The `node` must provide `execute_kernel` functions that are invoked by the `operating_system` or other other software objects.
+The `node` must provide `execute_kernel` functions that are invoked by the `OperatingSystem` or other other software objects.
 The prototypes for these are:
 
 ````
@@ -1827,16 +1827,16 @@ The network interface can implement many services, but the basic public interfac
 For sending messages, the NIC must implement
 
 ````
-virtual void do_send(network_message* payload);
+virtual void doSend(NetworkMessage* payload);
 ````
 A non-virtual, top-level `send` function performs operations standard to all NICs.
-Once these operations are complete, the NIC invokes `do_send` to perform model-specific send operations.
-The NIC should only ever send `network_message` types.
+Once these operations are complete, the NIC invokes `doSend` to perform model-specific send operations.
+The NIC should only ever send `NetworkMessage` types.
 
-For the bare-bones class `logp_nic`, the function is
+For the bare-bones class `LogPNIC`, the function is
 
 ````
-void logp_nic::do_send(network_message* msg)
+void LogPNIC::doSend(NetworkMessage* msg)
 {
   long num_bytes = msg->byte_length();
   timestamp now_ = now();
@@ -1848,7 +1848,7 @@ void logp_nic::do_send(network_message* msg)
   next_free_ = start_send + time_to_inject;
   if (msg->needs_ack()) {
     //do whatever you need to do so that this msg decouples all pointers
-    network_message* acker = msg->clone_injection_ack();
+    NetworkMessage* acker = msg->clone_injection_ack();
     schedule(next_free_, parent_->self_handler(), acker); //send to node
   }
 }
@@ -1866,13 +1866,7 @@ The methods are not pure virtual.  Depending on the congestion model,  the NIC m
 Upon receipt, just as for ACKs, the NIC should deliver the message to the node to interpret.
 In general, `nic::handle` is intended to handle packets. 
 If a NIC supports direct handling of complete messages (MTL) instead of packets (BTL),
-it should provide a message handler:
-
-````
-event_handler* mtl_handler() const {
-  return mtl_handler_;
-}
-````
+it should provide a message handler.
 
 A special completion queue object tracks chunks and processes out-of-order arrivals,
 notifying the NIC when the entire message is done.
@@ -1948,11 +1942,11 @@ We got some functions for free by inheriting from `structured_topology`.
 We start with
 
 ````
-xpress_ring::xpress_ring(sprockit::sim_parameters* params) :
+xpress_ring::xpress_ring(SST::Params& params) :
   structured_topology(params)
 {
-  ring_size_ = params->get_int_param("xpress_ring_size");
-  jump_size_ = params->get_int_param("xpress_jump_size");
+  ring_size_ = params.find<int>("xpress_ring_size");
+  jump_size_ = params.find<int>("xpress_jump_size");
 }
 ````
 determining how many switches are in the ring and how big a "jump" link is.
@@ -1960,7 +1954,7 @@ determining how many switches are in the ring and how big a "jump" link is.
 The topology then needs to tell objects how to connect
 
 ````
-void xpress_ring::connected_outports(switch_id src, std::vector<connection>& conns)
+void xpress_ring::connectedOutports(SwitchId src, std::vector<connection>& conns)
 {
   conns.resize(4); //every switch has 4 connections
   auto& plusConn = conns[0];
@@ -2008,7 +2002,7 @@ int xpress_ring::num_hops(int total_distance) const
 }
 
 int
-xpress_ring::minimal_distance(
+xpress_ring::minimalDistance(
   const coordinates& src_coords,
   const coordinates& dest_coords) const
 {
@@ -2100,16 +2094,16 @@ There are three important components to build.
 #### 9.2.1: Event Manager<a name="sec:eventMan"></a>
 
 
-The `event_manager` object is a polymorphic type that depends on 1) what sort of parallelism is being used and 2) what sort of data structure is being used.
-Some allowed values include `event_map` or `event_calendar` via the `event_manager` variable in the input file.
+The `EventManager` object is a polymorphic type that depends on 1) what sort of parallelism is being used and 2) what sort of data structure is being used.
+Some allowed values include `event_map` or `event_calendar` via the `EventManager` variable in the input file.
 For parallel simulation, only the `event_map` data structure is currently supported.
-For MPI parallel simulations, the `event_manager` parameter should be set to `clock_cycle_parallel`.
+For MPI parallel simulations, the `EventManager` parameter should be set to `clock_cycle_parallel`.
 For multithreaded simulations (single process or coupled with MPI), this should be set to `multithread`.
 In most cases, SST-macro chooses a sensible default based on the configuration and installation.
 
 As of right now, the event manager is also responsible for partitioning the simulation.
 This may be refactored in future versions.
-This creates something of a circular dependency between the `event_manager` and the `interconnect` objects.
+This creates something of a circular dependency between the `EventManager` and the `interconnect` objects.
 When scheduling events and sending events remotely,
 it is highly convenient to have the partition information accessible by the event manager.
 For now, the event manager reads the topology information from the input file.
@@ -2120,11 +2114,11 @@ This partitioning object is passed on to the interconnect.
 
 
 The interconnect is the workhorse for building all hardware components.
-After receiving the partition information from the `event_manager`,
+After receiving the partition information from the `EventManager`,
 the interconnect creates all the nodes, switches, and NICs the current MPI rank is responsible for.
 In parallel runs, each MPI rank only gets assigned a unique, disjoint subset of the components.
-The interconnect then also creates all the connections between components that are linked based on the topology input (see Section [7.2](#sec:connectables)).
-For components that are not owned by the current MPI rank, the interconnect inserts a dummy handler that informs the `event_manager`
+The interconnect then also creates all the connections between components that are linked based on the topology input (see Section [7.2](#sec:Connectables)).
+For components that are not owned by the current MPI rank, the interconnect inserts a dummy handler that informs the `EventManager`
 that the message needs to be re-routed to another MPI rank.
 
 #### 9.2.3: Applications<a name="subsec:apps"></a>
@@ -2136,7 +2130,7 @@ The interconnect builds a set of node objects corresponding to compute nodes in 
 In the constructor for `node` we have:
 
 ````
-job_launcher_ = job_launcher::static_job_launcher(params, mgr;
+JobLauncher_ = JobLauncher::static_JobLauncher(params, mgr;
 ````
 
 This job launcher roughly corresponds to SLURM, PBS, or MOAB - some process manager that will allocate nodes to a job request and spawn processes on the nodes. For implementation reasons, each node grabs a reference to a static job launcher.  After construction, each node will have its `init` function invoked.
@@ -2155,7 +2149,7 @@ The `build_launchers` will detect all the launch requests from the input file.  
 void node::schedule_launches()
 {
   for (app_launch* appman : launchers_){
-    schedule(appman->time(), new_callback(this, &node::job_launch, appman));
+    schedule(appman->time(), newCallback(this, &node::job_launch, appman));
   }
 }
 ````
@@ -2166,7 +2160,7 @@ When the time for a job launch request is reached, the callback function is invo
 ````
 void node::job_launch(app_launch* appman)
 {
-  job_launcher_->handle_new_launch_request(appman, this);
+  JobLauncher_->handle_new_launch_request(appman, this);
 }
 ````
 For the default job launcher (in most cases SST/macro only simulates a single job in which case no scheduler is needed) the job launches immediately. 
@@ -2175,7 +2169,7 @@ The code for the default job launcher is:
 ````
 ordered_node_set allocation;
 appman->request_allocation(available_, allocation);
-for (const node_id& nid : allocation){
+for (const NodeId& nid : allocation){
   if (available_.find(nid) == available_.end()){
     spkt_throw_printf(sprockit::value_error,
                       "allocation requested node %d, but it's not available",
@@ -2209,7 +2203,7 @@ In most cases, only a single application is being used, in which case the applic
 
 
 Now that all hardware components have been created and all application objects have been assigned to physical nodes,
-the `event_manager` created above is started.
+the `EventManager` created above is started.
 It begins looping through all events in the queue ordered by timestamp and runs them.
 As stated above, all events originate from application code.
 Thus, the first events to run are always the application launch events generated from the launch messages sent to the nodes generated the job launcher.
@@ -2263,7 +2257,7 @@ Although this can be done manually, a special template function is provided for 
 
 
 ````
-hist_msg_size_ = optional_stats<stat_histogram>(parent,
+hist_msg_size_ = optionalStats<stat_histogram>(parent,
         params, "message_size_histogram", "histogram");
 ````
 This returns a nullptr if the params does not have a namespace "message\_size\_histogram."  Otherwise it builds a stats object corresponding to the registered factory type "histogram." By returning a nullptr, the SST component can check if the stats are active.  If stats are required, the same function prototype can be used with `required_stats` which then aborts if the correct parameters are not found. 
@@ -2272,7 +2266,7 @@ The histogram constructor initializes a few parameters internally.
 
 ````
 bin_size_ = params->get_quantity("bin_size");
-is_log_ = params->get_optional_bool_param("logarithmic", false);
+is_log_ = params.find<bool>("logarithmic", false);
 ````
 defining how large histogram bins are, whether the scale is logarithmic, and finally defining a file root for dumping results later.
 Internally in the event manager, all objects with the same file root are grouped together.
@@ -2287,9 +2281,9 @@ The first set of virtual functions that every stats object must provide are
 ````
 virtual void simulation_finished(timestamp end) = 0;
 
-virtual void dump_local_data() = 0;
+virtual void dumpLocalData() = 0;
 
-virtual void dump_global_data() = 0;
+virtual void dumpGlobalData() = 0;
 ````
 
 `simulation_finished` tells the stats object what the final time of the simulation is and allows any final post-processing to be done.
@@ -2310,7 +2304,7 @@ Each stats object is therefore required to provide the functions
 ````
 virtual void reduce(stat_collector* coll) = 0;
 
-virtual void global_reduce(parallel_runtime* rt) = 0;
+virtual void globalReduce(parallel_runtime* rt) = 0;
 ````
 The first function does a local reduce.
 The object calling the `reduce` function aggregates data into itself from input parameter `coll`
@@ -2349,16 +2343,16 @@ void stat_histogram::reduce(stat_collector *coll)
 and for the global reduce
 
 ````
-void stat_histogram::global_reduce(parallel_runtime* rt)
+void stat_histogram::globalReduce(parallel_runtime* rt)
 {
   int root = 0;
   /** Align everyone to have the same number of bins */
   int my_num_bins = counts_.size();
-  int num_bins = rt->global_max(my_num_bins);
+  int num_bins = rt->globalMax(my_num_bins);
   counts_.resize(num_bins);
 
   /** Now global sum the data vector */
-  rt->global_sum(&counts_[0], num_bins, root);
+  rt->globalSum(&counts_[0], num_bins, root);
 }
 ````
 

@@ -44,7 +44,7 @@ Although this can be done manually, a special template function is provided for 
 
 
 \begin{CppCode}
-hist_msg_size_ = optional_stats<stat_histogram>(parent,
+hist_msg_size_ = optionalStats<stat_histogram>(parent,
         params, "message_size_histogram", "histogram");
 \end{CppCode}
 This returns a nullptr if the params does not have a namespace ``message\_size\_histogram.''  Otherwise it builds a stats object corresponding to the registered factory type ``histogram.'' By returning a nullptr, the SST component can check if the stats are active.  If stats are required, the same function prototype can be used with \inlinecode{required_stats} which then aborts if the correct parameters are not found. 
@@ -53,7 +53,7 @@ The histogram constructor initializes a few parameters internally.
 
 \begin{CppCode}
 bin_size_ = params->get_quantity("bin_size");
-is_log_ = params->get_optional_bool_param("logarithmic", false);
+is_log_ = params.find<bool>("logarithmic", false);
 \end{CppCode}
 defining how large histogram bins are, whether the scale is logarithmic, and finally defining a file root for dumping results later.
 Internally in the event manager, all objects with the same file root are grouped together.
@@ -66,9 +66,9 @@ The first set of virtual functions that every stats object must provide are
 \begin{CppCode}
 virtual void simulation_finished(timestamp end) = 0;
 
-virtual void dump_local_data() = 0;
+virtual void dumpLocalData() = 0;
 
-virtual void dump_global_data() = 0;
+virtual void dumpGlobalData() = 0;
 \end{CppCode}
 
 \inlinecode{simulation_finished} tells the stats object what the final time of the simulation is and allows any final post-processing to be done.
@@ -87,7 +87,7 @@ Each stats object is therefore required to provide the functions
 \begin{CppCode} 
 virtual void reduce(stat_collector* coll) = 0;
 
-virtual void global_reduce(parallel_runtime* rt) = 0;
+virtual void globalReduce(parallel_runtime* rt) = 0;
 \end{CppCode}
 The first function does a local reduce.
 The object calling the \inlinecode{reduce} function aggregates data into itself from input parameter \inlinecode{coll}
@@ -126,16 +126,16 @@ void stat_histogram::reduce(stat_collector *coll)
 and for the global reduce
 
 \begin{CppCode}
-void stat_histogram::global_reduce(parallel_runtime* rt)
+void stat_histogram::globalReduce(parallel_runtime* rt)
 {
   int root = 0;
   /** Align everyone to have the same number of bins */
   int my_num_bins = counts_.size();
-  int num_bins = rt->global_max(my_num_bins);
+  int num_bins = rt->globalMax(my_num_bins);
   counts_.resize(num_bins);
   
   /** Now global sum the data vector */
-  rt->global_sum(&counts_[0], num_bins, root);
+  rt->globalSum(&counts_[0], num_bins, root);
 }
 \end{CppCode}
 

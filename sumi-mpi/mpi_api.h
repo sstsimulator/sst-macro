@@ -70,35 +70,34 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sprockit/sim_parameters_fwd.h>
 #include <unordered_map>
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 
-#include <sstmac/libraries/sumi/sumi_transport.h>
+#include <sumi/sim_transport.h>
 
 #include <sumi-mpi/otf2_output_stat_fwd.h>
 
 namespace sumi {
 
-using sstmac::sw::software_id;
-using sstmac::sw::operating_system;
-
-class mpi_api :
-  public sstmac::sumi_transport
+class MpiApi : public sumi::SimTransport
 {
-  RegisterAPI("mpi", mpi_api)
+  friend class OTF2Writer;
+ public:
+  SST_ELI_REGISTER_DERIVED(
+    API,
+    MpiApi,
+    "macro",
+    "mpi",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "provides the MPI transport API")
 
-  friend class otf2_writer;
+  MpiApi(SST::Params& params, sstmac::sw::App* app, SST::Component* comp);
+
+  static void deleteStatics();
 
  public:
-  mpi_api(sprockit::sim_parameters* params,
-          sstmac::sw::software_id sid,
-          sstmac::sw::operating_system* os);
+  virtual ~MpiApi();
 
-  static void delete_statics();
-
- public:
-  virtual ~mpi_api();
-
-  mpi_queue* queue() {
+  MpiQueue* queue() {
     return queue_;
   }
 
@@ -108,25 +107,25 @@ class mpi_api :
    * @return Whether a global collective has been crossed
    *
    */
-  bool crossed_comm_world_barrier() const {
+  bool crossedCommWorldBarrier() const {
     return crossed_comm_world_barrier_;
   }
 
-  mpi_comm* comm_world() const {
+  MpiComm* commWorld() const {
     return worldcomm_;
   }
 
-  mpi_comm* comm_self() const {
+  MpiComm* commSelf() const {
     return selfcomm_;
   }
 
-  int comm_get_attr(MPI_Comm, int comm_keyval, void* attribute_val, int* flag);
+  int commGetAttr(MPI_Comm, int comm_keyval, void* attribute_val, int* flag);
 
-  int comm_rank(MPI_Comm comm, int* rank);
+  int commRank(MPI_Comm comm, int* rank);
 
-  int comm_size(MPI_Comm comm, int* size);
+  int commSize(MPI_Comm comm, int* size);
 
-  int type_size(MPI_Datatype type, int* size);
+  int typeSize(MPI_Datatype type, int* size);
 
   int initialized(int* flag){
     *flag = (status_ == is_initialized);
@@ -138,15 +137,15 @@ class mpi_api :
     return MPI_SUCCESS;
   }
 
-  int buffer_attach(void* buffer, int size){
+  int bufferAttach(void* buffer, int size){
     return MPI_SUCCESS;
   }
 
-  int buffer_detach(void* buffer, int* size){
+  int bufferDetach(void* buffer, int* size){
     return MPI_SUCCESS;
   }
 
-  int init_thread(int* argc, char*** argv, int required, int* provided){
+  int initThread(int* argc, char*** argv, int required, int* provided){
     init(argc, argv);
     *provided = required;
     return MPI_SUCCESS;
@@ -159,42 +158,42 @@ class mpi_api :
 
   double wtime();
 
-  void set_generate_ids(bool flag){
+  void setGenerateIds(bool flag){
     generate_ids_ = flag;
   }
 
-  bool generate_ids() const {
+  bool generateIds() const {
     return generate_ids_;
   }
 
   int abort(MPI_Comm comm, int errcode);
 
-  int errhandler_set(MPI_Comm comm, MPI_Errhandler handler){
+  int errhandlerSet(MPI_Comm comm, MPI_Errhandler handler){
     return MPI_SUCCESS;
   }
 
-  int errhandler_create(MPI_Handler_function *function, MPI_Errhandler *errhandler){
+  int errhandlerCreate(MPI_Handler_function *function, MPI_Errhandler *errhandler){
     return MPI_SUCCESS;
   }
 
-  int error_class(int errorcode, int* errorclass){
+  int errorClass(int errorcode, int* errorclass){
     *errorclass = 0;
     return MPI_SUCCESS;
   }
 
-  int error_string(int errorcode, char* str, int* resultlen);
+  int errorString(int errorcode, char* str, int* resultlen);
 
-  int comm_split(MPI_Comm incomm, int color, int key, MPI_Comm* outcomm);
+  int commSplit(MPI_Comm incomm, int color, int key, MPI_Comm* outcomm);
 
-  int comm_dup(MPI_Comm input, MPI_Comm* output);
+  int commDup(MPI_Comm input, MPI_Comm* output);
 
-  int comm_create(MPI_Comm input, MPI_Group group, MPI_Comm* output);
+  int commCreate(MPI_Comm input, MPI_Group group, MPI_Comm* output);
 
-  int comm_group(MPI_Comm comm, MPI_Group* grp);
+  int commGroup(MPI_Comm comm, MPI_Group* grp);
 
-  int comm_create_group(MPI_Comm comm, MPI_Group group, int tag, MPI_Comm * newcomm);
+  int commCreateGroup(MPI_Comm comm, MPI_Group group, int tag, MPI_Comm * newcomm);
 
-  void comm_create_with_id(MPI_Comm input, MPI_Group group, MPI_Comm new_comm);
+  void commCreateWithId(MPI_Comm input, MPI_Group group, MPI_Comm new_comm);
 
   /**
    * @param group
@@ -202,38 +201,38 @@ class mpi_api :
    * @param members
    * @return Whether the current rank is in the group
    */
-  bool group_create_with_id(MPI_Group group, int num_members, const int* members);
+  bool groupCreateWithId(MPI_Group group, int num_members, const int* members);
 
-  int cart_create(MPI_Comm comm_old, int ndims, const int dims[],
+  int cartCreate(MPI_Comm comm_old, int ndims, const int dims[],
               const int periods[], int reorder, MPI_Comm *comm_cart);
 
-  int cart_get(MPI_Comm comm, int maxdims, int dims[], int periods[], int coords[]);
+  int cartGet(MPI_Comm comm, int maxdims, int dims[], int periods[], int coords[]);
 
-  int cartdim_get(MPI_Comm comm, int *ndims);
+  int cartdimGet(MPI_Comm comm, int *ndims);
 
-  int cart_rank(MPI_Comm comm, const int coords[], int *rank);
+  int cartRank(MPI_Comm comm, const int coords[], int *rank);
 
-  int cart_shift(MPI_Comm comm, int direction, int disp,
+  int cartShift(MPI_Comm comm, int direction, int disp,
                  int *rank_source, int *rank_dest);
 
-  int cart_coords(MPI_Comm comm, int rank, int maxdims, int coords[]);
+  int cartCoords(MPI_Comm comm, int rank, int maxdims, int coords[]);
 
-  int comm_free(MPI_Comm* input);
+  int commFree(MPI_Comm* input);
 
-  int comm_set_errhandler(MPI_Comm comm, MPI_Errhandler errhandler){
+  int commSetErrhandler(MPI_Comm comm, MPI_Errhandler errhandler){
     return MPI_SUCCESS;
   }
 
-  int group_incl(MPI_Group oldgrp,
+  int groupIncl(MPI_Group oldgrp,
              int num_ranks,
              const int* ranks,
              MPI_Group* newgrp);
 
-  int group_range_incl(MPI_Group oldgrp, int n, int ranges[][3], MPI_Group* newgrp);
+  int groupRangeIncl(MPI_Group oldgrp, int n, int ranges[][3], MPI_Group* newgrp);
 
-  int group_free(MPI_Group* grp);
+  int groupFree(MPI_Group* grp);
 
-  int group_translate_ranks(MPI_Group grp1, int n, const int* ranks1, MPI_Group grp2, int* ranks2);
+  int groupTranslateRanks(MPI_Group grp1, int n, const int* ranks1, MPI_Group grp2, int* ranks2);
 
   int sendrecv(const void* sendbuf, int sendcount,
         MPI_Datatype sendtype, int dest, int sendtag,
@@ -245,7 +244,7 @@ class mpi_api :
            MPI_Datatype datatype, int dest, int tag,
            MPI_Comm comm);
 
-  int send_init(const void *buf, int count, MPI_Datatype datatype, int dest,
+  int sendInit(const void *buf, int count, MPI_Datatype datatype, int dest,
                 int tag, MPI_Comm comm, MPI_Request *request);
 
   int isend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,
@@ -257,7 +256,7 @@ class mpi_api :
   int irecv(void *buf, int count, MPI_Datatype datatype, int source,
             int tag, MPI_Comm comm, MPI_Request *request);
 
-  int recv_init(void *buf, int count, MPI_Datatype datatype,
+  int recvInit(void *buf, int count, MPI_Datatype datatype,
       int source, int tag, MPI_Comm comm, MPI_Request *request);
 
   int request_free(MPI_Request* req);
@@ -385,17 +384,17 @@ class mpi_api :
             int count, MPI_Datatype type, MPI_Op op,
             MPI_Comm comm);
 
-  int reduce_scatter(int* recvcnts, MPI_Datatype type,
+  int reduceScatter(int* recvcnts, MPI_Datatype type,
                  MPI_Op op, MPI_Comm comm);
 
-  int reduce_scatter(const void* src, void* dst,
+  int reduceScatter(const void* src, void* dst,
                  const int* recvcnts, MPI_Datatype type,
                  MPI_Op op, MPI_Comm comm);
 
-  int reduce_scatter_block(int recvcnt, MPI_Datatype type,
+  int reduceScatterBlock(int recvcnt, MPI_Datatype type,
                  MPI_Op op, MPI_Comm comm);
 
-  int reduce_scatter_block(const void* src, void* dst,
+  int reduceScatterBlock(const void* src, void* dst,
                  int recvcnt, MPI_Datatype type,
                  MPI_Op op, MPI_Comm comm);
 
@@ -502,42 +501,42 @@ class mpi_api :
         int count, MPI_Datatype type, MPI_Op op,
         MPI_Comm comm, MPI_Request* req);
 
-  int ireduce_scatter(int* recvcnts, MPI_Datatype type,
+  int ireduceScatter(int* recvcnts, MPI_Datatype type,
                  MPI_Op op, MPI_Comm comm, MPI_Request* req);
 
-  int ireduce_scatter(const void* src, void* dst,
+  int ireduceScatter(const void* src, void* dst,
                  const int* recvcnts, MPI_Datatype type,
                  MPI_Op op, MPI_Comm comm, MPI_Request* req);
 
-  int ireduce_scatter_block(int recvcnt, MPI_Datatype type,
+  int ireduceScatterBlock(int recvcnt, MPI_Datatype type,
                  MPI_Op op, MPI_Comm comm, MPI_Request* req);
 
-  int ireduce_scatter_block(const void* src, void* dst,
+  int ireduceScatterBlock(const void* src, void* dst,
                  int recvcnt, MPI_Datatype type,
                  MPI_Op op, MPI_Comm comm, MPI_Request* req);
 
 
-  int type_get_name(MPI_Datatype type, char* type_name, int* resultlen);
+  int typeGetName(MPI_Datatype type, char* type_name, int* resultlen);
 
-  int type_set_name(MPI_Datatype type, const char* type_name);
+  int typeSetName(MPI_Datatype type, const char* type_name);
 
-  int type_extent(MPI_Datatype type, MPI_Aint* extent);
+  int typeExtent(MPI_Datatype type, MPI_Aint* extent);
 
-  int pack_size(int incount, MPI_Datatype datatype,
+  int packSize(int incount, MPI_Datatype datatype,
          MPI_Comm comm, int *size);
 
-  int win_flush(int rank, MPI_Win win);
+  int winFlush(int rank, MPI_Win win);
 
-  int win_flush_local(int rank, MPI_Win win);
+  int winFlushLocal(int rank, MPI_Win win);
 
-  int win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
+  int winCreate(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
                  MPI_Comm comm, MPI_Win *win);
 
-  int win_free(MPI_Win *win);
+  int winFree(MPI_Win *win);
 
-  int win_lock(int lock_type, int rank, int assert, MPI_Win win);
+  int winLock(int lock_type, int rank, int assert, MPI_Win win);
 
-  int win_unlock(int rank, MPI_Win win);
+  int winUnlock(int rank, MPI_Win win);
 
   int get(void *origin_addr, int origin_count, MPI_Datatype
               origin_datatype, int target_rank, MPI_Aint target_disp,
@@ -548,265 +547,276 @@ class mpi_api :
               int target_count, MPI_Datatype target_datatype, MPI_Win win);
 
  public:
-  int op_create(MPI_User_function* user_fn, int commute, MPI_Op* op);
+  int opCreate(MPI_User_function* user_fn, int commute, MPI_Op* op);
 
-  int op_free(MPI_Op* op);
+  int opFree(MPI_Op* op);
 
-  int get_count(const MPI_Status* status, MPI_Datatype datatype, int* count);
+  int getCount(const MPI_Status* status, MPI_Datatype datatype, int* count);
 
-  int type_dup(MPI_Datatype intype, MPI_Datatype* outtype);
+  int typeDup(MPI_Datatype intype, MPI_Datatype* outtype);
 
-  int type_set_name(MPI_Datatype id, const std::string &name);
+  int typeSetName(MPI_Datatype id, const std::string &name);
 
-  int type_indexed(int count, const int _blocklens_[],
+  int typeIndexed(int count, const int _blocklens_[],
                const int* _indices_,
                MPI_Datatype intype, MPI_Datatype* outtype);
 
-  int type_hindexed(int count, const int _blocklens_[],
+  int typeHindexed(int count, const int _blocklens_[],
               const MPI_Aint* _indices_,
                MPI_Datatype intype, MPI_Datatype* outtype);
 
 
-  int type_contiguous(int count, MPI_Datatype old_type, MPI_Datatype* new_type);
+  int typeContiguous(int count, MPI_Datatype old_type, MPI_Datatype* new_type);
 
-  int type_vector(int count, int blocklength, int stride,
+  int typeVector(int count, int blocklength, int stride,
               MPI_Datatype old_type,
               MPI_Datatype* new_type);
 
-  int type_hvector(int count, int blocklength, MPI_Aint stride,
+  int typeHvector(int count, int blocklength, MPI_Aint stride,
               MPI_Datatype old_type,
               MPI_Datatype* new_type);
 
-  int type_create_struct(const int count, const int* blocklens,
+  int typeCreateStruct(const int count, const int* blocklens,
               const MPI_Aint* displs,
               const MPI_Datatype* old_types,
               MPI_Datatype* newtype);
 
-  int type_create_struct(const int count, const int* blocklens,
+  int typeCreateStruct(const int count, const int* blocklens,
               const int* displs,
               const MPI_Datatype* old_types,
               MPI_Datatype* newtype);
 
-  int type_commit(MPI_Datatype* type);
+  int typeCommit(MPI_Datatype* type);
 
-  int type_free(MPI_Datatype* type);
+  int typeFree(MPI_Datatype* type);
 
-  mpi_type* type_from_id(MPI_Datatype id);
+  MpiType* typeFromId(MPI_Datatype id);
 
-  void allocate_type_id(mpi_type* type);
+  void allocateTypeId(MpiType* type);
 
-  std::string comm_str(mpi_comm* comm);
+  std::string commStr(MpiComm* comm);
 
-  std::string comm_str(MPI_Comm comm);
+  std::string commStr(MPI_Comm comm);
 
-  std::string tag_str(int tag);
+  std::string tagStr(int tag);
 
-  std::string src_str(int id);
+  std::string srcStr(int id);
 
-  std::string src_str(mpi_comm* comm, int id);
+  std::string srcStr(MpiComm* comm, int id);
 
-  std::string type_str(MPI_Datatype mid);
+  std::string typeStr(MPI_Datatype mid);
 
-  const char* op_str(MPI_Op op);
+  const char* opStr(MPI_Op op);
 
-  mpi_comm* get_comm(MPI_Comm comm);
+  MpiComm* getComm(MPI_Comm comm);
 
-  mpi_group* get_group(MPI_Group grp);
+  MpiGroup* getGroup(MPI_Group grp);
 
-  mpi_request* get_request(MPI_Request req);
+  MpiRequest* getRequest(MPI_Request req);
 
-  void add_comm_ptr(mpi_comm* ptr, MPI_Comm* comm);
+  void addCommPtr(MpiComm* ptr, MPI_Comm* comm);
 
-  void erase_comm_ptr(MPI_Comm comm);
+  void eraseCommPtr(MPI_Comm comm);
 
-  void add_group_ptr(mpi_group* ptr, MPI_Group* grp);
+  void addGroupPtr(MpiGroup* ptr, MPI_Group* grp);
 
-  void add_group_ptr(MPI_Group grp, mpi_group* ptr);
+  void addGroupPtr(MPI_Group grp, MpiGroup* ptr);
 
-  void erase_group_ptr(MPI_Group grp);
+  void eraseGroupPtr(MPI_Group grp);
 
-  void add_request_ptr(mpi_request* ptr, MPI_Request* req);
+  void addRequestPtr(MpiRequest* ptr, MPI_Request* req);
 
-  void erase_request_ptr(MPI_Request req);
+  void eraseRequestPtr(MPI_Request req);
 
-  void check_key(int key);
+  void checkKey(int key);
 
-  void add_keyval(int key, keyval* keyval);
+  void addKeyval(int key, keyval* keyval);
 
-  keyval* get_keyval(int key);
+  keyval *getKeyval(int key);
 
-  void finish_collective(collective_op_base* op);
+  void finishCollective(CollectiveOpBase* op);
 
  private:
-  int do_wait(MPI_Request *request, MPI_Status *status, int& tag, int& source);
+  int doWait(MPI_Request *request, MPI_Status *status, int& tag, int& source);
 
-  void finalize_wait_request(mpi_request* reqPtr, MPI_Request* request, MPI_Status* status);
+  void finalizeWaitRequest(MpiRequest* reqPtr, MPI_Request* request, MPI_Status* status);
 
-  int do_type_hvector(int count, int blocklength, MPI_Aint stride,
-              mpi_type* old_type,
+  int doTypeHvector(int count, int blocklength, MPI_Aint stride,
+              MpiType* old_type,
               MPI_Datatype* new_type);
 
-  int do_type_hindexed(int count, const int _blocklens_[],
+  int doTypeHindexed(int count, const int _blocklens_[],
        const MPI_Aint* _indices_,
-       mpi_type* old_type, MPI_Datatype* outtype);
+       MpiType* old_type, MPI_Datatype* outtype);
 
-  void start_mpi_collective(
-      collective::type_t ty,
+  void startMpiCollective(
+      Collective::type_t ty,
       const void* sendbuf, void* recvbuf,
       MPI_Datatype sendtype, MPI_Datatype recvtype,
-      collective_op_base* op);
+      CollectiveOpBase* op);
 
 
-  void* allocate_temp_pack_buffer(int count, mpi_type* type);
+  void* allocateTempPackBuffer(int count, MpiType* type);
 
-  void free_temp_pack_buffer(void* srcbuf);
+  void freeTempPackBuffer(void* srcbuf);
 
-  void wait_collective(collective_op_base* op);
+  /**
+   * @brief waitCollective The function takes ownership of the op.
+   *  This should only be called with a single pending collective.
+   *  If there are multiple pending collectives,
+   *  this can lead to an error condition
+   * @param op Moved collective operation
+   */
+  void waitCollective(CollectiveOpBase::ptr&& op);
 
-  void free_requests(int nreqs, MPI_Request* reqs, int* inds);
+  void waitCollectives(std::vector<CollectiveOpBase::ptr>&& op);
 
-  void commit_builtin_types();
+  void freeRequests(int nreqs, MPI_Request* reqs, int* inds);
 
-  void commit_builtin_type(mpi_type* type, MPI_Datatype id);
+  void commitBuiltinTypes();
 
-  std::string type_label(MPI_Datatype tid);
+  void commitBuiltinType(MpiType* type, MPI_Datatype id);
 
-  void start_allgather(collective_op* op);
+  std::string typeLabel(MPI_Datatype tid);
 
-  void start_alltoall(collective_op* op);
+  sumi::CollectiveDoneMessage*  startAllgather(CollectiveOp* op);
 
-  void start_allreduce(collective_op* op);
+  sumi::CollectiveDoneMessage*  startAlltoall(CollectiveOp* op);
 
-  void start_barrier(collective_op* op);
+  sumi::CollectiveDoneMessage*  startAllreduce(CollectiveOp* op);
 
-  void start_bcast(collective_op* op);
+  sumi::CollectiveDoneMessage*  startBarrier(CollectiveOp* op);
 
-  void start_gather(collective_op* op);
+  sumi::CollectiveDoneMessage*  startBcast(CollectiveOp* op);
 
-  void start_reduce(collective_op* op);
+  sumi::CollectiveDoneMessage*  startGather(CollectiveOp* op);
 
-  void start_reduce_scatter(collective_op* op);
+  sumi::CollectiveDoneMessage*  startReduce(CollectiveOp* op);
 
-  void start_reduce_scatter_block(collective_op* op);
+  sumi::CollectiveDoneMessage*  startReduceScatter(CollectiveOp* op);
 
-  void start_scan(collective_op* op);
+  sumi::CollectiveDoneMessage*  startReduceScatterBlock(CollectiveOp* op);
 
-  void start_scatter(collective_op* op);
+  sumi::CollectiveDoneMessage*  startScan(CollectiveOp* op);
 
-  void start_allgatherv(collectivev_op* op);
+  sumi::CollectiveDoneMessage*  startScatter(CollectiveOp* op);
 
-  void start_alltoallv(collectivev_op* op);
+  sumi::CollectiveDoneMessage*  startAllgatherv(CollectivevOp* op);
 
-  void start_gatherv(collectivev_op* op);
+  sumi::CollectiveDoneMessage*  startAlltoallv(CollectivevOp* op);
 
-  void start_scatterv(collectivev_op* op);
+  sumi::CollectiveDoneMessage*  startGatherv(CollectivevOp* op);
 
-  void finish_collective_op(collective_op_base* op_);
+  sumi::CollectiveDoneMessage* startScatterv(CollectivevOp* op);
 
-  void finish_vcollective_op(collective_op_base* op_);
+  void finishCollectiveOp(CollectiveOpBase* op_);
+
+  void finishVcollectiveOp(CollectiveOpBase* op_);
 
   /* Collective operations */
-  collective_op_base* start_barrier(const char* name, MPI_Comm comm);
+  CollectiveOpBase::ptr startBarrier(const char* name, MPI_Comm comm);
 
-  collective_op_base* start_bcast(const char* name, MPI_Comm comm, int count, MPI_Datatype datatype,
+  CollectiveOpBase::ptr startBcast(const char* name, MPI_Comm comm, int count, MPI_Datatype datatype,
                                   int root, void *buffer);
 
-  collective_op_base*
-  start_scatter(const char* name, MPI_Comm comm, int sendcount, MPI_Datatype sendtype, int root,
+  CollectiveOpBase::ptr
+  startScatter(const char* name, MPI_Comm comm, int sendcount, MPI_Datatype sendtype, int root,
            int recvcount, MPI_Datatype recvtype, const void *sendbuf, void *recvbuf);
 
-  collective_op_base*
-  start_scatterv(const char* name, MPI_Comm comm, const int *sendcounts, MPI_Datatype sendtype, int root,
+  CollectiveOpBase::ptr
+  startScatterv(const char* name, MPI_Comm comm, const int *sendcounts, MPI_Datatype sendtype, int root,
                  const int *displs, int recvcount, MPI_Datatype recvtype, const void *sendbuf, void *recvbuf);
 
-  collective_op_base*
-  start_gather(const char* name, MPI_Comm comm, int sendcount, MPI_Datatype sendtype, int root,
+  CollectiveOpBase::ptr
+  startGather(const char* name, MPI_Comm comm, int sendcount, MPI_Datatype sendtype, int root,
                int recvcount, MPI_Datatype recvtype, const void *sendbuf, void *recvbuf);
 
-  collective_op_base*
-  start_gatherv(const char* name, MPI_Comm comm, int sendcount, MPI_Datatype sendtype, int root,
+  CollectiveOpBase::ptr
+  startGatherv(const char* name, MPI_Comm comm, int sendcount, MPI_Datatype sendtype, int root,
           const int *recvcounts, const int *displs, MPI_Datatype recvtype,
           const void *sendbuf, void *recvbuf);
 
-  collective_op_base*
-  start_allgather(const char* name, MPI_Comm comm, int sendcount, MPI_Datatype sendtype,
+  CollectiveOpBase::ptr
+  startAllgather(const char* name, MPI_Comm comm, int sendcount, MPI_Datatype sendtype,
             int recvcount, MPI_Datatype recvtype, const void *sendbuf, void *recvbuf);
 
-  collective_op_base*
-  start_allgatherv(const char* name, MPI_Comm comm, int sendcount, MPI_Datatype sendtype,
+  CollectiveOpBase::ptr
+  startAllgatherv(const char* name, MPI_Comm comm, int sendcount, MPI_Datatype sendtype,
                    const int *recvcounts, const int *displs, MPI_Datatype recvtype,
                    const void *sendbuf, void *recvbuf);
 
-  collective_op_base*
-  start_alltoall(const char* name, MPI_Comm comm, int sendcount, MPI_Datatype sendtype,
+  CollectiveOpBase::ptr
+  startAlltoall(const char* name, MPI_Comm comm, int sendcount, MPI_Datatype sendtype,
                  int recvcount, MPI_Datatype recvtype, const void *sendbuf, void *recvbuf);
 
-  collective_op_base*
-  start_alltoallv(const char* name, MPI_Comm comm, const int *sendcounts, MPI_Datatype sendtype, const int *sdispls,
+  CollectiveOpBase::ptr
+  startAlltoallv(const char* name, MPI_Comm comm, const int *sendcounts, MPI_Datatype sendtype, const int *sdispls,
             const int *recvcounts, MPI_Datatype recvtype, const int *rdispls,
             const void *sendbuf,  void *recvbuf);
 
-  collective_op_base*
-  start_reduce(const char* name, MPI_Comm comm, int count, MPI_Datatype type, int root,
+  CollectiveOpBase::ptr
+  startReduce(const char* name, MPI_Comm comm, int count, MPI_Datatype type, int root,
                MPI_Op op, const void* src, void* dst);
 
-  collective_op_base*
-  start_allreduce(const char* name, MPI_Comm comm, int count, MPI_Datatype type,
+  CollectiveOpBase::ptr
+  startAllreduce(const char* name, MPI_Comm comm, int count, MPI_Datatype type,
                MPI_Op op, const void* src, void* dst);
 
-  collective_op_base*
-  start_allreduce(mpi_comm* commPtr, int count, MPI_Datatype type,
+  CollectiveOpBase::ptr
+  startAllreduce(MpiComm* commPtr, int count, MPI_Datatype type,
                MPI_Op op, const void* src, void* dst);
 
-  collective_op_base*
-  start_reduce_scatter(const char* name, MPI_Comm comm, const int* recvcounts, MPI_Datatype type,
+  CollectiveOpBase::ptr
+  startReduceScatter(const char* name, MPI_Comm comm, const int* recvcounts, MPI_Datatype type,
                        MPI_Op op, const void* src, void* dst);
 
-  collective_op_base*
-  start_reduce_scatter_block(const char* name, MPI_Comm comm, int count, MPI_Datatype type,
+  CollectiveOpBase::ptr
+  startReduceScatterBlock(const char* name, MPI_Comm comm, int count, MPI_Datatype type,
                              MPI_Op op, const void* src, void* dst);
 
-  collective_op_base*
-  start_scan(const char* name, MPI_Comm comm, int count, MPI_Datatype type,
+  CollectiveOpBase::ptr
+  startScan(const char* name, MPI_Comm comm, int count, MPI_Datatype type,
              MPI_Op op, const void* src, void* dst);
 
-  void do_start(MPI_Request req);
+  void doStart(MPI_Request req);
 
-  void add_immediate_collective(collective_op_base* op, MPI_Request* req);
+  MpiRequest* addImmediateCollective(CollectiveOpBase::ptr&& op);
+
+  void addImmediateCollective(CollectiveOpBase::ptr&& op, MPI_Request* req);
 
   bool test(MPI_Request *request, MPI_Status *status, int& tag, int& source);
 
-  int type_size(MPI_Datatype type){
+  int typeSize(MPI_Datatype type){
     int ret;
-    type_size(type, &ret);
+    typeSize(type, &ret);
     return ret;
   }
 
-  reduce_fxn get_collective_function(collective_op_base* op);
+  reduce_fxn getCollectiveFunction(CollectiveOpBase* op);
 
-  void check_init();
+  void checkInit();
 
-  mpi_request* do_isend(const void *buf, int count, MPI_Datatype datatype, int dest,
+  MpiRequest* doIsend(const void *buf, int count, MPI_Datatype datatype, int dest,
                         int tag, MPI_Comm comm);
-  int do_recv(void *buf, int count, MPI_Datatype datatype, int source,
+  int doRecv(void *buf, int count, MPI_Datatype datatype, int source,
             int tag, MPI_Comm comm, MPI_Status* status);
 
-  int do_isend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,
+  int doIsend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,
             MPI_Comm comm, MPI_Request *request, bool print);
 
  private:
-  friend class mpi_comm_factory;
+  friend class MpiCommFactory;
 
-  mpi_queue* queue_;
+  MpiQueue* queue_;
 
   MPI_Datatype next_type_id_;
 
   static const MPI_Op first_custom_op_id = 1000;
   MPI_Op next_op_id_;
 
-  static sstmac::sw::ftq_tag mpi_tag;
+  static sstmac::sw::FTQTag mpi_tag;
 
-  mpi_comm_factory comm_factory_;
+  MpiCommFactory comm_factory_;
 
   int iprobe_delay_us_;
   int test_delay_us_;
@@ -817,22 +827,22 @@ class mpi_api :
 
   bool crossed_comm_world_barrier_;
 
-  mpi_comm* worldcomm_;
-  mpi_comm* selfcomm_;
+  MpiComm* worldcomm_;
+  MpiComm* selfcomm_;
 
-  typedef std::map<MPI_Datatype, mpi_type*> type_map;
-  type_map known_types_;
+  std::map<MPI_Datatype, MpiType*> known_types_;
+  std::map<MPI_Datatype, MpiType::ptr> allocatedTypes_;
 
   typedef std::unordered_map<MPI_Op, MPI_User_function*> op_map;
   op_map custom_ops_;
 
-  typedef std::unordered_map<MPI_Comm, mpi_comm*> comm_ptr_map;
+  typedef std::unordered_map<MPI_Comm, MpiComm*> comm_ptr_map;
   comm_ptr_map comm_map_;
-  typedef std::unordered_map<MPI_Group, mpi_group*> group_ptr_map;
+  typedef std::unordered_map<MPI_Group, MpiGroup*> group_ptr_map;
   group_ptr_map grp_map_;
   MPI_Group group_counter_;
 
-  typedef std::unordered_map<MPI_Request, mpi_request*> req_ptr_map;
+  typedef std::unordered_map<MPI_Request, MpiRequest*> req_ptr_map;
   req_ptr_map req_map_;
   MPI_Request req_counter_;
 
@@ -840,26 +850,26 @@ class mpi_api :
 
   bool generate_ids_;
 
-  uint64_t trace_clock() const;
+  uint64_t traceClock() const;
 
 #ifdef SSTMAC_OTF2_ENABLED
-  otf2_writer* otf2_writer_;
+  OTF2Writer* OTF2Writer_;
 #endif
 
 #if SSTMAC_COMM_SYNC_STATS
  public:
-  void collect_sync_delays(double wait_start, message* msg) override;
+  void collectSyncDelays(double wait_start, message* msg) override;
 
-  void start_collective_sync_delays() override;
+  void startCollectiveSyncDelays() override;
 
  private:
-  void set_new_mpi_call(MPI_function func){
+  void setNewMpiCall(MPI_function func){
     current_call_.ID = func;
     current_call_.sync = sstmac::timestamp();
     current_call_.start = now();
   }
 
-  void finish_last_mpi_call(MPI_function func, bool dumpThis = true);
+  void finishLastMpiCall(MPI_function func, bool dumpThis = true);
 
  private:
   double last_collection_;
@@ -878,34 +888,37 @@ class mpi_api :
 
 };
 
-mpi_api* sstmac_mpi();
+MpiApi* sstmac_mpi();
 
 }
 
 #define _start_mpi_call_(fxn) \
   SSTMACBacktrace(fxn); \
-  sstmac::sw::ftq_scope scope(os_->active_thread(), mpi_tag); \
-  start_api_call()
+  sstmac::sw::FTQScope scope(activeThread(), mpi_tag); \
+  startAPICall()
 
 #if SSTMAC_COMM_SYNC_STATS
   #define start_mpi_call(fxn) \
     _start_mpi_call_(fxn); \
-    set_new_mpi_call(Call_ID_##fxn)
+    setNewMpiCall(Call_ID_##fxn)
   #define finish_mpi_call(fxn) \
-    finish_last_mpi_call(Call_ID_##fxn); \
-    end_api_call()
+    mpi_api_debug(sprockit::dbg::mpi, #fxn " finished"); \
+    finishLastMpiCall(Call_ID_##fxn); \
+    endAPICall()
 #else
   #define start_mpi_call(fxn) _start_mpi_call_(fxn)
   #define start_wait_call(fxn,...) _start_mpi_call_(fxn)
-  #define finish_mpi_call(fxn) end_api_call()
-  #define finish_Impi_call(fxn) end_api_call()
+  #define finish_mpi_call(fxn) \
+    mpi_api_debug(sprockit::dbg::mpi, #fxn " finished"); \
+    endAPICall()
+  #define finish_Impi_call(fxn) endAPICall()
 #endif
 
 #define mpi_api_debug(flags, ...) \
-  mpi_debug(comm_world()->rank(), flags, __VA_ARGS__)
+  mpi_debug(commWorld()->rank(), flags, __VA_ARGS__)
 
 #define mpi_api_cond_debug(flags, cond, ...) \
-  mpi_cond_debug(comm_world()->rank(), flags, cond, __VA_ARGS__)
+  mpi_cond_debug(commWorld()->rank(), flags, cond, __VA_ARGS__)
 
 
 #endif

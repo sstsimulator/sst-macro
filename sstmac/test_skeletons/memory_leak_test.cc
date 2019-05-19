@@ -46,7 +46,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/compute.h>
 #include <sstmac/replacements/mpi.h>
-#include <sprockit/sim_parameters.h>
 #include <math.h>
 
 static int max_pt2pt_count = 64000;
@@ -56,8 +55,9 @@ static int max_all_count = 4096;
 static void test_pt2pt(MPI_Comm comm);
 static void test_allgather(MPI_Comm comm);
 
+
 #define finish_test() \
-  if (rank==0) printf("Rank %d on MPI_Comm %ld passed test: %8.2e\n", rank, comm, MPI_Wtime());
+   if (rank==0) printf("Rank %d on MPI_Comm %ld passed test: %8.2e\n", rank, comm, MPI_Wtime());
 
 int USER_MAIN(int argc, char** argv)
 {
@@ -66,9 +66,8 @@ int USER_MAIN(int argc, char** argv)
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-  sprockit::sim_parameters* params = get_params();
-  max_pt2pt_count = params->get_optional_int_param("max_pt2pt_count", max_pt2pt_count);
-  max_all_count = params->get_optional_int_param("max_all_count", max_all_count);
+  max_pt2pt_count = sstmac::getParam<int>("max_pt2pt_count", max_pt2pt_count);
+  max_all_count = sstmac::getParam<int>("max_all_count", max_all_count);
 
   test_pt2pt(MPI_COMM_WORLD);
   test_allgather(MPI_COMM_WORLD);

@@ -69,12 +69,12 @@ RegisterKeywords(
 
 namespace sstmac {
 
-const int parallel_runtime::global_root = -1;
-parallel_runtime* parallel_runtime::static_runtime_ = nullptr;
+const int ParallelRuntime::global_root = -1;
+ParallelRuntime* ParallelRuntime::static_runtime_ = nullptr;
 static int backupSize = 10e6;
 
 char*
-parallel_runtime::comm_buffer::allocateSpace(size_t size, ipc_event_t *ev)
+ParallelRuntime::CommBuffer::allocateSpace(size_t size, IpcEvent *ev)
 {
   uint64_t newOffset = add_int64_atomic(size, &bytesAllocated);
   uint64_t myStartPos = newOffset - size;
@@ -86,7 +86,7 @@ parallel_runtime::comm_buffer::allocateSpace(size_t size, ipc_event_t *ev)
     }
 
     //find me a backup buffer meeting my requirements
-    for (backup_buffer& b : backups){
+    for (BackupBuffer& b : backups){
       if (newOffset < b.maxSize){
         //great - this is my backup buffer
         b.filledSize = std::max(newOffset, b.filledSize);
@@ -102,7 +102,7 @@ parallel_runtime::comm_buffer::allocateSpace(size_t size, ipc_event_t *ev)
 
     //create a new larger backup buffer big enough to hold
     char* buf = new char[nextBackupSize];
-    backup_buffer b;
+    BackupBuffer b;
     b.buffer = buf;
     b.maxSize = nextBackupSize;
     b.filledSize = newOffset;
@@ -117,7 +117,7 @@ parallel_runtime::comm_buffer::allocateSpace(size_t size, ipc_event_t *ev)
 }
 
 void
-parallel_runtime::comm_buffer::copyToBackup()
+ParallelRuntime::CommBuffer::copyToBackup()
 {
   if (backups.empty()) return;
 
@@ -125,7 +125,7 @@ parallel_runtime::comm_buffer::copyToBackup()
   size_t fillMark = filledSize;
   char* finalBuf = backups.back().buffer;
   char* nextBuf = storage;
-  for (backup_buffer& buf : backups){
+  for (BackupBuffer& buf : backups){
     size_t bytesToFill = fillMark - lastFill;
     ::memcpy(finalBuf + lastFill, nextBuf + lastFill, bytesToFill);
     lastFill += bytesToFill;
@@ -135,7 +135,7 @@ parallel_runtime::comm_buffer::copyToBackup()
 }
 
 void
-parallel_runtime::comm_buffer::reset()
+ParallelRuntime::CommBuffer::reset()
 {
   if (!backups.empty()){
     int growRatio = bytesAllocated / allocSize;
@@ -152,7 +152,7 @@ parallel_runtime::comm_buffer::reset()
 }
 
 void
-parallel_runtime::comm_buffer::realloc(size_t size)
+ParallelRuntime::CommBuffer::realloc(size_t size)
 {
   char* oldAlloc = allocation;
   allocSize = size;
@@ -164,7 +164,7 @@ parallel_runtime::comm_buffer::realloc(size_t size)
 }
 
 void
-parallel_runtime::bcast_string(std::string& str, int root)
+ParallelRuntime::bcastString(std::string& str, int root)
 {
   if (nproc_ == 1)
     return;
@@ -185,15 +185,15 @@ parallel_runtime::bcast_string(std::string& str, int root)
 }
 
 std::istream*
-parallel_runtime::bcast_file_stream(const std::string &fname)
+ParallelRuntime::bcastFileStream(const std::string &fname)
 {
 
   if (me_ == 0){
     std::ifstream* fstr = new std::ifstream;
-    sprockit::SpktFileIO::open_file(*fstr, fname);
+    sprockit::SpktFileIO::openFile(*fstr, fname);
 
     if (!fstr->is_open()) {
-      spkt_throw_printf(sprockit::input_error,
+      spkt_throw_printf(sprockit::InputError,
        "could not find file %s in current folder or configuration include path",
        fname.c_str());
     }
@@ -209,20 +209,20 @@ parallel_runtime::bcast_file_stream(const std::string &fname)
       sstr << line << "\n";
     }
     std::string all_text = sstr.str();
-    bcast_string(all_text, 0);
+    bcastString(all_text, 0);
     //go back to the beginning of the file
     fstr->clear();
     fstr->seekg(0, fstr->beg);
     return fstr;
   } else {
     std::string all_text;
-    bcast_string(all_text, 0);
+    bcastString(all_text, 0);
     return new std::stringstream(all_text);
   }
 }
 
 void
-parallel_runtime::init_partition_params(sprockit::sim_parameters *params)
+ParallelRuntime::initPartitionParams(SST::Params& params)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   sprockit::abort("parallel_runtime::init_partition_params: should not be used with integrated core");
@@ -233,12 +233,13 @@ parallel_runtime::init_partition_params(sprockit::sim_parameters *params)
   if (nthread_ == 1 && nproc_ == 1){
     deflt = "serial";
   }
-  part_ = partition::factory::get_optional_param("partition", deflt, params, this);
+  auto type = params.find<std::string>("partition", deflt);
+  part_ = sprockit::create<Partition>("macro", type, params, this);
 #endif
 }
 
-parallel_runtime*
-parallel_runtime::static_runtime(sprockit::sim_parameters* params)
+ParallelRuntime*
+ParallelRuntime::staticRuntime(SST::Params& params)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   return nullptr;
@@ -246,7 +247,8 @@ parallel_runtime::static_runtime(sprockit::sim_parameters* params)
   static thread_lock rt_lock;
   rt_lock.lock();
   if (!static_runtime_){
-    static_runtime_ = parallel_runtime::factory::get_param("runtime", params);
+    auto type = params.find<std::string>("runtime");
+    static_runtime_ = sprockit::create<ParallelRuntime>("macro", type, params);
   }
   rt_lock.unlock();
   return static_runtime_;
@@ -254,18 +256,20 @@ parallel_runtime::static_runtime(sprockit::sim_parameters* params)
 }
 
 void
-parallel_runtime::init_runtime_params(sprockit::sim_parameters *params)
+ParallelRuntime::initRuntimeParams(SST::Params& params)
 {
-  num_recvs_done_ = 0;
+  numRecvsDone_ = 0;
   num_sends_done_ = 0;
   sends_done_.resize(nproc_);
 
   //turn the number of procs and my rank into keywords
-  nthread_ = params->get_optional_int_param("sst_nthread", 1);
+  nthread_ = params.find<int>("sst_nthread", 1);
 
-  buf_size_ = params->get_optional_byte_length_param("serialization_buffer_size", 16384);
 
-  backupSize = params->get_optional_byte_length_param("backup_buffer_size", 10e6);
+
+  buf_size_ = params.find<SST::UnitAlgebra>("serialization_buffer_size", "16KB").getRoundedValue();
+
+  backupSize = params.find<SST::UnitAlgebra>("backup_buffer_size", "1MB").getRoundedValue();
 
   send_buffers_.resize(nproc_);
   recv_buffers_.resize(nproc_);
@@ -281,7 +285,7 @@ parallel_runtime::init_runtime_params(sprockit::sim_parameters *params)
 #endif
 }
 
-parallel_runtime::parallel_runtime(sprockit::sim_parameters* params,
+ParallelRuntime::ParallelRuntime(SST::Params& params,
                                    int me, int nproc)
   : part_(nullptr),
     me_(me),
@@ -300,14 +304,14 @@ parallel_runtime::parallel_runtime(sprockit::sim_parameters* params,
   sprockit::output::init_errn(&std::cerr);
 }
 
-parallel_runtime::~parallel_runtime()
+ParallelRuntime::~ParallelRuntime()
 {
   if (part_) delete part_;
 }
 
 #if !SSTMAC_INTEGRATED_SST_CORE
 void
-parallel_runtime::run_serialize(serializer& ser, ipc_event_t* iev)
+ParallelRuntime::runSerialize(serializer& ser, IpcEvent* iev)
 {
   ser & iev->ser_size; //this must be first!!!
   ser & iev->dst;  //this must be first!!!
@@ -320,12 +324,12 @@ parallel_runtime::run_serialize(serializer& ser, ipc_event_t* iev)
   ser & iev->ev;
 }
 
-void parallel_runtime::send_event(ipc_event_t* iev)
+void ParallelRuntime::sendEvent(IpcEvent* iev)
 {
   //somehow this doesn't return the sum of sizes
   //uint32_t overhead = sizeof(ipc_event_base);
   const uint32_t overhead = sizeof(uint32_t) + sizeof(uint32_t)
-    + sizeof(timestamp) + sizeof(uint32_t) + sizeof(uint32_t)
+    + sizeof(Timestamp) + sizeof(uint32_t) + sizeof(uint32_t)
     + sizeof(int) + sizeof(int) + sizeof(bool);
 
   sprockit::serializer ser;
@@ -333,27 +337,27 @@ void parallel_runtime::send_event(ipc_event_t* iev)
   ser & iev->ev;
   iev->ser_size = overhead + ser.size();
   align64(iev->ser_size);
-  comm_buffer& buff = send_buffers_[iev->rank];
+  CommBuffer& buff = send_buffers_[iev->rank];
   char* ptr = buff.allocateSpace(iev->ser_size, iev);
   ser.start_packing(ptr, iev->ser_size);
   debug_printf(sprockit::dbg::parallel, "sending event of size %lu to LP %d at t=%10.6e: %s",
                iev->ser_size, iev->rank, iev->t.sec(),
-               sprockit::to_string(iev->ev).c_str());
-  run_serialize(ser, iev);
+               sprockit::toString(iev->ev).c_str());
+  runSerialize(ser, iev);
 }
 #endif
 
 void
-parallel_runtime::reset_send_recv()
+ParallelRuntime::resetSendRecv()
 {
   for (int i=0; i < num_sends_done_; ++i){
     send_buffers_[sends_done_[i]].reset();
   }
-  for (int i=0; i < num_recvs_done_; ++i){
+  for (int i=0; i < numRecvsDone_; ++i){
     recv_buffers_[i].reset();
   }
   num_sends_done_ = 0;
-  num_recvs_done_ = 0;
+  numRecvsDone_ = 0;
 }
 
 

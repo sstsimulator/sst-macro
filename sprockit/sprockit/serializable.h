@@ -55,7 +55,7 @@ namespace sprockit {
 #define NotSerializable(obj) \
  public: \
   static void throw_exc(){ \
-     spkt_throw_printf(sprockit::illformed_error, \
+     spkt_throw_printf(sprockit::IllformedError, \
       "type %s should not be serialized", \
       #obj); \
   } \
@@ -158,7 +158,7 @@ class serializable_factory
     return (*builders_)[cls_id]->sanity(ser);
   }
 
-  static void delete_statics();
+  static void deleteStatics();
 
 };
 

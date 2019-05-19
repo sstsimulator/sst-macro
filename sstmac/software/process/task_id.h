@@ -45,12 +45,10 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef SSTMAC_SOFTWARE_PROCESS_TASKID_H_INCLUDED
 #define SSTMAC_SOFTWARE_PROCESS_TASKID_H_INCLUDED
 
-#include <sprockit/spkt_config.h>
-
 namespace sstmac {
 namespace sw {
 
-typedef int task_id;
+typedef int TaskId;
 
 }
 } // end of namespace sstmac

@@ -42,69 +42,123 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef STAT_HISTOGRAM_H
-#define STAT_HISTOGRAM_H
+#ifndef sstmac_common_STAT_HISTOGRAM_H
+#define sstmac_common_STAT_HISTOGRAM_H
 
 #include <sstmac/common/stats/stat_collector.h>
+#include <sprockit/sim_parameters.h>
 #include <vector>
+#include <cmath>
 
-namespace sstmac
-{
+namespace sstmac {
 
-class stat_histogram :
-  public stat_collector
+template <class BinType, class CountType>
+class StatHistogram : public SST::Statistics::MultiStatistic<BinType,CountType>
 {
-  FactoryRegister("histogram", stat_collector, stat_histogram)
+  using Parent=SST::Statistics::MultiStatistic<double,uint64_t>;
  public:
-  stat_histogram(sprockit::sim_parameters* params);
+  SST_ELI_DECLARE_STATISTIC_TEMPLATE(
+      StatHistogram,
+      "macro",
+      "histogram",
+      SST_ELI_ELEMENT_VERSION(1,0,0),
+      "a histogram with flexible counting",
+      "Statistic<Bin,Count>")
 
-  std::string to_string() const override {
-    return "stat histogram";
+  StatHistogram(SST::BaseComponent* comp, const std::string& name,
+                const std::string& subName, SST::Params& params) :
+      bin_size_(0),
+      is_log_(false),
+      SST::Statistics::MultiStatistic<BinType,CountType>(comp, name, subName, params)
+  {
+    min_val_ = params.find<SST::UnitAlgebra>("min_value").getValue().toDouble();
+    max_val_ = params.find<SST::UnitAlgebra>("max_value").getValue().toDouble();
+    bin_size_ = params.find<SST::UnitAlgebra>("bin_size").getValue().toDouble();
+    int num_bins = params.find<int>("num_bins", 20);
+    is_log_ = params.find<bool>("logarithmic", false);
+    if (is_log_){
+      min_val_ = log10(min_val_);
+      max_val_ = log10(min_val_);
+    }
+    increment_ = (max_val_ - min_val_) / num_bins;
+    counts_.resize(num_bins);
+    fields_.reserve(num_bins + 2);
   }
 
-  void collect(double value);
+  void addData_impl(BinType value, CountType count) override {
+    value = is_log_ ? log10(value) : value;
 
-  void collect(double value, int64_t num);
+    if (value > max_val_) return; //drop
+    if (value < min_val_) return; //drop
 
-  void dump_local_data() override;
-
-  void dump_global_data() override;
-
-  void global_reduce(parallel_runtime *rt) override;
-
-  void clear() override;
-
-  void reduce(stat_collector* coll) override;
-
-  stat_collector* do_clone(sprockit::sim_parameters* params) const override {
-    return new stat_histogram(params);
+    BinType delta = value - max_val_;
+    int bin = delta / increment_;
+    counts_[bin] += count;
   }
 
- protected:
-  void dump(const std::string& froot);
+  void registerOutputFields(SST::Statistics::StatisticFieldsOutput* statOutput) override {
+    int fid = 0;
+    statOutput->outputField(fields_[fid++], int(counts_.size()));
+    statOutput->outputField(fields_[fid++], bin_size_);
+    for (auto cnt : counts_){
+      statOutput->outputField(fields_[fid++], cnt);
+    }
+  }
 
- protected:
-  std::vector<int64_t> counts_;
+  void outputStatisticData(SST::Statistics::StatisticFieldsOutput* statOutput, bool EndOfSimFlag) override {
+    fields_.push_back(statOutput->registerField<int>("numBins"));
+    fields_.push_back(statOutput->registerField<double>("binSize"));
+    for (int i=0; i < counts_.size(); ++i){
+      std::string name = sprockit::printf("bin%d", i);
+      fields_.push_back(statOutput->registerField<uint64_t>(name.c_str()));
+    }
+  }
 
-  double bin_size_;
-
-  int64_t max_bin_;
-
+ private:
+  std::vector<CountType> counts_;
+  BinType min_val_;
+  BinType max_val_;
+  BinType bin_size_;
+  BinType increment_;
   bool is_log_;
+
+  std::vector<SST::Statistics::StatisticOutput::fieldHandle_t> fields_;
 
 };
 
-class stat_time_histogram :
-  public stat_histogram
-{
-  FactoryRegister("time_histogram", stat_collector, stat_time_histogram)
+template <class BinType>
+class SimpleStatHistogram : public Statistic<BinType> {
  public:
-  stat_time_histogram(sprockit::sim_parameters* params) :
-    stat_histogram(params)
+  SST_ELI_DECLARE_STATISTIC_TEMPLATE(
+      SimpleStatHistogram,
+      "macro",
+      "simple_histogram",
+      SST_ELI_ELEMENT_VERSION(1,0,0),
+      "a histogram",
+      "Statistic<Bin,Count>")
+
+
+  SimpleStatHistogram(SST::BaseComponent* comp, const std::string& name,
+                const std::string& subName, SST::Params& params) :
+      Statistic<BinType>(comp, name, subName, params),
+      hist_(comp, name, subName, params)
   {
   }
 
-  void record(timestamp t, int64_t num);
+  void addData_impl(BinType value) override {
+    hist_.addData_impl(value, 1);
+  }
+
+  void registerOutputFields(SST::Statistics::StatisticFieldsOutput* statOutput) override {
+    hist_.registerOutputFields(statOutput);
+  }
+
+  void outputStatisticData(SST::Statistics::StatisticFieldsOutput* statOutput, bool EndOfSimFlag) override {
+    hist_.outputStatisticData(statOutput, EndOfSimFlag);
+  }
+
+ private:
+  StatHistogram<BinType,uint64_t> hist_;
 };
 
 }

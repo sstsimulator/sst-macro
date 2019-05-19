@@ -59,20 +59,18 @@ namespace sstmac {
 namespace hw {
 
 
-simple_node::~simple_node()
+SimpleNode::~SimpleNode()
 {
 }
 
-simple_node::simple_node(sprockit::sim_parameters *params,
-                         uint32_t id,
-                         event_manager *mgr)
-  : node(params, id, mgr)
+SimpleNode::SimpleNode(uint32_t id, SST::Params& params)
+  : Node(id, params)
 {
-  init_links(params);
+  initLinks(params);
 }
 
 void
-simple_node::execute(ami::COMP_FUNC func, event* data, callback* cb)
+SimpleNode::execute(ami::COMP_FUNC func, Event* data, ExecutionEvent* cb)
 {
   node_debug("executing kernel %s on node %d",
              ami::tostr(func), my_addr_);
@@ -81,12 +79,12 @@ simple_node::execute(ami::COMP_FUNC func, event* data, callback* cb)
       proc_->compute(data, cb);
       break;
     case sstmac::ami::COMP_TIME: {
-      sw::timed_compute_event* ev = safe_cast(sw::timed_compute_event, data);
-      send_delayed_self_event_queue(ev->data(), cb);
+      sw::TimedComputeEvent* ev = safe_cast(sw::TimedComputeEvent, data);
+      sendDelayedExecutionEvent(ev->data(), cb);
       break;
     }
     default:
-      spkt_throw_printf(sprockit::spkt_error,
+      spkt_throw_printf(sprockit::SpktError,
             "simplenode: cannot process kernel %s",
             ami::tostr(func));
   }

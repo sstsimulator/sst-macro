@@ -65,56 +65,55 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-instruction_processor::~instruction_processor()
+InstructionProcessor::~InstructionProcessor()
 {
 }
 
-instruction_processor::
-instruction_processor(sprockit::sim_parameters* params,
-                      memory_model* mem, node* nd) :
-  simple_processor(params, mem, nd)
+InstructionProcessor::
+InstructionProcessor(SST::Params& params,
+                      MemoryModel* mem, Node* nd) :
+  SimpleProcessor(params, mem, nd)
 {
-  negligible_bytes_ = params->get_optional_byte_length_param(
-        "negligible_compute_bytes", 64);
+  negligible_bytes_ = params.find<SST::UnitAlgebra>("negligible_compute_bytes", "64B").getRoundedValue();
 
-  double parallelism = params->get_optional_double_param("parallelism", 1.0);
+  double parallelism = params.find<double>("parallelism", 1.0);
 
-  tflop_ = timestamp(1.0 / freq_ / parallelism);
+  tflop_ = Timestamp(1.0 / freq_ / parallelism);
   tintop_ = tflop_;
-  tmemseq_ = timestamp(1.0 / mem_freq_);
+  tmemseq_ = Timestamp(1.0 / mem_freq_);
   tmemrnd_ = tmemseq_;
-  max_single_mem_inv_bw_ = timestamp(1.0 / mem_->max_single_bw());
+  min_flow_byte_delay_ = mem_->minFlowByteDelay();
 }
 
 
-timestamp
-instruction_processor::instruction_time(sw::basic_compute_event* cmsg)
+Timestamp
+InstructionProcessor::instructionTime(sw::BasicComputeEvent* cmsg)
 {
   sw::basic_instructions_st& st = cmsg->data();
-  timestamp tsec = 0;
+  Timestamp tsec;
   tsec += st.flops*tflop_;
   tsec += st.intops*tintop_;
   return tsec;
 }
 
 void
-instruction_processor::compute(event* ev, callback* cb)
+InstructionProcessor::compute(Event* ev, ExecutionEvent* cb)
 {
-  sw::basic_compute_event* bev = test_cast(sw::basic_compute_event, ev);
+  sw::BasicComputeEvent* bev = test_cast(sw::BasicComputeEvent, ev);
   sw::basic_instructions_st& st = bev->data();
   int nthread = st.nthread;
   // compute execution time in seconds
-  timestamp instr_time = instruction_time(bev) / nthread;
+  Timestamp instr_time = instructionTime(bev) / nthread;
   // now count the number of bytes
   uint64_t bytes = st.mem_sequential;
   // max_single_mem_bw is the bandwidth achievable if ZERO instructions are executed
-  timestamp best_possible_time = instr_time + bytes * max_single_mem_inv_bw_;
+  Timestamp best_possible_time = instr_time + bytes * min_flow_byte_delay_;
   if (bytes <= negligible_bytes_) {
-    node_->send_delayed_self_event_queue(instr_time, cb);
+    node_->sendDelayedExecutionEvent(instr_time, cb);
   } else {
     //do the full memory modeling
-    double best_possible_bw = bytes / best_possible_time.sec();
-    mem_->access(bytes, best_possible_bw, cb);
+    Timestamp best_possible_byte_delay = best_possible_time / bytes;
+    mem_->access(bytes, best_possible_byte_delay, cb);
   }
 }
 

@@ -50,73 +50,79 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-class threading_pth : public thread_context
+class ThreadingPth : public ThreadContext
 {
  public:
-  FactoryRegister("pth", thread_context, threading_pth)
+  SST_ELI_REGISTER_DERIVED(
+    ThreadContext,
+    ThreadingPth,
+    "macro",
+    "pth",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "uses GNU Pth for fast context switching")
 
   /** nothing */
-  threading_pth(sprockit::sim_parameters* params)
+  ThreadingPth()
   {
   }
 
-  virtual ~threading_pth() {}
+  virtual ~ThreadingPth() {}
 
-  thread_context* copy() const override {
-    return new threading_pth(nullptr);
+  ThreadContext* copy() const override {
+    return new ThreadingPth;
   }
 
-  void init_context() override {
+  void initContext() override {
     if (pth_uctx_create(&context_) != TRUE) {
-      spkt_throw_printf(sprockit::os_error,
+      spkt_throw_printf(sprockit::OSError,
           "threading_pth::init_context: %s",
           ::strerror(errno));
     }
   }
 
-  void destroy_context() override {
+  void destroyContext() override {
     if (pth_uctx_destroy(context_) != TRUE) {
-        spkt_throw_printf(sprockit::os_error,
+        spkt_throw_printf(sprockit::OSError,
           "threading_pth::destroy_context: %s",
           ::strerror(errno));
     }
   }
 
-  void start_context(void *stack, size_t stacksize,
-                     void(*func)(void*), void *args, thread_context* from) override {
+  void startContext(void *stack, size_t stacksize,
+                     void(*func)(void*), void *args, ThreadContext* from) override {
     if (stacksize < (16384)) {
       sprockit::abort("threading_pth::start_context: PTH does not accept stacks smaller than 16KB");
     }
-    init_context();
+    initContext();
     int retval = pth_uctx_make(context_, (char*) stack, stacksize, NULL, func, args, NULL);
     if (retval != TRUE) {
-      spkt_throw_printf(sprockit::os_error,
+      spkt_throw_printf(sprockit::OSError,
           "threading_pth::start_context: %s",
           ::strerror(errno));
     }
-    resume_context(from);
+    resumeContext(from);
   }
 
-  void resume_context(thread_context* from) override {
-    threading_pth* frompth = static_cast<threading_pth*>(from);
+  void resumeContext(ThreadContext* from) override {
+    ThreadingPth* frompth = static_cast<ThreadingPth*>(from);
     if (pth_uctx_switch(frompth->context_, context_) != TRUE) {
-      spkt_throw_printf(sprockit::os_error,
+      spkt_throw_printf(sprockit::OSError,
         "threading_pth::swap_context: %s",
         strerror(errno));
     }
   }
 
-  void pause_context(thread_context *to) override {
-    threading_pth* topth = static_cast<threading_pth*>(to);
+  void pauseContext(ThreadContext *to) override {
+    ThreadingPth* topth = static_cast<ThreadingPth*>(to);
     if (pth_uctx_switch(context_, topth->context_) != TRUE) {
-      spkt_throw_printf(sprockit::os_error,
+      spkt_throw_printf(sprockit::OSError,
         "threading_pth::swap_context: %s",
         strerror(errno));
     }
   }
 
-  void complete_context(thread_context *to) override {
-    pause_context(to);
+  void completeContext(ThreadContext *to) override {
+    pauseContext(to);
   }
 
   typedef pth_uctx_t threadcontext_t;

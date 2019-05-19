@@ -51,7 +51,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/node/node_fwd.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
 #include <sstmac/software/launch/job_launcher_fwd.h>
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 
 DeclareDebugSlot(timestamp);
 
@@ -64,41 +64,39 @@ namespace native {
  * All time progression is handled by this object
  * and messages between nodes are managed here as well.
  */
-class manager {
+class Manager {
 
  public:
-  manager(sprockit::sim_parameters* params, parallel_runtime* rt);
+  Manager(SST::Params& params, ParallelRuntime* rt);
 
-  static int compute_max_nproc(sprockit::sim_parameters *params);
+  static int computeMaxNproc(sprockit::SimParametersPtr& param);
 
-  static int compute_max_nproc_for_app(sprockit::sim_parameters* app_params);
+  static int computeMaxNprocForApp(sprockit::SimParametersPtr& app_params);
 
 #if !SSTMAC_INTEGRATED_SST_CORE
-  ~manager() throw ();
+  ~Manager() throw ();
 
-  timestamp
-  run(timestamp until);
+  GlobalTimestamp run(GlobalTimestamp until);
 
   void stop();
 
   void finish();
 
-  sstmac::hw::interconnect*
-  interconn() const {
+  sstmac::hw::Interconnect* interconnect() const {
     return interconnect_;
   }
 
  private:
   void start();
 
-  event_manager* event_manager_;
+  EventManager* EventManager_;
 
   bool running_;
 
-  sstmac::sw::app_id next_ppid_;
+  sstmac::sw::AppId next_ppid_;
 
-  sstmac::hw::interconnect* interconnect_;
-  parallel_runtime* rt_;
+  sstmac::hw::Interconnect* interconnect_;
+  ParallelRuntime* rt_;
 #endif
 };
 

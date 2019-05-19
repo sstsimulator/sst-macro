@@ -61,46 +61,16 @@ namespace sstmac {
 /**
  * The main interface for something that can respond to an event (sst_message).
  */
-class event_handler :
-  public sprockit::printable
+class EventHandler : public sprockit::printable
 {
  public:
-  static const int null_lpid = -1;
+  virtual ~EventHandler() {}
+
+  virtual void handle(Event* ev) = 0;
 
  protected:
-  event_handler(uint32_t comp_id) :
-    comp_id_(comp_id)
-  {
-  }
+  EventHandler() {}
 
- public:
-  uint32_t component_id() const {
-    return comp_id_;
-  }
-
-  virtual ~event_handler() {}
-
-  virtual void handle(event* ev) = 0;
-
-  virtual void deadlock_check(event* ev) = 0;
-  
-  virtual void deadlock_check() = 0;
-
- private:
-  uint32_t comp_id_;
-};
-
-class member_fxn_handler :
-  public event_handler
-{
- public:
-  virtual ~member_fxn_handler(){}
-
- protected:
-    member_fxn_handler(uint32_t comp_id) :
-      event_handler(comp_id)
-  {
-  }
 };
 
 template<int ...>
@@ -135,62 +105,52 @@ public:
 };
 
 template <class Cls, typename Fxn, class ...Args>
-class member_fxn_handler_impl :
-  public member_fxn_handler
+class MemberFxnHandler : public EventHandler
 {
 
  public:
-  virtual ~member_fxn_handler_impl(){}
+  virtual ~MemberFxnHandler(){}
 
-  std::string to_string() const override {
-    return obj_->to_string();
+  std::string toString() const override {
+    return obj_->toString();
   }
 
-  void handle(event* ev) override {
+  void handle(Event* ev) override {
     dispatch(ev, typename gens<sizeof...(Args)>::type());
   }
 
-  member_fxn_handler_impl(uint32_t comp_id, Cls* obj, Fxn fxn, const Args&... args) :
+  MemberFxnHandler(Cls* obj, Fxn fxn, const Args&... args) :
     params_(args...),
     obj_(obj),
-    fxn_(fxn),
-    member_fxn_handler(comp_id)
+    fxn_(fxn)
   {
-  }
-
-  void deadlock_check() override {
-    local_deadlock_check();
-  }
-
-  void deadlock_check(event* ev) override {
-    local_deadlock_check(ev);
   }
 
  private:
   template <int ...S>
-  void dispatch(event* ev, seq<S...>){
+  void dispatch(Event* ev, seq<S...>){
     (obj_->*fxn_)(ev, std::get<S>(params_)...);
   }
 
   template <class T = Cls>
   typename std::enable_if<has_deadlock_check<T>::value>::type
-  local_deadlock_check() {
+  localDeadlockCheck() {
     obj_->deadlock_check();
   }
 
   template <class T = Cls>
   typename std::enable_if<has_deadlock_check<T>::value>::type
-  local_deadlock_check(event* ev) {
+  localDeadlockCheck(Event* ev) {
     obj_->deadlock_check(ev);
   }
 
   template <class T = Cls>
   typename std::enable_if<!has_deadlock_check<T>::value>::type
-  local_deadlock_check() {}
+  localDeadlockCheck() {}
 
   template <class T = Cls>
   typename std::enable_if<!has_deadlock_check<T>::value>::type
-  local_deadlock_check(event* ev) {}
+  localDeadlockCheck(Event* ev) {}
 
   std::tuple<Args...> params_;
   Fxn fxn_;
@@ -199,11 +159,10 @@ class member_fxn_handler_impl :
 };
 
 template<class Cls, typename Fxn, class ...Args>
-event_handler*
-new_handler(Cls* cls, Fxn fxn, const Args&... args)
+EventHandler* newHandler(Cls* cls, Fxn fxn, const Args&... args)
 {
-  return new member_fxn_handler_impl<Cls, Fxn, Args...>(
-        cls->component_id(), cls, fxn, args...);
+  return new MemberFxnHandler<Cls, Fxn, Args...>(
+        cls, fxn, args...);
 }
 
 

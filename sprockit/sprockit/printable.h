@@ -51,13 +51,13 @@ namespace sprockit {
 
 class printable {
  public:
-  virtual std::string to_string() const = 0;
+  virtual std::string toString() const = 0;
 };
 
 template <class T>
-std::string to_string(T* t){
+std::string toString(T* t){
   printable* p = dynamic_cast<printable*>(t);
-  if (p) return p->to_string();
+  if (p) return p->toString();
   else return " (no string) ";
 }
 

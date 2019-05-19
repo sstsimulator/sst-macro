@@ -57,7 +57,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/output.h>
 #include <sprockit/util.h>
 #include <sprockit/basic_string_tokenizer.h>
-#include <sprockit/sprockit/spkt_config.h>
 #include <sprockit/fileio.h>
 #include <sprockit/statics.h>
 #include <sprockit/sim_parameters.h>
@@ -66,8 +65,53 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/api/api.h>
 #include <string>
 
+#include <dlfcn.h>
+#include <execinfo.h>
+
 #include <iostream>
 #include <sstream>
+
+#define BACKTRACE_MAIN 0
+
+#if BACKTRACE_MAIN
+void bt_handler(int signal)
+{
+  void* array[40];
+  char cmd[1024];
+  char debug[1024];
+  int size = backtrace(array, 40);
+  std::cerr << "Got backtrace of size " << size
+            << " for signal " << signal
+            << std::endl;
+  char** symbols = backtrace_symbols(array, size);
+  for (int i=0; i < size; ++i){
+    void* addr = array[i];
+    Dl_info info;
+    int err = dladdr(addr, &info);
+    if (err && info.dli_sname){
+      char* demangled = NULL;
+      int status = -1;
+      //if (info.dli_sname[0] == '_')
+      //  demangled = abi::__cxa_demangle(info.dli_sname, NULL, 0, &status);
+
+      fprintf(stderr, "%-3d %*p %s + %zd : %s %p\n",
+        i, int(2 + sizeof(void*)), array[i],
+        status == 0 ? demangled : info.dli_sname == 0 ? symbols[i] : info.dli_sname,
+        (char*) array[i] - (char*)info.dli_saddr,
+        info.dli_fname ? info.dli_fname : "no file",
+        info.dli_fbase ? info.dli_fbase : "");
+
+      //if (demangled) free(demangled);
+    } else {
+      fprintf(stderr, "no symbol - %d %p : %s %s\n",
+        err, info.dli_sname,
+        info.dli_fname ? info.dli_fname : "no file",
+        info.dli_fbase ? info.dli_fbase : "");
+    }
+  }
+  exit(1);
+}
+#endif
 
 #if CUSTOM_NEW_HANDLER
 #include <execinfo.h>
@@ -110,7 +154,7 @@ void new_error_handler()
         info.dli_fbase ? info.dli_fbase : "");
     }
   }
-  std::set_new_handler(nullptr);
+  std::set_newHandler(nullptr);
 }
 #endif
 
@@ -119,15 +163,18 @@ int
 main(int argc, char **argv)
 {
 #if CUSTOM_NEW_HANDLER
-  std::set_new_handler(new_error_handler);
+  std::set_newHandler(new_error_handler);
+#endif
+
+#if BACKTRACE_MAIN
+  signal(SIGFPE, bt_handler);
 #endif
 
   int rc;
   try {
-    sprockit::sim_parameters params;
-    params.set_public_scope(false); //do not expose top-level params to subspaces
+    sprockit::SimParameters::ptr params = std::make_shared<sprockit::SimParameters>();
     bool params_only = false;
-    rc = sstmac::try_main(&params, argc, argv, params_only);
+    rc = sstmac::tryMain(params, argc, argv, params_only);
   } catch (const std::exception &e) {
     std::cout.flush();
     std::cerr.flush();

@@ -14,8 +14,7 @@ include $(top_srcdir)/Makefile.common
 library_includedir=$(includedir)/sstmac/main
 
 library_include_HEADERS = \
-    sstmac.h \
-    driver.h
+    sstmac.h 
 
 noinst_LTLIBRARIES = libsstmac_driver.la 
 lib_LTLIBRARIES = libsstmac_main.la
@@ -32,7 +31,6 @@ libsstmac_main_la_SOURCES = main.cc
 
 libsstmac_driver_la_SOURCES = \
     loadlib.cc \
-    driver.cc \
     sstmac.cc \
     util.cc \
     help.cc \

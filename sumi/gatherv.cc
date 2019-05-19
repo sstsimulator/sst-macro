@@ -49,11 +49,11 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sumi {
 
 void
-btree_gatherv_actor::init_tree()
+BtreeGathervActor::initTree()
 {
   log2nproc_ = 0;
   midpoint_ = 1;
-  int nproc = cfg_.dom->nproc();
+  int nproc = comm_->nproc();
   while (midpoint_ < nproc){
     midpoint_ *= 2;
     log2nproc_++;
@@ -63,15 +63,16 @@ btree_gatherv_actor::init_tree()
 }
 
 void
-btree_gatherv_actor::init_buffers(void *dst, void *src)
+BtreeGathervActor::initBuffers()
 {
+  void* dst = result_buffer_;
+  void* src = send_buffer_;
   if (!src)
     return;
-
 }
 
 void
-btree_gatherv_actor::finalize_buffers()
+BtreeGathervActor::finalizeBuffers()
 {
   if (!result_buffer_)
     return;
@@ -79,16 +80,16 @@ btree_gatherv_actor::finalize_buffers()
 }
 
 void
-btree_gatherv_actor::buffer_action(void *dst_buffer, void *msg_buffer, action *ac)
+BtreeGathervActor::bufferAction(void *dst_buffer, void *msg_buffer, Action *ac)
 {
   std::memcpy(dst_buffer, msg_buffer, ac->nelems * type_size_);
 }
 
 void
-btree_gatherv_actor::init_dag()
+BtreeGathervActor::initDag()
 {
-  int me = cfg_.dom->my_comm_rank();
-  int nproc = cfg_.dom->nproc();
+  int me = comm_->myCommRank();
+  int nproc = comm_->nproc();
   int round = 0;
 
   int maxGap = midpoint_;

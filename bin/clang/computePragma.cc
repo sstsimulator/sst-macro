@@ -188,14 +188,12 @@ SSTMemoizeComputePragma::doReplace(SourceLocation startInsert, SourceLocation fi
     argsStr = args_sstr.str();
   }
 
-
-
-  if (visitor->memoizePass()){
+  if (visitor->memoize()){
     PresumedLoc ploc = CI->getSourceManager().getPresumedLoc(startInsert);
     int line = ploc.getLine();
 
     std::stringstream start_sstr;
-    start_sstr << "int sstmac_thr_tag" << line << " = sstmac_start_memoize("
+    start_sstr << "int sstmac_thr_tag" << line << " = sstmac_startMemoize("
        << "\"" << token_ << "\",\"" << model_ << "\"" << "); ";
     r.InsertText(startInsert, start_sstr.str(), insertStartAfter);
     std::stringstream finish_sstr;
@@ -300,7 +298,7 @@ SSTMemoizeComputePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
       for (int i=0; i < fd->getNumParams(); ++i){
         params[i] = fd->getParamDecl(i);
       }
-      bool replaceBody = skeletonize_ && !visitor->memoizePass();
+      bool replaceBody = skeletonize_ && !visitor->memoize();
       if (cs->body_front()){
         doReplace(replaceBody ? getStart(cs) : getStart(cs->body_front()),
                   getEnd(cs), cs,
@@ -317,7 +315,7 @@ SSTImplicitStatePragma::doReplace(SourceLocation startInsert, SourceLocation fin
                                   bool insertStartAfter, bool insertFinalAfter,
                                   Rewriter& r, const std::map<std::string,std::string>& values)
 {
-  std::string state_type = visitor->memoizePass() ? "memoize" : "compute";
+  std::string state_type = visitor->memoize() ? "memoize" : "compute";
 
   bool first = true;
   std::stringstream start_sstr;

@@ -49,7 +49,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #define one_indent "  "
 #define two_indent "    "
 
-#if 0
+#if 1
 #define pflow_arb_debug_printf_l0(format_str, ...) \
   debug_printf(sprockit::dbg::pisces,  \
     " [arbitrator] " format_str , \
@@ -75,6 +75,17 @@ Questions? Contact sst-macro-help@sandia.gov
 #define pflow_arb_debug_print_l2(format_str)
 #endif
 
+#define cut_through_epoch_debug(str, ...) \
+  pflow_arb_debug_printf_l0("Cut-through: arbitrator %p epoch %9.5e:%llu " str, \
+        this, epoch->start.sec(), epoch->numCycles, __VA_ARGS__)
+
+#define cut_through_arb_debug(str, ...) \
+  cut_through_epoch_debug(str ": %u bytes left", __VA_ARGS__, bytesLeft)
+
+#define cut_through_arb_debug_noargs(str) \
+  cut_through_arb_debug(str "%s", "")
+
+
 namespace sstmac {
 namespace hw {
 
@@ -82,448 +93,297 @@ static void
 validate_bw(double test_bw)
 {
   if (test_bw < 0 || (test_bw != test_bw)){ //i.e. NAN
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
         "Payload has invalid bandwidth %12.8e",
         test_bw);
   }
 }
 
-pisces_bandwidth_arbitrator::
-pisces_bandwidth_arbitrator(sprockit::sim_parameters* params)
+PiscesBandwidthArbitrator::
+PiscesBandwidthArbitrator(double bw)
 {
-  out_bw_ = params->get_bandwidth_param("bandwidth");
-  if (out_bw_ < 1){
-    spkt_abort_printf("Got erroneously low bandwidth %f in arbitrator from param %s", 
-      out_bw_, params->get_param("bandwidth").c_str());
-  }
-  inv_out_bw_ = 1.0 / out_bw_;
+  byteDelay_ = Timestamp(1.0/bw);
 }
 
-pisces_simple_arbitrator::pisces_simple_arbitrator(sprockit::sim_parameters* params) :
-  next_free_(0),
-  pisces_bandwidth_arbitrator(params)
+PiscesSimpleArbitrator::PiscesSimpleArbitrator(double bw) :
+  next_free_(),
+  PiscesBandwidthArbitrator(bw)
 {
 }
 
 void
-pisces_bandwidth_arbitrator::partition(noise_model* noise, int num_intervals)
+PiscesSimpleArbitrator::arbitrate(IncomingPacket &st)
 {
-  spkt_throw_printf(sprockit::input_error,
-    "%s is not compatible with partitioning",
-    to_string().c_str());
-}
+  GlobalTimestamp start_send = next_free_ < st.now ? st.now : next_free_;
+  Timestamp arrive_delay = st.pkt->byteLength() * st.pkt->byteDelay();
+  Timestamp output_delay = st.pkt->byteLength() * byteDelay_;
+  next_free_ = start_send + output_delay;
+  st.pkt->initByteDelay(byteDelay_);
+  Timestamp creditDelay = output_delay > arrive_delay
+        ? output_delay - arrive_delay //if going out slower, delay credit
+        : Timestamp();
 
-void
-pisces_bandwidth_arbitrator::init_noise_model(noise_model* noise)
-{
-  spkt_throw_printf(sprockit::input_error,
-    "%s is not compatible with noise models",
-    to_string().c_str());
-}
-
-void
-pisces_simple_arbitrator::arbitrate(pkt_arbitration_t &st)
-{
-  timestamp start_send = next_free_ < st.now ? st.now : next_free_;
-  timestamp ser_delay(st.pkt->byte_length() * inv_out_bw_);
-  next_free_ = start_send + ser_delay;
-  st.pkt->set_bw(out_bw_);
   //store and forward
   //head/tail are linked and go "at same time"
   st.head_leaves = st.tail_leaves = next_free_;
-  //we can send the credit a bit ahead of time
-  st.credit_leaves = st.head_leaves
-    + credit_delay(st.pkt->max_incoming_bw(), out_bw_, st.pkt->byte_length());
-  st.pkt->set_max_incoming_bw(out_bw_);
+  //head and tail arrive at same time - there is no delay
+  //for additional bytes to arrive
+  st.pkt->setByteDelay(Timestamp());
 }
 
-uint32_t
-pisces_simple_arbitrator::bytes_sending(timestamp now) const
-{
-  double send_delay = next_free_ > now ? (next_free_ - now).sec() : 0;
-  int bytes_sending = send_delay * out_bw_;
-  return bytes_sending;
-}
-
-pisces_null_arbitrator::pisces_null_arbitrator(sprockit::sim_parameters* params) :
-  pisces_bandwidth_arbitrator(params)
+PiscesNullArbitrator::PiscesNullArbitrator(double bw) :
+  PiscesBandwidthArbitrator(bw)
 {
 }
 
-timestamp
-pisces_null_arbitrator::head_tail_delay(pisces_packet *pkt)
+Timestamp
+PiscesNullArbitrator::headTailDelay(PiscesPacket *pkt)
 {
-  timestamp ser_delay(pkt->num_bytes() / pkt->bw());
-  return ser_delay;
+  return pkt->numBytes() * pkt->byteDelay();
 }
 
 void
-pisces_null_arbitrator::arbitrate(pkt_arbitration_t &st)
+PiscesNullArbitrator::arbitrate(IncomingPacket &st)
 {
-  st.pkt->set_max_bw(out_bw_);
-  timestamp ser_delay(st.pkt->num_bytes() / st.pkt->bw());
+  PiscesPacket* payload = st.pkt;
+  pflow_arb_debug_printf_l0("Null: starting packet %p:%llu of size %u with byte_delay=%9.5e epoch_delay=%9.5e: %s",
+                            payload, payload->flowId(),
+                            payload->numBytes(), payload->byteDelay().sec(), byteDelay_.sec());
+  Timestamp byteDelay = std::max(byteDelay_, st.pkt->byteDelay());
+  st.pkt->setByteDelay(byteDelay_);
+  Timestamp actual_delay = st.pkt->numBytes() * byteDelay;
+  Timestamp min_delay = st.pkt->numBytes() * byteDelay_;
+#if SSTMAC_SANITY_CHECK
+  if (actual_delay < min_delay){
+    spkt_abort_printf("null arbitrator computed bad delay");
+  }
+#endif
   st.head_leaves = st.now;
-  st.tail_leaves = st.now + ser_delay;
-  //we can send the credit a bit ahead of the tail
-  st.credit_leaves = st.head_leaves
-    + credit_delay(st.pkt->max_incoming_bw(), out_bw_, st.pkt->num_bytes());
-  st.pkt->set_max_incoming_bw(out_bw_);
+  st.tail_leaves = st.now + actual_delay;
+  st.pkt->setByteDelay(byteDelay);
+
+  pflow_arb_debug_printf_l0("Null: packet %p:%llu of size %u leaves with effective bandwidth=%9.5e with epoch max=%9.5e",
+          payload, payload->flowId(), payload->numBytes(), 1.0/byteDelay.sec(), 1.0/byteDelay_.sec());
 }
 
-uint32_t
-pisces_null_arbitrator::bytes_sending(timestamp now) const
-{
-  return 0;
-}
-
-pisces_cut_through_arbitrator::
-pisces_cut_through_arbitrator(sprockit::sim_parameters* params)
+PiscesCutThroughArbitrator::
+PiscesCutThroughArbitrator(double bw)
   : head_(nullptr),
-    pisces_bandwidth_arbitrator(params)
+    PiscesBandwidthArbitrator(bw)
 {
-  timestamp sec(1.0);
-  timestamp tick(1, timestamp::exact);
-  bw_sec_to_tick_conversion_ = tick.sec();
-  bw_tick_to_sec_conversion_ = sec.ticks_int64();
-
-  //thread environments might not be setup yet when allocating
-  //placement new this one
-  head_ = bandwidth_epoch::allocate_at_beginning();
-  head_->bw_available = out_bw_ * bw_sec_to_tick_conversion_;
-  head_->start = 0;
-  //just set to super long
-  head_->length = std::numeric_limits<uint64_t>::max();
+  cycleLength_ = byteDelay_;
+  if (cycleLength_.sec() > 0.1) abort();
+  if (cycleLength_.ticks() == 0) abort();
+  head_ = Epoch::allocateAtBeginning();
+  head_->numCycles = std::numeric_limits<uint32_t>::max();
 }
 
 
-timestamp
-pisces_cut_through_arbitrator::head_tail_delay(pisces_packet *pkt)
+Timestamp
+PiscesCutThroughArbitrator::headTailDelay(PiscesPacket *pkt)
 {
-  timestamp ser_delay(pkt->num_bytes() / pkt->bw());
-  return ser_delay;
+  return pkt->numBytes() * pkt->byteDelay();
 }
 
-pisces_cut_through_arbitrator::~pisces_cut_through_arbitrator()
+PiscesCutThroughArbitrator::~PiscesCutThroughArbitrator()
 {
-  bandwidth_epoch* next = head_;
-  while (next){
-    bandwidth_epoch* e = next;
-    next = next->next;
-    //do not delete this for now, treat as permanent
-    //this guy gets deleted and created before anything is running
-    bandwidth_epoch::free_at_end(e);
-  }
-}
-
-uint32_t
-pisces_cut_through_arbitrator::bytes_sending(timestamp now) const
-{
-  ticks_t next_free =
-    head_->start; //just assume that at head_->start link is fully available
-  ticks_t now_ = now.ticks();
-  timestamp send_delay(next_free > now_ ? (next_free - now_) : 0, timestamp::exact);
-  int bytes_sending = send_delay.sec() * out_bw_;
-  return bytes_sending;
 }
 
 void
-pisces_cut_through_arbitrator::partition(noise_model* noise, int num_intervals)
+PiscesCutThroughArbitrator::clearOut(GlobalTimestamp now)
 {
-  //find the tail
-  bandwidth_epoch* tail = head_;
-  while (tail->next) //while true, not the tail
-    tail = tail->next;
-
-  for (int i=0; i < num_intervals; ++i){
-    tail->split(noise->value());
-    tail = tail->next;
-  }
-
-}
-
-void
-pisces_cut_through_arbitrator::init_noise_model(noise_model* noise)
-{
-  bandwidth_epoch* next = head_;
-  while (next){
-    next->bw_available = noise->value();
-    next = next->next;
-  }
-}
-
-void
-pisces_cut_through_arbitrator::bandwidth_epoch::split(ticks_t delta_t)
-{
-  bandwidth_epoch* new_epoch = new bandwidth_epoch;
-  new_epoch->bw_available = this->bw_available;
-  new_epoch->start = this->start + delta_t;
-  new_epoch->length = this->length - delta_t;
-  new_epoch->next = this->next;
-  this->next = new_epoch;
-  this->length = delta_t;
-}
-
-void
-pisces_cut_through_arbitrator::bandwidth_epoch::truncate_after(ticks_t delta_t)
-{
-  ticks_t finish = start + length;
-  start += delta_t;
-
-  length -= delta_t;
-}
-
-void
-pisces_cut_through_arbitrator::clean_up(ticks_t now)
-{
-  bandwidth_epoch* epoch = head_;
-  while (1) {
-
-    if (epoch->start >= now) {
-      return; // we are done
-    }
-
-    ticks_t delta_t = now - epoch->start;
-    if (delta_t >= epoch->length) { //this epoch has expired
-      //delete and move on
-      head_ = epoch->next;
-      delete epoch;
-      epoch = head_;
-    } else { //we are in the middle of this epoch
-      epoch->truncate_after(delta_t);
-      return; //we are done
-    }
-
-    if (!head_) {
-      spkt_throw_printf(sprockit::illformed_error, "head is null");
-    }
-  }
-}
-
-void
-pisces_cut_through_arbitrator::arbitrate(pkt_arbitration_t &st)
-{
-  do_arbitrate(st);
-  st.head_leaves.correct_round_off(st.now);
-  //we can send the credit a bit ahead of the tail
-  st.credit_leaves = st.head_leaves
-    + credit_delay(st.pkt->max_incoming_bw(), out_bw_, st.pkt->num_bytes());
-  st.pkt->set_max_incoming_bw(out_bw_);
-}
-
-void
-pisces_cut_through_arbitrator::do_arbitrate(pkt_arbitration_t &st)
-{
-  pisces_packet* payload = st.pkt;
-  payload->init_bw(out_bw_);
-  double payload_bw = payload->bw() * bw_sec_to_tick_conversion_;
-#if SSTMAC_SANITY_CHECK
-  validate_bw(payload->bw());
-#endif
-
-  //first things first - clean out any old epochs
-  ticks_t now = st.now.ticks_int64();
-  clean_up(now);
-
-  ticks_t send_start = head_->start;
-
-  long bytes_queued = payload_bw * (send_start - payload->arrival().ticks_int64());
-#if SSTMAC_SANITY_CHECK
-  if (bytes_queued < 0) {
-    spkt_abort_printf("Payload has negative number of bytes queued: bw=%12.8e send_start=%20.16e arrival=%20.16e",
-                     payload->bw(), send_start, payload->arrival());
-  }
-#endif
-  //zero byte packets break the math below - if tiny, just push it up to 8
-  uint32_t bytes_to_send = std::max(payload->num_bytes(), uint32_t(8));
-
-  pflow_arb_debug_printf_l0("cut_through arbitrator handling %s at time %10.5e that started arriving at %10.5e",
-                            payload->to_string().c_str(), st.now.sec(), payload->arrival().sec());
-
-  bandwidth_epoch* epoch = head_;
-  while (1) {
-    pflow_arb_debug_printf_l1("epoch BW=%9.5e start=%9.5e length=%9.5e: bytes_to_send=%d bytes_queued=%d",
-                           epoch->bw_available,
-                           epoch->start,
-                           epoch->length,
-                           bytes_to_send,
-                           bytes_queued);
-
-    double delta_bw = payload_bw - epoch->bw_available;
-
-    /**
-        This is basically assuming payload->bw >= bw_available
-        We use the -1e-6 to avoid huge numbers in the else block
-        We are maximally utilizing all bw available
-    */
-    if (delta_bw > -1e-6) {
-      //see if we can send all the bytes in this epoch
-      ticks_t time_to_send = bytes_to_send / epoch->bw_available;
-      pflow_arb_debug_printf_l2("delta=%8.4e, send_time=%lu using all available bandwidth in epoch",
-                             delta_bw, time_to_send);
-      if (time_to_send < epoch->length) {
-        ticks_t payload_stop = epoch->start + time_to_send;
-        ticks_t total_send_time = payload_stop - send_start;
-        double new_bw = payload->num_bytes() * bw_tick_to_sec_conversion_ / total_send_time;
-
-        payload->set_bw(new_bw);
-        epoch->truncate_after(time_to_send);
-        pflow_arb_debug_printf_l1("truncate epoch: start=%llu stop=%llu send_time=%llu new_bw=%12.8e",
-                                send_start, payload_stop, total_send_time, payload->bw());
-        st.head_leaves = timestamp(send_start, timestamp::exact);
-        st.tail_leaves = timestamp(payload_stop, timestamp::exact);
-        return;
-      } else if (time_to_send == epoch->length) {
-        ticks_t payload_stop = epoch->start + time_to_send;
-        ticks_t total_send_time = payload_stop - send_start;
-        double new_bw = payload->num_bytes()*bw_tick_to_sec_conversion_ / total_send_time;
-        payload->set_bw(new_bw);
-        head_ = epoch->next;
-        delete epoch;
-        pflow_arb_debug_printf_l2("exact fit: start=%llu stop=%llu send_time=%llu new_bw=%12.8e\n",
-                                   send_start, payload_stop, total_send_time, payload->bw());
-        st.head_leaves = timestamp(send_start, timestamp::exact);
-        st.tail_leaves = timestamp(payload_stop, timestamp::exact);
-        return;
+  Epoch* epoch = head_;
+  while (epoch){
+    cut_through_epoch_debug("clearing at %9.5e", now.sec());
+    GlobalTimestamp end = epoch->start + epoch->numCycles * cycleLength_;
+    if (now <= epoch->start){
+      return;
+    } else if (now < end){
+      if (epoch->next){
+        Timestamp lostTime = now - epoch->start;
+        uint32_t lostCycles = lostTime / cycleLength_;
+        epoch->numCycles -= lostCycles;
       } else {
-        //this epoch is exhausted
-        bytes_to_send -= epoch->bw_available * epoch->length;
-        head_ = epoch->next;
+        //this is the last epoch - restore it to "full size"
+        epoch->numCycles = std::numeric_limits<uint32_t>::max();
+      }
+      epoch->start = now;
+      return;
+    } else {
+      if (epoch->next){
+        Epoch* next = epoch->next;
         delete epoch;
-        epoch = head_;
-        pflow_arb_debug_print_l2("epoch used up");
+        head_ = next;
+        epoch = next;
+      } else {
+        //this is the last epoch - restore it to "full size"
+        epoch->numCycles = std::numeric_limits<uint32_t>::max();
+        epoch->start = now;
+        return;
       }
     }
+  }
+}
 
-    /**
-        The payload is sending slower than the max available bw
-        We are not complicated by any bytes being arrived in the queue
-    */
-    else if (bytes_queued == 0) {
-      //we are under-utilizing the bandwidth
-      double time_to_send = bytes_to_send / payload_bw;
-      pflow_arb_debug_printf_l2("underutilized, No Queue: time_to_send=%llu",
-                                time_to_send);
+PiscesCutThroughArbitrator::Epoch*
+PiscesCutThroughArbitrator::advance(Epoch* epoch, Epoch* prev)
+{
+  Epoch* next = epoch->next;
+  if (prev) prev->next = epoch->next;
+  else head_ = next;
+  delete epoch;
+  return next;
+}
 
-      if (time_to_send <= epoch->length) {
-        epoch->split(time_to_send);
-        epoch->bw_available -= payload_bw;
+void
+PiscesCutThroughArbitrator::arbitrate(IncomingPacket &st)
+{
+  pflow_arb_debug_printf_l0("Cut-through: arbitrator %p starting packet %p:%llu of size %u with byte_delay=%9.5e epoch_delay=%9.5e start=%9.5e: %s",
+                          this, st.pkt, st.pkt->flowId(), st.pkt->numBytes(), st.pkt->byteDelay().sec(),
+                          byteDelay_.sec(), st.now.sec(),
+                          (st.pkt->orig() ? sprockit::toString(st.pkt->orig()).c_str() : "null payload"));
 
-        //configure bandwidth
-        ticks_t send_done = epoch->start + time_to_send;
-        double new_bw = payload->num_bytes() * bw_tick_to_sec_conversion_ / (send_done - send_start);
-        payload->set_bw(new_bw);
-        pflow_arb_debug_printf_l2("send finishes: start=%llu stop=%llu new_bw=%12.8e",
-                               send_start, send_done, payload->bw());
-        st.head_leaves = timestamp(send_start, timestamp::exact);
-        st.tail_leaves = timestamp(send_done, timestamp::exact);
-        return;
-      } else {
-#if SSTMAC_SANITY_CHECK
-        if (epoch->next ==
-            0) { //we should never be subtracting from the big long epoch at the end
-          spkt_throw_printf(sprockit::illformed_error,
-                           "Subtracting bandwidth from the final epoch:\n"
-                           "bytes_to_send=%d\n"
-                           "payload_bw=%20.16e\n"
-                           "time_to_send=%20.16e\n"
-                           "epoch_length=%20.16e\n",
-                           bytes_to_send,
-                           payload->bw(),
-                           time_to_send,
-                           epoch->length);
-        }
+#define PRINT_EPOCHS 0
+#if PRINT_EPOCHS
+  std::cout << "------" << std::endl;
+  Epoch* start_ep = head_;
+  while(start_ep){
+    std::cout << "Start epoch " << this << ": " << start_ep->start.time.ticks() << ": " << start_ep->numCycles << std::endl;
+    start_ep = start_ep->next;
+  }
+  std::cout << "------" << std::endl;
 #endif
-        epoch->bw_available -= payload_bw;
-        bytes_to_send -= payload_bw * epoch->length;
-        epoch = epoch->next;
-        pflow_arb_debug_print_l2("send not done yet");
+
+  clearOut(st.now);
+
+  GlobalTimestamp fullyBufferedTime = st.now + st.pkt->byteDelay() * st.pkt->numBytes();
+  Epoch* epoch = head_;
+  Epoch* prev = nullptr;
+  uint32_t bytesSent = 0;
+  uint32_t bytesLeft = st.pkt->numBytes();
+  //first idle epoch
+  st.head_leaves = epoch->start;
+  while (bytesLeft > 2){ //we often end up with 1,2 byte stragglers - ignore them for efficiency
+#if SSTMAC_SANITY_CHECK
+    if (!epoch){
+      spkt_abort_printf("ran out of epochs on arbitrator %p: this should not be possible", this);
+    }
+#endif
+    Timestamp epochLength = epoch->numCycles * cycleLength_;
+    GlobalTimestamp epochEnd = epoch->start + epochLength;
+    if (st.pkt->byteDelay() <= cycleLength_){
+      //every cycle gets used, arriving faster than leaving
+      if (epoch->numCycles <= bytesLeft){
+        cut_through_arb_debug_noargs("used all cycles")
+        //epoch is completely busy
+        bytesSent += epoch->numCycles;
+        bytesLeft -= epoch->numCycles;
+        epoch = advance(epoch, prev);
+        st.tail_leaves = epochEnd;
+      } else {
+        //epoch has to split into busy and idle halves
+        cut_through_arb_debug_noargs("truncating and finishing");
+        epoch->start += bytesLeft * cycleLength_;
+        epoch->numCycles -= bytesLeft;
+        st.tail_leaves = epoch->start;
+        bytesLeft = 0;
+        bytesSent = st.pkt->numBytes();
       }
     } else {
-      /**
-          The payload is sending slower than the max available bandwidth
-          However, we have a certain number of bytes that are instantly ready to go in the queue
-      */
-      //the number of bytes available to send is the line
-      // BA = INP * t + QUE
-      //the number bytes that could have been sent is
-      // BS = OUT * t
-      //we want to know where lines intersect
-      //we need to solve BS = BA => OUT * t = INP * t + QUE
-      //subject to t >= 0
-
-      //the intersection might come after whole message is sent
-      ticks_t send_all_time = bytes_to_send / epoch->bw_available;
-      ticks_t time_to_intersect = bytes_queued / (-delta_bw);
-      ticks_t time_to_send = std::min(epoch->length, std::min(send_all_time,
-                                     time_to_intersect));
-
-      pflow_arb_debug_printf_l2("underutilized, but %d bytes queued: delta=%12.8e "
-                             "send_all_time=%llu time_to_intersect=%llu time_to_send=%llu",
-                             bytes_queued, delta_bw, send_all_time, time_to_intersect, time_to_send);
-
-      if (time_to_send == send_all_time) {
-        //and the message completely finishes
-        ticks_t send_done = epoch->start + time_to_send;
-        double new_bw = payload->num_bytes() * bw_tick_to_sec_conversion_ / (send_done - send_start);
-        payload->set_bw(new_bw);
-        pflow_arb_debug_printf_l2("send finishes: start=%llu stop=%llu new_bw=%12.8e",
-                               send_start, send_done, payload->bw());
-        epoch->truncate_after(time_to_send);
-        st.head_leaves = timestamp(send_start, timestamp::exact);
-        st.tail_leaves = timestamp(send_done, timestamp::exact);
-        return;
-      } else if (time_to_send == epoch->length) {
-#if SSTMAC_SANITY_CHECK
-        if (epoch->next == 0) {
-          //something freaked out numerically
-          //time_to_send should never equal the length of the big long, last epoch
-          spkt_abort_printf("Time to send pisces is way too long:\n"
-                           "send_all_time=%20.16e\n"
-                           "time_to_intersect=%20.16e\n"
-                           "epoch_length=%20.16e\n"
-                           "time_to_send=%20.16e\n"
-                           "bytes_to_send=%d\n"
-                           "bytes_queued=%d\n"
-                           "bw_available=%20.16e\n",
-                           "payload_bw=%20.16e\n",
-                           "delta_bw=%20.16e\n",
-                           send_all_time,
-                           time_to_intersect,
-                           epoch->length,
-                           time_to_send,
-                           bytes_to_send,
-                           bytes_queued,
-                           epoch->bw_available,
-                           payload->bw(),
-                           delta_bw);
+      //we do not have all the bytes here yet
+      if (fullyBufferedTime >= epochEnd){
+        uint32_t bytesArrived = (epochEnd - st.now) / st.pkt->byteDelay();
+        uint32_t bytesBuffered = std::min(bytesLeft, bytesArrived - bytesSent);
+        if (bytesBuffered >= epoch->numCycles){
+          cut_through_arb_debug_noargs("buffering finishes after epoch: epoch used up");
+          bytesSent += epoch->numCycles;
+          bytesLeft -= epoch->numCycles;
+          epoch = advance(epoch, prev);
+        } else {
+          cut_through_arb_debug_noargs("buffering finishes after epoch: epoch has leftover cycles");
+          epoch->numCycles -= bytesBuffered;
+          prev = epoch;
+          epoch = epoch->next;
+          bytesSent += bytesBuffered;
+          bytesLeft -= bytesBuffered;
         }
-#endif
-        //add in the contributions
-        bytes_to_send -= ceil(epoch->bw_available * time_to_send);
-        //we are also draining the queue
-        //delta < 0 so this is really a subtraction
-        bytes_queued += ceil(delta_bw * epoch->length);
-        //this epoch is exhausted
-        head_ = epoch->next;
-        delete epoch;
-        epoch = head_;
-        pflow_arb_debug_print_l2("send not done yet");
-      } else { //time_to_send = time_to_intersect
-        //the queue is completely drained during the epoch
-        epoch->truncate_after(time_to_send);
-        //but we are not done yet - add the contributions
-        bytes_to_send -= ceil(epoch->bw_available * time_to_send);
-        bytes_queued = 0;
-        pflow_arb_debug_print_l2("queue emptied");
+        //in case this is the end
+        st.tail_leaves = epochEnd;
+      } else if (fullyBufferedTime <= epoch->start) {
+        cut_through_arb_debug("buffering finishes before epoch: left=%u cycles=%u",
+                              bytesLeft, epoch->numCycles);
+        //packet is completely buffered
+        if (epoch->numCycles > bytesLeft){
+          epoch->numCycles -= bytesLeft;
+          epoch->start += bytesLeft * cycleLength_;
+          st.tail_leaves = epoch->start;
+          bytesLeft = 0;
+          bytesSent = st.pkt->numBytes();
+        } else {
+          bytesLeft -= epoch->numCycles;
+          bytesSent += epoch->numCycles;
+          //epoch is used up
+          epoch = advance(epoch, prev);
+          st.tail_leaves = epochEnd;
+        }
+      } else {
+        //buffering finishes in the middle of the epoch
+        //split the epochs on buffering finishing and repeat
+        Epoch* next = new Epoch;
+        Timestamp deltaT = fullyBufferedTime - epoch->start;
+        uint32_t preCycles = deltaT  / cycleLength_;
+        uint32_t postCycles = epoch->numCycles - preCycles;
+        cut_through_arb_debug("buffering finishes during epoch: pre=%u post=%u",
+                              preCycles, postCycles);
+        epoch->numCycles = preCycles;
+        if (epoch->next){
+          //there are more epochs after this
+          next->next = epoch->next;
+          next->numCycles = postCycles;
+        } else {
+          next->next = nullptr;
+          //oh, this is the last epoch - replenish the cycles
+          next->numCycles = std::numeric_limits<uint32_t>::max();
+        }
+        next->start = epoch->start + deltaT;
+        epoch->next = next;
       }
-
     }
-
-    if (!head_) {
-      spkt_abort_printf("pisces_arbitrator: head is null");
-    }
-
   }
+
+  Timestamp newByteDelay = (st.tail_leaves - st.head_leaves) / st.pkt->numBytes();
+  st.pkt->setByteDelay(newByteDelay);
+
+#if SSTMAC_SANITY_CHECK
+  Epoch* end_ep = head_;
+  GlobalTimestamp end_last;
+  while(end_ep){
+#if PRINT_EPOCHS
+    std::cout << "End epoch " << this << ": " << end_ep->start.time.ticks() << ": " << end_ep->numCycles << std::endl;
+#endif
+    if (end_last > end_ep->start){
+      Epoch* test = head_;
+      while (test){
+        std::cerr << "Epoch " << test->start.time.ticks() << ": " << test->numCycles << std::endl;
+        test = test->next;
+      }
+      spkt_abort_printf("arbitration epochs go backward in time");
+    }
+    end_last = end_ep->start;
+    end_ep = end_ep->next;
+  }
+#endif
+
+  pflow_arb_debug_printf_l0("Cut-through: arbitrator %p finished packet %p:%llu of size %u with byte_delay=%9.5e epoch_delay=%9.5e head=%9.5e tail=%9.5e",
+                          this, st.pkt, st.pkt->flowId(), st.pkt->numBytes(), newByteDelay.sec(), byteDelay_.sec(),
+                          st.head_leaves.sec(), st.tail_leaves.sec());
+
+#if SSTMAC_SANITY_CHECK
+  if (st.head_leaves > st.tail_leaves){
+    spkt_abort_printf("head leaves after tail!");
+  }
+#endif
+
 }
 
 }

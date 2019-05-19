@@ -12,7 +12,8 @@
 
 namespace std {
 
-using mutex = sstmac::sw::std_mutex;
+using mutex = sstmac::sw::stdMutex;
+using recursive_mutex = sstmac::sw::stdRecursiveMutex;
 
 struct once_flag {
   constexpr once_flag() noexcept : called(false) {}

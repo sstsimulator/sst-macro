@@ -57,61 +57,61 @@ int sstmac_omp_test_lock(sstmac_omp_lock_t *lock)
 
 extern "C"
 double sstmac_omp_get_wtime(){
-  return sstmac::sw::operating_system::current_os()->now().sec();
+  return sstmac::sw::OperatingSystem::currentOs()->now().sec();
 }
 
 extern "C"
 int sstmac_omp_get_thread_num(){
-  sstmac::sw::thread* t = sstmac::sw::operating_system::current_thread();
-  return t->omp_get_thread_num();
+  sstmac::sw::Thread* t = sstmac::sw::OperatingSystem::currentThread();
+  return t->ompGetThreadNum();
 }
 
 extern "C"
 int sstmac_omp_get_num_threads(){
-  sstmac::sw::thread* t = sstmac::sw::operating_system::current_thread();
-  return t->omp_get_num_threads();
+  sstmac::sw::Thread* t = sstmac::sw::OperatingSystem::currentThread();
+  return t->ompGetNumThreads();
 }
 
 extern "C"
 int sstmac_omp_get_max_threads(){
-  sstmac::sw::thread* t = sstmac::sw::operating_system::current_thread();
+  sstmac::sw::Thread* t = sstmac::sw::OperatingSystem::currentThread();
   //for now, just return number of cores
-  return t->omp_get_max_threads();
+  return t->ompGetMaxThreads();
 }
 
 extern "C"
 int sstmac_omp_get_num_procs()
 {
-  sstmac::sw::operating_system* os = sstmac::sw::operating_system::current_os();
+  sstmac::sw::OperatingSystem* os = sstmac::sw::OperatingSystem::currentOs();
   return os->node()->proc()->ncores();
 }
 
 extern "C"
 void sstmac_omp_set_num_threads(int nthr)
 {
-  sstmac::sw::thread* t = sstmac::sw::operating_system::current_thread();
-  t->omp_set_num_threads(nthr);
+  sstmac::sw::Thread* t = sstmac::sw::OperatingSystem::currentThread();
+  t->ompSetNumThreads(nthr);
 }
 
 extern "C"
 int sstmac_omp_in_parallel()
 {
-  sstmac::sw::thread* t = sstmac::sw::operating_system::current_thread();
-  return t->omp_in_parallel();
+  sstmac::sw::Thread* t = sstmac::sw::OperatingSystem::currentThread();
+  return t->ompInParallel();
 }
 
 extern "C"
 int sstmac_omp_get_level()
 {
-  sstmac::sw::thread* t = sstmac::sw::operating_system::current_thread();
-  return t->omp_get_level();
+  sstmac::sw::Thread* t = sstmac::sw::OperatingSystem::currentThread();
+  return t->ompGetLevel();
 }
 
 extern "C"
 int sstmac_omp_get_ancestor_thread_num()
 {
-  sstmac::sw::thread* t = sstmac::sw::operating_system::current_thread();
-  return t->omp_get_ancestor_thread_num();
+  sstmac::sw::Thread* t = sstmac::sw::OperatingSystem::currentThread();
+  return t->ompGetAncestorThreadNum();
 }
 
 }

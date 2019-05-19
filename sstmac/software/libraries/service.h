@@ -46,33 +46,29 @@ Questions? Contact sst-macro-help@sandia.gov
 #define SSTMAC_SOFTWARE_SERVICES_SERVICE_H_INCLUDED
 
 #include <sstmac/software/libraries/library.h>
-#include <sprockit/factories/factory.h>
-
 #include <sstmac/hardware/node/node_fwd.h>
 #include <sstmac/software/process/operating_system_fwd.h>
 
 namespace sstmac {
 namespace sw {
 
-class service :
-  public library
+class Service :
+  public Library
 {
 
  public:
   virtual void start() {}
 
-  virtual void incoming_event(event* ev) override = 0;
-
  protected:
-  service(const std::string& libname, software_id sid, operating_system* os) :
-    library(libname, sid, os)
+  Service(const std::string& libname, SoftwareId sid, OperatingSystem* os) :
+    Library(libname, sid, os)
   {}
 
-  service(const char* prefix, software_id sid, operating_system* os) :
-    library(prefix, sid, os)
+  Service(const char* prefix, SoftwareId sid, OperatingSystem* os) :
+    Library(prefix, sid, os)
   {}
 
-  virtual ~service(){}
+  virtual ~Service(){}
 
 
 };

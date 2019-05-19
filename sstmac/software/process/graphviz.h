@@ -78,7 +78,7 @@ struct graph_viz_registration {
   static int id_count;
 
  private:
-  static std::map<int,const char*>* names;
+  static std::unique_ptr<std::map<int,const char*>> names;
 };
 
 
@@ -89,7 +89,7 @@ struct graph_viz_ID {
 };
 template <class T> int graph_viz_ID<T>::id = graph_viz_registration::id_count++;
 
-class graph_viz_increment_stack
+class GraphVizIncrementStack
 {
  public:
   /**
@@ -101,99 +101,90 @@ class graph_viz_increment_stack
    *        the DES thread, which is an error. This allows
    *        the backtrace to be turned off on the DES thread
    */
-  graph_viz_increment_stack(int id);
+  GraphVizIncrementStack(int id);
 
-  ~graph_viz_increment_stack();
+  ~GraphVizIncrementStack();
 
 };
 
-class graph_viz :
-  public stat_collector
+class GraphViz :
+  public SST::Statistics::MultiStatistic<uint64_t,sw::Thread*>
 {
-  FactoryRegister("graph_viz | call_graph", stat_collector, graph_viz)
+  using Parent=SST::Statistics::MultiStatistic<uint64_t,sw::Thread*>;
  public:
-  graph_viz(sprockit::sim_parameters* params);
+  /**
+  SST_ELI_REGISTER_CUSTOM_STATISTIC(
+      Parent,
+      GraphViz,
+      "macro",
+      "graph_viz",
+      SST_ELI_ELEMENT_VERSION(1,0,0),
+      "collect graphviz call trace")
+  */
 
-  std::string to_string() const override {
-    return "grahpviz";
-  }
+  GraphViz(SST::BaseComponent* comp, const std::string& name,
+           const std::string& subName, SST::Params& params);
 
-  virtual ~graph_viz();
+  virtual ~GraphViz();
 
-  void clear() override;
+  void addData_impl(uint64_t count, sw::Thread* thr) override;
 
-  void reduce(stat_collector *coll) override;
+  void reassign(int fxnId, uint64_t count, Thread* thr);
 
-  void dump_local_data() override;
-
-  void dump_global_data() override;
-
-  void global_reduce(parallel_runtime *rt) override;
-
-  stat_collector* do_clone(sprockit::sim_parameters* params) const override {
-    return new graph_viz(params);
-  }
-
-  void count_trace(uint64_t count, sw::thread* thr);
-
-  void reassign(int fxnId, uint64_t count, thread* thr);
-
-  static void delete_statics();
+  static void deleteStatics();
 
  private:
-  void dump_summary(std::ostream& os);
-
-  struct graphviz_call {
+  struct GraphvizCall {
     uint64_t ncalls;
     uint64_t counts;
   };
 
-  class trace  {
-   friend class graph_viz;
+  class Trace  {
+   friend class GraphViz;
    private:
-    graphviz_call calls_[0];
+    GraphvizCall calls_[0];
 
     uint64_t self_;
 
    public:
-    trace() : self_(0) {}
+    Trace() : self_(0) {}
 
     std::string summary(const char* fxn) const;
 
     bool include() const;
 
-    void add_call(int fxnId, int ncalls, uint64_t count) {
-      graphviz_call& call = calls_[fxnId];
+    void addCall(int fxnId, int ncalls, uint64_t count) {
+      GraphvizCall& call = calls_[fxnId];
       call.ncalls += ncalls;
       call.counts += count;
     }
 
-    void add_self(uint64_t count) {
+    void addSelf(uint64_t count) {
       self_ += count;
     }
 
-    void reassign_self(int fxnId, uint64_t count) {
+    void reassignSelf(int fxnId, uint64_t count) {
       self_ -= count;
-      graphviz_call& call = calls_[fxnId];
+      GraphvizCall& call = calls_[fxnId];
       call.ncalls += 1;
       call.counts += count;
     }
 
-    void substract_self(uint64_t count) {
+    void substractSelf(uint64_t count) {
       self_ -= count;
     }
 
   };
 
-  void add_call(int ncalls, uint64_t count, int fxnId, int callFxnId);
+  void addCall(int ncalls, uint64_t count, int fxnId, int callFxnId);
 
-  void add_self(int fxnId, uint64_t count);
+  void addSelf(int fxnId, uint64_t count);
 
-  trace** traces_;
+  Trace** traces_;
 
   uint64_t* data_block_;
 
-  friend class trace;
+  friend class Trace;
 
 
 };

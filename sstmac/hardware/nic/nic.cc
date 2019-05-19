@@ -48,13 +48,10 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/hardware/logp/logp_switch.h>
 #include <sstmac/software/process/operating_system.h>
-#include <sstmac/common/stats/stat_spyplot.h>
-#include <sstmac/common/stats/stat_histogram.h>
-#include <sstmac/common/stats/stat_local_int.h>
-#include <sstmac/common/stats/stat_global_int.h>
 #include <sstmac/common/event_manager.h>
 #include <sstmac/common/event_callback.h>
 #include <sstmac/hardware/memory/memory_model.h>
+#include <sstmac/hardware/topology/topology.h>
 #include <sprockit/statics.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
@@ -68,9 +65,7 @@ RegisterNamespaces("nic", "message_sizes", "traffic_matrix",
 RegisterKeywords(
 { "nic_name", "DEPRECATED: the type of NIC to use on the node" },
 { "network_spyplot", "DEPRECATED: the file root of all stats showing traffic matrix" },
-{ "post_bandwidth", "the throughput of the NIC posting messages" },
 { "post_latency", "the latency of the NIC posting messages" },
-{ "pipeline_fraction", "the fraction of NIC post work that can be pipelined" },
 );
 
 #define DEFAULT_NEGLIGIBLE_SIZE 256
@@ -78,269 +73,256 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-static sprockit::need_delete_statics<nic> del_statics;
+static sprockit::NeedDeletestatics<NIC> del_statics;
 
-nic::nic(sprockit::sim_parameters* params, node* parent) :
-  spy_num_messages_(nullptr),
-  spy_bytes_(nullptr),
-  hist_msg_size_(nullptr),
-  local_bytes_sent_(nullptr),
-  global_bytes_sent_(nullptr),
-  parent_(parent),
-  event_mtl_handler_(nullptr),
-  my_addr_(parent->addr()),
-  nic_pipeline_multiplier_(0.),
-  logp_switch_(nullptr),
-  post_inv_bw_(0),
-  post_latency_(0),
-  next_free_(0),
-  connectable_subcomponent(parent) //no self events with NIC
+void
+NicEvent::serialize_order(serializer &ser)
 {
-  event_mtl_handler_ = new_handler(this, &nic::mtl_handle);
-  //node_handler_ = new_handler(parent, &node::handle);
-
-  if (params->has_param("post_latency")){
-    post_latency_ = params->get_time_param("post_latency");
-    sprockit::sim_parameters* inj_params = params->get_namespace("injection");
-    double bw = inj_params->get_bandwidth_param("bandwidth");
-    post_inv_bw_ = 1.0 / bw;
-    //by default, assume very little contention on the nic
-    double nic_pipeline_fraction = params->get_double_param("pipeline_fraction");
-    //we multiply by the percent that is NOT pipelineable
-    nic_pipeline_multiplier_ = 1.0 - nic_pipeline_fraction;
-  }
-
-  negligible_size_ = params->get_optional_int_param("negligible_size", DEFAULT_NEGLIGIBLE_SIZE);
-
-  spy_num_messages_ = optional_stats<stat_spyplot>(parent,
-        params, "traffic_matrix", "ascii", "num_messages");
-  spy_bytes_ = optional_stats<stat_spyplot>(parent,
-        params, "traffic_matrix", "ascii", "bytes");
-  local_bytes_sent_ = optional_stats<stat_local_int>(parent,
-        params, "local_bytes_sent", "local_int");
-  global_bytes_sent_ = optional_stats<stat_global_int>(parent,
-        params, "global_bytes_sent", "global_int");
-  //global_bytes_sent_->set_label("NIC Total Bytes Sent");
-  hist_msg_size_ = optional_stats<stat_histogram>(parent,
-        params, "message_size_histogram", "histogram");
-
-#if !SSTMAC_INTEGRATED_SST_CORE
-  link_mtl_handler_ = new_handler(this, &nic::mtl_handle);
-#endif
+  Event::serialize_order(ser);
+  ser & msg_;
 }
 
-nic::~nic()
+NIC::NIC(SST::Params& params, Node* parent) :
+  spy_num_messages_(nullptr),
+  spy_bytes_(nullptr),
+  msg_sizes_(nullptr),
+  parent_(parent),
+  my_addr_(parent->addr()),
+  logp_link_(nullptr),
+  os_(parent->os()),
+  queue_(parent->os()),
+  ConnectableSubcomponent("nic", parent) //no self events with NIC
+{
+  negligibleSize_ = params.find<int>("negligible_size", DEFAULT_NEGLIGIBLE_SIZE);
+  top_ = Topology::staticTopology(params);
+
+  /** TODO stats
+  spy_num_messages_ = optionalStats<StatSpyplot>(parent,
+        params, "traffic_matrix", "ascii", "num_messages");
+  spy_bytes_ = optionalStats<StatSpyplot>(parent,
+        params, "traffic_matrix", "ascii", "bytes");
+  local_bytes_sent_ = optionalStats<StatLocalInt>(parent,
+        params, "local_bytes_sent", "local_int");
+  global_bytes_sent_ = optionalStats<StatGlobalInt>(parent,
+        params, "global_bytes_sent", "global_int");
+  //global_bytes_sent_->setLabel("NIC Total Bytes Sent");
+  hist_msg_size_ = optionalStats<StatHistogram>(parent,
+        params, "message_size_histogram", "histogram");
+  */
+}
+
+NIC::~NIC()
 {
   //if (node_handler_) delete node_handler_;
-  if (event_mtl_handler_) delete event_mtl_handler_;
+  //if (event_mtlHandler_) delete event_mtlHandler_;
   //if (spy_bytes_) delete spy_bytes_;
   //if (spy_num_messages_) delete spy_num_messages_;
   //if (local_bytes_sent_) delete local_bytes_sent_;
   //if (global_bytes_sent_) delete global_bytes_sent_;
   //if (hist_msg_size_) delete hist_msg_size_;
 #if !SSTMAC_INTEGRATED_SST_CORE
-  delete link_mtl_handler_;
+  //delete link_mtlHandler_;
 #endif
 }
 
-void
-nic::mtl_handle(event *ev)
+EventHandler*
+NIC::mtlHandler() const
 {
-  recv_message(static_cast<message*>(ev));
+  return newHandler(const_cast<NIC*>(this), &NIC::mtlHandle);
 }
 
 void
-nic::delete_statics()
+NIC::mtlHandle(Event *ev)
 {
+  nic_debug("MTL handle");
+  NicEvent* nev = static_cast<NicEvent*>(ev);
+  NetworkMessage* msg = nev->msg();
+  delete nev;
+  recvMessage(msg);
 }
 
 void
-nic::inject_send(network_message* netmsg, sw::operating_system* os)
+NIC::deleteStatics()
 {
-  uint64_t bytes = netmsg->byte_length();
-  timestamp delay = post_latency_ + timestamp(post_inv_bw_ * bytes);
-  timestamp nic_ready = next_free_ + delay;
-  next_free_ = next_free_ + delay * nic_pipeline_multiplier_;
-  os->sleep_until(nic_ready);
+}
 
+std::function<void(NetworkMessage*)>
+NIC::ctrlIoctl()
+{
+  auto f = [=](NetworkMessage* msg){
+    this->sendManagerMsg(msg);
+  };
+  return f;
+}
+
+std::function<void(NetworkMessage*)>
+NIC::dataIoctl()
+{
+  return std::bind(&NIC::injectSend, this, std::placeholders::_1);
+}
+
+void
+NIC::injectSend(NetworkMessage* netmsg)
+{
   if (netmsg->toaddr() == my_addr_){
-    intranode_send(netmsg);
+    intranodeSend(netmsg);
   } else {
-    internode_send(netmsg);
+    netmsg->putOnWire();
+    internodeSend(netmsg);
   }
 }
 
 void
-nic::recv_message(message* msg)
+NIC::recvMessage(NetworkMessage* netmsg)
 {
-  if (parent_->failed()){
-    return;
-  }
-
-  nic_debug("receiving message %s",
-    msg->to_string().c_str());
-
-  network_message* netmsg = safe_cast(network_message, msg);
-
   nic_debug("handling message %s:%lu of type %s from node %d while running",
-    netmsg->to_string().c_str(),
-    netmsg->flow_id(),
-    network_message::tostr(netmsg->type()),
+    netmsg->toString().c_str(),
+    netmsg->flowId(),
+    NetworkMessage::tostr(netmsg->type()),
     int(netmsg->fromaddr()));
 
   switch (netmsg->type()) {
-    case network_message::rdma_get_request: {
-      netmsg->nic_reverse(network_message::rdma_get_payload);
-      netmsg->put_on_wire();
-      internode_send(netmsg);
+    case NetworkMessage::rdma_get_request: {
+      netmsg->nicReverse(NetworkMessage::rdma_get_payload);
+      netmsg->putOnWire();
+      internodeSend(netmsg);
       break;
     }
-    case network_message::nvram_get_request: {
-      netmsg->nic_reverse(network_message::nvram_get_payload);
-      internode_send(netmsg);
-      break;
-    }
-    case network_message::rdma_get_sent_ack:
-    case network_message::payload_sent_ack:
-    case network_message::rdma_put_sent_ack: {
+    case NetworkMessage::nvram_get_request: {
+      netmsg->nicReverse(NetworkMessage::nvram_get_payload);
+      //internodeSend(netmsg);
       parent_->handle(netmsg);
       break;
     }
-    case network_message::failure_notification: {
+    case NetworkMessage::failure_notification:
+    case NetworkMessage::rdma_get_sent_ack:
+    case NetworkMessage::payload_sent_ack:
+    case NetworkMessage::rdma_put_sent_ack: {
+      //node_link_->send(netmsg);
       parent_->handle(netmsg);
       break;
     }
-    case network_message::rdma_get_nack:
-    case network_message::rdma_get_payload:
-    case network_message::rdma_put_payload:
-    case network_message::nvram_get_payload:
-    case network_message::payload: {
-      netmsg->take_off_wire();
-      send_to_node(netmsg);
+    case NetworkMessage::rdma_get_nack:
+    case NetworkMessage::rdma_get_payload:
+    case NetworkMessage::rdma_put_payload:
+    case NetworkMessage::nvram_get_payload:
+    case NetworkMessage::payload: {
+      netmsg->takeOffWire();
+      parent_->handle(netmsg);
+      //node_link_->send(netmsg);
       break;
     }
     default: {
-      spkt_throw_printf(sprockit::value_error,
+      spkt_throw_printf(sprockit::ValueError,
         "nic::handle: invalid message type %s: %s",
-        network_message::tostr(netmsg->type()), netmsg->to_string().c_str());
+        NetworkMessage::tostr(netmsg->type()), netmsg->toString().c_str());
     }
   }
 }
 
 void
-nic::ack_send(network_message* payload)
+NIC::ackSend(NetworkMessage* payload)
 {
-  if (payload->needs_ack()){
-    network_message* ack = payload->clone_injection_ack();
+  if (payload->needsAck()){
+    NetworkMessage* ack = payload->cloneInjectionAck();
     nic_debug("acking payload %s with ack %p",
-      payload->to_string().c_str(), ack);
-    send_to_node(ack);
+      payload->toString().c_str(), ack);
+    sendToNode(ack);
   }
 }
 
 void
-nic::intranode_send(network_message* payload)
+NIC::intranodeSend(NetworkMessage* payload)
 {
-  nic_debug("intranode send payload %s", payload->to_string().c_str());
+  nic_debug("intranode send payload %s", payload->toString().c_str());
 
   switch(payload->type())
   {
-  case network_message::nvram_get_request:
-    payload->nic_reverse(network_message::nvram_get_payload);
+  case NetworkMessage::nvram_get_request:
+    payload->nicReverse(NetworkMessage::nvram_get_payload);
     break;
-  case network_message::rdma_get_request:
-    payload->nic_reverse(network_message::rdma_get_payload);
+  case NetworkMessage::rdma_get_request:
+    payload->nicReverse(NetworkMessage::rdma_get_payload);
     break;
   default:
     break; //nothing to do
   }
 
-  memory_model* mem = parent_->mem();
+  MemoryModel* mem = parent_->mem();
   //use 64 as a negligible number of compute bytes
-  uint64_t byte_length = payload->byte_length();
+  uint64_t byte_length = payload->byteLength();
   if (byte_length > 64){
-    mem->access(payload->byte_length(),
-                mem->max_single_bw(),
-                new_callback(this, &nic::finish_memcpy, payload));
+    mem->access(payload->byteLength(),
+                mem->minFlowByteDelay(),
+                newCallback(this, &NIC::finishMemcpy, payload));
   } else {
-    finish_memcpy(payload);
+    finishMemcpy(payload);
   }
 }
 
 void
-nic::finish_memcpy(network_message* payload)
+NIC::finishMemcpy(NetworkMessage* payload)
 {
+  ackSend(payload);
   payload->intranode_memmove();
-  ack_send(payload);
-  send_to_node(payload);
+  sendToNode(payload);
 }
 
 void
-nic::record_message(network_message* netmsg)
+NIC::recordMessage(NetworkMessage* netmsg)
 {
   nic_debug("sending message %lu of size %ld of type %s to node %d: "
       "netid=%lu for %s",
-      netmsg->flow_id(),
-      netmsg->byte_length(),
-      network_message::tostr(netmsg->type()),
+      netmsg->flowId(),
+      netmsg->byteLength(),
+      NetworkMessage::tostr(netmsg->type()),
       int(netmsg->toaddr()),
-      netmsg->flow_id(), netmsg->to_string().c_str());
+      netmsg->flowId(), netmsg->toString().c_str());
 
-  if (netmsg->type() == network_message::null_netmsg_type){
+  if (netmsg->type() == NetworkMessage::null_netmsg_type){
     //assume this is a simple payload
-    netmsg->set_type(network_message::payload);
+    netmsg->setType(NetworkMessage::payload);
   }
 
   if (spy_num_messages_) {
-    spy_num_messages_->add_one(netmsg->fromaddr(),
-                  netmsg->toaddr());
+    //spy_num_messages_->addData(netmsg->fromaddr(), netmsg->toaddr(), 1);
   }
 
   if (spy_bytes_) {
-    spy_bytes_->add(netmsg->fromaddr(),
-                    netmsg->toaddr(), netmsg->byte_length());
+    //spy_bytes_->addData(netmsg->fromaddr(), netmsg->toaddr(), netmsg->byteLength());
   }
 
-  if (hist_msg_size_) {
-    hist_msg_size_->collect(netmsg->byte_length());
-  }
-
-  if (local_bytes_sent_) {
-    local_bytes_sent_->collect(netmsg->byte_length());
-  }
-
-  if (global_bytes_sent_) {
-    global_bytes_sent_->collect(netmsg->byte_length());
+  if (msg_sizes_) {
+    //msg_sizes_->addData(netmsg->byteLength());
   }
 }
 
 void
-nic::internode_send(network_message* netmsg)
+NIC::internodeSend(NetworkMessage* netmsg)
 {
-  record_message(netmsg);
-  nic_debug("internode send payload %s",
-    netmsg->to_string().c_str());
+  recordMessage(netmsg);
+  nic_debug("internode send payload %llu of size %d %s",
+    netmsg->flowId(), int(netmsg->byteLength()), netmsg->toString().c_str());
   //we might not have a logp overlay network
-  if (negligible_size(netmsg->byte_length())){
-    ack_send(netmsg);
-    send_to_logp_switch(netmsg);
+  if (negligibleSize(netmsg->byteLength())){
+    sendManagerMsg(netmsg);
   } else {
-    do_send(netmsg);
+    doSend(netmsg);
   }
 }
 
-void
-nic::send_to_logp_switch(network_message* netmsg)
+void 
+NIC::sendManagerMsg(NetworkMessage* msg)
 {
-  nic_debug("send to logP switch %s", netmsg->to_string().c_str());
-  logp_switch_->send(netmsg);
+  logp_link_->send(new NicEvent(msg));
+  ackSend(msg);
 }
 
 void
-nic::send_to_node(network_message* payload)
+NIC::sendToNode(NetworkMessage* payload)
 {
-  auto forward_ev = new_callback(parent_, &node::handle, payload);
-  parent_->send_now_self_event_queue(forward_ev);
+  auto forward_ev = newCallback(parent_, &Node::handle, payload);
+  parent_->sendExecutionEventNow(forward_ev);
 }
 
 }

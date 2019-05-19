@@ -66,7 +66,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/spkt_new.h>
 #include <sprockit/output.h>
 #include <sprockit/basic_string_tokenizer.h>
-#include <sstmac/common/param_expander.h>
 
 namespace sstmac {
 
@@ -101,7 +100,7 @@ param_remap remap_list[] = {
   pr("node_mem_bandwidth", "node.memory.bandwidth"),
   pr("nic_negligible_size", "node.nic.negligible_size"),
   pr("nic_name", "node.nic.name"),
-  pr("node_memory_model", "node.memory.name"),
+  pr("node_MemoryModel", "node.memory.name"),
   pr("node_frequency", "node.proc.frequency"),
   pr("router", "switch.router.name"),
   pr("router_seed", "switch.router.seed"),
@@ -114,7 +113,7 @@ param_remap remap_list[] = {
   pr("pisces_injection_bandwidth", "switch.ejection_bandwidth", false),
   pr("pisces_injection_bandwidth", "node.nic.injection.bandwidth"),
   pr("pisces_injection_latency", "node.nic.injection.latency"),
-  pr("pisces_switch_crossbar_latency", "switch.xbar.latency"),
+  pr("PiscesSwitch_crossbar_latency", "switch.xbar.latency"),
   pr("node_cores", "node.proc.ncores"),
   pr("node_sockets", "node.nsockets"),
   pr("node_pipeline_speedup", "node.proc.parallelism"),
@@ -128,7 +127,7 @@ param_remap remap_list[] = {
   pr("network_spyplot", "node.nic.traffic_matrix.fileroot"),
   pr("ftq", "node.os.ftq.fileroot"),
   pr("ftq_epoch", "node.os.ftq.epoch"),
-  pr("call_graph", "node.os.call_graph.fileroot"),
+  pr("callGraph", "node.os.callGraph.fileroot"),
   pr("stack_size", "node.os.stack_size"),
   pr("stack_chunk_size", "node.os.stack_chunk_size"),
   pr("injection_redundant", "node.nic.injection.redundant", false),
@@ -161,143 +160,90 @@ param_remap remap_list[] = {
   pr("launch_node_id_indexing_file", "node.app1.node_id_indexing_file"),
 };
 
-void
-remap_deprecated_params(sprockit::sim_parameters* params)
-{
-  int num_remap = sizeof(remap_list) / sizeof(param_remap);
-  for (int i=0; i < num_remap; ++i){
-    param_remap& p = remap_list[i];
-    if (params->has_param(p.deprecated)){
-      params->parse_keyval(p.updated,
-         params->get_param(p.deprecated),
-         false/*fail on existing*/,
-         false/*do not overwrite anything*/,
-         false/*do not mark anything as read*/);
-      if (p.del){
-        params->remove_param(p.deprecated);
-      }
-    }
-  }
-}
 
 void
-remap_latency_params(sprockit::sim_parameters* params)
+remapParams(sprockit::SimParameters::ptr params, bool verbose)
 {
+  double timescale = 100e-18;//params->get_optional_time_param("timestamp_resolution", 100e-18);
+  int as_per_tick = round(timescale/1e-18) + 0.02;
+  Timestamp::initStamps(100);
 
-}
-
-void
-remap_params(sprockit::sim_parameters* params, bool verbose)
-{
-  double timescale = params->get_optional_time_param("timestamp_resolution", 1e-12);
-  int ps_per_tick = round(timescale/1e-12) + 0.02;
-  timestamp::init_stamps(ps_per_tick);
-
-  remap_deprecated_params(params);
-  remap_latency_params(params);
-
-  sprockit::sim_parameters* top_params = params->get_namespace("topology");
-  bool auto_top = top_params->get_optional_bool_param("auto", false);
+  sprockit::SimParameters::ptr top_params = params->getNamespace("topology");
+  bool auto_top = top_params->getOptionalBoolParam("auto", false);
   if (auto_top){
-    int max_nproc = native::manager::compute_max_nproc(params);
+    int max_nproc = native::Manager::computeMaxNproc(params);
     if (max_nproc == 0){
-      params->print_scoped_params(std::cerr);
+      params->printParams(std::cerr);
       spkt_abort_printf("computed max nproc=0 from parameters - need app1.launch_cmd or app1.size");
     }
-    resize_topology(max_nproc, params, verbose);
+    resizeTopology(max_nproc, params, verbose);
     //clear the auto keyword to keep params self-consistent
-    top_params->remove_param("auto");
-  }
-
-  //here is where we might need to build supplemental params
-  bool has_cong_model = params->has_param("congestion_model");
-  bool has_amm_model = params->has_param("amm_model");
-  if (has_cong_model && !has_amm_model){
-    spkt_abort_printf("If specying congestion_model, must also specify amm_model");
-  }
-  if (has_amm_model && !has_cong_model){
-    spkt_abort_printf("If specifiyng amm_model, must also specify congestion_model");
-
-  }
-
-  if (has_cong_model && has_amm_model){
-    sstmac::param_expander* hw_expander = sstmac::param_expander::factory::get_param("congestion_model", params);
-    hw_expander->expand(params);
-    delete hw_expander;
+    //top_params->remove_param("auto");
   }
 
   //here is where we want to read debug params and active debug printing for stuff, maybe
   std::vector<std::string> debug_flags;
-  if (params->has_param("debug")){
-    params->get_vector_param("debug", debug_flags);
+  if (params->hasParam("debug")){
+    params->getVectorParam("debug", debug_flags);
   }
 
   for (int i=0; i < debug_flags.size(); ++i){
-    sprockit::debug::turn_on(debug_flags[i]);
+    sprockit::Debug::turnOn(debug_flags[i]);
   }
 
   /** If more than one thread, make sure event manager is multithreaded */
-  if (params->has_param("sst_nthread")){
-    int nthr = params->get_int_param("sst_nthread");
-    if (nthr > 1 && !params->has_param("event_manager")){
-      params->add_param_override("event_manager", "multithread");
+  if (params->hasParam("sst_nthread")){
+    int nthr = params->getIntParam("sst_nthread");
+    if (nthr > 1 && !params->hasParam("event_manager")){
+      params->addParamOverride("event_manager", "multithread");
     }
   }
-
-  std::string top_name = top_params->get_param("name");
-  sprockit::sim_parameters* sw_params = params->get_optional_namespace("switch");
-  sprockit::sim_parameters* rtr_params = sw_params->get_optional_namespace("router");
-  std::string rtr_name = rtr_params->get_optional_param("name","");
-  std::string new_rtr_name = top_name + "_" + rtr_name;
-  if (rtr_name == "minimal")      rtr_params->add_param_override("name", new_rtr_name);
-  else if (rtr_name == "valiant") rtr_params->add_param_override("name", new_rtr_name);
-  else if (rtr_name == "ugal") rtr_params->add_param_override("name", new_rtr_name);
-  else if (rtr_name == "ugalG") rtr_params->add_param_override("name", new_rtr_name);
-  else if (rtr_name == "par") rtr_params->add_param_override("name", new_rtr_name);
 }
 
 }
 
 void
-resize_topology(int max_nproc, sprockit::sim_parameters *params, bool verbose)
+resizeTopology(int max_nproc, sprockit::SimParameters::ptr params, bool verbose)
 {
-  sprockit::sim_parameters* top_params = params->get_namespace("topology");
-  if (top_params->has_param("name")){
+  sprockit::SimParameters::ptr top_params = params->getNamespace("topology");
+  if (top_params->hasParam("name")){
     spkt_abort_printf("cannot specify topology name with auto topology");
   }
-  top_params->add_param_override("name", "torus");
+  top_params->addParamOverride("name", "torus");
 
   //create a topology matching nproc
   int x, y, z;
-  gen_cart_grid(max_nproc, x, y, z);
-  std::string paramval = sprockit::printf("%d %d %d", x, y, z);
-  params->add_param("topology.geometry", paramval);
+  genCartGrid(max_nproc, x, y, z);
+  std::string paramval = sprockit::printf("[%d,%d,%d]", x, y, z);
+  top_params->addParamOverride("geometry", paramval);
   if (verbose)
     cerr0 << sprockit::printf("Using auto-generated geometry [%d %d %d] for nproc=%d\n", x, y, z, max_nproc);
 }
 
+#if 0
 void
-map_env_params(sprockit::sim_parameters* params)
+map_env_params(SST::Params& params)
 {
   //read environmental variables as potential overrides
   char* param = getenv("MPICH_GNI_MAX_VSHORT_MSG_SIZE");
   if (param) {
-    params->add_param_override("max_vshort_msg_size", param);
+    params.insert("max_vshort_msg_size", param);
   }
 
   param = getenv("MPICH_GNI_MAX_EAGER_MSG_SIZE");
   if (param) {
-    params->add_param_override("max_eager_msg_size", param);
+    params.insert("max_eager_msg_size", param);
   }
 
   param = getenv("MPICH_SMP_SINGLE_COPY_SIZE");
   if (param) {
-    params->add_param_override("smp_single_copy_size", param);
+    params.insert("smp_single_copy_size", param);
   }
 
   /** set to an absurdly high value - no single copies */
   param = getenv("MPICH_SMP_SINGLE_COPY_OFF");
   if (param) {
-    params->add_param_override("smp_single_copy_size", "99999999999");
+    params.insert("smp_single_copy_size", "99999999999");
   }
 }
+#endif

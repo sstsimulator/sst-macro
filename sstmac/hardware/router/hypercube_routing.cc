@@ -10,51 +10,55 @@
 namespace sstmac {
 namespace hw {
 
-class hypercube_minimal_router : public router {
+class HypercubeMinimalRouter : public Router {
  public:
-  FactoryRegister("hypercube_minimal",
-              router, hypercube_minimal_router,
-              "router implementing minimal routing for hypercube")
+  SST_ELI_REGISTER_DERIVED(
+    Router,
+    HypercubeMinimalRouter,
+    "macro",
+    "hypercube_minimal",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "router implementing minimal routing for hypercube")
 
-  hypercube_minimal_router(sprockit::sim_parameters* params, topology *top,
-                         network_switch *netsw)
-    : router(params, top, netsw)
+  HypercubeMinimalRouter(SST::Params& params, Topology *top,
+                         NetworkSwitch *netsw)
+    : Router(params, top, netsw)
   {
-    cube_ = safe_cast(hypercube, top);
+    cube_ = safe_cast(Hypercube, top);
     inj_offset_ = 0;
     for (int size : cube_->dimensions()){
       inj_offset_ += size;
     }
   }
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "hypercube minimal router";
   }
 
-  int num_vc() const override {
+  int numVC() const override {
     return 1;
   }
 
-  void route(packet *pkt) override {
-    auto* hdr = pkt->rtr_header<packet::header>();
-    switch_id ej_addr = pkt->toaddr() / cube_->concentration();
+  void route(Packet *pkt) override {
+    auto* hdr = pkt->rtrHeader<Packet::Header>();
+    SwitchId ej_addr = pkt->toaddr() / cube_->concentration();
     if (ej_addr == my_addr_){
       hdr->edge_port = pkt->toaddr() % cube_->concentration() + inj_offset_;
       hdr->deadlock_vc = 0;
       return;
     }
 
-    cube_->minimal_route_to_switch(my_addr_, ej_addr, hdr);
+    cube_->minimalRouteToSwitch(my_addr_, ej_addr, hdr);
     hdr->deadlock_vc = 0;
   }
 
  protected:
-  hypercube* cube_;
+  Hypercube* cube_;
   int inj_offset_;
 };
 
-class hypercube_par_router : public hypercube_minimal_router {
-  struct header : public packet::header {
+class HypercubeParRouter : public HypercubeMinimalRouter {
+  struct header : public Packet::Header {
     uint8_t stage_number : 3;
     uint8_t nhops : 3;
     uint8_t dstX : 6;
@@ -70,19 +74,23 @@ class hypercube_par_router : public hypercube_minimal_router {
   static const char valiant_stage = 2;
   static const char final_stage = 3;
 
-  FactoryRegister("hypercube_par",
-              router, hypercube_par_router,
-              "router implementing PAR for hypercube/hyperX")
+  SST_ELI_REGISTER_DERIVED(
+    Router,
+    HypercubeParRouter,
+    "macro",
+    "hypercube_par",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "router implementing PAR for hypercube")
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "hypercube PAR router";
   }
 
-  hypercube_par_router(sprockit::sim_parameters* params, topology *top,
-                       network_switch *netsw)
-    : hypercube_minimal_router(params, top, netsw)
+  HypercubeParRouter(SST::Params& params, Topology *top,
+                       NetworkSwitch *netsw)
+    : HypercubeMinimalRouter(params, top, netsw)
   {
-    auto coords = cube_->switch_coords(my_addr_);
+    auto coords = cube_->switchCoords(my_addr_);
     if (coords.size() != 3){
       spkt_abort_printf("PAR routing currently only valid for 3D");
     }
@@ -95,42 +103,42 @@ class hypercube_par_router : public hypercube_minimal_router {
     z_ = dims[2];
   }
 
-  int x_random_number(uint32_t seed){
+  int x_randomNumber(uint32_t seed){
     int x = myX_;
     uint32_t attempt = 0;
     while (x == myX_){
-      x = random_number(x_, attempt, seed);
+      x = randomNumber(x_, attempt, seed);
       ++attempt;
     }
     return x;
   }
 
-  int y_random_number(uint32_t seed){
+  int y_randomNumber(uint32_t seed){
     int y = myY_;
     uint32_t attempt = 1; //start 1 to better scramble
     while (y == myY_){
-      y = random_number(y_, attempt, seed);
+      y = randomNumber(y_, attempt, seed);
       ++attempt;
     }
     return y;
   }
 
-  int z_random_number(uint32_t seed){
+  int z_randomNumber(uint32_t seed){
     int z = myZ_;
     uint32_t attempt = 2; //start 2 to better scramble
     while (z == myZ_){
-      z = random_number(z_, attempt, seed);
+      z = randomNumber(z_, attempt, seed);
       ++attempt;
     }
     return z;
   }
 
-  void route(packet *pkt) override {
-    auto hdr = pkt->rtr_header<header>();
+  void route(Packet *pkt) override {
+    auto hdr = pkt->rtrHeader<header>();
     switch(hdr->stage_number){
     case initial_stage: {
-      switch_id ej_addr = pkt->toaddr() / cube_->concentration();
-      auto coords = cube_->switch_coords(ej_addr);
+      SwitchId ej_addr = pkt->toaddr() / cube_->concentration();
+      auto coords = cube_->switchCoords(ej_addr);
       hdr->dstX = coords[0];
       hdr->dstY = coords[1];
       hdr->dstZ = coords[2];
@@ -144,13 +152,13 @@ class hypercube_par_router : public hypercube_minimal_router {
     }
     case minimal_stage: {
      //have to decide if we want to route valiantly
-       uint32_t seed = netsw_->now().ticks();
+       uint32_t seed = netsw_->now().time.ticks();
        int minimalPort;
        int valiantPort;
        coordinates coords(3);
-       coords[0] = myX_ == hdr->dstX ? myX_ : x_random_number(seed);
-       coords[1] = myY_ == hdr->dstY ? myY_ : y_random_number(seed);
-       coords[2] = myZ_ == hdr->dstZ ? myZ_ : z_random_number(seed);
+       coords[0] = myX_ == hdr->dstX ? myX_ : x_randomNumber(seed);
+       coords[1] = myY_ == hdr->dstY ? myY_ : y_randomNumber(seed);
+       coords[2] = myZ_ == hdr->dstZ ? myZ_ : z_randomNumber(seed);
        if (myX_ != hdr->dstX){
          minimalPort = hdr->dstX;
          valiantPort = coords[0];
@@ -166,12 +174,12 @@ class hypercube_par_router : public hypercube_minimal_router {
          hdr->deadlock_vc = 0;
          return;
        }
-      int minLength = netsw_->queue_length(minimalPort);
-      int valLength = netsw_->queue_length(valiantPort) * 2;
+      int minLength = netsw_->queueLength(minimalPort, all_vcs);
+      int valLength = netsw_->queueLength(valiantPort, all_vcs) * 2;
       if (minLength <= valLength){
         hdr->edge_port = minimalPort;
       } else {
-        switch_id inter = cube_->switch_addr(coords);
+        SwitchId inter = cube_->switchAddr(coords);
         hdr->edge_port = valiantPort;
         hdr->dest_switch = inter;
         hdr->stage_number = valiant_stage;
@@ -180,7 +188,7 @@ class hypercube_par_router : public hypercube_minimal_router {
     }
     case valiant_stage: {
       if (my_addr_ != hdr->dest_switch){
-        auto coords = cube_->switch_coords(hdr->dest_switch);
+        auto coords = cube_->switchCoords(hdr->dest_switch);
         if (coords[0] != myX_){
           hdr->edge_port = coords[0];
         } else if (coords[1] != myY_){
@@ -215,7 +223,7 @@ class hypercube_par_router : public hypercube_minimal_router {
     hdr->nhops++;
   }
 
-  int num_vc() const override {
+  int numVC() const override {
     return 6;
   }
 

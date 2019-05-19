@@ -52,7 +52,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-typedef unique_event_id network_id;
+typedef UniqueEventId network_id;
 
 }
 }

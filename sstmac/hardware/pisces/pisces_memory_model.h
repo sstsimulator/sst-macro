@@ -49,136 +49,75 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/libraries/compute/compute_event_fwd.h>
 #include <sstmac/hardware/pisces/pisces_arbitrator.h>
 #include <sstmac/hardware/pisces/pisces_sender.h>
-#include <sstmac/hardware/pisces/pisces_packetizer.h>
 #include <sprockit/thread_safe_new.h>
 #include <sprockit/allocator.h>
 
 namespace sstmac {
 namespace hw {
 
-class memory_message : 
-  public message,
-  public sprockit::thread_safe_new<memory_message>
-{
-  NotSerializable(memory_message)
-
- public:
-  memory_message(long bytes, uint64_t id, double max_bw) :
-    bytes_(bytes), id_(id), max_bw_(max_bw)
-  {
-  }
-
-  uint64_t byte_length() const override {
-    return bytes_;
-  }
-
-  uint64_t flow_id() const override {
-    return id_;
-  }
-
-  std::string to_string() const override;
-
-  node_id toaddr() const override {
-    return node_id();
-  }
-
-  node_id fromaddr() const override {
-    return node_id();
-  }
-
-  double max_bw() const {
-    return max_bw_;
-  }
-
- private:
-  uint64_t id_;
-  uint64_t bytes_;
-  double max_bw_;
-};
-
-#define PISCES_MEM_DEFAULT_NUM_CHANNELS 8
-
-class pisces_memory_packetizer : public packetizer
+class PiscesMemoryModel : public MemoryModel
 {
  public:
-  pisces_memory_packetizer(sprockit::sim_parameters* params,
-                          event_scheduler* parent);
-  
-  ~pisces_memory_packetizer();
+  SST_ELI_REGISTER_DERIVED(
+    MemoryModel,
+    PiscesMemoryModel,
+    "macro",
+    "pisces",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "a memory model using pisces packet flow for contention")
 
-  std::string to_string() const override {
-    return "pisces memory packetizer";
-  }
+  PiscesMemoryModel(SST::Params& params, Node* nd);
 
-  link_handler* new_credit_handler() const override;
-  link_handler* new_payload_handler() const override;
+  virtual ~PiscesMemoryModel();
 
-  void recv_credit(event* ev);
-
-  void inject(int vn, uint32_t bytes, uint64_t byte_offset, message *payload) override;
-
-  bool spaceToSend(int vn, int num_bits) override {
-    return channelFree_[vn];
-  }
-
-  double max_single_bw() const {
-    return max_single_bw_;
-  }
-
- private:
-  void handle_payload(int vn, pisces_packet* pkt);
-
-  void init_noise_model();
-
- private:
-  double max_bw_;
-  double max_single_bw_;
-  timestamp latency_;
-  pisces_bandwidth_arbitrator* arb_;
-  noise_model* bw_noise_;
-  noise_model* interval_noise_;
-  int num_noisy_intervals_;
-  bool channelFree_[PISCES_MEM_DEFAULT_NUM_CHANNELS];
-
-};
-
-
-class pisces_memory_model :
-  public memory_model,
-  public packetizer_callback
-{
-  FactoryRegister("pisces", memory_model, pisces_memory_model)
- public:
-  pisces_memory_model(sprockit::sim_parameters* params, node* nd);
-
-  virtual ~pisces_memory_model();
-
-  std::string to_string() const override {
+  std::string toString() const override {
     return "packet flow memory model";
   }
 
-  void notify(int vn, message* msg) override;
+  void access(uint64_t bytes, Timestamp min_byte_delay, Callback* cb) override;
 
-  void access(long bytes, double max_bw, callback* cb) override;
-
-  double max_single_bw() const override {
-    return mem_packetizer_->max_single_bw();
+  Timestamp minFlowByteDelay() const override {
+    return min_flow_byte_delay_;
   }
 
  private:
-  void start(int channel, memory_message* msg, callback* cb);
+  void start(int channel, uint64_t size, Timestamp byte_delay, Callback* cb);
+  void channelFree(int channel);
+  void dataArrived(int channel, uint32_t bytes);
+  GlobalTimestamp access(int channel, uint32_t bytes, Timestamp byte_delay, Callback* cb);
+  GlobalTimestamp access(int channel, PiscesPacket* pkt, Timestamp byte_delay, Callback* cb);
+  void access(PiscesPacket* pkt, Timestamp byte_delay, Callback* cb);
 
  private:
-  template <class T, class U> using pair_alc = sprockit::thread_safe_allocator<std::pair<T,U>>;
-  //template <class T, class U> using pair_alc = std::allocator<std::pair<T,U>>;
+  struct Request {
+    uint64_t bytes_total;
+    uint64_t bytes_arrived;
+    Timestamp byte_delay;
+    ExecutionEvent* cb;
+    PiscesPacket* pkt;
 
-  std::map<message*, callback*, std::less<message*>,
-           pair_alc<message* const,callback*>> pending_requests_;
-  std::list<std::pair<memory_message*,callback*>,
-           pair_alc<memory_message*,callback*>> stalled_requests_;
-  pisces_memory_packetizer* mem_packetizer_;
+    Request(uint64_t bytes, Timestamp byt_delay, Callback* c) :
+      bytes_total(bytes), bytes_arrived(0), byte_delay(byt_delay), cb(c), pkt(nullptr)
+    {
+    }
+
+    Request(Timestamp byt_delay, Callback* c, PiscesPacket* p) :
+      byte_delay(byt_delay), cb(c), pkt(p)
+    {
+    }
+
+  };
+
   std::vector<int> channels_available_;
+  std::vector<Request> channel_requests_;
+  std::list<Request, sprockit::threadSafeAllocator<Request>> stalled_requests_;
+
   int nchannels_;
+  Timestamp min_agg_byte_delay_;
+  Timestamp min_flow_byte_delay_;
+  Timestamp latency_;
+  PiscesBandwidthArbitrator* arb_;
+  int packet_size_;
 
 };
 

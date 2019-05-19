@@ -57,24 +57,28 @@ namespace sw {
 /**
  * A chunk of allocated memory to be divided into fixed-size stacks.
  */
-class stack_alloc::chunk
+class StackAlloc::chunk
 {
   /// The base address of my memory region.
   char *addr_;
+  /// If true we mmap twice the requested space and mprotect every other stack
+  bool protect_;
   /// The total size of my allocation.
   size_t size_;
   /// The target size of each open (unprotected) stack region.
   size_t stacksize_;
-  /// Next stack (for get_next_stack).
-  size_t next_stack_;
+  /// When unprotected step_size = stacksize, otherwise 2x stacksize
+  size_t step_size_;
+  /// Offset for next stack (used in get_next_stack).
+  size_t next_stack_offset_ = 0;
 
  public:
   /// Make a new chunk.
-  chunk(size_t stacksize, size_t suggested_chunk_size);
+  chunk(size_t stacksize, size_t suggested_chunk_size, bool protect);
 
   ~chunk();
 
-  void*  get_next_stack();
+  void*  getNextStack();
 
 };
 

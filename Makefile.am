@@ -13,21 +13,15 @@ include $(top_srcdir)/Makefile.common
 
 # Files that should be distributed but are not built.
 EXTRA_DIST = LICENSE bootstrap.sh \
-  developer-sstmacro-8.1.pdf \
-  manual-sstmacro-8.1.pdf \
-  pdes-report-7.2.pdf \
+  developer-sstmacro-9.0.pdf \
+  manual-sstmacro-9.0.pdf \
+  pdes-report.pdf \
   docs \
   share \
   skeletons \
 	configurations
 
-SUBDIRS = $(subdirs)
-
-if BUILD_SUMI_MPI
-SUBDIRS += sumi-mpi
-endif
-
-SUBDIRS += sumi sstmac bin python tests configurations 
+SUBDIRS = $(subdirs) sumi-mpi sprockit sumi sstmac bin python tests configurations 
 
 dist_bin_SCRIPTS = sstmacro-libtool
 

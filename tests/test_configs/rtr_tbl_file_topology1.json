@@ -1,0 +1,44 @@
+{
+  "switches" : {
+    "switch0" : {
+      "routes" : {
+        "node0" : 6,
+        "node1" : 7,
+        "node2" : 0,
+        "node3" : 1,
+        "node4" : 0,
+        "node5" : 1
+      }
+    },
+    "switch1" : {
+      "routes" : {
+        "node0" : 0,
+        "node1" : 1,
+        "node2" : 6,
+        "node3" : 7,
+        "node4" : 0,
+        "node5" : 1
+      } 
+    },
+    "switch2" : {
+      "routes" : {
+        "node0" : 0,
+        "node1" : 1,
+        "node2" : 0,
+        "node3" : 1,
+        "node4" : 6,
+        "node5" : 7 
+      }
+    },
+    "switch3" : {
+      "routes" : {
+        "node0" : 0,
+        "node1" : 1,
+        "node2" : 2,
+        "node3" : 3,
+        "node4" : 4,
+        "node5" : 5 
+      }
+    }
+  }
+}

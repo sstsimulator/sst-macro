@@ -23,7 +23,7 @@ Simulation requires coarse-grained approximations to be practical.
 
 The developer's manual broadly covers the two main aspects of creating new components.
 \begin{itemize}
-\item Setting up components to match the \inlinecode{connectable} interface linking components together via ports and event handlers
+\item Setting up components to match the \inlinecode{Connectable} interface linking components together via ports and event handlers
 \item Registering components with the factory system to make them usable in simulation input files
 \end{itemize}
 
@@ -92,7 +92,7 @@ The simulation progresses with different modules (classes) exchanging events.
 In general, when module 1 sends a message to module 2, module 1 only sees an abstract interface for module 2.
 The polymorphic type of module 2 can vary freely to employ different physics or congestions models without affecting the implementation of module 1. 
 Polymorphism, while greatly simplifying modularity and interchangeability, does have some consequences.
-The ``workhorse'' of SST/macro is the base \inlinecode{event}, \inlinecode{event_component}, and \inlinecode{event_handler} classes.
+The ``workhorse'' of SST/macro is the base \inlinecode{event}, \inlinecode{Component}, and \inlinecode{EventHandler} classes.
 To increase polymorphism and flexibility, every SST/macro module that receives events does so via the generic function
 
 \begin{CppCode}
@@ -102,10 +102,10 @@ void handle(event* ev){
 \end{CppCode}
 The prototype therefore accepts \emph{any} event type. 
 The interaction of these types is illustrated in Figure~\ref{fig:abstractHandlers}).
-Event handlers are created as dispatch wrappers to member functions of an en \inlinecode{event_component}.
+Event handlers are created as dispatch wrappers to member functions of an en \inlinecode{Component}.
 There are special helper functions and template classes in SST/macro designed to simplify this process.
 A \inlinecode{link} is created connecting two components.
-An \inlinecode{event_handler} is created that dispatches to the \inlinecode{Listener::recv} member function.
+An \inlinecode{EventHandler} is created that dispatches to the \inlinecode{Listener::recv} member function.
 When events are pushed onto the link by \inlinecode{Pinger},
 the simulation core computes the correct link delay.
 After advancing virtual simulation time,

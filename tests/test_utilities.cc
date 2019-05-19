@@ -58,6 +58,8 @@ void test_random_numbers()
         else
             printf("FAILURE on normal distribution\n");
     }
+
+    delete gaussian;
 }
 
 

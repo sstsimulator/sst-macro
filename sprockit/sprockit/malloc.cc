@@ -633,10 +633,10 @@ void sprockit_finalize_heap(SprockitHeap* heap)
 {
 }
 
-void sprockit_init_cxx_heap(sim_parameters* params)
+void sprockit_init_cxx_heap(SST::Params& params)
 {
-  bool has_heap_size = params->has_param("sprockit_cxx_heap_size_mb");
-  bool has_page_size = params->has_param("sprockit_cxx_page_size_mb");
+  bool has_heap_size = params.contains("sprockit_cxx_heap_size_mb");
+  bool has_page_size = params.contains("sprockit_cxx_page_size_mb");
   if (has_heap_size && !has_page_size) {
     cerrn <<
               "Sprockit has heap size parameter, but not page size parameter.  Both must be given to use custom allocated."
@@ -653,11 +653,11 @@ void sprockit_init_cxx_heap(sim_parameters* params)
     return; //no work to do
   }
 
-  size_t heap_size_mbytes = params->get_long_param("sprockit_cxx_heap_size_mb");
-  size_t page_size_mbytes = params->get_long_param("sprockit_cxx_page_size_mb");
+  size_t heap_size_mbytes = params.find<long>("sprockit_cxx_heap_size_mb");
+  size_t page_size_mbytes = params.find<long>("sprockit_cxx_page_size_mb");
 
   //by default, use 16-byte alignment
-  size_t byte_alignment = params->get_optional_long_param("sprockit_byte_alignment", 16);
+  size_t byte_alignment = params.find<long>("sprockit_byte_alignment", 16);
 
   void* heap* = ::malloc(sizeof(SprockitHeap));
   cxx_malloc_heap = new (heap*) SprockitHeap(heap_size_mbytes, page_size_mbytes,
@@ -701,7 +701,7 @@ void sprockit_finalize_cxx_heap()
 #endif
 }
 #else
-void sprockit_init_cxx_heap(sim_parameters* params)
+void sprockit_init_cxx_heap(sprockit::SimParameters::ptr params)
 {
 }
 

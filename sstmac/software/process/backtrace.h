@@ -46,12 +46,12 @@ Questions? Contact sst-macro-help@sandia.gov
 #define sstmac_software_process_backtrace_h
 
 #include <sstmac/common/sstmac_config.h>
-#include <sstmac/software/process/graphviz.h>
+//#include <sstmac/software/process/graphviz.h>
 
 #if SSTMAC_HAVE_GRAPHVIZ
 #define SSTMACBacktrace GraphVizAppendBacktrace
 #else
-#define SSTMACBacktrace GraphVizDoNothing
+#define SSTMACBacktrace(...)
 #endif
 
 #endif

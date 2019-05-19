@@ -48,7 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sumi {
 
 int
-mpi_api::group_range_incl(MPI_Group oldgrp, int n, int ranges[][3], MPI_Group* newgrp)
+MpiApi::groupRangeIncl(MPI_Group oldgrp, int n, int ranges[][3], MPI_Group* newgrp)
 {
   std::vector<int> new_ranks;
   for (int i=0; i < n; ++i){
@@ -75,23 +75,23 @@ mpi_api::group_range_incl(MPI_Group oldgrp, int n, int ranges[][3], MPI_Group* n
     }
   }
 
-  return group_incl(oldgrp, new_ranks.size(), new_ranks.data(), newgrp);
+  return groupIncl(oldgrp, new_ranks.size(), new_ranks.data(), newgrp);
 }
 
 int
-mpi_api::group_incl(MPI_Group oldgrp, int num_ranks, const int *ranks, MPI_Group *newgrp)
+MpiApi::groupIncl(MPI_Group oldgrp, int num_ranks, const int *ranks, MPI_Group *newgrp)
 {
-  mpi_group* oldgrpPtr = get_group(oldgrp);
+  MpiGroup* oldgrpPtr = getGroup(oldgrp);
   if (num_ranks > oldgrpPtr->size()) {
     spkt_abort_printf("MPI_Group_incl: invalid group size %d", num_ranks);
   }
 
-  std::vector<task_id> vec_ranks(num_ranks, task_id(0));
+  std::vector<TaskId> vec_ranks(num_ranks, TaskId(0));
   for (int i = 0; i < num_ranks; i++) {
     vec_ranks[i] = oldgrpPtr->at(ranks[i]);
   }
-  mpi_group* newgrpPtr = new mpi_group(vec_ranks);
-  add_group_ptr(newgrpPtr, newgrp);
+  MpiGroup* newgrpPtr = new MpiGroup(vec_ranks);
+  addGroupPtr(newgrpPtr, newgrp);
 
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Group_incl(%d,%d,*%d)",
                 num_ranks, oldgrp, *newgrp);
@@ -100,12 +100,12 @@ mpi_api::group_incl(MPI_Group oldgrp, int num_ranks, const int *ranks, MPI_Group
 }
 
 bool
-mpi_api::group_create_with_id(MPI_Group group, int num_members, const int* members)
+MpiApi::groupCreateWithId(MPI_Group group, int num_members, const int* members)
 {
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Group_create_with_id(id=%d,n=%d)",
                 group, num_members);
 
-  int my_rank = comm_world()->rank();
+  int my_rank = commWorld()->rank();
   bool in_group = false;
   for (int i=0; i < num_members; ++i){
     if (members[i] == my_rank){
@@ -116,18 +116,18 @@ mpi_api::group_create_with_id(MPI_Group group, int num_members, const int* membe
 
   if (!in_group) return false;
 
-  std::vector<task_id> vec_ranks(num_members);
+  std::vector<TaskId> vec_ranks(num_members);
   for (int i=0; i < num_members; ++i){
     vec_ranks[i] = members[i];
   }
-  mpi_group* grpPtr = new mpi_group(vec_ranks);
-  add_group_ptr(grpPtr, &group);
+  MpiGroup* grpPtr = new MpiGroup(vec_ranks);
+  addGroupPtr(grpPtr, &group);
 
   return true;
 }
 
 int
-mpi_api::group_free(MPI_Group *grp)
+MpiApi::groupFree(MPI_Group *grp)
 {
   //do not delete it, leave it around
   //forever and ever and ever
@@ -145,11 +145,11 @@ mpi_api::group_free(MPI_Group *grp)
 }
 
 int
-mpi_api::group_translate_ranks(MPI_Group grp1, int n, const int *ranks1, MPI_Group grp2, int *ranks2)
+MpiApi::groupTranslateRanks(MPI_Group grp1, int n, const int *ranks1, MPI_Group grp2, int *ranks2)
 {
-  mpi_group* grp1ptr = get_group(grp1);
-  mpi_group* grp2ptr = get_group(grp2);
-  grp1ptr->translate_ranks(n, ranks1, ranks2, grp2ptr);
+  MpiGroup* grp1ptr = getGroup(grp1);
+  MpiGroup* grp2ptr = getGroup(grp2);
+  grp1ptr->translateRanks(n, ranks1, ranks2, grp2ptr);
 
 
   return MPI_SUCCESS;

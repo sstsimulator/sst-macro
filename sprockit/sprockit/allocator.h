@@ -85,11 +85,11 @@ class allocator
 
 };
 
-#if 0
-template <class T> using thread_safe_allocator = std::allocator<T>;
+#if SSTMAC_VALGRIND_MODE
+template <class T> using threadSafeAllocator = std::allocator<T>;
 #else
 template <class T>
-class thread_safe_allocator
+class threadSafeAllocator
 {
  public:
   typedef size_t    size_type;
@@ -101,10 +101,12 @@ class thread_safe_allocator
   typedef T         value_type;
 
   template <class U>
-  struct rebind { typedef thread_safe_allocator<U> other; };
+  struct rebind { typedef threadSafeAllocator<U> other; };
 
   void destroy(pointer p) { p->~T(); }
-  void construct(pointer p, const T& val){ new ((T*) p) T(val); }
+
+  template <class U, class... Args>
+  void construct(U* p, Args&&... args){ ::new ((void*)p) U(std::forward<Args>(args)...); }
 
   pointer allocate(size_type n, const void * = 0) {
     //ignore hints

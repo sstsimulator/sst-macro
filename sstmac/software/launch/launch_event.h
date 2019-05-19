@@ -46,21 +46,17 @@ Questions? Contact sst-macro-help@sandia.gov
 #define SSTMAC_SOFTWARE_LIBRARIES_LAUNCH_MESSAGES_LAUNCH_MESSAGE_H_INCLUDED
 
 #include <sstmac/hardware/network/network_message.h>
-#include <sstmac/common/messages/library_message.h>
-#include <sstmac/common/messages/timed_event.h>
 #include <sstmac/software/launch/job_launcher.h>
+#include <sstmac/software/launch/task_mapping.h>
 #include <sstmac/software/process/app_fwd.h>
 #include <sstmac/software/process/app_id.h>
-#include <sprockit/sim_parameters_fwd.h>
+#include <sprockit/sim_parameters.h>
 #include <sprockit/thread_safe_new.h>
 
 namespace sstmac {
 namespace sw {
 
-class launch_event :
-  public hw::network_message,
-  public library_interface,
-  public timed_interface
+class LaunchRequest : public hw::NetworkMessage
 {
  public:
   typedef enum {
@@ -68,28 +64,22 @@ class launch_event :
     Stop
   } type_t;
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return sprockit::printf("launch event app=%d task=%d node=%d",
-                            aid_, tid_, toaddr_);
+                            aid(), tid_, toaddr());
   }
 
   void serialize_order(serializer& ser) override {
-    hw::network_message::serialize_order(ser);
-    timed_interface::serialize_order(ser);
-    library_interface::serialize_order(ser);
+    hw::NetworkMessage::serialize_order(ser);
     ser & ty_;
     ser & tid_;
   }
 
-  task_id tid() const {
+  TaskId tid() const {
     return tid_;
   }
 
-  app_id aid() const {
-    return aid_;
-  }
-
-  std::string unique_name() const {
+  std::string uniqueName() const {
     return unique_name_;
   }
 
@@ -97,88 +87,88 @@ class launch_event :
     return ty_;
   }
 
-  network_message* clone_injection_ack() const override;
+  NetworkMessage* cloneInjectionAck() const override;
 
  protected:
-  launch_event(type_t ty, app_id aid, task_id tid,
+  LaunchRequest(uint64_t flow_id,
+               type_t ty, AppId aid, TaskId tid,
                const std::string& unique_name,
-               node_id to, node_id from,
+               NodeId to, NodeId from,
                const std::string& libname) :
     ty_(ty), tid_(tid),
     unique_name_(unique_name),
-    library_interface(libname),
-    network_message(aid, to, from, 0)
+    NetworkMessage(flow_id, libname, aid, to, from,
+                    256, //use rough fixed size to avoid platform-dependent sizeof(...)
+                    false, nullptr, header{})
   {
-    network_message::type_ = payload;
-    set_needs_ack(false);
   }
 
-  launch_event(){} //for serialization
+  LaunchRequest(){} //for serialization
 
  private:
-  task_id tid_;
+  TaskId tid_;
   std::string unique_name_;
   type_t ty_;
 
 };
 
-class start_app_event :
-  public launch_event,
-  public sprockit::thread_safe_new<start_app_event>
+class StartAppRequest :
+  public LaunchRequest,
+  public sprockit::thread_safe_new<StartAppRequest>
 {
-  ImplementSerializable(start_app_event)
+  ImplementSerializable(StartAppRequest)
  public:
-  start_app_event(app_id aid,
+  StartAppRequest(uint64_t flow_id, AppId aid,
      const std::string& unique_name,
-     task_mapping::ptr mapping,
-     task_id tid,
-     node_id to,
-     node_id from,
-     const sprockit::sim_parameters* app_params) :
-    launch_event(Start, aid, tid, unique_name, to, from, "launcher"),
+     TaskMapping::ptr mapping,
+     TaskId tid,
+     NodeId to,
+     NodeId from,
+     const SST::Params& app_params) :
+    LaunchRequest(flow_id, Start, aid, tid, unique_name, to, from, "launcher"),
     mapping_(mapping),
     app_params_(app_params)
   {
   }
 
-  int core_affinity(int intranode_rank) const;
+  int coreAffinity(int intranode_rank) const;
 
-  std::string to_string() const override;
+  std::string toString() const override;
 
-  start_app_event() {} //for serialization
+  StartAppRequest() {} //for serialization
 
   void serialize_order(serializer& ser) override;
 
-  sprockit::sim_parameters& app_params() {
+  const SST::Params& appParams() const {
     return app_params_;
   }
 
-  task_mapping::ptr mapping() const {
+  TaskMapping::ptr mapping() const {
     return mapping_;
   }
 
  private:
   std::string unique_name_;
-  task_mapping::ptr mapping_;
-  sprockit::sim_parameters app_params_;
+  TaskMapping::ptr mapping_;
+  SST::Params app_params_;
 
 };
 
-class job_stop_event : public launch_event
+class JobStopRequest : public LaunchRequest
 {
-  ImplementSerializable(job_stop_event)
+  ImplementSerializable(JobStopRequest)
  public:
-  job_stop_event(app_id aid,
+  JobStopRequest(uint64_t flow_id, AppId aid,
      const std::string& unique_name,
-     node_id to,
-     node_id from) :
-    launch_event(Stop, aid, 0, unique_name, to, from, "job_launcher")
+     NodeId to,
+     NodeId from) :
+    LaunchRequest(flow_id, Stop, aid, 0, unique_name, to, from, "JobLauncher")
   {
   }
 
-  job_stop_event(){} //for serialization
+  JobStopRequest(){} //for serialization
 
-  std::string to_string() const override;
+  std::string toString() const override;
 };
 
 }

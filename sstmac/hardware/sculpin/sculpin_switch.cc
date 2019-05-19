@@ -82,194 +82,116 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-sculpin_switch::sculpin_switch(
-  sprockit::sim_parameters *params, uint32_t id, event_manager *mgr) :
+SculpinSwitch::SculpinSwitch(uint32_t id, SST::Params& params) :
   router_(nullptr),
   congestion_(true),
-  #if SSTMAC_VTK_ENABLED && !SSTMAC_INTEGRATED_SST_CORE
-    vtk_(nullptr),
-  #endif
-  delay_hist_(nullptr),
-  network_switch(params, id, mgr)
+  vtk_(nullptr),
+  xmit_wait_(nullptr),
+  NetworkSwitch(id, params)
 {
-  sprockit::sim_parameters* rtr_params = params->get_optional_namespace("router");
-  rtr_params->add_param_override_recursive("id", int(my_addr_));
-  router_ = router::factory::get_param("name", rtr_params, top_, this);
+  SST::Params rtr_params = params.find_scoped_params("router");
+  rtr_params.insert("id", std::to_string(my_addr_));
+  router_ = sprockit::create<Router>(
+   "macro", rtr_params.find<std::string>("name"), rtr_params, top_, this);
 
-  congestion_ = params->get_optional_bool_param("congestion", true);
-  vtk_flicker_ = params->get_optional_bool_param("vtk_flicker", true);
+  congestion_ = params.find<bool>("congestion", true);
+  vtk_flicker_ = params.find<bool>("vtk_flicker", true);
 
-  sprockit::sim_parameters* ej_params = params->get_optional_namespace("ejection");
-  std::vector<topology::injection_port> inj_conns;
-  top_->endpoints_connected_to_ejection_switch(my_addr_, inj_conns);
-  for (topology::injection_port& conn : inj_conns){
-    sprockit::sim_parameters* port_params = topology::get_port_params(params, conn.switch_port);
-    ej_params->combine_into(port_params);
-  }
+  SST::Params link_params = params.find_scoped_params("link");
+  link_bw_ = link_params.find<SST::UnitAlgebra>("bandwidth").getValue().toDouble();
 
   // Ensure topology is set
-  topology::static_topology(params);
+  Topology::staticTopology(params);
 
-#if SSTMAC_VTK_ENABLED
-#if SSTMAC_INTEGRATED_SST_CORE
-  //traffic_intensity = registerStatistic<traffic_event>("traffic_intensity", getName());
+  xmit_wait_ = registerMultiStatistic<double,uint32_t>(params, "xmit_wait");
 
-//  std::function<void (const std::multimap<uint64_t, traffic_event> &, int, int)> f =
-//      &stat_vtk::outputExodus;
+  //vtk_ = registerStatistic<uint64_t,int,double,int>("traffic_intensity", getName());
+  //if (vtk_) vtk_->configure(my_addr_, top_);
 
-  //SST::Factory::getFactory()->registerOptionnalCallback("statOutputEXODUS", f);
-#else
-  vtk_ = optional_stats<stat_vtk>(this,
-        params,
-        "vtk", /* The parameter namespace in the ini file */
-        "vtk" /* The object's factory name */
-   );
-  if (vtk_) vtk_->configure(my_addr_, top_);
-#endif
-#endif
-#if !SSTMAC_INTEGRATED_SST_CORE
-  payload_handler_ = new_handler(this, &sculpin_switch::handle_payload);
-  credit_handler_ = new_handler(this, &sculpin_switch::handle_credit);
-#endif
-  ports_.resize(top_->max_num_ports());
+  ports_.resize(top_->maxNumPorts());
   for (int i=0; i < ports_.size(); ++i){
     ports_[i].id = i;
     ports_[i].seqnum = 0;
-#if SSTMAC_VTK_ENABLED
-#if SSTMAC_INTEGRATED_SST_CORE
-    traffic_intensity.push_back(registerStatistic<traffic_event>("traffic_intensity", getName() + std::to_string(ports_[i].id)));
-#endif
-#endif
   }
+  initLinks(params);
 
-  delay_hist_ = optional_stats<stat_histogram>(this, params, "delays", "histogram");
-
-  init_links(params);
-
-  if (params->has_param("filter_stat_source")){
+  if (params.contains("filter_stat_source")){
     std::vector<int> filter;
-    params->get_vector_param("filter_stat_source", filter);
+    params.find_array("filter_stat_source", filter);
     for (int src : filter){
       src_stat_filter_.insert(src);
     }
   }
 
-  if (params->has_param("filter_stat_destination")){
+  if (params.contains("filter_stat_destination")){
     std::vector<int> filter;
-    params->get_vector_param("filter_stat_destination", filter);
+    params.find_array("filter_stat_destination", filter);
     for (int dst : filter) dst_stat_filter_.insert(dst);
   }
 
-  if (params->has_param("highlight_stat_source")){
+  if (params.contains("highlight_stat_source")){
     std::vector<int> filter;
-    params->get_vector_param("highlight_stat_source", filter);
+    params.find_array("highlight_stat_source", filter);
     for (int src : filter) src_stat_highlight_.insert(src);
   }
 
-  highlight_scale_ = params->get_optional_double_param("highlight_scale", 1000.);
-  vtk_flicker_ = params->get_optional_bool_param("vtk_flicker", true);
+  highlight_scale_ = params.find<double>("highlight_scale", 1000.);
+  vtk_flicker_ = params.find<bool>("vtk_flicker", true);
 
 }
 
-sculpin_switch::~sculpin_switch()
+SculpinSwitch::~SculpinSwitch()
 {
   if (router_) delete router_;
-#if !SSTMAC_INTEGRATED_SST_CORE
-  if (credit_handler_) delete credit_handler_;
-  if (payload_handler_) delete payload_handler_;
-#endif
-  for (port& p : ports_){
-    if (p.link) delete p.link;
-  }
 }
 
 void
-sculpin_switch::connect_output(
-  sprockit::sim_parameters* port_params,
-  int src_outport,
-  int dst_inport,
-  event_link* link)
+SculpinSwitch::connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link)
 {
-  double bw = port_params->get_bandwidth_param("bandwidth");
-  port& p = ports_[src_outport];
-  p.link = link;
-  p.inv_bw = 1.0/bw;
+  double scale_factor = top_->portScaleFactor(my_addr_, src_outport);
+  double port_bw = scale_factor * link_bw_;
+  Port& p = ports_[src_outport];
+  p.link = std::move(link);
+  p.byte_delay = Timestamp(1.0/port_bw);
   p.dst_port = dst_inport;
 }
 
 void
-sculpin_switch::connect_input(
-  sprockit::sim_parameters* port_params,
-  int src_outport,
-  int dst_inport,
-  event_link* link)
+SculpinSwitch::connectInput(int src_outport, int dst_inport, EventLink::ptr&& link)
 {
   //no-op
-  //but we have to delete the link because we own it
-  delete link;
-}
-
-timestamp
-sculpin_switch::send_latency(sprockit::sim_parameters *params) const
-{
-  return params->get_time_param("send_latency");
-}
-
-timestamp
-sculpin_switch::credit_latency(sprockit::sim_parameters *params) const
-{
-  return params->get_time_param("send_latency");
-}
-
-void
-sculpin_switch::compatibility_check() const
-{
-  router_->compatibility_check();
-}
-
-void
-sculpin_switch::deadlock_check()
-{
-  //pass - no deadlock check in sculpin
-}
-
-void
-sculpin_switch::deadlock_check(event *ev)
-{
-  //pass - no deadlock check in sculpin
 }
 
 int
-sculpin_switch::queue_length(int portnum) const
+SculpinSwitch::queueLength(int port, int vc) const
 {
-  auto& p = ports_[portnum];
+  auto& p = ports_[port];
+  //VC basically ignored, all ports on "same" VC
   return p.priority_queue.size();
 }
 
 void
-sculpin_switch::handle_credit(event *ev)
+SculpinSwitch::handleCredit(Event *ev)
 {
-  spkt_abort_printf("sculpin_switch::handle_credit: should never be called");
+  spkt_abort_printf("SculpinSwitch::handleCredit: should never be called");
 }
 
 void
-sculpin_switch::send(port& p, sculpin_packet* pkt, timestamp now)
+SculpinSwitch::send(Port& p, SculpinPacket* pkt, GlobalTimestamp now)
 {
   if (now > p.next_free){
     p.next_free = now;
   }
 
-  timestamp extra_delay = p.next_free - now;
-  timestamp time_to_send = pkt->num_bytes() * p.inv_bw;
+  Timestamp extra_delay = p.next_free - now;
+  Timestamp time_to_send = pkt->numBytes() * p.byte_delay;
   p.next_free += time_to_send;
-  pkt->set_time_to_send(time_to_send);
-  p.link->send_extra_delay(extra_delay, pkt);
+  pkt->setTimeToSend(time_to_send);
+  p.link->send(extra_delay, pkt);
 
-  timestamp delay = p.next_free - pkt->arrival();
+  Timestamp delay = p.next_free - pkt->arrival();
 
-  if (delay_hist_){
-    delay_hist_->collect(delay.usec());
-  }
+  //if (xmit_delay_) xmit_delay_->addData(p.id, delay.usec());
 
 #if SSTMAC_VTK_ENABLED
 #if SSTMAC_INTEGRATED_SST_CORE
@@ -296,7 +218,7 @@ sculpin_switch::send(port& p, sculpin_packet* pkt, timestamp now)
 #endif
 
   pkt_debug("packet leaving port %d at t=%8.4e: %s",
-            p.id, p.next_free.sec(), pkt->to_string().c_str());
+            p.id, p.next_free.sec(), pkt->toString().c_str());
 
   if (p.priority_queue.empty()){
     //reset the sequence number for ordering packets
@@ -305,50 +227,50 @@ sculpin_switch::send(port& p, sculpin_packet* pkt, timestamp now)
     pkt_debug("scheduling pull from port %d at t=%8.4e with %d queued",
               p.id, p.next_free.sec(), p.priority_queue.size());
     //schedule this port to pull another packet
-    auto* ev = new_callback(this, &sculpin_switch::pull_next, p.id);
-    send_self_event_queue(p.next_free, ev);
+    auto* ev = newCallback(this, &SculpinSwitch::pullNext, p.id);
+    sendExecutionEvent(p.next_free, ev);
   }
 
 }
 
 void
-sculpin_switch::pull_next(int portnum)
+SculpinSwitch::pullNext(int portnum)
 {
-  port& p = ports_[portnum];
+  Port& p = ports_[portnum];
   if (p.priority_queue.empty()){
-    spkt_abort_printf("sculpin_switch::pull_next: incorrectly scheduled pull on switch %d from empty port %d",
+    spkt_abort_printf("SculpinSwitch::pull_next: incorrectly scheduled pull on switch %d from empty port %d",
                       int(addr()), p.id);
   }
   pkt_debug("pulling pending packet from port %d with %d queued", portnum, p.priority_queue.size());
   auto iter = p.priority_queue.begin();
-  sculpin_packet* pkt = *iter;
+  SculpinPacket* pkt = *iter;
   p.priority_queue.erase(iter);
   send(p, pkt, now());
 }
 
 void
-sculpin_switch::try_to_send_packet(sculpin_packet* pkt)
+SculpinSwitch::tryToSendPacket(SculpinPacket* pkt)
 {
-  timestamp now_ = now();
+  GlobalTimestamp now_ = now();
 
-  pkt->set_arrival(now_);
-  port& p = ports_[pkt->next_port()];
-  pkt->set_seqnum(p.seqnum++);
+  pkt->setArrival(now_);
+  Port& p = ports_[pkt->nextPort()];
+  pkt->setSeqnum(p.seqnum++);
 
   static int max_queue_depth = 0;
 
   if (!congestion_){
-    timestamp time_to_send = pkt->num_bytes() * p.inv_bw;
+    Timestamp time_to_send = pkt->numBytes() * p.byte_delay;
     p.next_free += time_to_send;
-    pkt->set_time_to_send(time_to_send);
+    pkt->setTimeToSend(time_to_send);
     p.link->send(pkt);
   } else if (p.next_free > now_){
     //oh, well, I have to wait
     if (p.priority_queue.empty()){
       //nothing else is waiting - which means I have to schedule my own pull
       //schedule this port to pull another packet
-      auto* ev = new_callback(this, &sculpin_switch::pull_next, p.id);
-      send_self_event_queue(p.next_free, ev);
+      auto* ev = newCallback(this, &SculpinSwitch::pullNext, p.id);
+      sendExecutionEvent(p.next_free, ev);
       pkt_debug("new packet has to schedule pull from port %d at t=%8.4e", p.id, p.next_free.sec());
     }
     pkt_debug("new packet has to wait on queue on port %d with %d queued", p.id, p.priority_queue.size());
@@ -365,7 +287,7 @@ sculpin_switch::try_to_send_packet(sculpin_packet* pkt)
 }
 
 double
-sculpin_switch::do_not_filter_packet(sculpin_packet* pkt)
+SculpinSwitch::doNotFilterPacket(SculpinPacket* pkt)
 {
   auto iter = src_stat_highlight_.find(pkt->fromaddr());
   if (iter!= src_stat_highlight_.end()){
@@ -385,50 +307,42 @@ sculpin_switch::do_not_filter_packet(sculpin_packet* pkt)
 }
 
 void
-sculpin_switch::handle_payload(event *ev)
+SculpinSwitch::handlePayload(Event *ev)
 {
-  sculpin_packet* pkt = safe_cast(sculpin_packet, ev);
-  switch_debug("handling payload %s", pkt->to_string().c_str());
+  SculpinPacket* pkt = safe_cast(SculpinPacket, ev);
+  switch_debug("handling payload %s", pkt->toString().c_str());
   router_->route(pkt);
-  port& p = ports_[pkt->next_port()];
+  Port& p = ports_[pkt->nextPort()];
 
-  timestamp time_to_send = p.inv_bw * pkt->num_bytes();
+  Timestamp time_to_send = p.byte_delay * pkt->numBytes();
   /** I am processing the head flit - so I assume compatibility with wormhole routing
    * The tail flit cannot leave THIS switch prior to its departure time in the prev switch */
-  if (pkt->time_to_send() > time_to_send){
+  if (pkt->timeToSend() > time_to_send){
     //delay the packet
-    auto ev = new_callback(this, &sculpin_switch::try_to_send_packet, pkt);
-    timestamp delta_t = pkt->time_to_send() - time_to_send;
-    send_delayed_self_event_queue(delta_t, ev);
+    auto ev = newCallback(this, &SculpinSwitch::tryToSendPacket, pkt);
+    Timestamp delta_t = pkt->timeToSend() - time_to_send;
+    sendDelayedExecutionEvent(delta_t, ev);
   } else {
-    try_to_send_packet(pkt);
+    tryToSendPacket(pkt);
   }
 }
 
 std::string
-sculpin_switch::to_string() const
+SculpinSwitch::toString() const
 {
   return sprockit::printf("sculpin switch %d", int(my_addr_));
 }
 
-link_handler*
-sculpin_switch::credit_handler(int port)
+LinkHandler*
+SculpinSwitch::creditHandler(int port)
 {
-#if SSTMAC_INTEGRATED_SST_CORE
-  return new_link_handler(this, &sculpin_switch::handle_credit);
-#else
-  return credit_handler_;
-#endif
+  return newLinkHandler(this, &SculpinSwitch::handleCredit);
 }
 
-link_handler*
-sculpin_switch::payload_handler(int port)
+LinkHandler*
+SculpinSwitch::payloadHandler(int port)
 {
-#if SSTMAC_INTEGRATED_SST_CORE
-  return new_link_handler(this, &sculpin_switch::handle_payload);
-#else
-  return payload_handler_;
-#endif
+  return newLinkHandler(this, &SculpinSwitch::handlePayload);
 }
 
 }

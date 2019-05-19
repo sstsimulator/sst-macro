@@ -58,28 +58,28 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-coordinate_task_mapper::coordinate_task_mapper(sprockit::sim_parameters *params) :
-  task_mapper(params)
+CoordinateTaskMapper::CoordinateTaskMapper(SST::Params& params) :
+  TaskMapper(params)
 {
-  listfile_ = params->get_param("coordinate_file");
+  listfile_ = params.find<std::string>("coordinate_file");
 }
 
 void
-coordinate_task_mapper::map_ranks(
+CoordinateTaskMapper::mapRanks(
   const ordered_node_set& nodes,
   int ppn,
-  std::vector<node_id> &result,
+  std::vector<NodeId> &result,
   int nproc)
 {
-  hw::cartesian_topology* regtop = safe_cast(hw::cartesian_topology, topology_);
+  hw::CartesianTopology* regtop = safe_cast(hw::CartesianTopology, topology_);
 
   std::vector<hw::coordinates> node_list;
-  coordinate_allocation::read_coordinate_file(rt_, listfile_, node_list);
+  CoordinateAllocation::readCoordinateFile(rt_, listfile_, node_list);
   int num_nodes = node_list.size();
   result.resize(num_nodes);
   for (int i=0; i < num_nodes; ++i){
     const hw::coordinates& coords = node_list[i];
-    node_id nid = regtop->node_addr(coords);
+    NodeId nid = regtop->node_addr(coords);
     result[i] = nid;
   }
 }

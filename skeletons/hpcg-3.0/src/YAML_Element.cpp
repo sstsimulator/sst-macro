@@ -47,7 +47,7 @@ YAML_Element::~YAML_Element() {
 */
 YAML_Element * YAML_Element::add(const std::string & key_arg, double value_arg) {
   this->value = "";
-  string converted_value = convert_double_to_string(value_arg);
+  string converted_value = convert_double_toString(value_arg);
   YAML_Element * element = new YAML_Element(key_arg,converted_value);
   children.push_back(element);
   return element;
@@ -63,7 +63,7 @@ YAML_Element * YAML_Element::add(const std::string & key_arg, double value_arg) 
 */
 YAML_Element * YAML_Element::add(const std::string & key_arg, int value_arg) {
   this->value = "";
-  string converted_value = convert_int_to_string(value_arg);
+  string converted_value = convert_int_toString(value_arg);
   YAML_Element * element = new YAML_Element(key_arg,converted_value);
   children.push_back(element);
   return element;
@@ -81,7 +81,7 @@ YAML_Element * YAML_Element::add(const std::string & key_arg, int value_arg) {
 */
 YAML_Element * YAML_Element::add(const std::string & key_arg, long long value_arg) {
   this->value = "";
-  string converted_value = convert_long_long_to_string(value_arg);
+  string converted_value = convert_long_long_toString(value_arg);
   YAML_Element * element = new YAML_Element(key_arg,converted_value);
   children.push_back(element);
   return element;
@@ -99,7 +99,7 @@ YAML_Element * YAML_Element::add(const std::string & key_arg, long long value_ar
 */
 YAML_Element * YAML_Element::add(const std::string & key_arg, size_t value_arg) {
   this->value = "";
-  string converted_value = convert_size_t_to_string(value_arg);
+  string converted_value = convert_size_t_toString(value_arg);
   YAML_Element * element = new YAML_Element(key_arg,converted_value);
   children.push_back(element);
   return element;
@@ -158,7 +158,7 @@ string YAML_Element::printYAML(std::string space) {
 
   @param[in] value_arg The value to be converted.
 */
-string YAML_Element::convert_double_to_string(double value_arg) {
+string YAML_Element::convert_double_toString(double value_arg) {
   stringstream strm;
   strm << value_arg;
   return strm.str();
@@ -169,7 +169,7 @@ string YAML_Element::convert_double_to_string(double value_arg) {
 
   @param[in] value_arg The value to be converted.
 */
-string YAML_Element::convert_int_to_string(int value_arg) {
+string YAML_Element::convert_int_toString(int value_arg) {
   stringstream strm;
   strm << value_arg;
   return strm.str();
@@ -182,7 +182,7 @@ string YAML_Element::convert_int_to_string(int value_arg) {
 
   @param[in] value_arg The value to be converted.
 */
-string YAML_Element::convert_long_long_to_string(long long value_arg) {
+string YAML_Element::convert_long_long_toString(long long value_arg) {
   stringstream strm;
   strm << value_arg;
   return strm.str();
@@ -195,7 +195,7 @@ string YAML_Element::convert_long_long_to_string(long long value_arg) {
 
   @param[in] value_arg The value to be converted.
 */
-string YAML_Element::convert_size_t_to_string(size_t value_arg) {
+string YAML_Element::convert_size_t_toString(size_t value_arg) {
   stringstream strm;
   strm << value_arg;
   return strm.str();

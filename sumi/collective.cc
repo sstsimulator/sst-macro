@@ -63,10 +63,6 @@ RegisterDebugSlot(sumi_collective_init,
  "print all debug output for collectives performed within the sumi framework")
 RegisterDebugSlot(sumi_collective,
  "print all debug output for collectives performed within the sumi framework")
-RegisterDebugSlot(sumi_collective_sendrecv,
- "print all debug output for individual send/recv operations done by a sumi collective")
-RegisterDebugSlot(sumi_collective_round,
- "print all debug output for configuring/running collectives like allreduce based on round-by-round communication")
 RegisterDebugSlot(sumi_vote,
  "print all debug output for fault-tolerant voting collectives within the sumi framework")
 
@@ -75,10 +71,11 @@ namespace sumi {
 #define enumcase(x) case x: return #x
 
 const char*
-collective::tostr(type_t ty)
+Collective::tostr(type_t ty)
 {
   switch (ty)
   {
+    enumcase(donothing);
     enumcase(alltoall);
     enumcase(alltoallv);
     enumcase(allreduce);
@@ -92,46 +89,32 @@ collective::tostr(type_t ty)
     enumcase(reduce_scatter);
     enumcase(scan);
     enumcase(barrier);
-    enumcase(dynamic_tree_vote);
-    enumcase(heartbeat);
     enumcase(bcast);
   }
-  spkt_throw_printf(sprockit::value_error,
+  spkt_throw_printf(sprockit::ValueError,
       "collective::tostr: unknown type %d", ty);
 }
 
-void
-collective::init(type_t ty, transport *api, int tag, const config& cfg)
+Collective::Collective(type_t ty, CollectiveEngine* engine, int tag, int cq_id, Communicator* comm) :
+  type_(ty), engine_(engine), my_api_(engine->tport()), tag_(tag),
+  dom_nproc_(comm->nproc()), dom_me_(comm->myCommRank()),
+  complete_(false), comm_(comm), cq_id_(cq_id),
+  subsequent_(nullptr)
 {
-  my_api_ = api;
-  cfg_ = cfg;
-  complete_ = false;
-  tag_ = tag;
-  type_ = ty;
-
-#ifdef FEATURE_TAG_SUMI_RESILIENCE
-  const thread_safe_set<int>& failed = api->failed_ranks(context);
-  dense_rank_map rank_map(failed, dom);
-
-  dense_nproc_ = rank_map.dense_rank(dom->nproc());
-  dense_me_ = rank_map.dense_rank(dom->my_comm_rank());
-#else
-  dense_nproc_ = cfg.dom->nproc();
-  dense_me_ = cfg.dom->my_comm_rank();
-#endif
-
   debug_printf(sumi_collective | sumi_vote,
-    "Rank %d=%d built collective of size %d in role=%d, tag=%d, context=%d",
-    my_api_->rank(), cfg.dom->my_comm_rank(), cfg.dom->nproc(), dense_me_, tag, cfg.context);
+    "Rank %d=%d built collective of size %d in role=%d, tag=%d",
+    my_api_->rank(), comm_->myCommRank(), comm_->nproc(), dom_me_, tag);
 }
 
-collective::collective(type_t ty, transport* api, int tag, const config& cfg)
+CollectiveDoneMessage*
+Collective::addActors(Collective *coll)
 {
-  init(ty, api, tag, cfg);
+  sprockit::abort("collective:add_actors: collective should not dynamically add actors");
+  return nullptr;
 }
 
 void
-collective::actor_done(int comm_rank, bool& generate_cq_msg, bool& delete_collective)
+Collective::actorDone(int comm_rank, bool& generate_cq_msg, bool& delete_collective)
 {
   generate_cq_msg = false;
   delete_collective = false;
@@ -148,32 +131,17 @@ collective::actor_done(int comm_rank, bool& generate_cq_msg, bool& delete_collec
   }
 }
 
-void
-collective::add_actors(collective *coll)
+CollectiveDoneMessage*
+Collective::recv(CollectiveWorkMessage* msg)
 {
-  sprockit::abort("collective:add_actors: collective should not dynamically add actors");
+  return recv(msg->domTargetRank(), msg);
 }
 
-void
-collective::recv(collective_work_message* msg)
-{
-  switch(msg->payload_type())
-  {
-    case message::rdma_get_ack:
-    case message::rdma_put_ack:
-      recv(msg->dense_sender(), msg); //I got an ack because my send data went out
-      break;
-    default:
-      recv(msg->dense_recver(), msg); //all other messages have the correct directionality - I am the recver in the transaction
-      break;
-  }
-}
-
-collective::~collective()
+Collective::~Collective()
 {
 }
 
-dag_collective::~dag_collective()
+DagCollective::~DagCollective()
 {
   actor_map::iterator it, end = my_actors_.end();
   for (it=my_actors_.begin(); it != end; ++it){
@@ -181,124 +149,93 @@ dag_collective::~dag_collective()
   }
 }
 
-dag_collective*
-dag_collective::construct(const std::string& name, sprockit::sim_parameters *params)
-{
-  sprockit::sim_parameters* collective_params = params->get_namespace(name);
-  return dag_collective::factory::get_param("algorithm", collective_params);
-}
-
-dag_collective*
-dag_collective::construct(const std::string& name, sprockit::sim_parameters *params, reduce_fxn fxn)
-{
-  sprockit::sim_parameters* collective_params = params->get_namespace(name);
-  dag_collective* coll = dag_collective::factory::get_param("algorithm", collective_params);
-  coll->init_reduce(fxn);
-  return coll;
-}
-
 void
-dag_collective::init_actors()
+DagCollective::initActors()
 {
-  dag_collective_actor* actor = new_actor();
-
-  actor->init(type_, my_api_, nelems_, type_size_, tag_, cfg_);
-  actor->init_tree();
-  actor->init_buffers(dst_buffer_, src_buffer_);
-  actor->init_dag();
-
-  my_actors_[dense_me_] = actor;
-  refcounts_[cfg_.dom->my_comm_rank()] = my_actors_.size();
+  DagCollectiveActor* actor = newActor();
+  actor->init();
+  my_actors_[dom_me_] = actor;
+  refcounts_[dom_me_] = my_actors_.size();
 }
 
-void
-dag_collective::init(type_t type,
-  transport *my_api,
-  void *dst, void *src,
-  int nelems, int type_size,
-  int tag, const config& cfg)
+CollectiveDoneMessage*
+DagCollective::recv(int target, CollectiveWorkMessage* msg)
 {
-  collective::init(type, my_api, tag, cfg);
-  fault_aware_ = cfg.fault_aware;
-  nelems_ = nelems;
-  type_size_ = type_size;
-  src_buffer_ = src;
-  dst_buffer_ = dst;
-}
+  debug_printf(sumi_collective | sprockit::dbg::sumi,
+    "Rank %d=%d %s got from %d on tag=%d for target %d",
+    my_api_->rank(), dom_me_,
+    Collective::tostr(type_),
+    msg->sender(), tag_, target);
 
-void
-dag_collective::recv(int target, collective_work_message* msg)
-{
-  debug_printf(sumi_collective | sumi_collective_sendrecv,
-    "Rank %d=%d %s got %s:%p from %d=%d on tag=%d for target %d",
-    my_api_->rank(), dense_me_,
-    collective::tostr(type_),
-    message::tostr(msg->payload_type()), msg,
-    msg->sender(), msg->dense_sender(),
-    tag_, target);
-
-  dag_collective_actor* vr = my_actors_[target];
+  DagCollectiveActor* vr = my_actors_[target];
   if (!vr){
     //data-centric collective - this actor does not exist
     pending_.push_back(msg);
-    //spkt_throw_printf(sprockit::value_error,
-    //  "virtual_bruck_actor::recv: invalid handler %d for endpoint %d for %s on tag=%d ",
-    //  target, my_api_->rank(),
-    //  msg->to_string().c_str(),
-    //  tag_);
+      debug_printf(sumi_collective | sprockit::dbg::sumi,
+                  "dag actor %d does not yet exit - queueing %s",
+                  target, msg->toString().c_str())
+    return nullptr;
   } else {
     vr->recv(msg);
+    if (vr->complete()){
+      debug_printf(sumi_collective, "Rank %d=%d returning completion", my_api_->rank(), dom_me_);
+      return vr->doneMsg();
+    } else {
+      debug_printf(sumi_collective, "Rank %d=%d not yet complete", my_api_->rank(), dom_me_);
+      return nullptr;
+    }
   }
 }
 
 void
-dag_collective::start()
+DagCollective::start()
 {
   actor_map::iterator it, end = my_actors_.end();
   for (it = my_actors_.begin(); it != end; ++it){
-    dag_collective_actor* actor = it->second;
+    DagCollectiveActor* actor = it->second;
     actor->start();
   }
 }
 
 void
-dag_collective::deadlock_check()
+DagCollective::deadlockCheck()
 {
   std::cout << sprockit::printf("%s collective deadlocked on rank %d, tag %d",
                   tostr(type_), my_api_->rank(), tag_) << std::endl;
 
   actor_map::iterator it, end = my_actors_.end();
   for (it=my_actors_.begin(); it != end; ++it){
-    dag_collective_actor* actor = it->second;
+    DagCollectiveActor* actor = it->second;
     if (actor) {
-      actor->deadlock_check();
+      actor->deadlockCheck();
    } else {
-      spkt_throw_printf(sprockit::null_error,
-              "%s collective deadlocked on rank %d, tag %d, with NULL actor",
-              tostr(type_), my_api_->rank(), tag_);
+      spkt_abort_printf("%s collective deadlocked on rank %d, tag %d, with NULL actor %d",
+              tostr(type_), my_api_->rank(), tag_, it->first);
     }
   }
 }
 
-void
-dag_collective::add_actors(collective* coll)
+CollectiveDoneMessage*
+DagCollective::addActors(Collective* coll)
 {
-  dag_collective* ar = static_cast<dag_collective*>(coll);
-  { std::map<int, dag_collective_actor*>::iterator it, end = ar->my_actors_.end();
+  DagCollective* ar = static_cast<DagCollective*>(coll);
+  { std::map<int, DagCollectiveActor*>::iterator it, end = ar->my_actors_.end();
   for (it=ar->my_actors_.begin(); it != end; ++it){
     my_actors_[it->first] = it->second;
   } }
 
-  refcounts_[coll->comm()->my_comm_rank()] = ar->my_actors_.size();
+  refcounts_[coll->comm()->myCommRank()] = ar->my_actors_.size();
 
-  std::list<collective_work_message*> pending = pending_;
+  std::list<CollectiveWorkMessage*> pending = pending_;
   pending_.clear();
-  { std::list<collective_work_message*>::iterator it, end = pending.end();
+  CollectiveDoneMessage* msg = nullptr;
+  { std::list<CollectiveWorkMessage*>::iterator it, end = pending.end();
   for (it=pending.begin(); it != end; ++it){
-    collective::recv(*it);
+    msg = Collective::recv(*it);
   } }
 
   ar->my_actors_.clear();
+  return msg;
 }
 
 }

@@ -48,25 +48,25 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace native {
 
-serial_runtime::serial_runtime(sprockit::sim_parameters* params)
-  : parallel_runtime(params, 0, 1)
+SerialRuntime::SerialRuntime(SST::Params& params)
+  : ParallelRuntime(params, 0, 1)
 {
 }
 
 int64_t
-serial_runtime::allreduce_min(int64_t mintime)
+SerialRuntime::allreduceMin(int64_t mintime)
 {
   return mintime;
 }
 
 int64_t
-serial_runtime::allreduce_max(int64_t maxtime)
+SerialRuntime::allreduceMax(int64_t maxtime)
 {
   return maxtime;
 }
 
 void
-serial_runtime::gather(void *send_buffer, int num_bytes, void *recv_buffer, int root)
+SerialRuntime::gather(void *send_buffer, int num_bytes, void *recv_buffer, int root)
 {
   if (root != 0){
     sprockit::abort("serial_runtime::gather: received gather request for non-zero root - there is only one proc");
@@ -75,55 +75,73 @@ serial_runtime::gather(void *send_buffer, int num_bytes, void *recv_buffer, int 
 }
 
 void
-serial_runtime::allgather(void *send_buffer, int num_bytes, void *recv_buffer)
+SerialRuntime::allgather(void *send_buffer, int num_bytes, void *recv_buffer)
 {
   ::memcpy(recv_buffer, send_buffer, num_bytes);
 }
 
 void
-serial_runtime::send(int dst, void *buffer, int buffer_size)
+SerialRuntime::send(int dst, void *buffer, int buffer_size)
 {
   sprockit::abort("serial_runtime::send: should never be called - who would I send to?");
 }
 
 void
-serial_runtime::recv(int src, void *buffer, int buffer_size)
+SerialRuntime::recv(int src, void *buffer, int buffer_size)
 {
   sprockit::abort("serial_runtime::recv: should never be called - who would I recv from?");
 }
 
 void
-serial_runtime::global_sum(long *data, int nelems, int root)
+SerialRuntime::globalSum(uint32_t *data, int nelems, int root)
 {
   //do nothing
 }
 
 void
-serial_runtime::global_sum(int* data, int nelems, int root)
+SerialRuntime::globalSum(uint64_t *data, int nelems, int root)
 {
   //do nothing
 }
 
 void
-serial_runtime::global_sum(long long *data, int nelems, int root)
+SerialRuntime::globalSum(int32_t *data, int nelems, int root)
 {
   //do nothing
 }
 
 void
-serial_runtime::global_max(long *data, int nelems, int root)
+SerialRuntime::globalSum(int64_t *data, int nelems, int root)
+{
+  //do nothing
+}
+
+void
+SerialRuntime::globalMax(int32_t* data, int nelems, int root)
+{
+  //do nothing
+}
+
+void
+SerialRuntime::globalMax(uint32_t *data, int nelems, int root)
+{
+  //do nothing
+}
+
+void
+SerialRuntime::globalMax(int64_t *data, int nelems, int root)
 {
  //do nothing
 }
 
 void
-serial_runtime::global_max(int *data, int nelems, int root)
+SerialRuntime::globalMax(uint64_t *data, int nelems, int root)
 {
  //do nothing
 }
 
 void
-serial_runtime::bcast(void* buffer, int bytes, int root)
+SerialRuntime::bcast(void* buffer, int bytes, int root)
 {
  //do nothning
 }

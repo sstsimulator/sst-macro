@@ -13,12 +13,11 @@
 SUBDIRS = \
 machines \
 blas \
-sumi \
 pthread \
-omp \
-uq
+omp 
 
 
 library_includedir=$(includedir)/sstmac/libraries
-library_include_HEADERS =
+
+library_include_HEADERS = nlohmann/json.hpp
 

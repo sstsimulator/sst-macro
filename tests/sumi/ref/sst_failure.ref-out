@@ -1,4 +1,4 @@
-WARNING: using null_memory_model object: this does not support detailed compute modeling
+WARNING: using NullMemoryModel object: this does not support detailed compute modeling
  and is primarily used for debugging purposes or for experiments focused on network traffic
 scheduling failure at timestamp(2 secs) on node 1
 Rank 11 maps to dense rank 11

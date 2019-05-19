@@ -46,8 +46,9 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/compute.h>
 #include <sstmac/replacements/mpi.h>
-#include <sprockit/sim_parameters.h>
+#include <sprockit/errors.h>
 #include <math.h>
+#include <vector>
 
 #define heisenbug printf("%s: %d\n", __FILE__, __LINE__); fflush(stdout)
 
@@ -108,7 +109,7 @@ int USER_MAIN(int argc, char** argv)
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
   if (size < 8) {
-    spkt_throw_printf(sprockit::range_error,
+    spkt_abort_printf(
        "sstmac_mpi_testall needs at least 8 nodes to run - only have %d",
        size);
   }
@@ -380,7 +381,7 @@ test_bcast(MPI_Comm comm)
     pay = 1234;
   }
 
-  MPI_Bcast(&pay, count, MPI_DOUBLE, root, comm);
+  MPI_Bcast(&pay, count, MPI_INT, root, comm);
   int recvdata = pay;
 
   if (recvdata != (1234)) {
@@ -496,7 +497,7 @@ test_alltoall(MPI_Comm comm)
     // checking the result, should look like a matrix transpose
     for(int i = 0; i < size; i++)
       if(recv_vect[i] != (i * 100) + rank)
-        throw sprockit::spkt_error("Unexpected value in MPI_Alltoall recv buffer! Check your implementation");
+        spkt_abort_printf("Unexpected value in MPI_Alltoall recv buffer! Check your implementation");
   }
 }
 
@@ -524,7 +525,7 @@ test_comms(MPI_Comm comm)
   MPI_Comm_size(new_comm, &new_size);
 
   if (new_size != size/2 && new_size != (size/2 + 1))
-    throw sprockit::spkt_error("MPI comm size missmatch, check MPI_Comm_split");
+    spkt_abort_printf("MPI comm size mismatch, check MPI_Comm_split");
 }
 
 void

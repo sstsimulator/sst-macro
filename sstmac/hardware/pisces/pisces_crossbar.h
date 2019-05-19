@@ -46,142 +46,126 @@ Questions? Contact sst-macro-help@sandia.gov
 #define PACKETFLOW_CROSSBAR_H
 
 #include <sstmac/hardware/pisces/pisces_sender.h>
-#include <sstmac/hardware/pisces/pisces_stats_fwd.h>
-#include <sstmac/common/stats/stat_global_int_fwd.h>
 #include <sstmac/hardware/router/router.h>
 #include <sprockit/keyword_registration.h>
 
 #include <memory>
 
-#define identity_port_mapper(n) std::unique_ptr<pisces_NtoM_queue::port_mapper> (new pisces_NtoM_queue::identity_mapper())
-#define constant_port_mapper(n) std::unique_ptr<pisces_NtoM_queue::port_mapper> (new pisces_NtoM_queue::constant_mapper(n))
-#define offset_port_mapper(n) std::unique_ptr<pisces_NtoM_queue::port_mapper> (new pisces_NtoM_queue::offset_mapper(n))
-#define divide_port_mapper(n) std::unique_ptr<pisces_NtoM_queue::port_mapper> (new pisces_NtoM_queue::div_mapper(n))
-#define mod_port_mapper(n) std::unique_ptr<pisces_NtoM_queue::port_mapper> (new pisces_NtoM_queue::mod_mapper(n))
-
 namespace sstmac {
 namespace hw {
 
-class pisces_NtoM_queue :
-  public pisces_sender
+class PiscesNtoMQueue :
+  public PiscesSender
 {
  public:
-  virtual ~pisces_NtoM_queue();
+  virtual ~PiscesNtoMQueue();
 
-  pisces_NtoM_queue(sprockit::sim_parameters* params,
-                   event_scheduler* parent,
-                   int num_in_ports, int num_out_ports, int num_vc,
-                   bool update_vc);
+  PiscesNtoMQueue(const std::string& selfname,
+                  const std::string& arb, double bw,
+                  SST::Component* parent,
+                  int num_in_ports, int num_out_ports, int num_vc,
+                  bool update_vc);
 
-  void handle_payload(event* ev) override;
+  void handlePayload(Event* ev) override;
 
-  void handle_credit(event* ev) override;
+  void handleCredit(Event* ev) override;
 
-  event_handler* credit_handler();
+  LinkHandler* creditHandler();
 
-  event_handler* payload_handler();
+  LinkHandler* payloadHandler();
 
-  void set_input(sprockit::sim_parameters* params,
-            int my_inport, int src_outport, event_link* link) override;
+  void setInput(int my_inport, int src_outport, EventLink::ptr&& link) override;
 
-  void set_output(sprockit::sim_parameters* params,
-             int my_outport, int dst_inport, event_link* link) override;
-
-  virtual void start_message(message* msg);
+  void setOutput(int my_outport, int dst_inport, EventLink::ptr&& link, int credits) override;
 
   inline int slot(int port, int vc) const {
     return port * num_vc_ + vc;
   }
 
-  void deadlock_check() override;
-
-  void deadlock_check(event* ev) override;
-
  protected:
-  pisces_bandwidth_arbitrator* arb_;
+  PiscesBandwidthArbitrator* arb_;
 
-  std::vector<input> inputs_;
-  std::vector<output> outputs_;
+  std::vector<Input> inputs_;
+  std::vector<Output> outputs_;
   //indexed by slot number = (port,vc)
   std::vector<int> credits_;
   //indexed by slot number = (port,vc)
-  std::vector<payload_queue> queues_;
+  std::vector<PayloadQueue> queues_;
 #if SSTMAC_SANITY_CHECK
   std::vector<int> initial_credits_;
 #endif
 
   int num_vc_;
-  event_handler* credit_handler_;
-  event_handler* payload_handler_;
 
   std::map<int, std::set<int> > deadlocked_channels_;
 
-  std::map<int, std::map<int, std::list<pisces_packet*> > > blocked_messages_;
+  std::map<int, std::map<int, std::list<PiscesPacket*> > > blocked_messages_;
 
  protected:
-  void send_payload(pisces_packet* pkt);
-
-  void build_blocked_messages();
+  void sendPayload(PiscesPacket* pkt);
 
  private:
   inline int& credit(int port, int vc){
     return credits_[slot(port, vc)];
   }
 
-  void resize_outports(int num_ports);
+  void resizeOutports(int num_ports);
 
-  inline payload_queue& queue(int port, int vc){
+  inline PayloadQueue& queue(int port, int vc){
     return queues_[slot(port, vc)];
   }
 
-  std::string input_name(pisces_packet* pkt);
+  std::string inputName(PiscesPacket* pkt);
 
-  std::string output_name(pisces_packet* pkt);
+  std::string outputName(PiscesPacket* pkt);
 
-  event_link* output_link(pisces_packet* pkt);
+  EventLink* outputLink(PiscesPacket* pkt);
 
 };
 
-class pisces_demuxer :
-  public pisces_NtoM_queue
+class PiscesDemuxer :
+  public PiscesNtoMQueue
 {
  public:
-  pisces_demuxer(sprockit::sim_parameters* params,
-                 event_scheduler* parent,
-                 int num_out_ports, int num_vc,
-                 bool update_vc);
+  PiscesDemuxer(const std::string& selfname,
+                const std::string& arb, double bw,
+                SST::Component* parent,
+                int num_out_ports, int num_vc,
+                bool update_vc);
 
-  std::string pisces_name() const override {
+  std::string piscesName() const override {
     return "demuxer";
   }
 
 };
 
 
-class pisces_muxer :
-  public pisces_NtoM_queue
+class PiscesMuxer :
+  public PiscesNtoMQueue
 {
  public:
-  pisces_muxer(sprockit::sim_parameters* params,
-               event_scheduler* parent,
-               int num_in_ports, int num_vc,
-               bool update_vc);
+  PiscesMuxer(const std::string& selfname,
+              const std::string& arb, double bw,
+              SST::Component* parent,
+              int num_in_ports, int num_vc,
+              bool update_vc);
 
-  std::string pisces_name() const override {
+  std::string piscesName() const override {
     return "muxer";
   }
 };
 
-class pisces_crossbar :
-  public pisces_NtoM_queue
+class PiscesCrossbar :
+  public PiscesNtoMQueue
 {
  public:
-  pisces_crossbar(sprockit::sim_parameters* params,
-                  event_scheduler* parent,
-                  int num_in_ports, int num_out_ports, int num_vc,
-                  bool update_vc);
+  PiscesCrossbar(const std::string& name,
+                 const std::string& arb, double bw,
+                 SST::Component* parent,
+                 int num_in_ports, int num_out_ports, int num_vc,
+                 bool update_vc);
 
-  std::string pisces_name() const override {
+  std::string piscesName() const override {
     return "crossbar";
   }
 };

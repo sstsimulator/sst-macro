@@ -140,7 +140,7 @@ namespace lblxml
         reduce_t* comm = static_cast<reduce_t*>(ev);
         int my_domain_rank = comm->domain_rank(box_number);
         const int* boxes = comm->box_array();
-        sumi::communicator* dom =
+        sumi::Communicator* dom =
             new box_domain(my_domain_rank, comm->nboxes(), boxes,
                            g_boxindex_to_rank.data());
 
@@ -149,7 +149,7 @@ namespace lblxml
           printf("rank %d starting allreduce %s for box %d\n",
                  rank_, ev->id().c_str(), box_number);
         sumi::comm_allreduce<double,sumi::Add>(NULL, NULL, count, index,
-                                               sumi::collective::config().comm(dom));
+                                               sumi::Collective::config().comm(dom));
         valid_allreduces_.pop();
         ++n_allreduce;
       }
@@ -189,9 +189,9 @@ namespace lblxml
       }
       if (synch_mode_ == full_asynch || ev_epoch == current_epoch()) {
         if (do_compute_) {
-          sstmac::timestamp start_comp = now();
-          compute( timestamp( compute_scale_ * comp.time() ));
-          sstmac::timestamp end_comp = now();
+          sstmac::Timestamp start_comp = now();
+          compute( Timestamp( compute_scale_ * comp.time() ));
+          sstmac::Timestamp end_comp = now();
           double comp_time = (end_comp - start_comp).sec();
           g_total_compute_time += comp_time;
         }
@@ -223,11 +223,11 @@ namespace lblxml
   void boxml::recv_boxes(int& n_events)
   {
       SSTMACBacktrace(RecvBoxes);
-      sstmac::timestamp start_poll = now();
+      sstmac::Timestamp start_poll = now();
       if (debug_ > 0)
         printf("rank %d polling for new message\n",rank_);
-      sumi::message* dmess = sumi::comm_poll();
-      sstmac::timestamp end_poll = now();
+      sumi::Message* dmess = sumi::comm_poll();
+      sstmac::Timestamp end_poll = now();
       double poll_time = (end_poll - start_poll).sec();
       g_total_idle_time += poll_time;
       if (idle_time_) {
@@ -235,8 +235,8 @@ namespace lblxml
       }
       int epoch;
       int index;
-      switch (dmess->class_type()){
-        case sumi::message::pt2pt:
+      switch (dmess->classType()){
+        case sumi::Message::pt2pt:
         {
           pt2pt_message* pmess = dynamic_cast<pt2pt_message*>(dmess);
           index = pmess->event_index();
@@ -256,9 +256,9 @@ namespace lblxml
           delete pmess;
           break;
         }
-        case sumi::message::collective_done:
+        case sumi::Message::collective_done:
         {
-          auto cmess = dynamic_cast<sumi::collective_done_message*>(dmess);
+          auto cmess = dynamic_cast<sumi::CollectiveDoneMessage*>(dmess);
           box_domain* dom = static_cast<box_domain*>(cmess->dom());
           int my_box_number = dom->my_box_number();
           index = cmess->tag();
@@ -275,9 +275,9 @@ namespace lblxml
         }
         default:
         {
-          spkt_throw_printf(sprockit::value_error,
+          spkt_throw_printf(sprockit::ValueError,
             "got invalid message type %s",
-            sumi::message::tostr(dmess->class_type()));
+            sumi::Message::tostr(dmess->classType()));
         }
       }
 

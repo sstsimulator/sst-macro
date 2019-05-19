@@ -118,35 +118,35 @@ static void check_status(OTF2_ErrorCode status, const std::string& description)
   }
 }
 
-OTF2TraceReplayApp::OTF2TraceReplayApp(sprockit::sim_parameters* params,
-        sumi::software_id sid, sstmac::sw::operating_system* os) :
-  app(params, sid, os), mpi_(nullptr), rank_(sid.task_), call_queue_(this), total_events_(0) {
-  timescale_ = params->get_optional_double_param("otf2_timescale", 1.0);
-  terminate_percent_ = params->get_optional_double_param("otf2_terminate_percent", 1);
-  print_progress_ = params->get_optional_bool_param("otf2_print_progress", true);
-  metafile_ = params->get_param("otf2_metafile");
+OTF2TraceReplayApp::OTF2TraceReplayApp(SST::Params& params,
+        sumi::SoftwareId sid, sstmac::sw::OperatingSystem* os) :
+  App(params, sid, os), mpi_(nullptr), rank_(sid.task_), call_queue_(this), total_events_(0) {
+  timescale_ = params.find<double>("otf2_timescale", 1.0);
+  terminate_percent_ = params.find<double>("otf2_terminate_percent", 1);
+  print_progress_ = params.find<bool>("otf2_print_progress", true);
+  metafile_ = params.find<std::string>("otf2_metafile");
 
-  print_mpi_calls_ = params->get_optional_bool_param("otf2_print_mpi_calls", false);
-  print_trace_events_ = params->get_optional_bool_param("otf2_print_trace_events", false);
-  print_time_deltas_ = params->get_optional_bool_param("otf2_print_time_deltas", false);
-  print_unknown_callback_ = params->get_optional_bool_param("otf2_print_unknown_callback", false);
+  print_mpi_calls_ = params.find<bool>("otf2_print_mpi_calls", false);
+  print_trace_events_ = params.find<bool>("otf2_print_trace_events", false);
+  print_time_deltas_ = params.find<bool>("otf2_print_time_deltas", false);
+  print_unknown_callback_ = params.find<bool>("otf2_print_unknown_callback", false);
 }
 
 int
-OTF2TraceReplayApp::skeleton_main() {
+OTF2TraceReplayApp::skeletonMain() {
   if (rank_ == 0){
     std::cout << "Running OTF2 replay on "
         << metafile_ << std::endl;
   }
 
-  mpi_ = get_api<sumi::mpi_api>();
-  mpi_->set_generate_ids(false);
+  mpi_ = getApi<sumi::MpiApi>("mpi");
+  mpi_->setGenerateIds(false);
   mpi_->init(nullptr,nullptr); //force init here
 
-  auto event_reader = initialize_event_reader();
+  auto event_reader = initializeEventReader();
 
-  initiate_trace_replay(event_reader);
-  verify_replay_success();
+  initiateTraceReplay(event_reader);
+  verifyReplaySuccess();
 
   OTF2_Reader_Close(event_reader);
 
@@ -155,11 +155,11 @@ OTF2TraceReplayApp::skeleton_main() {
 
 // Indicate that we are starting an MPI call.
 void
-OTF2TraceReplayApp::StartMpi(const sstmac::timestamp wall) {
+OTF2TraceReplayApp::startMpi(const sstmac::Timestamp wall) {
   // Time not initialized
-  if (compute_time == sstmac::timestamp::zero) return;
+  if (compute_time.ticks() == sstmac::Timestamp::zero) return;
 
-  if (PrintTimeDeltas()) {
+  if (printTimeDeltas()) {
     cout << "\u0394T " << (wall-compute_time).sec() << " seconds"<< endl;
   }
 
@@ -167,7 +167,7 @@ OTF2TraceReplayApp::StartMpi(const sstmac::timestamp wall) {
 }
 
 void
-OTF2TraceReplayApp::EndMpi(const sstmac::timestamp wall) {
+OTF2TraceReplayApp::endMpi(const sstmac::Timestamp wall) {
   compute_time = wall;
 }
 
@@ -191,7 +191,7 @@ GlobDefLocation_Register(void* userData,
 }
 
 OTF2_Reader*
-OTF2TraceReplayApp::initialize_event_reader() {
+OTF2TraceReplayApp::initializeEventReader() {
 	// OTF2 has an excellent API
 	uint64_t number_of_locations;
 	//uint64_t trace_length = 0;
@@ -262,7 +262,7 @@ handle_events(OTF2_Reader* reader, OTF2_EvtReader* event_reader) {
 	return events_read;
 }
 
-void OTF2TraceReplayApp::initiate_trace_replay(OTF2_Reader* reader) {
+void OTF2TraceReplayApp::initiateTraceReplay(OTF2_Reader* reader) {
   // get the trace reader corresponding to the rank
   uint64_t locs = 0;
   OTF2_Reader_GetNumberOfLocations(reader, &locs);
@@ -279,9 +279,9 @@ void OTF2TraceReplayApp::initiate_trace_replay(OTF2_Reader* reader) {
 }
 
 void
-OTF2TraceReplayApp::verify_replay_success()
+OTF2TraceReplayApp::verifyReplaySuccess()
 {
-  int incomplete_calls = call_queue_.GetDepth();
+  int incomplete_calls = call_queue_.getDepth();
 
   if(incomplete_calls > 0) { // Something stalled the queue...
     cerr << "ERROR: rank " << rank_ << " has " << incomplete_calls << " incomplete calls!" << endl;
@@ -291,14 +291,14 @@ OTF2TraceReplayApp::verify_replay_success()
     cerr << "Printing " << calls_to_print << " calls" << endl;
 
     for (int i = 0; i < calls_to_print; i++) {
-      auto& call = call_queue_.Peek();
+      auto& call = call_queue_.peekFront();
       call_queue_.call_queue.pop();
-      cerr << "  ==> " << setw(15) << call.ToString() << (call.isready?"\tREADY":"\tNOT READY")<< endl;
+      cerr << "  ==> " << setw(15) << call.toString() << (call.isready?"\tREADY":"\tNOT READY")<< endl;
     }
 
-    for (auto iter = call_queue_.request_begin(); iter != call_queue_.request_end(); ++iter){
+    for (auto iter = call_queue_.requestBegin(); iter != call_queue_.requestEnd(); ++iter){
       cerr << "Stalled on request " << iter->first
-           << " on " << iter->second->ToString()
+           << " on " << iter->second->toString()
            << std::endl;
     }
   }

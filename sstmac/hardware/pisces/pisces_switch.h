@@ -49,120 +49,98 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/pisces/pisces_buffer.h>
 #include <sstmac/hardware/pisces/pisces_crossbar.h>
 #include <sstmac/hardware/pisces/pisces_arbitrator.h>
-#include <sstmac/hardware/pisces/pisces_stats_fwd.h>
 
 namespace sstmac {
 namespace hw {
 
-class pisces_abstract_switch :
-  public network_switch
+class PiscesAbstractSwitch :
+  public NetworkSwitch
 {
  public:
-  packet_stats_callback* xbar_stats() const {
-    return xbar_stats_;
-  }
-
-  packet_stats_callback* buf_stats() const {
-    return buf_stats_;
-  }
-
-  router* rter() const override {
+  Router* router() const override {
     return router_;
   }
 
  protected:
-  pisces_abstract_switch(
-    sprockit::sim_parameters* params,
-    uint32_t id,
-    event_manager* mgr);
+  PiscesAbstractSwitch(uint32_t id, SST::Params& params);
 
-  virtual ~pisces_abstract_switch();
+  virtual ~PiscesAbstractSwitch();
 
-  packet_stats_callback* xbar_stats_;
-  packet_stats_callback* buf_stats_;
-  router* router_;
+  std::string arbType_;
+  Router* router_;
 };
 
 /**
- @class pisces_switch
+ @class PiscesSwitch
  A switch in the network that arbitrates/routes packets
  to the next link in the network
  */
-class pisces_switch :
-  public pisces_abstract_switch
+class PiscesSwitch :
+  public PiscesAbstractSwitch
 {
-  RegisterComponent("pisces", network_switch, pisces_switch,
-         "macro", COMPONENT_CATEGORY_NETWORK,
-         "A network switch implementing the packet flow congestion model")
  public:
-  pisces_switch(sprockit::sim_parameters* params, uint32_t id, event_manager* mgr);
+  SST_ELI_REGISTER_DERIVED_COMPONENT(
+    NetworkSwitch,
+    PiscesSwitch,
+    "macro",
+    "pisces_switch",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "A network switch implementing the packet flow congestion model",
+    COMPONENT_CATEGORY_NETWORK)
 
-  virtual ~pisces_switch();
+  SST_ELI_DOCUMENT_PORTS(SSTMAC_VALID_PORTS)
 
-  int queue_length(int port) const override;
+  SST_ELI_DOCUMENT_STATISTICS(
+    {"xmit_wait", "stalled cycles with data but no credits", "nanoseconds",1}
+  )
 
-  virtual void connect_output(
-    sprockit::sim_parameters* params,
-    int src_outport,
-    int dst_inport,
-    event_link* link) override;
+  PiscesSwitch(uint32_t id, SST::Params& params);
 
-  virtual void connect_input(
-    sprockit::sim_parameters* params,
-    int src_outport,
-    int dst_inport,
-    event_link* link) override;
+  virtual ~PiscesSwitch();
 
-  link_handler* credit_handler(int port) override;
+  int queueLength(int port, int vc) const override;
 
-  link_handler* payload_handler(int port) override;
+  virtual void connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
 
-  timestamp send_latency(sprockit::sim_parameters *params) const override;
+  virtual void connectInput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
 
-  timestamp credit_latency(sprockit::sim_parameters *params) const override;
+  LinkHandler* creditHandler(int port) override;
 
-  void deadlock_check() override;
+  LinkHandler* payloadHandler(int port) override;
 
-  void deadlock_check(event* ev) override;
+  void setup() override;
 
-  pisces_crossbar* xbar() const {
+  void init(unsigned int phase) override;
+
+  PiscesCrossbar* xbar() const {
     return xbar_;
   }
 
-  /**
-   * @brief compatibility_check
-   * Perform a self-consistency check (before sim starts) on all components.
-   * This usually involves checking dynamic types that cannot be verified at compile-time
-   * and are difficult to detect directly from the parameters (hence would otherwise fail in ctor).
-   */
-  virtual void compatibility_check() const override;
-
-  virtual std::string to_string() const override;
+  virtual std::string toString() const override;
 
  private:
   void get_buffer(int outport);
 
-  struct input_port {
-    pisces_switch* parent;
+  struct InputPort {
+    PiscesSwitch* parent;
     int port;
 
-    int component_id() const {
-      return parent->addr();
-    }
+    void handle(Event* ev);
 
-    void handle(event* ev);
-
-    std::string to_string() const {
-      return parent->xbar()->to_string();
+    std::string toString() const {
+      return parent->xbar()->toString();
     }
   };
 
-  std::vector<pisces_sender*> out_buffers_;
-  std::vector<input_port> inports_;
+  std::vector<PiscesSender*> out_buffers_;
+  std::vector<InputPort> inports_;
 
-  pisces_crossbar* xbar_;
+  PiscesCrossbar* xbar_;
 
-
+  int xbar_credits_;
+  double link_bw_;
+  int link_credits_;
+  int mtu_;
 };
 
 }

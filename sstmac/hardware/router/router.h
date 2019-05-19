@@ -49,9 +49,10 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/node_address.h>
 #include <sstmac/common/event_manager_fwd.h>
 #include <sstmac/hardware/common/packet.h>
+#include <sstmac/sst_core/integrated_component.h>
 
 #include <sprockit/debug.h>
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 
 #include <sstmac/hardware/topology/topology_fwd.h>
 #include <sstmac/hardware/switch/network_switch_fwd.h>
@@ -70,27 +71,28 @@ namespace hw {
 
 /**
   @class router
-  Class that computes the next step a messag should taken in traversing
+  Class that computes the next step a message should taken in traversing
   the network.  This performs routing operations only and is not actually
   a 'component' in the network - those are switches.  Switch and router
   are not synonymous in SST/macro.  All switches have routers.
 */
-class router : public sprockit::printable
+class Router : public sprockit::printable
 {
-  DeclareFactory(router, topology*, network_switch*)
  public:
+   SST_ELI_DECLARE_BASE(Router)
+   SST_ELI_DECLARE_DEFAULT_INFO()
+   SST_ELI_DECLARE_CTOR(SST::Params&,Topology*,NetworkSwitch*)
+
   /**
    * @brief route Makes a routing decision for the packet.
    * All routing decisions should be stored on the packet object itself.
    * @param pkt
    */
-  virtual void route(packet* pkt) = 0;
+  virtual void route(Packet* pkt) = 0;
 
-  virtual ~router();
+  virtual ~Router();
 
-  virtual void compatibility_check() const;
-
-  network_switch* get_switch() const {
+  NetworkSwitch* get_switch() const {
     return netsw_;
   }
 
@@ -98,11 +100,11 @@ class router : public sprockit::printable
    * @brief addr
    * @return
    */
-  switch_id addr() const {
+  SwitchId addr() const {
     return my_addr_;
   }
 
-  topology* topol() const {
+  Topology* topology() const {
     return top_;
   }
 
@@ -111,7 +113,7 @@ class router : public sprockit::printable
    * @return The maximum number of virtual channels the router must maintain
    *         to implement all possible routing algorithms
    */
-  virtual int num_vc() const = 0;
+  virtual int numVC() const = 0;
 
   /**
    * @brief random_number
@@ -120,10 +122,10 @@ class router : public sprockit::printable
    * @param seed    Optional seed for seeding if in debug mode
    * @return
    */
-  uint32_t random_number(uint32_t max, uint32_t attempt, uint32_t seed) const;
+  uint32_t randomNumber(uint32_t max, uint32_t attempt, uint32_t seed) const;
 
  protected:
-  router(sprockit::sim_parameters* params, topology* top, network_switch* sw);
+  Router(SST::Params& params, Topology* top, NetworkSwitch* sw);
 
   /**
    * @brief switch_paths Decide which path is 'shortest' based on
@@ -134,15 +136,17 @@ class router : public sprockit::printable
    * @param new_port
    * @return Whether the original path is estimated to be shorter
    */
-  bool switch_paths(int orig_distance, int new_distance,
+  bool switchPaths(int orig_distance, int new_distance,
           int orig_port, int new_port) const;
 
  protected:
-  switch_id my_addr_;
+  static constexpr int all_vcs = -1;
 
-  topology* top_;
+  SwitchId my_addr_;
 
-  network_switch* netsw_;
+  Topology* top_;
+
+  NetworkSwitch* netsw_;
 
   RNG::rngint_t seed_;
 

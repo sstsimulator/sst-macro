@@ -1,47 +1,85 @@
-Core 0 matches from set 1 intersecting cpumask 1 for thread 1
-No available cores from set E intersect cpumask 1 for thread 2
-No available cores from set E intersect cpumask 1 for thread 3
-No available cores from set E intersect cpumask 1 for thread 4
-Core 1 matches from set 2 intersecting cpumask 2 for thread 5
-No available cores from set C intersect cpumask 2 for thread 6
-No available cores from set C intersect cpumask 2 for thread 7
-Core 2 matches from set 4 intersecting cpumask 4 for thread 8
-No available cores from set 8 intersect cpumask 4 for thread 9
-Core 3 matches from set 8 intersecting cpumask 8 for thread 10
-Releasing cores 1 for thread 1 yields cpuset 0
-Core 0 matches from set 1 intersecting cpumask 1 for thread 2
+Core 0 matches from available set F intersecting thread cpumask FFFFFFFF for thread 0
+Available mask is E after subtracting 1
+Releasing core 0 for thread 0 yields cpuset F
+Core 0 matches from available set F intersecting thread cpumask 1 for thread 1
+Available mask is E after subtracting 1
+Failed to find 1 cores for thread 2 matching cpuset 1 against available E
+Failed to find 1 cores for thread 3 matching cpuset 1 against available E
+Failed to find 1 cores for thread 4 matching cpuset 1 against available E
+Core 1 matches from available set E intersecting thread cpumask 2 for thread 5
+Available mask is C after subtracting 2
+Failed to find 1 cores for thread 6 matching cpuset 2 against available C
+Failed to find 1 cores for thread 7 matching cpuset 2 against available C
+Core 2 matches from available set C intersecting thread cpumask 4 for thread 8
+Available mask is 8 after subtracting 4
+Failed to find 1 cores for thread 9 matching cpuset 4 against available 8
+Core 3 matches from available set 8 intersecting thread cpumask 8 for thread 10
+Available mask is 0 after subtracting 8
 Finishing compute at T=  1.0000 on thread 1
-Releasing cores 2 for thread 5 yields cpuset 0
-No available cores from set 2 intersect cpumask 1 for thread 3
-No available cores from set 2 intersect cpumask 1 for thread 4
-Core 1 matches from set 2 intersecting cpumask 2 for thread 6
+Releasing core 0 for thread 1 yields cpuset 1
+Core 0 matches from available set 1 intersecting thread cpumask 1 for thread 2
+Available mask is 0 after subtracting 1
+Failed to find 1 cores for thread 3 matching cpuset 1 against available 0
+Failed to find 1 cores for thread 4 matching cpuset 1 against available 0
+Failed to find 1 cores for thread 6 matching cpuset 2 against available 0
+Failed to find 1 cores for thread 7 matching cpuset 2 against available 0
+Failed to find 1 cores for thread 9 matching cpuset 4 against available 0
 Finishing compute at T=  1.0000 on thread 5
-Releasing cores 4 for thread 8 yields cpuset 0
-No available cores from set 4 intersect cpumask 1 for thread 3
-No available cores from set 4 intersect cpumask 1 for thread 4
-No available cores from set 4 intersect cpumask 2 for thread 7
-Core 2 matches from set 4 intersecting cpumask 4 for thread 9
+Releasing core 1 for thread 5 yields cpuset 2
+Failed to find 1 cores for thread 3 matching cpuset 1 against available 2
+Failed to find 1 cores for thread 4 matching cpuset 1 against available 2
+Core 1 matches from available set 2 intersecting thread cpumask 2 for thread 6
+Available mask is 0 after subtracting 2
+Failed to find 1 cores for thread 7 matching cpuset 2 against available 0
+Failed to find 1 cores for thread 9 matching cpuset 4 against available 0
 Finishing compute at T=  1.0000 on thread 8
-Releasing cores 8 for thread 10 yields cpuset 0
-No available cores from set 8 intersect cpumask 1 for thread 3
-No available cores from set 8 intersect cpumask 1 for thread 4
-No available cores from set 8 intersect cpumask 2 for thread 7
+Releasing core 2 for thread 8 yields cpuset 4
+Failed to find 1 cores for thread 3 matching cpuset 1 against available 4
+Failed to find 1 cores for thread 4 matching cpuset 1 against available 4
+Failed to find 1 cores for thread 7 matching cpuset 2 against available 4
+Core 2 matches from available set 4 intersecting thread cpumask 4 for thread 9
+Available mask is 0 after subtracting 4
 Finishing compute at T=  1.0000 on thread 10
-Releasing cores 1 for thread 2 yields cpuset 8
-Core 0 matches from set 1 intersecting cpumask 1 for thread 3
+Releasing core 3 for thread 10 yields cpuset 8
+Failed to find 1 cores for thread 3 matching cpuset 1 against available 8
+Failed to find 1 cores for thread 4 matching cpuset 1 against available 8
+Failed to find 1 cores for thread 7 matching cpuset 2 against available 8
+Core 3 matches from available set 8 intersecting thread cpumask FFFFFFFF for thread 0
+Available mask is 0 after subtracting 8
+Releasing core 3 for thread 0 yields cpuset 8
+Failed to find 1 cores for thread 3 matching cpuset 1 against available 8
+Failed to find 1 cores for thread 4 matching cpuset 1 against available 8
+Failed to find 1 cores for thread 7 matching cpuset 2 against available 8
 Finishing compute at T=  2.0000 on thread 2
-Releasing cores 2 for thread 6 yields cpuset 8
-No available cores from set A intersect cpumask 1 for thread 4
-Core 1 matches from set 2 intersecting cpumask 2 for thread 7
+Releasing core 0 for thread 2 yields cpuset 9
+Core 0 matches from available set 9 intersecting thread cpumask 1 for thread 3
+Available mask is 8 after subtracting 1
+Failed to find 1 cores for thread 4 matching cpuset 1 against available 8
+Failed to find 1 cores for thread 7 matching cpuset 2 against available 8
 Finishing compute at T=  2.0000 on thread 6
-Releasing cores 4 for thread 9 yields cpuset 8
-No available cores from set C intersect cpumask 1 for thread 4
+Releasing core 1 for thread 6 yields cpuset A
+Failed to find 1 cores for thread 4 matching cpuset 1 against available A
+Core 1 matches from available set A intersecting thread cpumask 2 for thread 7
+Available mask is 8 after subtracting 2
 Finishing compute at T=  2.0000 on thread 9
-Releasing cores 1 for thread 3 yields cpuset C
-Core 0 matches from set 1 intersecting cpumask 1 for thread 4
+Releasing core 2 for thread 9 yields cpuset C
+Failed to find 1 cores for thread 4 matching cpuset 1 against available C
+Core 2 matches from available set C intersecting thread cpumask FFFFFFFF for thread 0
+Available mask is 8 after subtracting 4
+Releasing core 2 for thread 0 yields cpuset C
+Failed to find 1 cores for thread 4 matching cpuset 1 against available C
 Finishing compute at T=  3.0000 on thread 3
-Releasing cores 2 for thread 7 yields cpuset C
+Releasing core 0 for thread 3 yields cpuset D
+Core 0 matches from available set D intersecting thread cpumask 1 for thread 4
+Available mask is C after subtracting 1
 Finishing compute at T=  3.0000 on thread 7
-Releasing cores 1 for thread 4 yields cpuset E
+Releasing core 1 for thread 7 yields cpuset E
+Core 1 matches from available set E intersecting thread cpumask FFFFFFFF for thread 0
+Available mask is C after subtracting 2
+Releasing core 1 for thread 0 yields cpuset E
 Finishing compute at T=  4.0000 on thread 4
-Estimated total runtime of           4.00000400 seconds
+Releasing core 0 for thread 4 yields cpuset F
+Core 0 matches from available set F intersecting thread cpumask FFFFFFFF for thread 0
+Available mask is E after subtracting 1
+Releasing core 0 for thread 0 yields cpuset F
+Estimated total runtime of           4.00000805 seconds

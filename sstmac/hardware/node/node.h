@@ -48,8 +48,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/ami/ami.h>
 #include <sstmac/common/timestamp.h>
 #include <sstmac/common/event_scheduler.h>
-#include <sstmac/common/sst_event_fwd.h>
+#include <sstmac/common/request_fwd.h>
 #include <sstmac/hardware/common/unique_id.h>
+#include <sstmac/hardware/common/connection.h>
 #include <sstmac/hardware/common/failable.h>
 
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
@@ -64,7 +65,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/memory/memory_model_fwd.h>
 #include <sstmac/hardware/processor/processor_fwd.h>
 
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <sprockit/debug.h>
 
 DeclareDebugSlot(node);
@@ -74,68 +75,61 @@ DeclareDebugSlot(node);
 namespace sstmac {
 namespace hw {
 
-class node :
-  public failable,
-  public connectable_component
+class Node : public ConnectableComponent
 {
-  DeclareFactory(node,uint32_t,event_manager*)
  public:
+  SST_ELI_DECLARE_BASE(Node)
+  SST_ELI_DECLARE_DEFAULT_INFO()
+  SST_ELI_DECLARE_CTOR(uint32_t, SST::Params&)
+
   void setup() override;
 
   void init(unsigned int phase) override;
 
-  virtual ~node();
+  virtual ~Node();
 
-  void connect_output(sprockit::sim_parameters* params,
-                 int src_outport, int dst_inport,
-                 event_link* link) override;
+  void connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
 
-  void connect_input(sprockit::sim_parameters* params,
-                 int src_outport, int dst_inport,
-                 event_link* link) override;
+  void connectInput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
 
-  timestamp send_latency(sprockit::sim_parameters *params) const override;
+  LinkHandler* payloadHandler(int port) override;
 
-  timestamp credit_latency(sprockit::sim_parameters *params) const override;
-
-  link_handler* payload_handler(int port) override;
-
-  link_handler* credit_handler(int port) override;
+  LinkHandler* creditHandler(int port) override;
 
   /**
    @return  The object encapsulating the memory model
   */
-  memory_model* mem() const {
+  MemoryModel* mem() const {
     return mem_model_;
   }
 
-  processor* proc() const {
+  Processor* proc() const {
     return proc_;
   }
 
   /**
    @return  A handler wrapper for scheduling events to the NIC
   */
-  nic* get_nic() const {
+  NIC* nic() const {
     return nic_;
   }
 
   /**
    @return  The operating system managing apps on this node
   */
-  sw::operating_system* os() const {
+  sw::OperatingSystem* os() const {
     return os_;
   }
 
   /**
    @return  A unique string description of the node
   */
-  virtual std::string to_string() const override;
+  virtual std::string toString() const override;
 
   /**
    @return  A unique integer identifier
   */
-  node_id addr() const {
+  NodeId addr() const {
     return my_addr_;
   }
 
@@ -143,21 +137,16 @@ class node :
     return nsocket_;
   }
 
-  int launch_root() const {
-    return launch_root_;
+  int launchRoot() const {
+    return launchRoot_;
   }
-
-  /**
-   Cause the node to crash. This cancels all future events for this node.
-  */
-  void fail_stop();
 
   /**
    Choose a unique (64-bit) integer ID for a message. This will never be reused
    except for integer overflow.
    @return A unique 64-bit integer
   */
-  unique_event_id allocate_unique_id() {
+  UniqueEventId allocateUniqueId() {
     return next_outgoing_id_++;
   }
 
@@ -169,8 +158,7 @@ class node :
    @param cb    The event to execute when kernel is complete
   */
   virtual void execute(ami::COMP_FUNC func,
-           event* data,
-           callback* cb) = 0;
+           Event* data, ExecutionEvent* cb) = 0;
 
   /**
    * @brief execute Asynchronously execute a kernel on some
@@ -179,51 +167,38 @@ class node :
    * @param func
    * @param data
    */
-  virtual void execute(ami::SERVICE_FUNC func, event* data);
+  virtual void execute(ami::SERVICE_FUNC func, Event* data);
 
-  void handle(event* ev);
+  void handle(Request* req);
 
-  /**
-   Push a network message (operation at the MTL layer) onto the NIC
-   @param netmsg
-  */
-  void send_to_nic(network_message* netmsg);
+  void incrementAppRefcount();
 
-  void deadlock_check() override;
-
-  void deadlock_check(event* ev) override;
-
-  void increment_app_refcount();
-
-  void decrement_app_refcount();
+  void decrementAppRefcount();
 
  protected:
-  node(sprockit::sim_parameters* params,
-    uint32_t id,
-    event_manager* mgr);
+  Node(uint32_t id, SST::Params& params);
 
  protected:
-  sw::operating_system* os_;
+  sw::OperatingSystem* os_;
 
-  node_id my_addr_;
+  NodeId my_addr_;
 
-  memory_model* mem_model_;
+  MemoryModel* mem_model_;
 
-  processor* proc_;
+  Processor* proc_;
 
-  nic* nic_;
+  NIC* nic_;
   
   int nsocket_;
 
  private:
   int app_refcount_;
-  int launch_root_;
+  int launchRoot_;
 
-  sw::app_launcher* app_launcher_;
-  sw::job_launcher* job_launcher_;
+  sw::AppLauncher* app_launcher_;
+  sw::JobLauncher* job_launcher_;
 
-  unique_event_id next_outgoing_id_;
-  sprockit::sim_parameters* params_;
+  UniqueEventId next_outgoing_id_;
 
 };
 

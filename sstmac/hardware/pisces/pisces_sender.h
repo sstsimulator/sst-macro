@@ -49,7 +49,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/stats/stat_spyplot_fwd.h>
 #include <sstmac/hardware/pisces/pisces.h>
 #include <sstmac/hardware/pisces/pisces_arbitrator.h>
-#include <sstmac/hardware/pisces/pisces_stats.h>
 #include <sstmac/common/event_scheduler.h>
 
 #define pisces_debug(...) \
@@ -58,15 +57,15 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-struct payload_queue {
+struct PayloadQueue {
 
-  std::list<pisces_packet*> queue;
+  std::list<PiscesPacket*> queue;
 
-  typedef std::list<pisces_packet*>::iterator iterator;
+  typedef std::list<PiscesPacket*>::iterator iterator;
 
-  pisces_packet* pop(int num_credits);
+  PiscesPacket* pop(int num_credits);
 
-  pisces_packet* front(){
+  PiscesPacket* front(){
     if (queue.empty()){
       return nullptr;
     }
@@ -78,80 +77,63 @@ struct payload_queue {
     return queue.size();
   }
 
-  void push_back(pisces_packet* payload){
+  void push_back(PiscesPacket* payload){
     queue.push_back(payload);
   }
 
 };
 
-class pisces_sender :
-  public event_subcomponent
+class PiscesSender : public SubComponent
 {
-  DeclareFactory(pisces_sender, event_component*)
  public:
-  struct input {
+  struct Input {
     int port_to_credit;
-    event_link* link;
-    input() : link(nullptr){}
+    EventLink::ptr link;
+    Input() : link(nullptr){}
   };
 
-  struct output {
+  struct Output {
     int arrival_port;
-    event_link* link;
-    output() : link(nullptr){}
+    EventLink::ptr link;
+    Output() : link(nullptr){}
   };
 
-  virtual ~pisces_sender() {}
+  virtual ~PiscesSender() {}
 
-  virtual void set_input(sprockit::sim_parameters* params,
-     int my_inport, int dst_outport,
-     event_link* link) = 0;
+  virtual void setInput(int my_inport, int dst_outport, EventLink::ptr&& link) = 0;
 
-  virtual void set_output(sprockit::sim_parameters* params,
-    int my_outport, int dst_inport,
-    event_link* link) = 0;
+  virtual void setOutput(int my_outport, int dst_inport, EventLink::ptr&& link, int credits) = 0;
 
-  virtual void handle_credit(event* ev) = 0;
+  virtual void handlePayload(Event* ev) = 0;
 
-  virtual void handle_payload(event* ev) = 0;
+  virtual void handleCredit(Event* ev) = 0;
 
-  static void configure_credit_port_latency(sprockit::sim_parameters* params);
+  virtual std::string piscesName() const = 0;
 
-  static void configure_payload_port_latency(sprockit::sim_parameters* params);
-
-  void set_stat_collector(packet_stats_callback* c){
-    stat_collector_ = c;
-  }
-
-  virtual std::string pisces_name() const = 0;
-
-  std::string to_string() const override;
-
-  timestamp send_latency() const {
-    return send_lat_;
-  }
-
-  timestamp credit_latency() const {
-    return credit_lat_;
-  }
+  std::string toString() const override;
 
  protected:
-  pisces_sender(sprockit::sim_parameters* params,
-                event_scheduler* parent,
-                bool update_vc);
+  PiscesSender(const std::string& selfname, SST::Component* parent, bool update_vc);
 
-  void send_credit(input& inp, pisces_packet* payload,
-          timestamp packet_tail_leaves);
+  void sendCredit(Input& inp, PiscesPacket* payload,
+          GlobalTimestamp packet_tail_leaves);
 
-  void send(pisces_bandwidth_arbitrator* arb,
-       pisces_packet* pkt, input& to_credit, output& to_send);
+  /**
+   * @brief send Invoked to send/bandwidth arbitrator a packet.
+   * Only called when there are enough credits to hold packet on other side.
+   * @param arb
+   * @param pkt
+   * @param to_credit
+   * @param to_send
+   * @return
+   */
+  GlobalTimestamp send(PiscesBandwidthArbitrator* arb,
+       PiscesPacket* pkt, Input& to_credit, Output& to_send);
 
  protected:
-  packet_stats_callback* stat_collector_;
+  Timestamp send_lat_;
 
-  timestamp send_lat_;
-
-  timestamp credit_lat_;
+  Timestamp credit_lat_;
 
   bool update_vc_;
 

@@ -45,8 +45,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef PARALLEL_RUNTIME_H
 #define PARALLEL_RUNTIME_H
 
-
-#include <sstmac/common/messages/message_buffer_cache.h>
 #include <sstmac/common/node_address.h>
 #include <sstmac/common/thread_lock.h>
 #include <sstmac/common/timestamp.h>
@@ -56,7 +54,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/event_manager_fwd.h>
 #include <sstmac/backends/common/sim_partition_fwd.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
-#include <sprockit/factories/factory.h>
+#include <sstmac/sst_core/integrated_component.h>
+#include <sprockit/factory.h>
 #include <sprockit/sim_parameters.h>
 #include <list>
 
@@ -79,30 +78,33 @@ void align64(T*& t){
 
 namespace sstmac {
 
-class parallel_runtime :
-  public lockable
+class ParallelRuntime :
+  public Lockable
 {
-  DeclareFactory(parallel_runtime)
  public:
-  virtual ~parallel_runtime();
+  SST_ELI_DECLARE_BASE(ParallelRuntime)
+  SST_ELI_DECLARE_DEFAULT_INFO()
+  SST_ELI_DECLARE_CTOR(SST::Params&)
 
-  struct comm_buffer : public lockable {
+  virtual ~ParallelRuntime();
+
+  struct CommBuffer : public Lockable {
     int64_t bytesAllocated;
     int64_t allocSize;
     int64_t filledSize;
     char* allocation;
     char* storage;
 
-    struct backup_buffer {
+    struct BackupBuffer {
       uint64_t maxSize;
       uint64_t filledSize;
       char* buffer;
     };
 
-    comm_buffer() : storage(nullptr), allocation(nullptr),
+    CommBuffer() : storage(nullptr), allocation(nullptr),
       filledSize(0), bytesAllocated(0) {}
 
-    ~comm_buffer(){
+    ~CommBuffer(){
       if (allocation) delete[] allocation;
     }
 
@@ -152,33 +154,39 @@ class parallel_runtime :
       bytesAllocated += size;
     }
 
-    char* allocateSpace(size_t size, ipc_event_t* ev);
+    char* allocateSpace(size_t size, IpcEvent* ev);
 
-    std::vector<backup_buffer> backups;
+    std::vector<BackupBuffer> backups;
 
   };
 
 #if !SSTMAC_INTEGRATED_SST_CORE
-  void send_event(ipc_event_t* iev);
+  void sendEvent(IpcEvent* iev);
 
-  static void run_serialize(serializer& ser, ipc_event_t* iev);
+  static void runSerialize(serializer& ser, IpcEvent* iev);
 #endif
 
   static const int global_root;
 
-  virtual int64_t allreduce_min(int64_t mintime) = 0;
+  virtual int64_t allreduceMin(int64_t mintime) = 0;
 
-  virtual int64_t allreduce_max(int64_t maxtime) = 0;
+  virtual int64_t allreduceMax(int64_t maxtime) = 0;
 
-  virtual void global_sum(int* data, int nelems, int root) = 0;
+  virtual void globalSum(int32_t* data, int nelems, int root) = 0;
 
-  virtual void global_sum(long* data, int nelems, int root) = 0;
+  virtual void globalSum(uint32_t* data, int nelems, int root) = 0;
 
-  virtual void global_sum(long long* data, int nelems, int root) = 0;
+  virtual void globalSum(int64_t* data, int nelems, int root) = 0;
 
-  virtual void global_max(int* data, int nelems, int root) = 0;
+  virtual void globalSum(uint64_t* data, int nelems, int root) = 0;
 
-  virtual void global_max(long* data, int nelems, int root) = 0;
+  virtual void globalMax(int32_t* data, int nelems, int root) = 0;
+
+  virtual void globalMax(uint32_t* data, int nelems, int root) = 0;
+
+  virtual void globalMax(int64_t* data, int nelems, int root) = 0;
+
+  virtual void globalMax(uint64_t* data, int nelems, int root) = 0;
 
   virtual void send(int dst, void* buffer, int buffer_size) = 0;
 
@@ -188,35 +196,35 @@ class parallel_runtime :
 
   virtual void recv(int src, void* buffer, int buffer_size) = 0;
 
-  int global_max(int my_elem){
-    int dummy = my_elem;
-    global_max(&dummy, 1, global_root);
+  template <class T> T globalMax(T my_elem){
+    T dummy = my_elem;
+    globalMax(&dummy, 1, global_root);
     return dummy;
   }
 
-  long global_max(long my_elem){
-    long dummy = my_elem;
-    global_max(&dummy, 1, global_root);
-    return dummy;
+  template <class T> T globalSum(T my_elem){
+    T sum = my_elem;
+    globalSum(&sum, 1, global_root);
+    return sum;
   }
 
   virtual void bcast(void* buffer, int bytes, int root) = 0;
 
-  void bcast_string(std::string& str, int root);
+  void bcastString(std::string& str, int root);
 
-  std::istream* bcast_file_stream(const std::string& fname);
+  std::istream* bcastFileStream(const std::string& fname);
 
   virtual void finalize() = 0;
 
-  virtual void init_runtime_params(sprockit::sim_parameters* params);
+  virtual void initRuntimeParams(SST::Params& params);
 
-  virtual void init_partition_params(sprockit::sim_parameters* params);
+  virtual void initPartitionParams(SST::Params& params);
 
-  virtual timestamp send_recv_messages(timestamp vote){
+  virtual GlobalTimestamp sendRecvMessages(GlobalTimestamp vote){
     return vote;
   }
 
-  void reset_send_recv();
+  void resetSendRecv();
 
   int me() const {
     return me_;
@@ -234,41 +242,41 @@ class parallel_runtime :
     return buf_size_;
   }
 
-  partition* topology_partition() const {
+  Partition* topologyPartition() const {
     return part_;
   }
 
-  int num_recvs_done() const {
-    return num_recvs_done_;
+  int numRecvsDone() const {
+    return numRecvsDone_;
   }
 
-  const comm_buffer& recv_buffer(int idx) const {
+  const CommBuffer& recvBuffer(int idx) const {
     return recv_buffers_[idx];
   }
 
-  static parallel_runtime* static_runtime(sprockit::sim_parameters* params);
+  static ParallelRuntime* staticRuntime(SST::Params& params);
 
-  static void clear_static_runtime(){
+  static void clearStaticRuntime(){
     if (static_runtime_) delete static_runtime_;
     static_runtime_ = nullptr;
   }
 
  protected:
-  parallel_runtime(sprockit::sim_parameters* params,
+  ParallelRuntime(SST::Params& params,
                    int me, int nproc);
 
  protected:
    int nproc_;
    int nthread_;
    int me_;
-   std::vector<comm_buffer> send_buffers_;
-   std::vector<comm_buffer> recv_buffers_;
+   std::vector<CommBuffer> send_buffers_;
+   std::vector<CommBuffer> recv_buffers_;
    std::vector<int> sends_done_;
    int num_sends_done_;
-   int num_recvs_done_;
+   int numRecvsDone_;
    int buf_size_;
-   partition* part_;
-   static parallel_runtime* static_runtime_;
+   Partition* part_;
+   static ParallelRuntime* static_runtime_;
 
 };
 

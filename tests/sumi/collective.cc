@@ -46,10 +46,10 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/output.h>
 #include <sstmac/util.h>
 #include <sstmac/compute.h>
-#include <sstmac/libraries/sumi/sumi.h>
 #include <sstmac/common/runtime.h>
-#include <sumi/transport.h>
 #include <sstmac/skeleton.h>
+#include <sumi/sumi.h>
+#include <sumi/transport.h>
 
 #define sstmac_app_name user_app_cxx
 
@@ -61,14 +61,11 @@ test_bcast(int tag, int root)
   int nelems = 10;
   int rank = comm_rank();
   int nproc = comm_nproc();
-  comm_bcast(root, NULL, nelems, sizeof(int), tag);
-
-  message* msg = comm_poll();
-  if (msg->class_type() != message::collective_done){
-    spkt_throw_printf(sprockit::value_error,
-      "bcast test: expected collective message, but got %s",
-      message::tostr(msg->class_type()));
+  auto* dmsg = comm_bcast(root, NULL, nelems, sizeof(int), tag, sumi::Message::default_cq);
+  if (!dmsg){
+    dmsg = sumi_engine()->blockUntilNext(Message::default_cq);
   }
+
 
   if (rank == root){
     //printf("Testing tiny allreduce\n");
@@ -93,14 +90,11 @@ test_gather(int tag, int root)
   int* dst_buffer = 0;
   if (rank == root) dst_buffer = new int[nproc*nelems];
 
-  comm_gather(root, dst_buffer, src_buffer, nelems, sizeof(int), tag);
-
-  message* msg = comm_poll();
-  if (msg->class_type() != message::collective_done){
-    spkt_throw_printf(sprockit::value_error,
-      "gather test: expected collective message, but got %s",
-      message::tostr(msg->class_type()));
+  auto* dmsg = comm_gather(root, dst_buffer, src_buffer, nelems, sizeof(int), tag, Message::default_cq);
+  if (!dmsg){
+    dmsg = sumi_engine()->blockUntilNext(Message::default_cq);
   }
+
 
   if (rank == root){
     printf("Testing gather on root=%d\n", root);
@@ -141,13 +135,9 @@ test_scatter(int tag, int root)
   if (rank == root)
     printf("Testing scatter on root=%d\n", root);
 
-  comm_scatter(root, dst_buffer, src_buffer, nelems, sizeof(int), tag);
-
-  message* msg = comm_poll();
-  if (msg->class_type() != message::collective_done){
-    spkt_throw_printf(sprockit::value_error,
-      "scatter test: expected collective message, but got %s",
-      message::tostr(msg->class_type()));
+  auto* dmsg = comm_scatter(root, dst_buffer, src_buffer, nelems, sizeof(int), tag, sumi::Message::default_cq);
+  if (!dmsg){
+    dmsg = sumi_engine()->blockUntilNext(Message::default_cq);
   }
 
   for (int i=0; i < nelems; ++i){
@@ -175,14 +165,11 @@ test_tiny_allreduce(int tag)
   }
   int* dst_buffer = new int[nelems];
 
-  comm_allreduce<int,Add>(dst_buffer, src_buffer, nelems, tag);
-
-  message* msg = comm_poll(); //wait on allreduce
-  if (msg->class_type() != message::collective_done){
-    spkt_throw_printf(sprockit::value_error,
-      "allreduce test: expected collective message, but got %s",
-      message::tostr(msg->class_type()));
+  auto* dmsg = comm_allreduce<int,Add>(dst_buffer, src_buffer, nelems, tag, Message::default_cq);
+  if (!dmsg){
+    dmsg = sumi_engine()->blockUntilNext(Message::default_cq);
   }
+
 
   if (rank == 0){
     printf("Testing tiny allreduce\n");
@@ -207,14 +194,11 @@ test_allreduce_payload(int tag)
   }
   int* dst_buffer = new int[nelems];
 
-  comm_allreduce<int,Add>(dst_buffer, src_buffer, nelems, tag);
-
-  message* msg = comm_poll(); //wait on allreduce
-  if (msg->class_type() != message::collective_done){
-    spkt_throw_printf(sprockit::value_error,
-      "allreduce test: expected collective message, but got %s",
-      message::tostr(msg->class_type()));
+  auto* dmsg = comm_allreduce<int,Add>(dst_buffer, src_buffer, nelems, tag, Message::default_cq);
+  if (!dmsg){
+   dmsg = sumi_engine()->blockUntilNext(Message::default_cq);
   }
+
 
   if (rank == 0){
     printf("Testing allreduce with payload\n");
@@ -233,18 +217,14 @@ test_scan_payload(int tag)
   int nelems = 3;
   int* src_buffer = new int[nelems];
   ::memset(src_buffer, 0, nelems * sizeof(int));
-  for (int i=0; i <= nelems; ++i){
+  for (int i=0; i < nelems; ++i){
     src_buffer[i] = 1;
   }
   int* dst_buffer = new int[nelems];
 
-  comm_scan<int,Add>(dst_buffer, src_buffer, nelems, tag);
-
-  message* msg = comm_poll(); //wait on allreduce
-  if (msg->class_type() != message::collective_done){
-    spkt_throw_printf(sprockit::value_error,
-      "scan test: expected collective message, but got %s",
-      message::tostr(msg->class_type()));
+  auto* dmsg = comm_scan<int,Add>(dst_buffer, src_buffer, nelems, tag, Message::default_cq);
+  if (!dmsg){
+   dmsg = sumi_engine()->blockUntilNext(Message::default_cq);
   }
 
   int correct = rank + 1;
@@ -277,13 +257,9 @@ test_allgatherv_uneven(int tag)
 
   int ntotal = nproc*(nproc+1) / 2;
   int* dst_buffer = new int[ntotal];
-  comm_allgatherv(dst_buffer, src_buffer, recv_counts, sizeof(int), tag);
-
-  message* msg = comm_poll(); //wait on allgather
-  if (msg->class_type() != message::collective_done){
-    spkt_throw_printf(sprockit::value_error,
-      "allgatherv test: expected collective message, but got %s",
-      message::tostr(msg->class_type()));
+  auto* dmsg = comm_allgatherv(dst_buffer, src_buffer, recv_counts, sizeof(int), tag, Message::default_cq);
+  if (!dmsg){
+    dmsg = sumi_engine()->blockUntilNext(Message::default_cq);
   }
 
   int* bufptr = dst_buffer;
@@ -321,13 +297,9 @@ test_allgatherv_even(int tag)
   }
 
   int* dst_buffer = new int[nproc*nelems];
-  comm_allgatherv(dst_buffer, src_buffer, recv_counts, sizeof(int), tag);
-
-  message* msg = comm_poll(); //wait on allgather
-  if (msg->class_type() != message::collective_done){
-    spkt_throw_printf(sprockit::value_error,
-      "allgatherv test: expected collective message, but got %s",
-      message::tostr(msg->class_type()));
+  auto* dmsg = comm_allgatherv(dst_buffer, src_buffer, recv_counts, sizeof(int), tag, Message::default_cq);
+  if (!dmsg){
+    dmsg = sumi_engine()->blockUntilNext(Message::default_cq);
   }
 
   int* bufptr = dst_buffer;
@@ -364,14 +336,9 @@ test_reduce(int tag, int root)
   int* dst_buffer = 0;
   if (rank == root) dst_buffer = new int[nelems];
 
-  comm_reduce<int,Add>(root, dst_buffer, src_buffer, nelems, tag);
-
-  message* msg = comm_poll(); //wait on reduce
-
-  if (msg->class_type() != message::collective_done){
-    spkt_throw_printf(sprockit::value_error,
-      "reduce test: expected collective message, but got %s",
-      message::tostr(msg->class_type()));
+  auto* dmsg = comm_reduce<int,Add>(root, dst_buffer, src_buffer, nelems, tag, Message::default_cq);
+  if (!dmsg){
+    dmsg = sumi_engine()->blockUntilNext(Message::default_cq);
   }
 
   if (rank == root){
@@ -396,13 +363,9 @@ test_allgather_payload(int tag)
   }
 
   int* dst_buffer = new int[nproc*nelems];
-  comm_allgather(dst_buffer, src_buffer, nelems, sizeof(int), tag);
-
-  message* msg = comm_poll(); //wait on allgather
-  if (msg->class_type() != message::collective_done){
-    spkt_throw_printf(sprockit::value_error,
-      "allgather test: expected collective message, but got %s",
-      message::tostr(msg->class_type()));
+  auto* dmsg = comm_allgather(dst_buffer, src_buffer, nelems, sizeof(int), tag, Message::default_cq);
+  if (!dmsg){
+    dmsg = sumi_engine()->blockUntilNext(Message::default_cq);
   }
 
   if (rank == 0){
@@ -426,10 +389,10 @@ test_allgather_payload(int tag)
 void
 test_allreduce(int tag)
 {
-  comm_allreduce<int,Add>(0, 0, 256, tag);
-
- message* msg = comm_poll();
-  std::cout << "Allreduce got " << msg->to_string() << std::endl;
+  auto* dmsg = comm_allreduce<int,Add>(0, 0, 256, tag, Message::default_cq);
+  if (!dmsg){
+    dmsg = sumi_engine()->blockUntilNext(Message::default_cq);
+  }
 }
 
 void
@@ -439,58 +402,11 @@ test_barrier(int tag)
   //sleep as many seconds as my rank is
   sstmac_sleep(rank);
   //then execute barrier
-  comm_barrier(tag);
-
-  message* msg = comm_poll();
-  auto dmsg = dynamic_cast<collective_done_message*>(msg);
-  if (dmsg->tag() != tag || dmsg->type() != collective::barrier){
-    sprockit::abort("barrier got invalid completion message");
+  auto* dmsg = comm_barrier(tag, Message::default_cq);
+  if (!dmsg){
+    dmsg = sumi_engine()->blockUntilNext(Message::default_cq);
   }
-
   printf("t=%4.2f finished barrier on rank %d\n", sstmac_now(), rank);
-}
-
-
-void
-test_dynamic_tree_vote(int tag)
-{
-  int vote = comm_rank() * 2;
-  int answer = (comm_nproc()-1) * 2;
-  comm_vote<Max>(vote, tag);
-
-  message* msg = comm_poll();
-  auto dmsg = dynamic_cast<collective_done_message*>(msg);
-  if (dmsg->tag() != tag || dmsg->type() != collective::dynamic_tree_vote){
-    sprockit::abort("vote got invalid completion message");
-  }
-
-  if (dmsg->vote() != answer){
-    cerrn << sprockit::printf("got final vote %d on rank %d, but answer is %d\n",
-        dmsg->vote(), comm_rank(), answer);
-  }
-
-}
-
-void
-test_failed_collectives()
-{
-
-  int tag = 717;
-  int rank = comm_rank();
-  int nelems = 10000;
-  void* null = 0;
-
-  comm_allreduce<char,Add>(null,null,nelems,tag,
-                           collective::cfg().resilient(true));
-  comm_collective_block(collective::allreduce, tag);
-  printf("t=%6.2f: passed failed allreduce on rank %d\n", sstmac_now(), rank);
-
-
-  tag = 818;
-  comm_allgather(null,null,nelems,sizeof(int),tag,
-                 collective::cfg().resilient(true));
-  comm_collective_block(collective::allgather, tag);
-  printf("t=%6.2f: passed failed allgather on rank %d\n", sstmac_now(), rank);
 }
 
 void
@@ -509,13 +425,9 @@ test_alltoall(int tag)
   }
 
   //the all-to-all should accumulate it
-  comm_alltoall(dst_buffer, src_buffer, nelems, sizeof(int), tag);
-
-  message* msg = comm_poll(); //wait on allgather
-  if (msg->class_type() != message::collective_done){
-    spkt_throw_printf(sprockit::value_error,
-      "all-to-all test: expected collective message, but got %s",
-      message::tostr(msg->class_type()));
+  auto* dmsg = comm_alltoall(dst_buffer, src_buffer, nelems, sizeof(int), tag, Message::default_cq);
+  if (!dmsg){
+    dmsg = sumi_engine()->blockUntilNext(Message::default_cq);
   }
 
   for (int i=0; i < buffer_size; ++i){
@@ -535,12 +447,6 @@ int
 main(int argc, char **argv)
 {
   comm_init();
-
-  sstmac::runtime::enter_deadlock_region();
-  sstmac::runtime::add_deadlock_check(
-    sstmac::new_deadlock_check(sumi_api(), &sumi::transport::deadlock_check));
-
-  test_dynamic_tree_vote(1);
 
   test_allreduce(2);
 
@@ -571,16 +477,15 @@ main(int argc, char **argv)
   test_scatter(16, 3);
 
   test_allgatherv_even(17);
-  test_allgatherv_uneven(18);
+  //test_allgatherv_uneven(18);
 
   test_alltoall(20);
 
   test_scan_payload(21);
 
   sstmac_sleep(100);
-  //test_failed_collectives();
 
   comm_finalize();
-  sstmac::runtime::exit_deadlock_region();
+
   return 0;
 }

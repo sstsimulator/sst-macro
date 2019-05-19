@@ -52,35 +52,26 @@ namespace sprockit {
 
 /// Multiply two 64 bit integer values and check for overflow.
 /// This would be two lines if we had 128-bit integers.
-int64_t
-multiply64(int64_t a, int64_t b, bool &errorflag);
+int64_t multiply64(int64_t a, int64_t b, bool &errorflag);
 
-void
-populate_bandwidth_names(std::map<std::string, int64_t> &abbrname,
-                         std::map<std::string, int64_t> &fullname);
+void populateBandwidthNames(std::map<std::string, int64_t>& abbrname,
+                            std::map<std::string, int64_t>& fullname);
 
-double
-get_bandwidth(const char *value, bool &errorflag, bool print_errors = false);
+double getBandwidth(const char *value, bool &errorflag, bool print_errors = false);
 
-double
-get_bandwidth(const char *value);
+double getBandwidth(const char *value);
 
-double
-get_frequency(const char* value, bool& errorflag, bool print_errors = false);
+double getFrequency(const char* value, bool& errorflag, bool print_errors = false);
 
-long
-byte_length(const char* value, bool& errorflag, bool print_errors = false);
+long byteLength(const char* value, bool& errorflag, bool print_errors = false);
 
-void
-populate_timestamp_names(std::map<std::string, int64_t> &value);
+void populateTimestampNames(std::map<std::string, int64_t> &value);
 
-void
-populate_frequency_names(std::map<std::string, int64_t> &value);
+void populateFrequencyNames(std::map<std::string, int64_t> &value);
 
 /// Get a timestamp possiblly suffixed with any of the identifiers
 /// psec, nsec, usec, msec, sec, ps, ns, us, ms, s
-double
-get_timestamp(const char *value, bool &errorflag, bool print_errors = false);
+double getTimestamp(const char *value, bool &errorflag, bool print_errors = false);
 
 }
 

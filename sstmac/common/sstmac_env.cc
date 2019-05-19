@@ -43,8 +43,9 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sstmac/common/sstmac_env.h>
+#include <sprockit/sim_parameters.h>
 
 namespace sstmac {
-sprockit::sim_parameters* sstmac::env::params = nullptr;
-parallel_runtime* sstmac::env::rt = nullptr;
+SST::Params sstmac::Env::params;
+ParallelRuntime* sstmac::Env::rt = nullptr;
 }

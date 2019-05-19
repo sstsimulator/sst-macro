@@ -3,12 +3,12 @@
 namespace sstmac {
 namespace tutorial {
 
-christopher_guest::christopher_guest(sprockit::sim_parameters* params) :
+christopher_guest::christopher_guest(SST::Params& params) :
   actor(params)
 {
-  num_fingers_ = params->get_int_param("num_fingers");
+  num_fingers_ = params.find<int>("num_fingers");
   if (num_fingers_ != 6) {
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
                      "invalid number of fingers %d - must be 6");
   }
 }

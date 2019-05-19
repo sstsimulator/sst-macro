@@ -11,7 +11,7 @@
 
 ACLOCAL_AMFLAGS = -I acinclude
 
-EXTRA_DIST = bin/runtest bin/configlib.py
+#EXTRA_DIST = bin/runtest bin/configlib.py
 
 SUBDIRS = sprockit test
 

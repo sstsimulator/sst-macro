@@ -47,9 +47,10 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/thread.h>
-#include <sstmac/libraries/sumi/sumi.h>
-#include <sumi/dense_rank_map.h>
 #include <sstmac/skeleton.h>
+#include <sumi/sumi.h>
+#include <sumi/dense_rank_map.h>
+
 #define sstmac_app_name user_app_cxx
 using namespace sstmac;
 using namespace sstmac::sw;
@@ -76,12 +77,12 @@ main(int argc, char **argv)
   int nfailed = 0;
   int failure_num = 0;
   while (nfailed < 6){
-    auto dmsg = std::dynamic_pointer_cast<collective_done_message>(comm_poll());
-    if (dmsg->type() != collective::heartbeat){
-      spkt_throw_printf(sprockit::value_error,
+    auto dmsg = std::dynamic_pointer_cast<CollectiveDoneMessage>(comm_poll());
+    if (dmsg->type() != Collective::heartbeat){
+      spkt_throw_printf(sprockit::ValueError,
         "got non-heartbeat message %s of type %s",
-        dmsg->to_string().c_str(),
-        sumi::collective::tostr(dmsg->type()));
+        dmsg->toString().c_str(),
+        sumi::Collective::tostr(dmsg->type()));
     }
 
     auto& failed = dmsg->failed_procs();
@@ -92,7 +93,7 @@ main(int argc, char **argv)
     int idx = 0;
     int* correct_failures = failures[failure_num];
     if (nfailures[failure_num] != (int)(failed.size())){
-      spkt_throw_printf(sprockit::value_error,
+      spkt_throw_printf(sprockit::ValueError,
         "Got %d failures, but supposed to be %d failures",
         failed.size(), nfailures[failure_num]);
     }
@@ -101,7 +102,7 @@ main(int argc, char **argv)
       int failed_rank = *it;
       if (correct_failures[idx] != failed_rank){
         failed.end_iteration();
-        spkt_throw_printf(sprockit::value_error,
+        spkt_throw_printf(sprockit::ValueError,
             "Got failure %d, but failure %d was supposed to be rank %d",
             failed_rank, idx, correct_failures[idx]);
       }

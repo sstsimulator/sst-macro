@@ -45,10 +45,14 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef EVENT_HANDLER_FWD_H
 #define EVENT_HANDLER_FWD_H
 
+#include <memory>
+
 namespace sstmac {
 
-class event_handler;
-class event_link;
+class EventHandler;
+class EventLink;
+
+using EventLinkPtr = std::unique_ptr<EventLink>;
 
 }
 

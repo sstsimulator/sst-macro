@@ -56,96 +56,87 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-app_launcher::app_launcher(operating_system* os) :
+AppLauncher::AppLauncher(OperatingSystem* os) :
   is_completed_(false),
-  service(std::string("launcher"), software_id(0,0), os)
+  Service(std::string("launcher"), SoftwareId(0,0), os)
 {
 }
 
-app_launcher::~app_launcher() throw()
+AppLauncher::~AppLauncher() throw()
 {
 }
 
 void
-app_launcher::incoming_event(event* ev)
+AppLauncher::incomingRequest(Request* req)
 {
-  start_app_event* lev = safe_cast(start_app_event, ev);
-  if (lev->type() == launch_event::Start){
-    task_mapping::add_global_mapping(lev->aid(), lev->unique_name(), lev->mapping());
+  StartAppRequest* lreq = safe_cast(StartAppRequest, req);
+  if (lreq->type() == LaunchRequest::Start){
+    TaskMapping::addGlobalMapping(lreq->aid(), lreq->uniqueName(), lreq->mapping());
 
     //if necessary, bcast this to whomever else needs it
-    os_->outcast_app_start(lev->tid(), lev->aid(), lev->unique_name(),
-                         lev->mapping(), &lev->app_params());
+    os_->outcastAppStart(lreq->tid(), lreq->aid(), lreq->uniqueName(),
+                         lreq->mapping(), lreq->appParams());
 
-    software_id sid(lev->aid(), lev->tid());
-    sprockit::sim_parameters* app_params = new sprockit::sim_parameters(&lev->app_params());
+    SoftwareId sid(lreq->aid(), lreq->tid());
+    SST::Params app_params = lreq->appParams();
 
-    app::check_dlopen(lev->aid(), app_params);
-    app* theapp = app::factory::get_param("name", app_params, sid, os_);
-    theapp->set_unique_name(lev->unique_name());
-    int intranode_rank = num_apps_launched_[lev->aid()]++;
-    int core_affinity = lev->core_affinity(intranode_rank);
-    if (core_affinity != thread::no_core_affinity){
-      theapp->set_affinity(core_affinity);
+    App::dlopenCheck(lreq->aid(), app_params);
+    App* theapp = sprockit::create<App>(
+          "macro", app_params.find<std::string>("name"), app_params, sid, os_);
+    theapp->setUniqueName(lreq->uniqueName());
+    int intranode_rank = num_apps_launched_[lreq->aid()]++;
+    int core_affinity = lreq->coreAffinity(intranode_rank);
+    if (core_affinity != Thread::no_core_affinity){
+      theapp->setAffinity(core_affinity);
     }
 
-    os_->start_app(theapp, lev->unique_name());
+    os_->startApp(theapp, lreq->uniqueName());
   }
-  delete lev;
+  delete lreq;
 }
 
 void
-app_launcher::start()
+AppLauncher::start()
 {
-  service::start();
+  Service::start();
   if (!os_) {
-    spkt_throw_printf(sprockit::value_error,
-                     "app_launcher::start: OS hasn't been registered yet");
+    spkt_throw_printf(sprockit::ValueError,
+                     "AppLauncher::start: OS hasn't been registered yet");
   }
 }
 
-hw::network_message*
-launch_event::clone_injection_ack() const
+hw::NetworkMessage*
+LaunchRequest::cloneInjectionAck() const
 {
   spkt_abort_printf("launch event should never be cloned for injection");
   return nullptr;
 }
 
 int
-start_app_event::core_affinity(int intranode_rank) const
+StartAppRequest::coreAffinity(int intranode_rank) const
 {
-  return thread::no_core_affinity;
+  return Thread::no_core_affinity;
 }
 
 void
-start_app_event::serialize_order(serializer &ser)
+StartAppRequest::serialize_order(serializer &ser)
 {
-  launch_event::serialize_order(ser);
+  LaunchRequest::serialize_order(ser);
   ser & unique_name_;
-  if (ser.mode() == ser.UNPACK){
-    std::string paramStr;
-    ser & paramStr;
-    std::stringstream sstr(paramStr);
-    app_params_.parse_stream(sstr, false, true);
-  } else {
-    std::stringstream sstr;
-    app_params_.reproduce_params(sstr);
-    std::string paramStr = sstr.str();
-    ser & paramStr;
-  }
-  mapping_ = task_mapping::serialize_order(aid_, ser);
+  ser & app_params_;
+  mapping_ = TaskMapping::serialize_order(aid(), ser);
 }
 
 std::string
-start_app_event::to_string() const
+StartAppRequest::toString() const
 {
-  return sprockit::printf("start_app_event: app=%d task=%d node=%d", aid_, tid(), toaddr());
+  return sprockit::printf("start_app_event: app=%d task=%d node=%d", aid(), tid(), toaddr());
 }
 
 std::string
-job_stop_event::to_string() const
+JobStopRequest::toString() const
 {
-  return sprockit::printf("job_stop_event: app=%d task=%d node=%d", aid_, tid(), fromaddr());
+  return sprockit::printf("job_stop_event: app=%d task=%d node=%d", aid(), tid(), fromaddr());
 }
 
 

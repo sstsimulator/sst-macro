@@ -45,7 +45,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef SPROCKIT_COMMON_MESSAGES_spkt_serializer_H_INCLUDED
 #define SPROCKIT_COMMON_MESSAGES_spkt_serializer_H_INCLUDED
 
-#include <sprockit/spkt_config.h>
 #include <sprockit/serialize_packer.h>
 #include <sprockit/serialize_sizer.h>
 #include <sprockit/serialize_unpacker.h>

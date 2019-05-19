@@ -56,29 +56,27 @@ namespace sumi {
 /**
  * A nested type to handle individual mpi receive requests.
  */
-class mpi_queue_recv_request  {
-  friend class mpi_queue;
-  friend class rendezvous_get;
-  friend class eager1;
-  friend class eager1_doublecpy;
-  friend class eager0;
-  friend class eager1_singlecpy;
+class MpiQueueRecvRequest  {
+  friend class MpiQueue;
+  friend class RendezvousGet;
+  friend class Eager1;
+  friend class Eager0;
 
  public:
-  mpi_queue_recv_request(mpi_request* key, mpi_queue* queue,
+  MpiQueueRecvRequest(MpiRequest* key, MpiQueue* queue,
                          int count,
                          MPI_Datatype type, int source, int tag,
                          MPI_Comm comm, void* buffer);
 
-  ~mpi_queue_recv_request();
+  ~MpiQueueRecvRequest();
 
-  bool matches(mpi_message* msg);
+  bool matches(MpiMessage* msg);
 
-  void set_seqnum(int seqnum) {
+  void setSeqnum(int seqnum) {
     seqnum_ = seqnum;
   }
 
-  mpi_request* req() const {
+  MpiRequest* req() const {
     return key_;
   }
 
@@ -86,7 +84,7 @@ class mpi_queue_recv_request  {
 
  private:
   /// The queue to whom we belong.
-  mpi_queue* queue_;
+  MpiQueue* queue_;
 
   /// The parameters I will be matching on.
   int source_;
@@ -102,8 +100,8 @@ class mpi_queue_recv_request  {
 
   /// The parameters I will not be matching on, but are good error checks.
   int count_;
-  mpi_type* type_;
-  mpi_request* key_;
+  MpiType* type_;
+  MpiRequest* key_;
 };
 
 }

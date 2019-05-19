@@ -50,6 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/sstmac_config.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
+#include <fstream>
 
 #if SSTMAC_INTEGRATED_SST_CORE && SSTMAC_HAVE_VALID_MPI
 #include <mpi.h>
@@ -78,16 +79,16 @@ RegisterDebugSlot(topology,
 namespace sstmac {
 namespace hw {
 
-topology* topology::static_topology_ = nullptr;
-topology* topology::main_top_ = nullptr;
+Topology* Topology::staticTopology_ = nullptr;
+Topology* Topology::main_top_ = nullptr;
 
 #if SSTMAC_INTEGRATED_SST_CORE
-int topology::nproc = 0;
+int Topology::nproc = 0;
 
-switch_id
-topology::node_to_logp_switch(node_id nid) const
+SwitchId
+Topology::nodeToLogpSwitch(NodeId nid) const
 {
-  int n_nodes = num_nodes();
+  int n_nodes = numNodes();
   int nodes_per_switch = n_nodes / nproc;
   int epPlusOne = nodes_per_switch + 1;
   int num_procs_with_extra_node = n_nodes % nproc;
@@ -102,7 +103,7 @@ topology::node_to_logp_switch(node_id nid) const
 }
 #endif
 
-topology::topology(sprockit::sim_parameters* params)
+Topology::Topology(SST::Params& params)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
 #if SSTMAC_HAVE_VALID_MPI
@@ -113,50 +114,29 @@ topology::topology(sprockit::sim_parameters* params)
 #endif
   main_top_ = this;
 
-  dot_file_ = params->get_optional_param("output_graph", "");
-  xyz_file_ = params->get_optional_param("output_xyz", "");
+  dot_file_ = params.find<std::string>("output_graph", "");
+  xyz_file_ = params.find<std::string>("outputXYZ", "");
 }
 
-topology::~topology()
+Topology::~Topology()
 {
 }
 
-topology*
-topology::static_topology(sprockit::sim_parameters* params)
+Topology*
+Topology::staticTopology(SST::Params& params)
 {
-  if (!static_topology_){
-    if (!params){
-      spkt_abort_printf("topology should have already been initialized");
-    }
-    sprockit::sim_parameters* top_params = params->get_namespace("topology");
-    static_topology_ = topology::factory::get_param("name", top_params);
+  if (!staticTopology_){
+    SST::Params top_params = params.find_scoped_params("topology");
+    staticTopology_ = sprockit::create<Topology>(
+      "macro", top_params.find<std::string>("name"), top_params);
   }
-  return static_topology_;
+  return staticTopology_;
 }
 
-sprockit::sim_parameters*
-topology::setup_port_params(int port, int credits, double bw,
-                            sprockit::sim_parameters* link_params,
-                            sprockit::sim_parameters* params)
+std::string
+Topology::getPortNamespace(int port)
 {
-  std::string port_name = sprockit::printf("port%d", port);
-  sprockit::sim_parameters* port_params = params->get_optional_namespace(port_name);
-  //for max lookahead, no credit latency
-  //put all of the credits on sending, none on credits
-  (*port_params)["bandwidth"].setBandwidth(bw/1e9, "GB/s");
-  (*port_params)["credits"].setByteLength(credits, "B");
-  port_params->add_param_override("send_latency", link_params->get_param("send_latency"));
-  port_params->add_param_override("credit_latency", link_params->get_param("credit_latency"));
-  if (link_params->has_param("arbitrator")){
-    port_params->add_param_override("arbitrator", link_params->get_param("arbitrator"));
-  }
-  return port_params;
-}
-
-sprockit::sim_parameters*
-topology::get_port_params(sprockit::sim_parameters *params, int port)
-{
-  return params->get_optional_namespace(sprockit::printf("port%d", port));
+  return std::string("port") + std::to_string(port);
 }
 
 static std::string get_outfile(const std::string& cmd_line_given,
@@ -167,7 +147,7 @@ static std::string get_outfile(const std::string& cmd_line_given,
 }
 
 void
-topology::output_graphviz(const std::string& path)
+Topology::outputGraphviz(const std::string& path)
 {
   std::string output = get_outfile(path, dot_file_);
   if (output.empty()) return;
@@ -175,20 +155,20 @@ topology::output_graphviz(const std::string& path)
   std::ofstream out(output);
   out << "graph {\n";
 
-  int nsw = num_switches();
+  int nsw = numSwitches();
   for (int s=0; s < nsw; ++s){
-    std::string lbl = switch_label(s);
+    std::string lbl = switchLabel(s);
     out << "sw" << s << " [style=filled,fillcolor=\"lightblue\",shape=rect,label=\""
                 << lbl << "\"];\n";
   }
 
-  std::vector<connection> conns;
+  std::vector<Connection> conns;
   std::map<int, int> weighted_conns;
   out << "\nedge[];\n";
   for (int s=0; s < nsw; ++s){
-    connected_outports(s, conns);
+    connectedOutports(s, conns);
     weighted_conns.clear();
-    for (connection& c : conns){
+    for (Connection& c : conns){
       weighted_conns[c.dst] += 1;
     }
     for (auto& pair : weighted_conns){
@@ -205,8 +185,8 @@ topology::output_graphviz(const std::string& path)
 }
 
 void
-topology::output_box(std::ostream& os,
-                     const topology::vtk_box_geometry& box)
+Topology::outputBox(std::ostream& os,
+                     const Topology::VTKBoxGeometry& box)
 {
   os << box.vertex(0);
   for (int i=1; i < 8; ++i){
@@ -215,36 +195,36 @@ topology::output_box(std::ostream& os,
 }
 
 void
-topology::output_box(std::ostream& os,
-                     const topology::vtk_box_geometry& box,
+Topology::outputBox(std::ostream& os,
+                     const Topology::VTKBoxGeometry& box,
                      const std::string& color,
                      const std::string& alpha)
 {
-  output_box(os, box);
+  outputBox(os, box);
   os << ";color=" << color;
   os << ";alpha=" << alpha;
 }
 
 void
-topology::output_xyz(const std::string& path)
+Topology::outputXYZ(const std::string& path)
 {
   std::string output = get_outfile(path, dot_file_);
   if (output.empty()) return;
 
-  int nsw = num_switches();
+  int nsw = numSwitches();
   //int half = nsw / 2;
   std::ofstream out(output);
 
   for (int sid=0; sid < nsw; ++sid){
-    vtk_switch_geometry geom = get_vtk_geometry(sid);
-    output_box(out, geom.box, "gray", "0.1"); //very transparent
+    VTKSwitchGeometry geom = getVtkGeometry(sid);
+    outputBox(out, geom.box, "gray", "0.1"); //very transparent
     out << "\n";
   }
   out.close();
 }
 
 void
-topology::create_partition(
+Topology::createPartition(
   int *switch_to_lp,
   int *switch_to_thread,
   int me,
@@ -252,141 +232,150 @@ topology::create_partition(
   int nthread,
   int noccupied) const
 {
-  spkt_throw_printf(sprockit::unimplemented_error,
+  spkt_throw_printf(sprockit::UnimplementedError,
     "topology::partition: not valid for %s",
-    to_string().c_str());
+    toString().c_str());
 }
 
-void
-topology::configure_individual_port_params(
-    int port_start, int nports,
-    sprockit::sim_parameters *switch_params) const
+CartesianTopology*
+Topology::cartTopology() const
 {
-  sprockit::sim_parameters* link_params =
-      switch_params->get_namespace("link");
-  for (int i=0; i < nports; ++i){
-    int port = port_start + i;
-    sprockit::sim_parameters* port_params =
-        get_port_params(switch_params, port);
-    link_params->combine_into(port_params);
-  }
-}
-
-cartesian_topology*
-topology::cart_topology() const
-{
-  sprockit::abort("topology::cart_topology: cannot cast to cartesian topology");
+  sprockit::abort("topology::cartTopology: cannot cast to cartesian topology");
   return nullptr;
 }
 
 std::string
-topology::node_label(node_id nid) const
+Topology::nodeLabel(NodeId nid) const
 {
   return sprockit::printf("%d", nid);
 }
 
 
 std::string
-topology::switch_label(switch_id sid) const
+Topology::switchLabel(SwitchId sid) const
 {
   return sprockit::printf("%d", sid);
 }
 
 std::string
-topology::label(uint32_t comp_id) const
+Topology::label(uint32_t comp_id) const
 {
-  if (comp_id < num_nodes()){
-    return node_label(comp_id);
+  if (comp_id < numNodes()){
+    return nodeLabel(comp_id);
   } else {
-    return switch_label(comp_id - num_nodes());
+    return switchLabel(comp_id - numNodes());
   }
 }
 
-topology::vtk_switch_geometry
-topology::get_vtk_geometry(switch_id sid) const
+Topology::VTKSwitchGeometry
+Topology::getVtkGeometry(SwitchId sid) const
 {
-  spkt_abort_printf("unimplemented: topology::get_vtk_geometry for %s",
-                    to_string().c_str());
-  return vtk_switch_geometry(0,0,0,0,0,0,0,std::vector<vtk_switch_geometry::port_geometry>());
+  spkt_abort_printf("unimplemented: topology::getVtkGeometry for %s",
+                    toString().c_str());
+  return VTKSwitchGeometry(0,0,0,0,0,0,0,std::vector<VTKSwitchGeometry::port_geometry>());
 }
 
-class merlin_topology : public topology {
-  FactoryRegister("merlin", topology, merlin_topology)
- public:
-  merlin_topology(sprockit::sim_parameters* params) 
-    : topology(params)
-  {
-    num_nodes_ = params->get_int_param("num_nodes");
-    num_switches_ = params->get_int_param("num_switches");
+std::string
+Topology::nodeIdToName(NodeId i)
+{
+  if (i >= hostmap_.size()){
+    spkt_abort_printf("Invalid node id %d given to topology::nodeIdToName", i)
+  }
+  return hostmap_[i];
+}
+
+NodeId
+Topology::nodeNameToId(const std::string& hostname) const
+{
+  auto it = idmap_.find(hostname);
+  if (it == idmap_.end()){
+    spkt_abort_printf("topology: can't find %s in hostname map",
+                      hostname.c_str());
+  }
+  return it->second;
+}
+
+void
+Topology::initHostnameMap(SST::Params& params)
+{
+  if (!idmap_.empty() || !hostmap_.empty()){
+    spkt_abort_printf("topology::initHostnameMap: maps not empty");
   }
 
-  std::string to_string() const override {
+  int nn = numNodes();
+  hostmap_.resize(nn);
+
+  for (int i=0; i < nn; ++i) {
+    std::string name = std::string("nid") + std::to_string(i);
+    idmap_[name] = i;
+    hostmap_[i] = name;
+  }
+}
+
+class MerlinTopology : public Topology {
+
+ public:
+  SPKT_REGISTER_DERIVED(
+    Topology,
+    MerlinTopology,
+    "macro",
+    "merlin",
+    "a dummy topology for running with Merlin")
+
+  MerlinTopology(SST::Params& params)
+    : Topology(params)
+  {
+    num_nodes_ = params.find<int>("num_nodes");
+    num_switches_ = params.find<int>("num_switches");
+  }
+
+  std::string toString() const override {
     return "merlin topology";
   }
 
-  switch_id num_switches() const override {
+  SwitchId numSwitches() const override {
     return num_switches_;
   }
 
-  node_id num_nodes() const override {
+  NodeId numNodes() const override {
     return num_nodes_;
   }
 
-  bool uniform_network_ports() const override {
-    spkt_abort_printf("merlin topology functions should never be called");
-    return false;
-  }
-
-  bool uniform_switches_non_uniform_network_ports() const override {
-    spkt_abort_printf("merlin topology functions should never be called");
-    return false;
-  }
-
-  bool uniform_switches() const override {
-    spkt_abort_printf("merlin topology functions should never be called");
-    return false;
-  }
-
-  switch_id endpoint_to_switch(node_id) const override {
+  SwitchId endpointToSwitch(NodeId) const override {
     spkt_abort_printf("merlin topology functions should never be called");
     return 0;
   }
 
-  void connected_outports(switch_id src, std::vector<topology::connection>& conns) const override {
+  void connectedOutports(SwitchId src, std::vector<Topology::Connection>& conns) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  void configure_individual_port_params(switch_id src,
-          sprockit::sim_parameters* switch_params) const override {
-    spkt_abort_printf("merlin topology functions should never be called");
-  }
-
-  int max_num_ports() const override {
+  int maxNumPorts() const override {
     spkt_abort_printf("merlin topology functions should never be called");
     return -1;
   }
 
-  int num_hops_to_node(node_id src, node_id dst) const override {
+  int numHopsToNode(NodeId src, NodeId dst) const override {
     spkt_abort_printf("merlin topology functions should never be called");
     return -1;
   }
 
-  void endpoints_connected_to_injection_switch(switch_id swid,
-                          std::vector<injection_port>& nodes) const override {
+  void endpointsConnectedToInjectionSwitch(SwitchId swid,
+                          std::vector<InjectionPort>& nodes) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  void endpoints_connected_to_ejection_switch(switch_id swid,
-                          std::vector<injection_port>& nodes) const override {
+  void endpointsConnectedToEjectionSwitch(SwitchId swid,
+                          std::vector<InjectionPort>& nodes) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  switch_id max_switch_id() const override {
+  SwitchId maxSwitchId() const override {
     spkt_abort_printf("merlin topology functions should never be called");
     return -1;
   }
 
-  node_id max_node_id() const override {
+  NodeId maxNodeId() const override {
     spkt_abort_printf("merlin topology functions should never be called");
     return -1;
   }

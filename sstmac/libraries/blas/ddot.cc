@@ -50,21 +50,28 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-class default_ddot :
-  public blas_kernel
+class DefaultDDOT :
+  public BlasKernel
 {
-  FactoryRegister("default_ddot", blas_kernel, default_ddot)
  public:
-  default_ddot(sprockit::sim_parameters* params){
-    loop_unroll_ = params->get_optional_double_param("ddot_loop_unroll", 4);
-    pipeline_ = params->get_optional_double_param("ddot_pipeline_efficiency", 2);
+  SST_ELI_REGISTER_DERIVED(
+    BlasKernel,
+    DefaultDDOT,
+    "macro",
+    "default_ddot",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "defaut DDOT kernel")
+
+  DefaultDDOT(SST::Params& params){
+    loop_unroll_ = params.find<double>("ddot_loop_unroll", 4);
+    pipeline_ = params.find<double>("ddot_pipeline_efficiency", 2);
   }
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "default ddot";
   }
 
-  compute_event* op_1d(int n) override;
+  ComputeEvent* op_1d(int n) override;
 
  protected:
   double loop_unroll_;
@@ -72,10 +79,10 @@ class default_ddot :
 
 };
 
-compute_event*
-default_ddot::op_1d(int n)
+ComputeEvent*
+DefaultDDOT::op_1d(int n)
 {
-  basic_compute_event* ev = new basic_compute_event;
+  BasicComputeEvent* ev = new BasicComputeEvent;
   basic_instructions_st& st = ev->data();
   int nops = n;
   st.flops = nops / long(pipeline_);

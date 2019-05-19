@@ -45,8 +45,10 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef SSTMAC_HARDWARE_PROCESSOR_EVENTDATA_H_INCLUDED
 #define SSTMAC_HARDWARE_PROCESSOR_EVENTDATA_H_INCLUDED
 
-#include <sstmac/common/messages/sst_message.h>
+
 #include <sstmac/common/timestamp.h>
+#include <sstmac/common/sst_event.h>
+#include <sstmac/hardware/common/flow.h>
 #include <sstmac/hardware/memory/memory_id.h>
 #include <type_traits>
 #include <sprockit/debug.h>
@@ -65,17 +67,17 @@ namespace sw {
  * that maps std::string keys to integer values.
  * Keys are defined in the libraries that use them.
  */
-class compute_event :
- public event
+class ComputeEvent :
+ public Event
 {
  public:
-  virtual bool is_timed_compute() const = 0;
+  virtual bool isTimedCompute() const = 0;
 
-  void set_core(int core){
+  void setCore(int core){
     core_ = core;
   }
 
-  std::string to_string() const {
+  std::string toString() const {
     return "compute event";
   }
 
@@ -83,35 +85,35 @@ class compute_event :
     return core_;
   }
 
-  hw::memory_access_id access_id() const {
+  hw::MemoryAccessId accessId() const {
     return unique_id_;
   }
 
-  void set_access_id(hw::memory_access_id id) {
+  void setAccessId(hw::MemoryAccessId id) {
     unique_id_ = id;
   }
 
-  uint64_t unique_id() const {
+  uint64_t uniqueId() const {
     return uint64_t(unique_id_);
   }
 
  private:
   int core_;
 
-  hw::memory_access_id unique_id_;
+  hw::MemoryAccessId unique_id_;
 
 };
 
 template <class T>
-class compute_event_impl :
- public compute_event,
- public sprockit::thread_safe_new<compute_event_impl<T>>
+class ComputeEvent_impl :
+ public ComputeEvent,
+ public sprockit::thread_safe_new<ComputeEvent_impl<T>>
 {
-  NotSerializable(compute_event_impl)
+  NotSerializable(ComputeEvent_impl)
 
  public:
-  bool is_timed_compute() const override {
-    return std::is_same<T,timestamp>::value;
+  bool isTimedCompute() const override {
+    return std::is_same<T,Timestamp>::value;
   }
 
   T& data() {
@@ -133,8 +135,8 @@ struct basic_instructions_st
   int nthread = 1;
 };
 
-typedef compute_event_impl<timestamp> timed_compute_event;
-typedef compute_event_impl<basic_instructions_st> basic_compute_event;
+typedef ComputeEvent_impl<Timestamp> TimedComputeEvent;
+typedef ComputeEvent_impl<basic_instructions_st> BasicComputeEvent;
 
 }
 }  // end of namespace sstmac

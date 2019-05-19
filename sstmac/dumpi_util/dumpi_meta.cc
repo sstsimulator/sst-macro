@@ -52,7 +52,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-dumpi_meta::dumpi_meta(const std::string &filename)
+DumpiMeta::DumpiMeta(const std::string &filename)
 {
   numprocscheck_ = false;
   fileprefixcheck_ = false;
@@ -60,22 +60,22 @@ dumpi_meta::dumpi_meta(const std::string &filename)
   metafile_ = filename;
 
   openfile();
-  init_callbacks();
+  initCallbacks();
   parsemeta();
 
   if(!numprocscheck_ && !fileprefixcheck_) {
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
                      "The input dumpi metafile %s does not appear valid",
                      metafile_.c_str());
   }
 }
 
-dumpi_meta::~dumpi_meta() throw()
+DumpiMeta::~DumpiMeta() throw()
 {
 
 }
 
-void dumpi_meta::parsemeta()
+void DumpiMeta::parsemeta()
 {
 
   std::deque<std::string> token;
@@ -98,18 +98,18 @@ void dumpi_meta::parsemeta()
   infile_.close();
 }
 
-void dumpi_meta::parse_numprocs(const std::deque<std::string> &token)
+void DumpiMeta::parseNumProcs(const std::deque<std::string> &token)
 {
   numprocs_ = atoi(token[1].c_str());
   numprocscheck_ = true;
 }
 
-int dumpi_meta::getnumprocs()
+int DumpiMeta::getnumprocs()
 {
   return numprocs_;
 }
 
-void dumpi_meta::parse_fileprefix(const std::deque<std::string> &token)
+void DumpiMeta::parseFilePrefix(const std::deque<std::string> &token)
 {
 
   fileprefix_ = token[1].c_str();
@@ -128,18 +128,18 @@ void dumpi_meta::parse_fileprefix(const std::deque<std::string> &token)
   fileprefixcheck_ = true;
 }
 
-void  dumpi_meta::init_callbacks()
+void  DumpiMeta::initCallbacks()
 {
-  callback_["numprocs"] = &dumpi_meta::parse_numprocs;
-  callback_["fileprefix"] = &dumpi_meta::parse_fileprefix;
+  callback_["numprocs"] = &DumpiMeta::parseNumProcs;
+  callback_["fileprefix"] = &DumpiMeta::parseFilePrefix;
 }
 
-bool dumpi_meta::openfile()
+bool DumpiMeta::openfile()
 {
   infile_.open(metafile_.c_str());
 
   if(!infile_) {
-    spkt_throw_printf(sprockit::io_error,
+    spkt_throw_printf(sprockit::IOError,
                      "dumpimeta::openfile: failed to open %s: error=%s",
                      metafile_.c_str(),
                      ::strerror(errno));

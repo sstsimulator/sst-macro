@@ -49,11 +49,11 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sprockit {
 
-class statics {
+class Statics {
  public:
   typedef void (*clear_fxn)(void);
 
-  static void register_finish(clear_fxn fxn);
+  static void registerFinish(clear_fxn fxn);
 
   static void finish();
 
@@ -63,10 +63,10 @@ class statics {
 };
 
 template <class T>
-class need_delete_statics {
+class NeedDeletestatics {
  public:
-  need_delete_statics(){
-    statics::register_finish(&T::delete_statics);
+  NeedDeletestatics(){
+    Statics::registerFinish(&T::deleteStatics);
   }
 };
 

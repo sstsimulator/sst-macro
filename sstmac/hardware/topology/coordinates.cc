@@ -64,7 +64,7 @@ coordinates::coordinates(const std::vector<int> &vec)
 }
 
 std::string
-coordinates::to_string() const
+coordinates::toString() const
 {
   std::stringstream sstr;
   sstr << "[";

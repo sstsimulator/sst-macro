@@ -46,12 +46,14 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/output.h>
 #include <sstmac/util.h>
 #include <sstmac/compute.h>
-#include <sstmac/libraries/sumi/sumi.h>
 #include <sstmac/skeleton.h>
+#include <sumi/sumi.h>
+
 #define sstmac_app_name user_app_cxx
 using namespace sumi;
 
 int indices[] = { 0,1,0,1,2,1 };
+int n_index = sizeof(indices) / sizeof(int);
 int ndomain = 6;
 
 void
@@ -69,9 +71,9 @@ test_allreduce(int cm_rank)
   src_buffer[cm_rank] = rank;
   int* dst_buffer = new int[nelems];
   int tag = 13;
-  communicator* dom = new index_communicator(cm_rank, ndomain, indices);
-  comm_allreduce<int,Add>(dst_buffer, src_buffer, nelems, tag,
-                          collective::cfg().comm(dom));
+
+  Communicator* dom = new IndexCommunicator(cm_rank, ndomain, std::vector<int>(indices,indices+n_index));
+  comm_allreduce<int,Add>(dst_buffer, src_buffer, nelems, tag, Message::default_cq);
 }
 
 
@@ -81,14 +83,8 @@ wait_allreduce(int cm_rank)
   printf("Waiting on allreduce collective for domain rank %d, physical rank %d\n",
     cm_rank, comm_rank());
 
-  message* msg = comm_poll(); //wait on allreduce
-  if (msg->class_type() != message::collective_done){
-    spkt_throw_printf(sprockit::value_error,
-      "allreduce test: expected collective message, but got %s",
-      message::tostr(msg->class_type()));
-  }
+  auto* dmsg = sumi_engine()->blockUntilNext(Message::default_cq);
 
-  auto dmsg = dynamic_cast<collective_done_message*>(msg);
   int* dst_buffer = (int*) dmsg->result();
   int nelems = 2*comm_nproc();
   if (cm_rank == 0){
@@ -114,7 +110,7 @@ main(int argc, char **argv)
 
   for (int i=0; i < ndomain; ++i){
     if (indices[i] == me){
-      wait_allreduce(i);
+      sumi_engine()->blockUntilNext(Message::default_cq);
     }
   }
 

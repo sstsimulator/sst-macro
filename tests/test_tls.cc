@@ -47,6 +47,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/skeleton.h>
 #include <sstmac/compute.h>
 #include <sstmac/software/process/cppglobal.h>
+#include <iostream>
 
 
 extern "C" int ubuntu_cant_name_mangle() { return 0; }

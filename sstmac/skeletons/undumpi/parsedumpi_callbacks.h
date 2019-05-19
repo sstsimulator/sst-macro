@@ -77,7 +77,7 @@ class parsedumpi_callbacks
   /// The parent for this callback-driven parser.
   /// Can be safely held by raw pointer, since the parent holds this
   /// object by value.
-  parsedumpi *parent_;
+  ParseDumpi *parent_;
 
   /// The callback struct we are using.
   /// This is pretty big (2.4 K), but at least it can be shared.
@@ -105,13 +105,13 @@ class parsedumpi_callbacks
 
  public:
   /// Populate callbacks.
-  parsedumpi_callbacks(parsedumpi *parent);
+  parsedumpi_callbacks(ParseDumpi *parent);
 
   ~parsedumpi_callbacks();
 
   void increment_collective(dumpi_comm comm){
     if (num_global_collectives_ == early_terminate_count_){
-      throw parsedumpi::early_termination();
+      throw ParseDumpi::early_termination();
     }
     if (comm == DUMPI_COMM_WORLD) ++num_global_collectives_;
   }
@@ -145,7 +145,7 @@ class parsedumpi_callbacks
                           const dumpi_perfinfo *perf);
 
   /// Access the mpiapi.
-  mpi_api* getmpi() {
+  MpiApi* getmpi() {
     return parent_->mpi();
   }
 

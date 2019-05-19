@@ -48,9 +48,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/replacements/mpi.h>
 #include <sstmac/common/runtime.h>
 #include <sstmac/software/process/backtrace.h>
-#include <sumi-mpi/mpi_api.h>
 #include <sstmac/skeleton.h>
 #include <sprockit/keyword_registration.h>
+#include <mpi.h>
 
 #define sstmac_app_name mpi_delay_stats
 
@@ -79,11 +79,11 @@ int USER_MAIN(int argc, char** argv)
     spkt_abort_printf("Test must run with at least 2 ranks, total even");
   }
 
-  double send_delay = get_params()->get_time_param("send_delay");
-  double send_compute = get_params()->get_time_param("send_compute");
-  double recv_delay = get_params()->get_time_param("recv_delay");
-  double recv_compute = get_params()->get_time_param("recv_compute");
-  int send_size = get_params()->get_byte_length_param("message_size");
+  double send_delay = sstmac::getUnitParam<double>("send_delay");
+  double send_compute = sstmac::getUnitParam<double>("send_compute");
+  double recv_delay = sstmac::getUnitParam<double>("recv_delay");
+  double recv_compute = sstmac::getUnitParam<double>("recv_compute");
+  int send_size = sstmac::getUnitParam<int>("message_size");
 
 
   int send_to = (me + 1) % nproc;

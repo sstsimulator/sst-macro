@@ -53,7 +53,7 @@ namespace sumi {
 //
 // Hi there.
 //
-mpi_queue_probe_request::mpi_queue_probe_request(mpi_request* key,
+mpi_queue_probe_request::mpi_queue_probe_request(MpiRequest* key,
                                         MPI_Comm comm,
                                         int source, int tag) :
   myid_(comm),
@@ -66,11 +66,11 @@ mpi_queue_probe_request::mpi_queue_probe_request(mpi_request* key,
 // Test whether we match a given message.
 //
 bool
-mpi_queue_probe_request::matches(mpi_message* message) const
+mpi_queue_probe_request::matches(MpiMessage* message) const
 {
   MPI_Comm inid = message->comm();
   bool sameid = (myid_ == inid);
-  bool src_matches = source_ == message->src_rank() || source_ == MPI_ANY_SOURCE;
+  bool src_matches = source_ == message->srcRank() || source_ == MPI_ANY_SOURCE;
   bool tag_matches = tag_ == message->tag() || tag_ == MPI_ANY_TAG;
   return sameid && src_matches && tag_matches;
 }
@@ -79,7 +79,7 @@ mpi_queue_probe_request::matches(mpi_message* message) const
 // Consider this request complete.
 //
 void
-mpi_queue_probe_request::complete(mpi_message* message)
+mpi_queue_probe_request::complete(MpiMessage* message)
 {
   key_->complete(message);
 }

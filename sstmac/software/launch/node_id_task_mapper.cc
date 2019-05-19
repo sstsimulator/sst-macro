@@ -65,26 +65,26 @@ RegisterKeywords(
 namespace sstmac {
 namespace sw {
 
-node_id_task_mapper::node_id_task_mapper(sprockit::sim_parameters* params) :
-  task_mapper(params)
+NodeIdTaskMapper::NodeIdTaskMapper(SST::Params& params) :
+  TaskMapper(params)
 {
-  if (params->has_param("node_id_file")){
-    listfile_ = params->get_param("node_id_file" );
+  if (params.contains("node_id_file")){
+    listfile_ = params.find<std::string>("node_id_file" );
   } else {
-    listfile_ = params->get_param("node_id_indexing_file");
+    listfile_ = params.find<std::string>("node_id_indexing_file");
   }
 }
 
 void
-node_id_task_mapper::map_ranks(
+NodeIdTaskMapper::mapRanks(
   const ordered_node_set& nodes,
   int ppn,
-  std::vector<node_id> &result,
+  std::vector<NodeId> &result,
   int nproc)
 {
-  node_id_allocation::read_coordinate_file(listfile_, result, topology_);
+  NodeIdAllocation::readCoordinateFile(listfile_, result, topology_);
   if (result.size() != nproc){
-    spkt_throw_printf(sprockit::unimplemented_error,
+    spkt_throw_printf(sprockit::UnimplementedError,
       "need %d nodes - only indexed %d", nproc, nodes.size());
   }
 }

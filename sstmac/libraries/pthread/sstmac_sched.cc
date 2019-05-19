@@ -171,15 +171,22 @@ void SSTMAC_CPU_FREE(sstmac_cpu_set_t* cpuset){
 /* Set the CPU affinity for a task */
 extern "C" int
 SSTMAC_sched_setaffinity (pid_t pid, size_t cpusetsize, const sstmac_cpu_set_t *cpuset){
-  sstmac::sw::thread* t = sstmac::sw::operating_system::current_thread();
-  t->set_cpumask(cpuset->cpubits);
+  sstmac::sw::OperatingSystem* os = sstmac::sw::OperatingSystem::currentOs();
+  sstmac::sw::Thread* t = os->activeThread();
+  t->setCpumask(cpuset->cpubits);
+
+  uint64_t test_mask = cpuset->cpubits & t->activeCoreMask();
+  if (test_mask != t->activeCoreMask()){
+    //the currently active thread is running on cores not part of its current affinity map
+    os->reassign_cores(t);
+  }
   return 0;
 }
 
 /* Get the CPU affinity for a task */
 extern "C" int
 SSTMAC_sched_getaffinity (pid_t pid, size_t cpusetsize, sstmac_cpu_set_t *cpuset){
-  sstmac::sw::thread* t = sstmac::sw::operating_system::current_thread();
+  sstmac::sw::Thread* t = sstmac::sw::OperatingSystem::currentThread();
   cpuset->cpubits = t->cpumask();
   return 0;
 }

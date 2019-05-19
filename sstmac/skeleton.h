@@ -56,6 +56,10 @@ typedef int (*empty_main_fxn)();
 #include <sstmac/software/process/tls.h>
 #ifndef __cplusplus
 #include <stdbool.h>
+#else
+#include <string>
+#include <sstream>
+#include <vector>
 #endif
 
 #ifdef __cplusplus
@@ -128,16 +132,52 @@ class vector {
   unsigned long  size_;
 };
 
+std::string getAppParam(const std::string& name);
+bool appHasParam(const std::string& name);
+
+void getAppUnitParam(const std::string& name, int& val);
+void getAppUnitParam(const std::string& name, const std::string& def, int& val);
+void getAppUnitParam(const std::string& name, double& val);
+void getAppUnitParam(const std::string& name, const std::string& def, double& val);
+void getAppArrayParam(const std::string& name, std::vector<int>& vec);
+
+template <class T> T getUnitParam(const std::string& name){
+  T t;
+  getAppUnitParam(name, t);
+  return t;
+}
+
+template <class T> T getUnitParam(const std::string& name, const std::string& def){
+  T t;
+  getAppUnitParam(name, def, t);
+  return t;
+}
+
+template <class T> std::vector<T> getArrayParam(const std::string& name){
+  std::vector<T> vec; getAppArrayParam(name, vec);
+  return vec;
+}
+
+template <class T> T getParam(const std::string& name){
+  std::string param = getAppParam(name);
+  std::istringstream sstr(param);
+  T t; sstr >> t;
+  return t;
+}
+
+template <class T, class U> T getParam(const std::string& name, U&& u){
+  if (appHasParam(name)){
+    return getParam<T>(name);
+  } else {
+    return u;
+  }
+}
+
 }
 #endif
 
-#include <sprockit/sim_parameters.h>
 #include <sstmac/software/process/global.h>
 #include <sstmac/software/api/api_fwd.h>
-
-/** Automatically inherit runtime types */
-using sprockit::sim_parameters;
-extern sprockit::sim_parameters* get_params();
 //end C++
 #else
 //need for C
@@ -153,11 +193,11 @@ static void* nullptr = 0;
 #define USER_MAIN(...) \
  fxn_that_nobody_ever_uses_to_make_magic_happen(); \
  typedef int (*this_file_main_fxn)(__VA_ARGS__); \
- int user_skeleton_main_init_fxn(const char* name, this_file_main_fxn fxn); \
- static int user_skeleton_main(__VA_ARGS__); \
+ int userSkeletonMainInitFxn(const char* name, this_file_main_fxn fxn); \
+ static int userSkeletonMain(__VA_ARGS__); \
  static int dont_ignore_this = \
-  user_skeleton_main_init_fxn(SST_APP_NAME_QUOTED, user_skeleton_main); \
- static int user_skeleton_main(__VA_ARGS__)
+  userSkeletonMainInitFxn(SST_APP_NAME_QUOTED, userSkeletonMain); \
+ static int userSkeletonMain(__VA_ARGS__)
 #else
 #define main sstmac_ignore_for_app_name(); static const char* sstmac_appname_str = SST_APP_NAME_QUOTED; int main
 #endif

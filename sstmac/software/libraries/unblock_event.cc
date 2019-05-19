@@ -49,31 +49,29 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-unblock_event::unblock_event(operating_system *os, thread *thr)
-  : event_queue_entry(os->component_id(), os->component_id()),
-  os_(os), thr_(thr)
+UnblockEvent::UnblockEvent(OperatingSystem *os, Thread *thr)
+  :  os_(os), thr_(thr)
 {
 }
 
 
 void
-unblock_event::execute()
+UnblockEvent::execute()
 {
   os_->unblock(thr_);
 }
 
-timeout_event::timeout_event(operating_system* os, thread* thr) :
-  event_queue_entry(os->component_id(), os->component_id()),
-  os_(os), thr_(thr), counter_(thr->block_counter())
+TimeoutEvent::TimeoutEvent(OperatingSystem* os, Thread* thr) :
+  os_(os), thr_(thr), counter_(thr->blockCounter())
 {
 }
 
 
 void
-timeout_event::execute()
+TimeoutEvent::execute()
 {
-  if (thr_->block_counter() == counter_){
-    thr_->set_timed_out(true);
+  if (thr_->blockCounter() == counter_){
+    thr_->setTimedOut(true);
     os_->unblock(thr_);
   } else {
     //already fired, no timeout

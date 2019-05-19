@@ -7,7 +7,7 @@ def start(debugger, command, result, internal_dict):
   debugger.HandleCommand("pro handle SIGUSR1 -p true -s false -n false")
   debugger.HandleCommand("br set -b sst_gdb_swap")
   debugger.HandleCommand("br com add -o bt")
-  newCmd = "expr  --ignore-breakpoints false -- sst_gdb_set_active(1)"
+  newCmd = "expr  --ignore-breakpoints false -- sst_gdbSetActive(1)"
   debugger.HandleCommand(newCmd)
 
 def select(debugger, command, result, internal_dict):

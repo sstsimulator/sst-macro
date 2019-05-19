@@ -52,6 +52,36 @@ Questions? Contact sst-macro-help@sandia.gov
 clang::LangOptions Printing::langOpts;
 clang::PrintingPolicy Printing::policy(Printing::langOpts);
 
+llvm::cl::OptionCategory ASTVisitorCmdLine::sstmacCategoryOpt("SST/Macro options");
+llvm::cl::opt<std::string> ASTVisitorCmdLine::memoizeOpt("memoize",
+  llvm::cl::desc("Run memoization source-to-source, optional extra LLVM instrumentation passes"),
+  llvm::cl::value_desc("[optional] list,of,names"),
+  llvm::cl::ValueOptional,
+  llvm::cl::cat(sstmacCategoryOpt));
+llvm::cl::opt<std::string> ASTVisitorCmdLine::skeletonizeOpt("skeletonize",
+  llvm::cl::desc("Run skeletonization source-to-source, optional extra LLVM skeletonization passes"),
+  llvm::cl::value_desc("[optional] list,of,names"),
+  llvm::cl::cat(sstmacCategoryOpt),
+  llvm::cl::ValueOptional);
+llvm::cl::opt<bool> ASTVisitorCmdLine::verboseOpt("verbose",
+  llvm::cl::desc("Print verbose source-to-source output"),
+  llvm::cl::cat(sstmacCategoryOpt));
+static llvm::cl::alias verboseAliasOpt("v",
+  llvm::cl::aliasopt(ASTVisitorCmdLine::verboseOpt),
+  llvm::cl::cat(ASTVisitorCmdLine::sstmacCategoryOpt));
+llvm::cl::opt<bool> ASTVisitorCmdLine::refactorMainOpt("refactor-main",
+  llvm::cl::desc("Refactor main, rerouting to SST/macro main wrapper"),
+  llvm::cl::cat(ASTVisitorCmdLine::sstmacCategoryOpt));
+llvm::cl::opt<bool> ASTVisitorCmdLine::noRefactorMainOpt("no-refactor-main",
+  llvm::cl::desc("Do not refactor main, leaving symbol as is"),
+  llvm::cl::cat(ASTVisitorCmdLine::sstmacCategoryOpt));
+
+bool ASTVisitorCmdLine::extraMemoizePasses = false;
+bool ASTVisitorCmdLine::extraSkeletonizePasses = false;
+bool ASTVisitorCmdLine::runMemoize = false;
+bool ASTVisitorCmdLine::runSkeletonize = false;
+bool ASTVisitorCmdLine::refactorMain = true;
+
 using namespace clang;
 using namespace clang::driver;
 using namespace clang::tooling;
@@ -74,23 +104,48 @@ static std::string appendText(clang::Expr* expr, const std::string& toAppend)
 }
 
 void
-SkeletonASTVisitor::initConfig()
+ASTVisitorCmdLine::setup()
 {
   const char* skelStr = getenv("SSTMAC_SKELETONIZE");
   if (skelStr){
-    bool doSkel = atoi(skelStr);
-    noSkeletonize_ = !doSkel;
+    runSkeletonize = atoi(skelStr);
   }
 
-  const char* mainStr = getenv("SSTMAC_REFACTOR_MAIN");
-  if (mainStr){
-    refactorMain_ = atoi(mainStr);
+  if (skeletonizeOpt.getNumOccurrences()){
+    //this overwrites anything from the environment
+    runSkeletonize = true;
+    StringRef sref(skeletonizeOpt);
+    extraSkeletonizePasses = !sref.empty();
   }
 
   const char* memoStr = getenv("SSTMAC_MEMOIZE");
   if (memoStr){
-    memoizePass_ = atoi(memoStr);
+    runMemoize = atoi(memoStr);
   }
+
+  if (memoizeOpt.getNumOccurrences()){
+    //this overwrites anything from the environment
+    runMemoize = true;
+    StringRef sref(memoizeOpt);
+    extraMemoizePasses = !sref.empty();
+  }
+
+  const char* mainStr = getenv("SSTMAC_REFACTOR_MAIN");
+  if (mainStr){
+    refactorMain = atoi(mainStr);
+  }
+
+  if (refactorMain){
+    refactorMain = true;
+    if (noRefactorMainOpt){
+      std::cerr << "Cannot specify both refactor/no-refactor options" << std::endl;
+      ::abort();
+    }
+  } else if (noRefactorMainOpt){
+    refactorMain = false;
+  }
+
+
 }
 
 void
@@ -321,11 +376,11 @@ SkeletonASTVisitor::TraverseCXXDeleteExpr(CXXDeleteExpr* expr, DataRecursionQueu
 {
   activeBinOpIdx_ = IndexResetter;
 
-  if (noSkeletonize_) return true;
-
-  goIntoContext(expr, [&]{
-    TraverseStmt(expr->getArgument());
-  });
+  if (opts_.runSkeletonize){
+    goIntoContext(expr, [&]{
+      TraverseStmt(expr->getArgument());
+    });
+  }
 
   return true;
 }
@@ -692,48 +747,48 @@ SkeletonASTVisitor::VisitDeclRefExpr(DeclRefExpr* expr)
 void
 SkeletonASTVisitor::visitCollective(CallExpr *expr)
 {
-  if (noSkeletonize_) return;
-
-  //first buffer argument to nullptr
-  if (expr->getArg(0)->getType()->isPointerType()){
-    //make sure this isn't a shortcut function without buffers
-    replace(expr->getArg(0), "nullptr");
-    replace(expr->getArg(3), "nullptr");
-    //rewriter_.ReplaceText(expr->getArg(0)->getSourceRange(), "nullptr");
-    //rewriter_.ReplaceText(expr->getArg(3)->getSourceRange(), "nullptr");
-    deletedArgs_.insert(expr->getArg(0));
-    deletedArgs_.insert(expr->getArg(3));
+  if (opts_.runSkeletonize){
+      //first buffer argument to nullptr
+      if (expr->getArg(0)->getType()->isPointerType()){
+        //make sure this isn't a shortcut function without buffers
+        replace(expr->getArg(0), "nullptr");
+        replace(expr->getArg(3), "nullptr");
+        //rewriter_.ReplaceText(expr->getArg(0)->getSourceRange(), "nullptr");
+        //rewriter_.ReplaceText(expr->getArg(3)->getSourceRange(), "nullptr");
+        deletedArgs_.insert(expr->getArg(0));
+        deletedArgs_.insert(expr->getArg(3));
+      }
   }
 }
 
 void
 SkeletonASTVisitor::visitReduce(CallExpr *expr)
 {
-  if (noSkeletonize_) return;
-
-  //first buffer argument to nullptr
-  if (expr->getArg(0)->getType()->isPointerType()){
-    //make sure this isn't a shortcut function without buffers
-    replace(expr->getArg(0), "nullptr");
-    replace(expr->getArg(1), "nullptr");
-    //rewriter_.ReplaceText(expr->getArg(0)->getSourceRange(), "nullptr");
-    //rewriter_.ReplaceText(expr->getArg(1)->getSourceRange(), "nullptr");
-    deletedArgs_.insert(expr->getArg(0));
-    deletedArgs_.insert(expr->getArg(1));
+  if (opts_.runSkeletonize){
+    //first buffer argument to nullptr
+    if (expr->getArg(0)->getType()->isPointerType()){
+      //make sure this isn't a shortcut function without buffers
+      replace(expr->getArg(0), "nullptr");
+      replace(expr->getArg(1), "nullptr");
+      //rewriter_.ReplaceText(expr->getArg(0)->getSourceRange(), "nullptr");
+      //rewriter_.ReplaceText(expr->getArg(1)->getSourceRange(), "nullptr");
+      deletedArgs_.insert(expr->getArg(0));
+      deletedArgs_.insert(expr->getArg(1));
+    }
   }
 }
 
 void
 SkeletonASTVisitor::visitPt2Pt(CallExpr *expr)
 {
-  if (noSkeletonize_) return;
-
-  //first buffer argument to nullptr
-  if (expr->getArg(0)->getType()->isPointerType()){
-    //make sure this isn't a shortcut function without buffers
-    replace(expr->getArg(0), "nullptr");
-    //rewriter_.ReplaceText(expr->getArg(0)->getSourceRange(), "nullptr");
-    deletedArgs_.insert(expr->getArg(0));
+  if (opts_.runSkeletonize){
+    //first buffer argument to nullptr
+    if (expr->getArg(0)->getType()->isPointerType()){
+      //make sure this isn't a shortcut function without buffers
+      replace(expr->getArg(0), "nullptr");
+      //rewriter_.ReplaceText(expr->getArg(0)->getSourceRange(), "nullptr");
+      deletedArgs_.insert(expr->getArg(0));
+    }
   }
 }
 bool 
@@ -891,7 +946,7 @@ SkeletonASTVisitor::TraverseCallExpr(CallExpr* expr, DataRecursionQueue* queue)
     if (pag.skipVisit()) return true;
 
     DeclRefExpr* baseFxn = nullptr;
-    if (!noSkeletonize_ && !pragmaConfig_.replacePragmas.empty()){
+    if (opts_.runSkeletonize && !pragmaConfig_.replacePragmas.empty()){
       Expr* fxn = getUnderlyingExpr(const_cast<Expr*>(expr->getCallee()));
       if (fxn->getStmtClass() == Stmt::DeclRefExprClass){
         //this is a basic function call
@@ -905,7 +960,7 @@ SkeletonASTVisitor::TraverseCallExpr(CallExpr* expr, DataRecursionQueue* queue)
           }
         }
       }
-    } else if (!noSkeletonize_) {
+    } else if (opts_.runSkeletonize) {
       Expr* fxn = getUnderlyingExpr(const_cast<Expr*>(expr->getCallee()));
       if (fxn->getStmtClass() == Stmt::DeclRefExprClass){
         DeclRefExpr* dref = cast<DeclRefExpr>(fxn);
@@ -1700,19 +1755,19 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
       //well, crap, we have to register a constructor to call
       PrettyPrinter pp;
       if (D->getStorageClass() == SC_Static) pp.os << "static ";
-      pp.os << "sstmac::CppGlobal* " << D->getNameAsString() << "_sstmac_ctor"
-           << " = sstmac::new_cpp_global<"
+      std::string tlsStr = threadLocal ? "true" : "false";
+      pp.os << "sstmac::CppGlobalHolder "
+            << D->getNameAsString() << "_sstmac_ctor(sstmac::new_cpp_global<"
            << GetAsString(D->getType())
-           << "," << (threadLocal ? "true" : "false")
+           << "," << tlsStr
            << ">(" << "__offset_" << scopeUniqueVarName;
-
       CXXConstructExpr* ctor = getCtor(D);
       if (ctor){
         //need leading comma if there are arguments
         addCppGlobalCtorString(pp, ctor, true);
       }
 
-      pp.os << "); ";
+      pp.os << ")," << tlsStr << ");";
 
       std::string str = pp.os.str();
       auto pos = str.find("struct "); //clang, why do you put struct everywhere
@@ -1841,6 +1896,7 @@ SkeletonASTVisitor::doTraverseLambda(LambdaExpr* expr)
       for (auto iter = expr->explicit_capture_begin();
         iter != expr->explicit_capture_end(); ++iter){
         const LambdaCapture& cap = *iter;
+
         if (cap.getCaptureKind() == LCK_ByRef){
           //reference doesn't cause any headaches
           continue;
@@ -1879,6 +1935,11 @@ SkeletonASTVisitor::doTraverseLambda(LambdaExpr* expr)
             case Stmt::CXXDependentScopeMemberExprClass: {
               CXXDependentScopeMemberExpr* next = cast<CXXDependentScopeMemberExpr>(needed);
               needed = next->getBase();
+              break;
+            }
+            case Stmt::CXXNewExprClass: {
+              //not a global variable - this got operator newed
+              cont = false;
               break;
             }
             case Stmt::CallExprClass:
@@ -2523,14 +2584,14 @@ SkeletonASTVisitor::visitVarDecl(VarDecl* D)
   if (D->getNameAsString() == "sstmac_appname_str"){
     StringLiteral* lit = cast<StringLiteral>(getUnderlyingExpr(D->getInit()));
     mainName_ = lit->getString();
-    if (memoizePass_){
+    if (opts_.runMemoize){
       mainName_ = mainName_ + "_memoize";
     }
     return false;
   }
 
   //memoization should do no refactoring of global variables
-  if (memoizePass_)
+  if (opts_.runMemoize)
     return false;
 
   bool skipInit = false;
@@ -3206,12 +3267,12 @@ SkeletonASTVisitor::TraverseArraySubscriptExpr(ArraySubscriptExpr* expr, DataRec
 bool
 SkeletonASTVisitor::VisitStmt(Stmt *S)
 {
-  if (noSkeletonize_) return true;
-
-  try {
-    PragmaActivateGuard pag(S, this);
-  } catch (StmtDeleteException& e) {
-    if (e.deleted != S) throw e;
+  if (opts_.runSkeletonize){
+    try {
+      PragmaActivateGuard pag(S, this);
+    } catch (StmtDeleteException& e) {
+      if (e.deleted != S) throw e;
+    }
   }
 
   return true;
@@ -3518,30 +3579,20 @@ SkeletonASTVisitor::maybeReplaceGlobalUse(DeclRefExpr* expr, SourceRange replRng
 bool
 FirstPassASTVistor::VisitDecl(Decl *d)
 {
-  PragmaActivateGuard pag(d, this, !noSkeletonize_);
+  PragmaActivateGuard pag(d, this, true/*always do first pass pragmas*/);
   return true;
 }
 
 bool
 FirstPassASTVistor::VisitStmt(Stmt *s)
 {
-  PragmaActivateGuard pag(s, this, !noSkeletonize_);
+  PragmaActivateGuard pag(s, this, true/*always do first pass pragmas*/);
   return true;
 }
 
 FirstPassASTVistor::FirstPassASTVistor(CompilerInstance& ci,
   SSTPragmaList& prgs, clang::Rewriter& rw, PragmaConfig& cfg) :
-  ci_(ci), pragmas_(prgs), rewriter_(rw), pragmaConfig_(cfg), noSkeletonize_(false),
-  memoizePass_(false)
+  ci_(ci), pragmas_(prgs), rewriter_(rw), pragmaConfig_(cfg)
 {
-  const char* skelStr = getenv("SSTMAC_SKELETONIZE");
-  if (skelStr){
-    bool doSkel = atoi(skelStr);
-    noSkeletonize_ = !doSkel;
-  }
-
-  const char* memoStr = getenv("SSTMAC_MEMOIZE");
-  if (memoStr){
-    memoizePass_ = atoi(memoStr);
-  }
+  opts_.setup();
 }

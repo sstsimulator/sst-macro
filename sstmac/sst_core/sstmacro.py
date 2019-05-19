@@ -89,7 +89,7 @@ class Interconnect:
 
   def defaultEpFxn(self, nodeID):
     nodeParams = self.params["node"]
-    compName = nodeParams["name"] + "_node"
+    compName = nodeParams["name"].lower() + "_node"
     node = sst.Component("Node %d" % nodeID, "macro.%s" % compName)
     node.addParams(macroToCoreParams(nodeParams))
     node.addParam("id", nodeID)
@@ -97,8 +97,8 @@ class Interconnect:
 
   def buildSwitches(self):
     for i in range(self.num_switches):
-      switchParams = self.system.switchParams(i)
-      compName = switchParams["name"] + "_switch"
+      switchParams = self.params["switch"]
+      compName = switchParams["name"].lower() + "_switch"
       switch = sst.Component("Switch %d" % i, "macro.%s" % compName)
       switch.addParams(macroToCoreParams(switchParams))
       switch.addParam("id", i)
@@ -111,8 +111,6 @@ class Interconnect:
   def latency(self, params):
     if params.has_key("latency"):
       return params["latency"]
-    elif params.has_key("send_latency"):
-      return params["send_latency"]
     else:
       import sys
       sys.exit("need link latency in parameters")
@@ -170,37 +168,12 @@ class Interconnect:
         makeUniLink("ejection",ejSwitchComp,swId,switchPort,ep,epId,ejPort,
                     outLat=lat,inLat=smallLatency)
 
-  def fillInParamsLogP(self):
-    switchParams = self.params["switch"]
-    if not switchParams.has_key("out_in_latency"):
-      try:
-        ejParams = switchParams["ejection"]
-        injParams = self.params["node"]["nic"]["injection"]
-        ejLat = self.latencyAsFloat(ejParams)
-        injLat = self.latencyAsFloat(injParams)
-        totLat = ejLat + injLat
-        lat = "%8.4fus" % (totLat/1e6)
-        switchParams["out_in_latency"] = lat
-      except KeyError:
-        sys.exit("Do not have enough parameters to deduce out_in_latency for LogP switch")
-    if not switchParams.has_key("hop_latency"):
-      try:
-        linkParams = switchParams["link"]
-        switchParams["hop_latency"] = self.latency(linkParams)
-      except KeyError:
-        sys.exit("Do not have enough parameters to deduce hop_latency for LogP switch")
-    if not switchParams.has_key("bandwidth"):
-      try:
-        linkParams = switchParams["link"]
-        switchParams["bandwidth"] = linkParams["bandwidth"]
-      except KeyError:
-        sys.exit("Do not have enough parameters to deduce bandwidth for LogP switch")
-
   def buildLogPNetwork(self):
     import re
     nproc = sst.getMPIRankCount() * sst.getThreadCount()
     switchParams = self.params["switch"]
-    self.fillInParamsLogP()
+    if switchParams.has_key("logp"):
+      switchParams = switchParams["logp"]
     lat = switchParams["out_in_latency"]
     switches = []
     for i in range(nproc):
@@ -269,8 +242,8 @@ def setupDeprecatedParams(params, debugList=[]):
     "parsedumpi",
     "sstmac_mpi_testall",
     "traffic_matrix",
-    "user_app_cxx_empty_main",
-    "user_app_cxx_full_main",
+    "UserAppCxxEmptyMain",
+    "UserAppCxxFullMain",
   ]
 
   for i in range(10):
@@ -288,7 +261,7 @@ def setupDeprecatedParams(params, debugList=[]):
   icParams["topology"] = params["topology"]
   nodeParams["interconnect"] = icParams
   if debugList:
-    nodeParams["debug"] = " ".join(debugList)
+    nodeParams["debug"] = "[" + ",".join(debugList) + "]"
   swParams["topology"] = params["topology"]
 
   #move every param in the global namespace 
@@ -307,6 +280,7 @@ def setupDeprecatedParams(params, debugList=[]):
 
 def setupDeprecated():
   import sys
+  sst.setProgramOption("timebase", "100as")
   params = readCmdLineParams()
   debugList = []
   if params.has_key("debug"):

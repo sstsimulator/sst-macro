@@ -53,7 +53,7 @@ app1Params = {
   "launch_cmd" : "aprun -n 8 -N 1",
   "indexing" : "block",
   "allocation" : "cartesian",
-  "cart_sizes" : "2 2 2",
+  "cart_sizes" : "[2,2,2]",
 }
 app2Params = {
   "name" : "mpi_coverage",
@@ -69,12 +69,12 @@ nodeParams = {
   "proc" : procParams,
   "topology" : {
     "name" : "torus",
-    "geometry" : "2 2 2",
+    "geometry" : "[2,2,2]",
   }
 }
 
 jobParams = {
-  "job_launcher" : "exclusive",
+  "JobLauncher" : "exclusive",
   "app1" : app1Params,
   "app2" : app2Params,
 }

@@ -3,8 +3,9 @@
 \section{SST/macro Parameter files}
 \label{sec:parameters}
 A minimal parameter file setting up a 2D-torus topology is shown below. 
+An equivalent Python input file that reads an ini file is also shown.
 A detailed listing of parameter namespaces and keywords is given in Section \ref{chapter:parameters}.
-The preferred input files now use namespaces.
+Both the \inlineshell{ini} files and Python files make careful use of namespaces.
 
 \begin{ViFile}
 amm_model = amm1
@@ -17,7 +18,7 @@ node {
   launch_cmd = aprun -n8 -N1
   name = sstmac_mpi_testall
   argv =
-  sendrecv_message_size = 128
+  sendrecvMessage_size = 128
  }
  ncores = 1
  memory {
@@ -45,6 +46,10 @@ switch {
   bandwidth = 1.0GB/s
    latency = 100ns
  }
+ logp {
+   bandwidth = 1GB/s
+   out_in_latency = 1us
+ }
 }
 
 topology {
@@ -56,24 +61,11 @@ The input file follows a basic syntax of \inlinefile{parameter = value}.
 Parameter names follow C++ variable rules (letters, numbers, underscore) while parameter values can contain spaces.  Trailing and leading whitespaces are stripped from parameters.
 Comments can be included on lines starting with \#.
 
-
 \subsection{Parameter Namespace Rules}
 \label{subsec:parameterNamespace}
 Periods denote nesting of parameter namespaces.
 The parameter \inlineshell{node.memory.model} will be nested in namespace \inlineshell{memory} inside namespace \inlineshell{node}.
-If inside a given namespace, \sstmacro looks within that namespace first.
-If unable to find it, the input parser moves through the namespace nesting to find the value.
-This exactly follows C++ namespace rules with one important exception. 
-The ``global'' namespace is reserved for special keywords.
-Keywords in the global namespace are not visible to any components.
-
-
-For example, consider the following:
-\begin{ViFile}
-node.model = simple
-node.memory.model = pisces
-\end{ViFile}
-If I am building the node's memory system, the initialization will look for \inlineshell{memory::model} inside namespace \inlineshell{node} first, returning the value \inlineshell{pisces}. 
+If inside a given namespace, \sstmacro looks only within that namespace.
 
 The preferred syntax more closely resembles C++ namespace declarations. 
 Namespaces are scoped using brackets \{\}:
@@ -129,7 +121,7 @@ node {
   name = user_mpiapp_cxx
   argv = 
   # Application parameters
-  sendrecv_message_size = 128
+  sendrecvMessage_size = 128
  }
 }
 
@@ -138,30 +130,3 @@ where in the first line we include the file \inlinefile{machine.ini}.
 All network, topology, and node parameters would be placed into a \inlinefile{machine.ini} file.  
 In this way, multiple experiments can be linked to a common machine.  
 Alternatively, multiple machines could be linked to the same application by creating and including an \inlinefile{application.ini}.
-
-Using the deprecated (non-namespace) parameters the file would be:
-
-\begin{ViFile}
-# Launch parameters
-launch_indexing = block
-launch_allocation = first_available
-launch_cmd_app1 = aprun -n2 -N1
-launch_app1 = user_mpiapp_cxx
-launch_app1_argv = 
-# Network parameters
-network_bandwidth = 1.0GB/s
-network_hop_latency = 100ns
-# Topology - Ring of 4 nodes
-topology_name = torus
-topology_geometry = 4,4
-# Node parameters
-node_cores = 1
-node_name = null
-node_memory_model = null
-nic_name = null
-# Application parameters
-sendrecv_message_size = 128
-\end{ViFile}
-
-All of these are special keywords in the global namespace that get expanded into parameters in a specific namespace. We really, really do not recommend using these deprecated parameters anymore.
-

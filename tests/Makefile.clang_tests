@@ -70,15 +70,15 @@ test_clang_%.tmp-out: sst.pp.%.cc $(SSTMAC_DEGLOBAL)
 
 sst.pp.pragma_sst_memoize.cc: pp.pragma_sst_memoize.cc $(SSTMAC_DEGLOBAL)
 	-SSTMAC_CLANG_TEST_PREFIX=xyz SSTMAC_MEMOIZE=1 SSTMAC_DELETE_TEMPS=0 \
-  $(SSTMAC_DEGLOBAL) $< --extra-arg=-std=c++11 --
+  $(SSTMAC_DEGLOBAL) $< -- -std=c++11
 
 sst.pp.pragma_sst_memoize_compute.cc: pp.pragma_sst_memoize_compute.cc $(SSTMAC_DEGLOBAL)
 	-SSTMAC_CLANG_TEST_PREFIX=xyz SSTMAC_SKELETONIZE=1 SSTMAC_DELETE_TEMPS=0 \
-  $(SSTMAC_DEGLOBAL) $< --extra-arg=-std=c++11 --
+  $(SSTMAC_DEGLOBAL) $< -- -std=c++11
 
 sst.pp.%.cc: pp.%.cc $(SSTMAC_DEGLOBAL)
 	-SSTMAC_CLANG_TEST_PREFIX=xyz SSTMAC_SKELETONIZE=1 SSTMAC_DELETE_TEMPS=0 \
-  $(SSTMAC_DEGLOBAL) $< --extra-arg=-std=c++11 --
+  $(SSTMAC_DEGLOBAL) $< -- -std=c++11
 
 pp.%.cc: $(top_srcdir)/tests/clang_src2src/%.cc $(SSTMAC_DEGLOBAL)
 	-$(CXX) -std=c++11 -E $< >& $@

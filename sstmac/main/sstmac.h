@@ -45,11 +45,12 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef SSTMAC_SSTMAC_H_INCLUDED
 #define SSTMAC_SSTMAC_H_INCLUDED
 
-#include <sprockit/sim_parameters_fwd.h>
+#include <sprockit/sim_parameters.h>
 #include <sstmac/backends/native/manager_fwd.h>
 #include <sstmac/backends/common/parallel_runtime_fwd.h>
+#include <sstmac/sst_core/integrated_component.h>
 #include <string>
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <sys/time.h>
 
 #define PARSE_OPT_SUCCESS 0
@@ -61,22 +62,22 @@ struct opts {
   std::string debug;
   std::string configfile;
   bool got_config_file;
-  sprockit::sim_parameters* params;
+  sprockit::SimParameters::ptr params;
   bool print_walltime;
   bool print_params;
   bool low_res_timer;
   std::string cpu_affinity;
   std::string benchmark;
-  std::string output_graphviz;
-  std::string output_xyz;
+  std::string outputGraphviz;
+  std::string outputXYZ;
   std::string params_dump_file;
 
   opts() :
     help(0),
     debug(""),
-    params(nullptr),
     configfile(""),
     got_config_file(false),
+    params(std::make_shared<sprockit::SimParameters>()),
     low_res_timer(false),
     print_walltime(true),
     print_params(false),
@@ -89,30 +90,30 @@ struct opts {
 std::ostream&
 operator<<(std::ostream &os, const opts &oo);
 
-struct sim_stats {
+struct SimStats {
   double wallTime;
   double simulatedTime;
   int numResults;
-  sim_stats() : 
+  SimStats() :
     wallTime(0), 
     simulatedTime(0), 
     numResults(-1) 
   {}
 };
 
-int parse_opts(int argc, char **argv, opts &oo);
+int parseOpts(int argc, char **argv, opts &oo);
 
-void print_help(int argc, char **argv);
+void printHelp(int argc, char **argv);
 
-
-void resize_topology(int max_nproc, sprockit::sim_parameters* params, bool verbose = true);
-
-void map_env_params(sprockit::sim_parameters* params);
+void resizeTopology(int max_nproc, sprockit::SimParameters::ptr params, bool verbose = true);
 
 namespace sstmac {
 
-class benchmark {
-  DeclareFactory(benchmark);
+struct Benchmark {
+  SST_ELI_DECLARE_BASE(Benchmark)
+  SST_ELI_DECLARE_DEFAULT_INFO()
+  SST_ELI_DECLARE_DEFAULT_CTOR()
+
   virtual void run() = 0;
 
   static double now() {
@@ -123,44 +124,42 @@ class benchmark {
   }
 };
 
-parallel_runtime* init();
+ParallelRuntime* init();
 
-void finalize(parallel_runtime* rt);
+void finalize(ParallelRuntime* rt);
 
-void init_opts(opts& oo, int argc, char** argv);
+void initOpts(opts& oo, int argc, char** argv);
 
-void init_params(parallel_runtime* rt, opts& oo, sprockit::sim_parameters* params, bool parallel);
+void initParams(ParallelRuntime* rt, opts& oo, sprockit::SimParameters::ptr params, bool parallel);
 
-void remap_deprecated_params(sprockit::sim_parameters* params);
+void remapParams(sprockit::SimParameters::ptr params, bool verbose = true);
 
-void remap_params(sprockit::sim_parameters* params, bool verbose = true);
+void* loadExternLibrary(const std::string& libname, const std::string& searchPath);
 
-void* load_extern_library(const std::string& libname, const std::string& searchPath);
+void* loadExternLibrary(const std::string& libname);
 
-void* load_extern_library(const std::string& libname);
+void unloadExternLibrary(void* handle);
 
-void unload_extern_library(void* handle);
-
-std::string load_extern_path_str();
+std::string loadExternPathStr();
 
 void run(opts& oo,
-    sstmac::parallel_runtime* rt,
-    sprockit::sim_parameters* params,
-    sim_stats& stats);
+    sstmac::ParallelRuntime* rt,
+    SST::Params& params,
+    SimStats& stats);
 
-int run_standalone(int argc, char** argv);
+int runStandalone(int argc, char** argv);
 
-int try_main(sprockit::sim_parameters* params,
+int tryMain(sprockit::SimParameters::ptr params,
    int argc, char **argv,
    bool params_only = false);
 
-void run_params(opts& oo,
-  parallel_runtime* rt,
-  sprockit::sim_parameters* params,
-   sim_stats& stats);
+void runParams(opts& oo,
+  ParallelRuntime* rt,
+  SST::Params& params,
+   SimStats& stats);
 
-void init_first_run(parallel_runtime* rt,
-    sprockit::sim_parameters* params);
+void initFirstRun(ParallelRuntime* rt,
+    SST::Params& params);
 
 }
 

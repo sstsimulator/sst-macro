@@ -50,34 +50,34 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/thread.h>
 
 #define start_comm_call(fxn,comm) \
-  auto call_start_time = (uint64_t)os_->now().usec(); \
+  auto call_start_time = (uint64_t)now().usec(); \
   start_mpi_call(fxn); \
-  mpi_api_debug(sprockit::dbg::mpi, "%s(%s) start", #fxn, comm_str(comm).c_str())
+  mpi_api_debug(sprockit::dbg::mpi, "%s(%s) start", #fxn, commStr(comm).c_str())
 
 #define finish_comm_call(fxn,input,output) \
   mpi_api_debug(sprockit::dbg::mpi, "%s(%s,*%s) finish", \
-                #fxn, comm_str(input).c_str(), comm_str(*output).c_str());
+                #fxn, commStr(input).c_str(), commStr(*output).c_str());
 
 
 namespace sumi {
 
 int
-mpi_api::comm_dup(MPI_Comm input, MPI_Comm *output)
+MpiApi::commDup(MPI_Comm input, MPI_Comm *output)
 {
-  check_init();
-  auto start_clock = trace_clock();
+  checkInit();
+  auto start_clock = traceClock();
   start_comm_call(MPI_Comm_dup,input);
-  mpi_comm* inputPtr = get_comm(input);
-  mpi_comm* outputPtr = comm_factory_.comm_dup(inputPtr);
-  add_comm_ptr(outputPtr, output);
+  MpiComm* inputPtr = getComm(input);
+  MpiComm* outputPtr = comm_factory_.comm_dup(inputPtr);
+  addCommPtr(outputPtr, output);
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Comm_dup(%s,*%s) finish",
-                comm_str(input).c_str(), comm_str(*output).c_str());
-  end_api_call();
+                commStr(input).c_str(), commStr(*output).c_str());
+  endAPICall();
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_){
-    otf2_writer_->add_comm(outputPtr, input);
-    otf2_writer_->writer().mpi_comm_dup(start_clock, trace_clock(),
+  if (OTF2Writer_){
+    OTF2Writer_->addComm(outputPtr, input);
+    OTF2Writer_->writer().mpi_comm_dup(start_clock, traceClock(),
                                         input, *output);
   }
 #endif
@@ -85,21 +85,21 @@ mpi_api::comm_dup(MPI_Comm input, MPI_Comm *output)
 }
 
 int
-mpi_api::comm_create_group(MPI_Comm comm, MPI_Group group, int tag, MPI_Comm *newcomm)
+MpiApi::commCreateGroup(MPI_Comm comm, MPI_Group group, int tag, MPI_Comm *newcomm)
 {
-  check_init();
+  checkInit();
   start_comm_call(MPI_Comm_create_group,comm);
-  mpi_comm* inputPtr = get_comm(comm);
-  mpi_group* groupPtr = get_group(group);
-  mpi_comm* outputPtr = comm_factory_.comm_create_group(inputPtr, groupPtr);
-  add_comm_ptr(outputPtr, newcomm);
+  MpiComm* inputPtr = getComm(comm);
+  MpiGroup* groupPtr = getGroup(group);
+  MpiComm* outputPtr = comm_factory_.commCreateGroup(inputPtr, groupPtr);
+  addCommPtr(outputPtr, newcomm);
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Comm_create_group(%s,*%s) finish",
-                comm_str(comm).c_str(), comm_str(*newcomm).c_str());
-  end_api_call();
+                commStr(comm).c_str(), commStr(*newcomm).c_str());
+  endAPICall();
   //okay, this is really complicated
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_){
+  if (OTF2Writer_){
     sprockit::abort("OTF2 trace MPI_Comm_create_group unimplemented");
   }
 #endif
@@ -107,31 +107,31 @@ mpi_api::comm_create_group(MPI_Comm comm, MPI_Group group, int tag, MPI_Comm *ne
 }
 
 int
-mpi_api::comm_size(MPI_Comm comm, int *size)
+MpiApi::commSize(MPI_Comm comm, int *size)
 {
   start_comm_call(MPI_Comm_size,comm);
-  *size = get_comm(comm)->size();
-  end_api_call();
+  *size = getComm(comm)->size();
+  endAPICall();
   return MPI_SUCCESS;
 }
 
 int
-mpi_api::comm_create(MPI_Comm input, MPI_Group group, MPI_Comm *output)
+MpiApi::commCreate(MPI_Comm input, MPI_Group group, MPI_Comm *output)
 {
-  auto start_clock = trace_clock();
+  auto start_clock = traceClock();
   start_comm_call(MPI_Comm_create,input);
-  mpi_comm* inputPtr = get_comm(input);
-  mpi_group* groupPtr = get_group(group);
-  mpi_comm* outputPtr = comm_factory_.comm_create(inputPtr, groupPtr);
-  add_comm_ptr(outputPtr, output);
+  MpiComm* inputPtr = getComm(input);
+  MpiGroup* groupPtr = getGroup(group);
+  MpiComm* outputPtr = comm_factory_.commCreate(inputPtr, groupPtr);
+  addCommPtr(outputPtr, output);
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Comm_create(%s,%d,*%s)",
-                comm_str(input).c_str(), group, comm_str(*output).c_str());
-  end_api_call();
+                commStr(input).c_str(), group, commStr(*output).c_str());
+  endAPICall();
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_){
-    otf2_writer_->add_comm(outputPtr, input);
-    otf2_writer_->writer().mpi_comm_create(start_clock, trace_clock(),
+  if (OTF2Writer_){
+    OTF2Writer_->addComm(outputPtr, input);
+    OTF2Writer_->writer().mpi_comm_create(start_clock, traceClock(),
                                            input, group, *output);
   }
 #endif
@@ -139,20 +139,20 @@ mpi_api::comm_create(MPI_Comm input, MPI_Group group, MPI_Comm *output)
 }
 
 void
-mpi_api::comm_create_with_id(MPI_Comm input, MPI_Group group, MPI_Comm new_comm)
+MpiApi::commCreateWithId(MPI_Comm input, MPI_Group group, MPI_Comm new_comm)
 {
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Comm_create_with_id(%s,%d,%d)",
-                comm_str(input).c_str(), group, new_comm);
-  mpi_group* groupPtr = get_group(group);
-  mpi_comm* inputPtr = get_comm(input);
-  int new_rank = groupPtr->rank_of_task(inputPtr->my_task());
+                commStr(input).c_str(), group, new_comm);
+  MpiGroup* groupPtr = getGroup(group);
+  MpiComm* inputPtr = getComm(input);
+  int new_rank = groupPtr->rankOfTask(inputPtr->myTask());
   if (new_rank != -1){ //this is actually part of the group
-    mpi_comm* newCommPtr = new mpi_comm(new_comm, new_rank, groupPtr, library::sid_.app_);
-    add_comm_ptr(newCommPtr, &new_comm);
+    MpiComm* newCommPtr = new MpiComm(new_comm, new_rank, groupPtr, sid().app_);
+    addCommPtr(newCommPtr, &new_comm);
 #ifdef SSTMAC_OTF2_ENABLED
-    if (otf2_writer_){
+    if (OTF2Writer_){
       if (newCommPtr->rank() == 0){
-        otf2_writer_->add_comm(newCommPtr, input);
+        OTF2Writer_->addComm(newCommPtr, input);
       }
     }
 #endif
@@ -160,25 +160,25 @@ mpi_api::comm_create_with_id(MPI_Comm input, MPI_Group group, MPI_Comm new_comm)
 }
 
 int
-mpi_api::comm_group(MPI_Comm comm, MPI_Group* grp)
+MpiApi::commGroup(MPI_Comm comm, MPI_Group* grp)
 {
-  mpi_comm* commPtr = get_comm(comm);
+  MpiComm* commPtr = getComm(comm);
   *grp = commPtr->group()->id();
   return MPI_SUCCESS;
 }
 
 int
-mpi_api::cart_create(MPI_Comm comm_old, int ndims, const int dims[],
+MpiApi::cartCreate(MPI_Comm comm_old, int ndims, const int dims[],
                     const int periods[], int reorder, MPI_Comm *comm_cart)
 {
   start_comm_call(MPI_Cart_create,comm_old);
-  mpi_comm* incommPtr = get_comm(comm_old);
-  mpi_comm* outcommPtr = comm_factory_.create_cart(incommPtr, ndims, dims, periods, reorder);
-  add_comm_ptr(outcommPtr, comm_cart);
-  end_api_call();
+  MpiComm* incommPtr = getComm(comm_old);
+  MpiComm* outcommPtr = comm_factory_.createCart(incommPtr, ndims, dims, periods, reorder);
+  addCommPtr(outcommPtr, comm_cart);
+  endAPICall();
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_){
+  if (OTF2Writer_){
     sprockit::abort("OTF2 trace MPI_Cart_create unimplemented");
   }
 #endif
@@ -187,13 +187,13 @@ mpi_api::cart_create(MPI_Comm comm_old, int ndims, const int dims[],
 }
 
 int
-mpi_api::cart_get(MPI_Comm comm, int maxdims, int dims[], int periods[],
+MpiApi::cartGet(MPI_Comm comm, int maxdims, int dims[], int periods[],
                  int coords[])
 {
   start_comm_call(MPI_Cart_get,comm);
 
-  mpi_comm* incommPtr = get_comm(comm);
-  mpi_comm_cart* c = safe_cast(mpi_comm_cart, incommPtr,
+  MpiComm* incommPtr = getComm(comm);
+  MpiCommCart* c = safe_cast(MpiCommCart, incommPtr,
     "mpi_api::cart_get: mpi comm did not cast to mpi_comm_cart");
 
   for (int i = 0; i < maxdims; i++) {
@@ -201,90 +201,96 @@ mpi_api::cart_get(MPI_Comm comm, int maxdims, int dims[], int periods[],
     periods[i] = c->period(i);
   }
 
-  c->set_coords(c->mpi_comm::rank(), coords);
-  end_api_call();
+  c->set_coords(c->MpiComm::rank(), coords);
+  endAPICall();
 
   return MPI_SUCCESS;
 }
 
 int
-mpi_api::cartdim_get(MPI_Comm comm, int *ndims)
+MpiApi::cartdimGet(MPI_Comm comm, int *ndims)
 {
   start_comm_call(MPI_Cartdim_get,comm);
-  mpi_comm* incommPtr = get_comm(comm);
-  mpi_comm_cart* c = safe_cast(mpi_comm_cart, incommPtr,
+  MpiComm* incommPtr = getComm(comm);
+  MpiCommCart* c = safe_cast(MpiCommCart, incommPtr,
     "mpi_api::cartdim_get: mpi comm did not cast to mpi_comm_cart");
   *ndims = c->ndims();
-  end_api_call();
+  endAPICall();
 
   return MPI_SUCCESS;
 }
 
 int
-mpi_api::cart_rank(MPI_Comm comm, const int coords[], int *rank)
+MpiApi::cartRank(MPI_Comm comm, const int coords[], int *rank)
 {
   start_comm_call(MPI_Cart_rank,comm);
-  mpi_comm* incommPtr = get_comm(comm);
-  mpi_comm_cart* c = safe_cast(mpi_comm_cart, incommPtr,
+  MpiComm* incommPtr = getComm(comm);
+  MpiCommCart* c = safe_cast(MpiCommCart, incommPtr,
     "mpi_api::cart_rank: mpi comm did not cast to mpi_comm_cart");
   *rank = c->rank(coords);
-  end_api_call();
+  endAPICall();
 
   return MPI_SUCCESS;
 }
 
 int
-mpi_api::cart_shift(MPI_Comm comm, int direction, int disp, int *rank_source,
+MpiApi::cartShift(MPI_Comm comm, int direction, int disp, int *rank_source,
                   int *rank_dest)
 {
   start_comm_call(MPI_Cart_shift,comm);
-  mpi_comm* incommPtr = get_comm(comm);
-  mpi_comm_cart* c = safe_cast(mpi_comm_cart, incommPtr,
+  MpiComm* incommPtr = getComm(comm);
+  MpiCommCart* c = safe_cast(MpiCommCart, incommPtr,
     "mpi_api::cart_shift: mpi comm did not cast to mpi_comm_cart");
   *rank_source = c->shift(direction, -1 * disp);
   *rank_dest = c->shift(direction, disp);
-  end_api_call();
+  endAPICall();
 
   return MPI_SUCCESS;
 }
 
 int
-mpi_api::cart_coords(MPI_Comm comm, int rank, int maxdims, int coords[])
+MpiApi::cartCoords(MPI_Comm comm, int rank, int maxdims, int coords[])
 {
   start_comm_call(MPI_Cart_coords,comm);
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Cart_coords(...)");
-  mpi_comm* incommPtr = get_comm(comm);
-  mpi_comm_cart* c = safe_cast(mpi_comm_cart, incommPtr,
+  MpiComm* incommPtr = getComm(comm);
+  MpiCommCart* c = safe_cast(MpiCommCart, incommPtr,
     "mpi_api::cart_coords: mpi comm did not cast to mpi_comm_cart");
   c->set_coords(rank, coords);
-  end_api_call();
+  endAPICall();
 
   return MPI_SUCCESS;
 }
 
 
 int
-mpi_api::comm_split(MPI_Comm incomm, int color, int key, MPI_Comm *outcomm)
+MpiApi::commSplit(MPI_Comm incomm, int color, int key, MPI_Comm *outcomm)
 {
-  auto start_clock = trace_clock();
+  auto start_clock = traceClock();
   start_comm_call(MPI_Comm_split,incomm);
-  mpi_comm* incommPtr = get_comm(incomm);
-  mpi_comm* outcommPtr = comm_factory_.comm_split(incommPtr, color, key);
-  add_comm_ptr(outcommPtr, outcomm);
+  MpiComm* incommPtr = getComm(incomm);
+  MpiComm* outcommPtr = comm_factory_.commSplit(incommPtr, color, key);
+
+  addCommPtr(outcommPtr, outcomm);
   mpi_api_debug(sprockit::dbg::mpi,
       "MPI_Comm_split(%s,%d,%d,*%s) exit",
-      comm_str(incomm).c_str(), color, key, comm_str(*outcomm).c_str());
+      commStr(incomm).c_str(), color, key, commStr(*outcomm).c_str());
 
   //but also assign an id to the underlying group
   if (outcommPtr->id() != MPI_COMM_NULL){
-    outcommPtr->group()->set_id(group_counter_++);
+    outcommPtr->group()->setId(group_counter_++);
+    if (smp_optimize_){
+      outcommPtr->createSmpCommunicator(smp_neighbors_, engine(), Message::default_cq);
+    }
   }
 
-  end_api_call();
+
+
+  endAPICall();
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_){
-    otf2_writer_->add_comm(outcommPtr, incomm);
-    otf2_writer_->writer().mpi_comm_split(start_clock, trace_clock(), incomm, color, key, *outcomm);
+  if (OTF2Writer_){
+    OTF2Writer_->addComm(outcommPtr, incomm);
+    OTF2Writer_->writer().mpi_comm_split(start_clock, traceClock(), incomm, color, key, *outcomm);
   }
 #endif
 
@@ -292,32 +298,32 @@ mpi_api::comm_split(MPI_Comm incomm, int color, int key, MPI_Comm *outcomm)
 }
 
 int
-mpi_api::comm_free(MPI_Comm* input)
+MpiApi::commFree(MPI_Comm* input)
 {
   start_comm_call(MPI_Comm_free,*input);
 #ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_){
+  if (OTF2Writer_){
     //If tracing OTF2, I am not allowed to delete any communicators
     //TODO this needs to pass in the comm id
-    //otf2_writer_.generic_call(start_clock, trace_clock(), "MPI_Comm_free");
+    //OTF2Writer_.generic_call(start_clock, traceClock(), "MPI_Comm_free");
   } else
 #endif
   {
-    mpi_comm* inputPtr = get_comm(*input);
+    MpiComm* inputPtr = getComm(*input);
     comm_map_.erase(*input);
-    if (inputPtr->delete_group()){
+    if (inputPtr->deleteGroup()){
       grp_map_.erase(inputPtr->group()->id());
     }
     delete inputPtr;
   }
   *input = MPI_COMM_NULL;
-  end_api_call();
+  endAPICall();
 
   return MPI_SUCCESS;
 }
 
 int
-mpi_api::comm_get_attr(MPI_Comm, int comm_keyval, void* attribute_val, int *flag)
+MpiApi::commGetAttr(MPI_Comm, int comm_keyval, void* attribute_val, int *flag)
 {
   /**
   if (comm_keyval == MPI_TAG_UB){

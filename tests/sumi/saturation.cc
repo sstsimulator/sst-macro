@@ -45,25 +45,24 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/test/test.h>
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
+#include <sprockit/keyword_registration.h>
 #include <sstmac/common/sstmac_env.h>
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/operating_system.h>
-#include <sumi/transport.h>
-#include <sstmac/libraries/sumi/sumi_api.h>
-#include <sstmac/libraries/sumi/sumi_thread.h>
-#include <sstmac/libraries/sumi/sumi.h>
 #include <sstmac/hardware/topology/traffic/traffic.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/skeleton.h>
-#include <sprockit/keyword_registration.h>
+#include <sumi/transport.h>
+#include <sumi/sumi.h>
+#include <sumi/sumi_thread.h>
 
 #define sstmac_app_name user_app_cxx
 using namespace sumi;
-using sstmac::timestamp;
+using sstmac::Timestamp;
 using sstmac::hw::traffic_pattern;
-using sstmac::node_id;
-using sstmac::env;
-using sstmac::hw::topology;
+using sstmac::NodeId;
+using sstmac::Env;
+using sstmac::hw::Topology;
 
 RegisterKeywords(
 "traffic_pattern",
@@ -78,17 +77,17 @@ static double average_latency_ms = 0;
 static long num_messages_counted = 0;
 //static long short_msg_length = 8000;
 static double latency_total = 0;
-typedef std::unordered_map<sumi::message*,double> time_map;
+typedef std::unordered_map<sumi::Message*,double> time_map;
 typedef std::unordered_map<int, time_map> rank_time_map;
 static rank_time_map start_times;
 
 
 class throughput_thread :
-  public sstmac::sumi_thread
+  public sstmac::SumiThread
 {
  public:
-  throughput_thread(sstmac::sw::software_id sid) :
-    sstmac::sumi_thread(sid){}
+  throughput_thread(sstmac::sw::SoftwareId sid) :
+    sstmac::SumiThread(sid){}
 
   virtual void run();
 
@@ -100,10 +99,10 @@ throughput_thread::run()
 {
   //int num_recved = 0;
   while (1) {
-    message* msg = comm_poll();
-    if (msg->payload_type() == message::rdma_put_ack) {
+    Message* msg = comm_poll();
+    if (msg->payload_type() == Message::rdma_put_ack) {
       //ignore
-    } else if (msg->payload_type() == message::rdma_put) {
+    } else if (msg->payload_type() == Message::rdma_put) {
       time_map& times = start_times[msg->sender()];
       time_map::iterator it = times.find(msg.get());
       if (it == times.end()) {
@@ -120,9 +119,9 @@ throughput_thread::run()
       average_latency_ms = latency_total / num_messages_counted;
       return;
     } else {
-      spkt_throw_printf(sprockit::illformed_error,
+      spkt_throw_printf(sprockit::IllformedError,
                        "got unexpected message %s",
-                       sumi::message::tostr(msg->payload_type()));
+                       sumi::Message::tostr(msg->payload_type()));
     }
   }
 
@@ -134,9 +133,9 @@ void run_test(
   double offered_load_bw
 )
 {
-  std::vector<node_id> node_partners;
+  std::vector<NodeId> node_partners;
   sstmac::sumi_api* simp = safe_cast(sstmac::sumi_api, sumi_api());
-  topology::global()->send_partners(
+  Topology::global()->send_partners(
     ty,
     simp->my_addr(),
     node_partners);
@@ -148,7 +147,7 @@ void run_test(
 
   node_partners.clear();
   std::vector<int> recv_partners(num_partners, 0);
-  topology::global()->recv_partners(
+  Topology::global()->recv_partners(
     ty,
     simp->my_addr(),
     node_partners);
@@ -157,13 +156,13 @@ void run_test(
   }
 
   int aid = 1; //assume 1 for now
-  sstmac::sw::software_id sid(aid, comm_rank());
+  sstmac::sw::SoftwareId sid(aid, comm_rank());
   throughput_thread* thr = new throughput_thread(sid);
   thr->start();
 
   int me = comm_rank();
   for (int i=0; i < num_partners; ++i) {
-    sumi::message* msg = new sumi::message(inject_length);
+    sumi::Message* msg = new sumi::Message(inject_length);
     comm_rdma_put(send_partners[i], msg);
 
     // sleep until the message WOULD be done
@@ -172,7 +171,7 @@ void run_test(
     sleep(delay);
 
     //now send a single, small message
-    msg = new sumi::message(8000);
+    msg = new sumi::Message(8000);
     comm_rdma_put(send_partners[i], msg);
     start_times[me][msg.get()] = wall_time();
   }
@@ -185,9 +184,9 @@ main(int argc, char** argv)
 {
   comm_init();
 
-  sprockit::sim_parameters* params = sstmac::sw::app::get_params();
+  SST::Params& params = sstmac::sw::App::getParams();
 
-  std::string pattern = params->get_param("traffic_pattern");
+  std::string pattern = params.find<std::string>("traffic_pattern");
   traffic_pattern::type_t ty;
   if (pattern == "NN" || pattern == "nearest_neighbor") {
     ty = traffic_pattern::nearest_neighbor;
@@ -196,29 +195,29 @@ main(int argc, char** argv)
   } else if (pattern == "TOR" || pattern == "tornado") {
     ty = traffic_pattern::tornado;
   } else {
-    spkt_throw_printf(sprockit::input_error,
+    spkt_throw_printf(sprockit::InputError,
                      "invalid traffic pattern %s",
                      pattern.c_str());
   }
 
   double offered_load_bw = 0;
 
-  if (params->has_param("pisces_injection_bandwidth")) {
-    offered_load_bw = params->get_bandwidth_param("pisces_injection_bandwidth");
-  } else if (params->has_param("cycle_accurate_switch_bandwidth_n2r")) {
-    offered_load_bw = params->get_bandwidth_param("cycle_accurate_switch_bandwidth_n2r");
-  } else if (params->has_param("network_injector_capacity_bw")) {
-    offered_load_bw = params->get_bandwidth_param("network_injector_capacity_bw");
-  } else if (params->has_param("packet_switch_bandwidth_n2r")) {
-    offered_load_bw = params->get_bandwidth_param("packet_switch_bandwidth_n2r");
-  } else if (params->has_param("network_train_injection_bw")) {
-    offered_load_bw = params->get_bandwidth_param("network_train_injection_bw");
+  if (params.contains("pisces_injection_bandwidth")) {
+    offered_load_bw = params.find<SST::UnitAlgebra>("pisces_injection_bandwidth").getValue().toDouble();
+  } else if (params.contains("cycle_accurate_switch_bandwidth_n2r")) {
+    offered_load_bw = params.find<SST::UnitAlgebra>("cycle_accurate_switch_bandwidth_n2r").getValue().toDouble();
+  } else if (params.contains("network_injector_capacity_bw")) {
+    offered_load_bw = params.find<SST::UnitAlgebra>("network_injector_capacity_bw").getValue().toDouble();
+  } else if (params.contains("packet_switch_bandwidth_n2r")) {
+    offered_load_bw = params.find<SST::UnitAlgebra>("packet_switch_bandwidth_n2r").getValue().toDouble();
+  } else if (params.contains("network_train_injection_bw")) {
+    offered_load_bw = params.find<SST::UnitAlgebra>("network_train_injection_bw").getValue().toDouble();
   } else {
-    spkt_throw_printf(sprockit::input_error,
+    spkt_throw_printf(sprockit::InputError,
                      "throughput application did not find injection bandwidth");
   }
 
-  timestamp inject_time = params->get_time_param("inject_time");
+  Timestamp inject_time = params.find<SST::UnitAlgebra>("inject_time");
   long inject_length = offered_load_bw * inject_time.sec();
 
   run_test(ty, inject_length, offered_load_bw);

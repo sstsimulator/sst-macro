@@ -5,7 +5,6 @@ check_PROGRAMS = \
   sst_box_domain \
   sst_barrier \
   sst_deadlock \
-  sst_big_tree \
   sst_replica \
   sst_collective 
 
@@ -31,7 +30,6 @@ exe_LDADD = \
 exe_FLAGS = 
 
 sst_deadlock_SOURCES = deadlock.cc
-sst_big_tree_SOURCES = big_tree.cc
 sst_replica_SOURCES = replica.cc
 sst_collective_SOURCES = collective.cc
 sst_box_domain_SOURCES = box_domain.cc
@@ -47,7 +45,6 @@ sst_barrier_SOURCES = barrier.cc
 
 sst_barrier_LDADD = $(exe_LDADD) 
 sst_deadlock_LDADD = $(exe_LDADD)
-sst_big_tree_LDADD = $(exe_LDADD)
 sst_replica_LDADD = $(exe_LDADD) 
 sst_collective_LDADD = $(exe_LDADD) 
 sst_box_domain_LDADD = $(exe_LDADD) 

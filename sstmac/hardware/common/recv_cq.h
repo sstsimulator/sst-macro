@@ -60,9 +60,9 @@ because a packet can be marked as the "tail" and used to track when an entire me
 When using adaptive or multipath routing, messages arrive out-of-order.
 This class tracks whether all packets have been received and signals to some handler
 that an entire message has fully arrived.
-@class nic_recv_cq
+@class nic_RecvCQ
 */
-class recv_cq
+class RecvCQ
 {
 
  public:
@@ -71,18 +71,18 @@ class recv_cq
       @param packet The arriving packet
       @return The completed msg or a null msg indicating not yet complete
   */
-  message* recv(packet* pkt);
+  Flow* recv(Packet* pkt);
 
-  message* recv(uint64_t unique_id, uint32_t bytes, message* payload);
+  Flow* recv(uint64_t unique_id, uint32_t bytes, Flow* payload);
 
   void print();
 
  protected:
-  struct incoming_msg {
-    message* msg;
+  struct incomingMsg {
+    Flow* msg;
     uint64_t bytes_arrived;
     uint64_t bytes_total;
-    incoming_msg() :
+    incomingMsg() :
         bytes_arrived(0),
         bytes_total(0),
         msg(0)
@@ -94,9 +94,9 @@ class recv_cq
       Keys are unique network ID for all messages.
       Value is the number of bytes receved.
   */
-  using pair_type = std::pair<const uint64_t, incoming_msg>;
-  using alloc = sprockit::thread_safe_allocator<pair_type>;
-  using received_map = std::map<uint64_t, incoming_msg, std::less<uint64_t>, alloc>;
+  using pair_type = std::pair<const uint64_t, incomingMsg>;
+  using alloc = sprockit::threadSafeAllocator<pair_type>;
+  using received_map = std::map<uint64_t, incomingMsg, std::less<uint64_t>, alloc>;
   received_map bytes_recved_;
 };
 

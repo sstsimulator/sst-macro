@@ -85,32 +85,32 @@ class MpiCall {
   ~MpiCall() {}
 
   // Methods
-  sstmac::timestamp GetStart() const {
+  sstmac::Timestamp getStart() const {
     if (start_time == 0){
-      std::cerr << "Warning: start timestamp is not initialized for " << ToString() << std::endl;
+      std::cerr << "Warning: start timestamp is not initialized for " << toString() << std::endl;
     }
-    return convert_time(start_time);
+    return convertTime(start_time);
   }
 
-  sstmac::timestamp GetEnd() const {
+  sstmac::Timestamp getEnd() const {
     if (end_time == 0){
-      std::cerr << "Warning: end timestamp is not initialized for " << ToString() << std::endl;
+      std::cerr << "Warning: end timestamp is not initialized for " << toString() << std::endl;
     }
-    return convert_time(end_time);
+    return convertTime(end_time);
   }
 
-  void SetTrigger(std::function<void()> trigger){
+  void setTrigger(std::function<void()> trigger){
     on_trigger = trigger;
   }
 
 
-  bool IsReady() const {
+  bool isReady() const {
     return isready;
   }
 
-  void Trigger();
+  void trigger();
 
-  const char* ToString() const {
+  const char* toString() const {
     return name(id);
   }
 
@@ -121,14 +121,14 @@ class MpiCall {
   bool isready;
   MPI_CALL_ID id;
 
-  static void assert_call(MpiCall* cb, std::string msg){
+  static void assertCall(MpiCall* cb, std::string msg){
     if (cb == nullptr) {
       spkt_abort_printf("ASSERT FAILED: %s", msg.c_str());
     }
   }
 
  private:
-  sstmac::timestamp convert_time(const OTF2_TimeStamp) const;
+  sstmac::Timestamp convertTime(const OTF2_TimeStamp) const;
 
 };
 

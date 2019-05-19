@@ -165,7 +165,7 @@ namespace lblxml
     int epoch = element->IntAttribute("epoch");
     comm* ev = new comm(index, eventid, dep, epoch, "uninitialized", from, to, size );
     if (index >= g_events.size()){
-      spkt_throw_printf(sprockit::value_error,
+      spkt_throw_printf(sprockit::ValueError,
         "event id %d is greater than max %d - check XML file for largest event id",
         index, g_events.size());
     }
@@ -182,7 +182,7 @@ namespace lblxml
     int epoch = element->IntAttribute("epoch");
     reduce* commev = new reduce(index, eventid, dep, epoch, size);
     if (index >= g_events.size()){
-      spkt_throw_printf(sprockit::value_error,
+      spkt_throw_printf(sprockit::ValueError,
         "event id %d is greater than max %d - check XML file for largest event id",
         index, g_events.size());
     }
@@ -202,7 +202,7 @@ namespace lblxml
     int epoch = element->IntAttribute("epoch");
     comp* ev = new comp(index, eventid, dep, epoch, "uninitialized", -1, time, at );
     if (index >= g_events.size()){
-      spkt_throw_printf(sprockit::value_error,
+      spkt_throw_printf(sprockit::ValueError,
         "event id %d is greater than max %d - check XML file for largest event id",
         index, g_events.size());
     }

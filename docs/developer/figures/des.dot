@@ -9,10 +9,10 @@ thr13,thr14,thr15,thr16
 
 thr10 [style=filled,fillcolor="lightblue",label="App Source\nMPI_Send(...)"];
 thr11 [style=filled,fillcolor="lightblue",label="mpi_api::send(...):\nm = new mpi_message(...);\los->execute_kernel(COMM_SEND,m);\lblock();\l"];
-thr12 [style=filled,fillcolor="lightblue",label="os::execute_kernel(COMM_FUNC f, event* ev):\l  network_message* netmsg = dynamic_cast<>(ev);\l node_->send_to_nic(netmsg);\l"]
-nic3  [label="nic::send(network_message* msg):\l  list<event*> pkts = packetize(msg);\l  for (pkt : pkts)\l  schedule(arrive,router,pkt);}\l  schedule(arrive,node,ack);\l"]
-node4 [label="node::handle(event* ev):\nos->handle_event(ev);"]
-node5 [label="os::handle_event(event* ev):\nlibrary* lib = libs[ev->lib_name()];\llib->incoming_event(ev);\l"]
+thr12 [style=filled,fillcolor="lightblue",label="os::execute_kernel(COMM_FUNC f, event* ev):\l  NetworkMessage* netmsg = dynamic_cast<>(ev);\l node_->send_to_nic(netmsg);\l"]
+nic3  [label="nic::send(NetworkMessage* msg):\l  list<event*> pkts = packetize(msg);\l  for (pkt : pkts)\l  schedule(arrive,router,pkt);}\l  schedule(arrive,node,ack);\l"]
+node4 [label="node::handle(event* ev):\nos->handleEvent(ev);"]
+node5 [label="os::handleEvent(event* ev):\nlibrary* lib = libs[ev->libName()];\llib->incoming_event(ev);\l"]
 mpi6  [label="sumi_server::incoming_event(event* ev):\nmpi_message* msg = dynamic_cast(ev);\lif(msg->is_ack()){\l  mpi_api* api = local_procs[msg->sender()];\l  api->incoming_ack(msg);\l  api->unblock();\l}\l"]
 thr17 [style=filled,fillcolor="lightblue",label=" -> mpi_api::send(...)"];
 
@@ -27,7 +27,7 @@ mpi0->mpi1->mpi2->mpi3->mpi4->mpi5->mpi6->mpi7;
 
 
 edge[style=solid];
-thr10->thr11 [label="Redirected Function Call\nos::current_thread()->get_api<mpi_api>()->send(...)"];
+thr10->thr11 [label="Redirected Function Call\nos::currentThread()->get_api<mpi_api>()->send(...)"];
 thr11->thr12 [label="Function\nCall"];
 thr12->nic3 [label="Schedule + \nContext Switch"];
 nic3->node4 [label="Schedule"];

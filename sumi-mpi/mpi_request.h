@@ -58,7 +58,7 @@ namespace sumi {
 /**
  * Persistent send operations (send, bsend, rsend, ssend)
  */
-class persistent_op
+class PersistentOp
 {
  public:
   /// The arguments.
@@ -70,8 +70,9 @@ class persistent_op
   void* content;
 };
 
-struct collective_op_base
+struct CollectiveOpBase
 {
+  using ptr = std::unique_ptr<CollectiveOpBase>;
 
   bool packed_send;
   bool packed_recv;
@@ -81,49 +82,71 @@ struct collective_op_base
   void* tmp_recvbuf;
   int tag;
   MPI_Op op;
-  mpi_type* sendtype;
-  mpi_type* recvtype;
-  collective::type_t ty;
-  mpi_comm* comm;
+  MpiType* sendtype;
+  MpiType* recvtype;
+  Collective::type_t ty;
+  MpiComm* comm;
   int sendcnt;
   int recvcnt;
   int root;
+  bool complete;
 
-  virtual ~collective_op_base(){}
+  friend class std::default_delete<CollectiveOpBase>;
 
  protected:
-  collective_op_base(mpi_comm* cm);
+  virtual ~CollectiveOpBase(){}
+  CollectiveOpBase(MpiComm* cm);
 
 };
 
-struct collective_op :
-  public collective_op_base,
-  public sprockit::thread_safe_new<collective_op>
+struct CollectiveOp :
+  public CollectiveOpBase,
+  public sprockit::thread_safe_new<CollectiveOp>
 {
-  collective_op(int count, mpi_comm* comm);
-  collective_op(int sendcnt, int recvcnt, mpi_comm* comm);
+  using ptr = std::unique_ptr<CollectiveOp>;
 
+  template <class... Args> static
+  CollectiveOp::ptr create(Args&&...args){
+    return CollectiveOp::ptr(new CollectiveOp(std::forward<Args>(args)...));
+  }
 
+ private:
+  friend class std::default_delete<CollectiveOp>;
+ ~CollectiveOp(){}
+
+  CollectiveOp(int count, MpiComm* comm);
+  CollectiveOp(int sendcnt, int recvcnt, MpiComm* comm);
 };
 
-struct collectivev_op :
-  public collective_op_base,
-  public sprockit::thread_safe_new<collectivev_op>
+struct CollectivevOp :
+  public CollectiveOpBase,
+  public sprockit::thread_safe_new<CollectivevOp>
 {
-  collectivev_op(int scnt, int* recvcnts, int* disps, mpi_comm* comm);
-  collectivev_op(int* sendcnts, int* disps, int rcnt, mpi_comm* comm);
-  collectivev_op(int* sendcnts, int* sdisps,
-                 int* recvcnts, int* rdisps, mpi_comm* comm);
+  using ptr = std::unique_ptr<CollectivevOp>;
+
+  template <class... Args> static
+  CollectivevOp::ptr create(Args&&...args){
+    return CollectivevOp::ptr(new CollectivevOp(std::forward<Args>(args)...));
+  }
 
   int* recvcounts;
   int* sendcounts;
   int* sdisps;
   int* rdisps;
   int size;
+
+ private:
+  friend class std::default_delete<CollectivevOp>;
+  ~CollectivevOp(){}
+
+  CollectivevOp(int scnt, int* recvcnts, int* disps, MpiComm* comm);
+  CollectivevOp(int* sendcnts, int* disps, int rcnt, MpiComm* comm);
+  CollectivevOp(int* sendcnts, int* sdisps,
+                int* recvcnts, int* rdisps, MpiComm* comm);
 };
 
-class mpi_request :
-  public sprockit::thread_safe_new<mpi_request>
+class MpiRequest :
+  public sprockit::thread_safe_new<MpiRequest>
 {
  public:
   typedef enum {
@@ -133,7 +156,7 @@ class mpi_request :
     Probe
   } op_type_t;
 
-  mpi_request(op_type_t ty) :
+  MpiRequest(op_type_t ty) :
    complete_(false),
    cancelled_(false),
    optype_(ty),
@@ -142,21 +165,21 @@ class mpi_request :
   {
   }
 
-  std::string to_string() const {
+  std::string toString() const {
     return "mpirequest";
   }
 
-  std::string type_str() const;
+  std::string typeStr() const;
 
-  static mpi_request* construct(op_type_t ty){
-    return new mpi_request(ty);
+  static MpiRequest* construct(op_type_t ty){
+    return new MpiRequest(ty);
   }
 
-  ~mpi_request();
+  ~MpiRequest();
 
-  void complete(mpi_message* msg);
+  void complete(MpiMessage* msg);
 
-  bool is_complete() const {
+  bool isComplete() const {
     return complete_;
   }
 
@@ -169,40 +192,41 @@ class mpi_request :
     complete_ = true;
   }
 
-  void set_complete(bool flag){
+  void setComplete(bool flag){
     complete_ = flag;
   }
 
-  void set_persistent(persistent_op* op) {
+  void setPersistent(PersistentOp* op) {
     persistent_op_ = op;
   }
 
-  persistent_op* persistent_data() const {
+  PersistentOp* persistentData() const {
     return persistent_op_;
   }
 
-  void set_collective(collective_op_base* op) {
-    collective_op_ = op;
+  CollectiveOpBase* setCollective(CollectiveOpBase::ptr&& op) {
+    collective_op_ = std::move(op);
+    return collective_op_.get();
   }
 
-  collective_op_base* collective_data() const {
-    return collective_op_;
+  CollectiveOpBase* collectiveData() const {
+    return collective_op_.get();
   }
 
   const MPI_Status& status() const {
     return stat_;
   }
 
-  bool is_cancelled() const {
+  bool isCancelled() const {
     return cancelled_;
   }
 
-  bool is_persistent() const {
+  bool isPersistent() const {
     return persistent_op_;
   }
 
-  bool is_collective() const {
-    return collective_op_;
+  bool isCollective() const {
+    return bool(collective_op_);
   }
 
   op_type_t optype() const {
@@ -215,8 +239,8 @@ class mpi_request :
   bool cancelled_;
   op_type_t optype_;
 
-  persistent_op* persistent_op_;
-  collective_op_base* collective_op_;
+  PersistentOp* persistent_op_;
+  CollectiveOpBase::ptr collective_op_;
 
 };
 
