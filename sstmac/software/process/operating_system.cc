@@ -342,7 +342,12 @@ OperatingSystem::OperatingSystem(SST::Params& params, hw::Node* parent) :
   for (auto& key : keys){
     env_[key] = env_params.find<std::string>(key);
   }
+}
 
+std::string
+OperatingSystem::hostname() const
+{
+  return node_->hostname();
 }
 
 void

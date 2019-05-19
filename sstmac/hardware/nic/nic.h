@@ -122,6 +122,10 @@ class NIC : public ConnectableSubcomponent
     return my_addr_;
   }
 
+  Topology* topology() const {
+    return top_;
+  }
+
   /**
    * @brief injectSend Perform an operation on the NIC.
    *  This assumes an exlcusive model of NIC use. If NIC is busy,

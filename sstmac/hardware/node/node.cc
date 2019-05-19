@@ -49,6 +49,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/memory/memory_model.h>
 #include <sstmac/hardware/processor/processor.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
+#include <sstmac/hardware/topology/topology.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/launch/app_launcher.h>
@@ -132,6 +133,12 @@ LinkHandler*
 Node::creditHandler(int port)
 {
   return nic_->creditHandler(port);
+}
+
+std::string
+Node::hostname() const
+{
+  return nic_-> topology()->nodeIdToName(addr());
 }
 
 LinkHandler*

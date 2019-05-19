@@ -73,6 +73,8 @@ class SimpleNode :
 
   SST_ELI_DOCUMENT_STATISTICS(
     {"xmit_wait", "stalled cycles with data but no credits", "nanoseconds", 1},
+    {"xmit_bytes", "number of bytes transmitted on a port", "bytes", 1},
+    {"recv_bytes", "number of bytes receive on a port", "bytes", 1},
     {"otf2", "Write an OTF2 trace", "n/a", 1},
   )
 

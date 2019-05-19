@@ -50,7 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/handler_event_queue_entry.h>
 #include <sstmac/common/sst_event_fwd.h>
 #include <sstmac/common/sstmac_config.h>
-#include <sstmac/common/stats/stat_collector_fwd.h>
+#include <sstmac/common/stats/stat_collector.h>
 #include <sstmac/common/event_manager_fwd.h>
 #include <sstmac/common/event_scheduler_fwd.h>
 #include <sstmac/sst_core/integrated_component.h>

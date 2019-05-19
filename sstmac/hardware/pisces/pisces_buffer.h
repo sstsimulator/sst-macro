@@ -106,6 +106,7 @@ class PiscesBuffer :
   int packet_size_;
   GlobalTimestamp last_tail_left_;
   Statistic<double>* xmit_wait_;
+  Statistic<uint64_t>* xmit_bytes_;
 
 };
 

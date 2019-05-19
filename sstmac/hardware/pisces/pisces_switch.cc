@@ -134,6 +134,9 @@ PiscesSwitch::PiscesSwitch(uint32_t id, SST::Params& params)
     InputPort& inp = inports_[i];
     inp.port = i;
     inp.parent = this;
+    std::string subname = sprockit::printf("%s:port%d",
+             top_->switchIdToName(my_addr_).c_str(), inp.port);
+    inp.recv_bytes_ = registerStatistic<uint64_t>("recv_bytes", subname);
   }
 
   mtu_ = params.find<SST::UnitAlgebra>("mtu").getRoundedValue();
@@ -189,6 +192,7 @@ PiscesSwitch::InputPort::handle(Event *ev)
   payload->resetStages(payload->edgeOutport(), 0);
   payload->setInport(this->port);
   parent->xbar()->handlePayload(payload);
+  recv_bytes_->addData(payload->byteLength());
 }
 
 void

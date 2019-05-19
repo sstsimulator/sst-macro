@@ -91,12 +91,14 @@ PiscesBuffer::PiscesBuffer(const std::string& selfname,
     credits_(num_vc, 0),
     initial_credits_(num_vc,0),
     packet_size_(packet_size),
-    xmit_wait_(nullptr)
+    xmit_wait_(nullptr),
+    xmit_bytes_(nullptr)
 {
   arb_ = sprockit::create<PiscesBandwidthArbitrator>(
         "macro", arb, bw);
 
   xmit_wait_ = getTrueComponent()->registerStatistic<double>("xmit_wait", selfname);
+  xmit_bytes_ = getTrueComponent()->registerStatistic<uint64_t>("xmit_bytes", selfname);
 }
 
 void
@@ -152,6 +154,7 @@ PiscesBuffer::handleCredit(Event* ev)
     //this actually doesn't create any new delay
     //this message was already queued so num_bytes
     //was already added to bytes_delayed
+    xmit_bytes_->addData(payload->byteLength());
     last_tail_left_ = send(arb_, payload, input_, output_);
     payload = queues_[vc].pop(num_credits);
   }
@@ -184,6 +187,7 @@ PiscesBuffer::handlePayload(Event* ev)
   bytes_delayed_ += pkt->numBytes();
   if (num_credits >= pkt->numBytes()) {
     num_credits -= pkt->numBytes();
+    xmit_bytes_->addData(pkt->byteLength());
     last_tail_left_ = send(arb_, pkt, input_, output_);
   } else {
 #if SSTMAC_SANITY_CHECK
@@ -205,6 +209,7 @@ PiscesBuffer::sendPayload(PiscesPacket *pkt)
   // either way there's a delay accumulating for other messages
   bytes_delayed_ += pkt->numBytes();
   num_credits -= pkt->numBytes();
+  xmit_bytes_->addData(pkt->byteLength());
   last_tail_left_ = send(arb_, pkt, input_, output_);
   return last_tail_left_;
 }

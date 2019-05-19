@@ -372,6 +372,8 @@ class OperatingSystem : public SubComponent
     return params_;
   }
 
+  std::string hostname() const;
+
   std::map<std::string,std::string>::const_iterator env_begin() const {
     return env_.begin();
   }
