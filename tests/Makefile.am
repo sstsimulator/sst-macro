@@ -110,6 +110,10 @@ else
 CHECK_TESTS += $(APITESTS)
 endif
 
+
+print-tests: 
+	echo $(CHECK_TESTS)
+
 check-local: $(CHECK_TESTS:%=%.$(CHKSUF))
 	$(PYVALIDATE) $+
 

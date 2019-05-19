@@ -66,7 +66,7 @@ RendezvousGet::~RendezvousGet()
 void*
 RendezvousGet::configure_send_buffer(int count, void *buffer, MpiType* type)
 {
-  SSTMACBacktrace(MPIRendezvousProtocol_RDMA_Configure_Buffer);
+  CallGraphAppend(MPIRendezvousProtocol_RDMA_Configure_Buffer);
   mpi_->pinRdma(count*type->packed_size());
 
   if (isNonNullBuffer(buffer)){
@@ -143,7 +143,7 @@ void
 RendezvousGet::incoming_header(MpiMessage* msg)
 {
   mpi_queue_protocol_debug("RDMA get incoming header %s", msg->toString().c_str());
-  SSTMACBacktrace(MPIRendezvousProtocol_RDMA_Handle_Header);
+  CallGraphAppend(MPIRendezvousProtocol_RDMA_Handle_Header);
   MpiQueueRecvRequest* req = queue_->findMatchingRecv(msg);
   if (req) incoming(msg, req);
 
@@ -156,7 +156,7 @@ RendezvousGet::incoming(MpiMessage *msg, MpiQueueRecvRequest* req)
   mpi_queue_protocol_debug("RDMA get matched payload %s", msg->toString().c_str());
 #if SSTMAC_COMM_SYNC_STATS
   //this is a bit of a hack
-  msg->setTimeSynced(queue->now());
+  msg->setTimeSynced(mpi_->now());
 #endif
   mpi_->pinRdma(msg->payloadBytes());
   mpi_queue_action_debug(

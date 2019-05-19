@@ -78,7 +78,7 @@ LibComputeTime::~LibComputeTime()
 void
 LibComputeTime::compute(Timestamp time)
 {
-  SSTMACBacktrace(ComputeTime);
+  CallGraphAppend(ComputeTime);
   if (time.sec() < 0) {
     sprockit::abort("lib_compute_time can't compute for less than zero time");
   }
@@ -88,7 +88,7 @@ LibComputeTime::compute(Timestamp time)
 void
 LibComputeTime::sleep(Timestamp time)
 {
-  SSTMACBacktrace(Sleep);
+  CallGraphAppend(Sleep);
   os_->sleep(time);
 }
 

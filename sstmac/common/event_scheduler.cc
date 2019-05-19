@@ -95,6 +95,13 @@ EventScheduler::getEmptyParams()
 }
 
 void
+EventScheduler::statNotFound(SST::Params &params, const std::string &name, const std::string &type)
+{
+  spkt_abort_printf("Bad stat type '%s' given for statistic '%s'",
+                    type.c_str(), name.c_str());
+}
+
+void
 EventScheduler::registerStatisticCore(StatisticBase *base, SST::Params& params)
 {
   mgr_->registerStatisticCore(base, params);

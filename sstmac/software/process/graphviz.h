@@ -45,17 +45,19 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef SSTMAC_SOFTWARE_PROCESS_GRAPHVIZ_H
 #define SSTMAC_SOFTWARE_PROCESS_GRAPHVIZ_H
 
-#define GraphVizAppendBacktrace(name) \
-  struct graph_viz_##name : public sstmac::sw::graph_viz_ID<graph_viz_##name> {}; \
-  static sstmac::sw::graph_viz_registration graph_viz_reg(#name, graph_viz_##name::id); \
-  ::sstmac::sw::graph_viz_increment_stack __graphviz_tmp_variable__(graph_viz_##name::id)
-#define GraphVizDoNothing(...) int __graphviz_tmp_variable__
+#include <sstmac/common/sstmac_config.h>
 
-#define GraphVizCreateTag(name) \
-  struct graph_viz_##name : public sstmac::sw::graph_viz_ID<graph_viz_##name> {}; \
-  static sstmac::sw::graph_viz_registration graph_viz_reg(#name, graph_viz_##name::id)
+#if SSTMAC_HAVE_CALL_GRAPH
+#define CallGraphAppend(name) \
+  struct graph_viz_##name : public sstmac::sw::CallGraphID<graph_viz_##name> {}; \
+  static sstmac::sw::CallGraphRegistration __call_graph_register_variable__(#name, graph_viz_##name::id); \
+  ::sstmac::sw::CallGraphIncrementStack __call_graph_append_variable__(graph_viz_##name::id)
 
-#define GraphVizTag(name) graph_viz_##name::id
+#define CallGraphCreateTag(name) \
+  struct graph_viz_##name : public sstmac::sw::CallGraphID<graph_viz_##name> {}; \
+  static sstmac::sw::CallGraphRegistration graph_viz_reg_##name(#name, graph_viz_##name::id)
+
+#define CallGraphTag(name) graph_viz_##name::id
 
 #include <sstmac/common/stats/stat_collector.h>
 #include <sstmac/software/process/thread_fwd.h>
@@ -63,8 +65,8 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-struct graph_viz_registration {
-  graph_viz_registration(const char* name, int id);
+struct CallGraphRegistration {
+  CallGraphRegistration(const char* name, int id);
 
   static int numIds() {
     return id_count;
@@ -83,13 +85,13 @@ struct graph_viz_registration {
 
 
 template <class T>
-struct graph_viz_ID {
+struct CallGraphID {
  public:
   static int id;
 };
-template <class T> int graph_viz_ID<T>::id = graph_viz_registration::id_count++;
+template <class T> int CallGraphID<T>::id = CallGraphRegistration::id_count++;
 
-class GraphVizIncrementStack
+class CallGraphIncrementStack
 {
  public:
   /**
@@ -101,99 +103,174 @@ class GraphVizIncrementStack
    *        the DES thread, which is an error. This allows
    *        the backtrace to be turned off on the DES thread
    */
-  GraphVizIncrementStack(int id);
+  CallGraphIncrementStack(int id);
 
-  ~GraphVizIncrementStack();
+  ~CallGraphIncrementStack();
 
 };
 
-class GraphViz :
-  public SST::Statistics::MultiStatistic<uint64_t,sw::Thread*>
+class CallGraph : public SST::Statistics::CustomStatistic
 {
-  using Parent=SST::Statistics::MultiStatistic<uint64_t,sw::Thread*>;
  public:
-  /**
-  SST_ELI_REGISTER_CUSTOM_STATISTIC(
-      Parent,
-      GraphViz,
-      "macro",
-      "graph_viz",
-      SST_ELI_ELEMENT_VERSION(1,0,0),
-      "collect graphviz call trace")
-  */
-
-  GraphViz(SST::BaseComponent* comp, const std::string& name,
-           const std::string& subName, SST::Params& params);
-
-  virtual ~GraphViz();
-
-  void addData_impl(uint64_t count, sw::Thread* thr) override;
-
-  void reassign(int fxnId, uint64_t count, Thread* thr);
-
-  static void deleteStatics();
-
- private:
-  struct GraphvizCall {
+  struct FunctionCall {
     uint64_t ncalls;
-    uint64_t counts;
+    uint64_t time_ticks;
+    FunctionCall() : ncalls(0), time_ticks(0){}
   };
 
-  class Trace  {
-   friend class GraphViz;
+  /**
+   * @brief The FunctionTrace class
+   * Trace the time spent and number of calls for this function and
+   * the functions called from this function
+   */
+  class FunctionTrace  {
+   friend class CallGraph;
    private:
-    GraphvizCall calls_[0];
+    std::vector<FunctionCall> calls_;
 
-    uint64_t self_;
+    uint64_t self_time_ticks_;
 
    public:
-    Trace() : self_(0) {}
+    FunctionTrace(int nfxn) : self_time_ticks_(0), calls_(nfxn) {}
+
+    uint64_t selfTime() const {
+      return self_time_ticks_;
+    }
+
+    const std::vector<FunctionCall>& calls() const {
+      return calls_;
+    }
 
     std::string summary(const char* fxn) const;
 
     bool include() const;
 
-    void addCall(int fxnId, int ncalls, uint64_t count) {
-      GraphvizCall& call = calls_[fxnId];
+    /**
+     * @brief addCall Record a function called from this function
+     * @param fxnId   The ID of the function called
+     * @param ncalls  The number of calls to increment by
+     * @param ticks   The number of time ticks elapsed
+     */
+    void addCall(int fxnId, int ncalls, uint64_t ticks) {
+      auto& call = calls_[fxnId];
       call.ncalls += ncalls;
-      call.counts += count;
+      call.time_ticks += ticks;
     }
 
-    void addSelf(uint64_t count) {
-      self_ += count;
+    void addSelf(uint64_t ticks) {
+      self_time_ticks_ += ticks;
     }
 
-    void reassignSelf(int fxnId, uint64_t count) {
-      self_ -= count;
-      GraphvizCall& call = calls_[fxnId];
+    /**
+     * @brief reassignSelf Convert time previously recorded
+     * as self (time spent directly in this function) to time
+     * spent in a subroutine
+     * @param fxnId  The function or subroutine to add time to
+     * @param ticks  The length of time elapsed
+     */
+    void reassignSelf(int fxnId, uint64_t ticks) {
+      self_time_ticks_ -= ticks;
+      auto& call = calls_[fxnId];
       call.ncalls += 1;
-      call.counts += count;
+      call.time_ticks += ticks;
     }
 
-    void substractSelf(uint64_t count) {
-      self_ -= count;
+    void substractSelf(uint64_t ticks) {
+      self_time_ticks_ -= ticks;
     }
 
   };
 
-  void addCall(int ncalls, uint64_t count, int fxnId, int callFxnId);
+ public:
+  SST_ELI_REGISTER_CUSTOM_STATISTIC(
+    CallGraph,
+    "macro",
+    "call_graph",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "Creates a call graph output readable by KCacheGrind")
 
+  CallGraph(SST::BaseComponent* comp, const std::string& name,
+           const std::string& subName, SST::Params& params);
+
+  virtual ~CallGraph();
+
+  void collect(uint64_t count, sw::Thread* thr);
+
+  void reassign(int fxnId, uint64_t count, Thread* thr);
+
+  const std::vector<FunctionTrace>& traces() const {
+    return traces_;
+  }
+
+ private:
+  /**
+   * @brief addCall
+   * @param ncalls    The number of calls to increment by
+   * @param ticks     The time elapsed (in ticks)
+   * @param fxnId     The parent function running the child function
+   * @param callFxnId The child function time is spent in
+   */
+  void addCall(int ncalls, uint64_t ticks, int fxnId, int callFxnId);
+
+  /**
+   * @brief addSelf
+   * @param fxnId
+   * @param count
+   */
   void addSelf(int fxnId, uint64_t count);
 
-  Trace** traces_;
+  std::vector<FunctionTrace> traces_;
 
-  uint64_t* data_block_;
+  //friend class FunctionTrace;
+  //friend class CallGraphOutput;
 
-  friend class Trace;
+};
 
+class CallGraphOutput : public sstmac::StatisticOutput
+{
+ public:
+  SST_ELI_REGISTER_DERIVED(
+    SST::Statistics::StatisticOutput,
+    CallGraphOutput,
+    "macro",
+    "cachegrind",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "Writes call graphs of the simulation")
+
+  CallGraphOutput(SST::Params& params);
+
+  void startRegisterGroup(SST::Statistics::StatisticGroup *grp) override {}
+  void stopRegisterGroup() override {}
+
+  void registerStatistic(SST::Statistics::StatisticBase* stat) override {}
+
+  void startOutputGroup(SST::Statistics::StatisticGroup * grp) override;
+  void stopOutputGroup() override;
+
+  void output(SST::Statistics::StatisticBase* statistic, bool endOfSimFlag) override;
+
+  bool checkOutputParameters() override { return true; }
+  void startOfSimulation() override {}
+  void endOfSimulation() override {}
+  void printUsage() override {}
+
+  void dumpCallGraph(CallGraph* cgr);
+  void dumpSummary(CallGraph* cgr);
+
+ private:
+  std::string fileroot_;
+  std::ofstream csv_summary_;
 
 };
 
 #define BACKTRACE_NFXN 50
-typedef int graphviz_trace[BACKTRACE_NFXN];
+typedef int CallGraphTrace[BACKTRACE_NFXN];
 
 }
 }
+#else
+#define CallGraphAppend(...) int __call_graph_append_variable__
+#endif
 
 
 #endif // GRAPHVIZ_H

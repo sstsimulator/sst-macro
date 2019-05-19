@@ -49,14 +49,14 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/thread.h>
 
 #define start_pt2pt_call(fxn, count, type, partner, tag, comm) \
-  start_mpi_call(fxn); \
+  StartMPICall(fxn); \
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_pt2pt, \
    "%s(%d,%s,%s,%s,%s)", #fxn, \
    count, typeStr(type).c_str(), srcStr(partner).c_str(), \
    tagStr(tag).c_str(), commStr(comm).c_str());
 
 #define start_Ipt2pt_call(fxn,count,type,partner,tag,comm,reqPtr) \
-  start_mpi_call(fxn)
+  StartMPICall(fxn)
 
 
 namespace sumi {
@@ -72,7 +72,7 @@ MpiApi::send(const void *buf, int count, MPI_Datatype datatype, int dest, int ta
   queue_->send(req, count, datatype, dest, tag, commPtr, const_cast<void*>(buf));
   queue_->progressLoop(req);
   delete req;
-  finish_mpi_call(MPI_Send);
+  FinishMPICall(MPI_Send);
 
 #ifdef SSTMAC_OTF2_ENABLED
   if (OTF2Writer_){
@@ -98,7 +98,7 @@ MpiApi::sendrecv(const void *sendbuf, int sendcount,
   doRecv(recvbuf, recvcount, recvtype, source, recvtag, comm, status);
   queue_->progressLoop(req);
   delete req;
-  finish_mpi_call(MPI_Sendrecv);
+  FinishMPICall(MPI_Sendrecv);
 
 #ifdef SSTMAC_OTF2_ENABLED
   if (OTF2Writer_){
@@ -163,7 +163,7 @@ MpiApi::start(MPI_Request* req)
 {
   auto start_clock = traceClock();
 
-  _start_mpi_call_(MPI_Start);
+  _StartMPICall_(MPI_Start);
   doStart(*req);
   endAPICall();
 
@@ -180,7 +180,7 @@ MpiApi::startall(int count, MPI_Request* req)
 {
   auto call_start_time = (uint64_t)now().usec();
 
-  _start_mpi_call_(MPI_Startall);
+  _StartMPICall_(MPI_Startall);
   for (int i=0; i < count; ++i){
     doStart(req[i]);
   }
@@ -202,7 +202,7 @@ MpiApi::sendInit(const void *buf, int count,
 {
   auto call_start_time = (uint64_t)now().usec();
 
-  _start_mpi_call_(MPI_Send_init);
+  _StartMPICall_(MPI_Send_init);
 
   MpiRequest* req = MpiRequest::construct(MpiRequest::Send);
   addRequestPtr(req, request);
@@ -258,7 +258,7 @@ MpiApi::isend(const void *buf, int count, MPI_Datatype datatype, int dest,
     count, typeStr(datatype).c_str(), int(dest),
     tagStr(tag).c_str(), commStr(comm).c_str(), *request);
   queue_->nonblockingProgress();
-  finish_mpi_call(MPI_Isend);
+  FinishMPICall(MPI_Isend);
 
 #ifdef SSTMAC_OTF2_ENABLED
   if (OTF2Writer_){
@@ -278,7 +278,7 @@ MpiApi::recv(void *buf, int count, MPI_Datatype datatype, int source,
 
   start_pt2pt_call(MPI_Recv,count,datatype,source,tag,comm);
   int rc = doRecv(buf,count,datatype,source,tag,comm,status);
-  finish_mpi_call(MPI_Recv);
+  FinishMPICall(MPI_Recv);
 
 #ifdef SSTMAC_OTF2_ENABLED
   if (OTF2Writer_){
@@ -309,7 +309,7 @@ int
 MpiApi::recvInit(void *buf, int count, MPI_Datatype datatype, int source,
                    int tag, MPI_Comm comm, MPI_Request *request)
 {
-  _start_mpi_call_(MPI_Recv_init);
+  _StartMPICall_(MPI_Recv_init);
 
   MpiRequest* req = MpiRequest::construct(MpiRequest::Recv);
   addRequestPtr(req, request);
@@ -361,7 +361,7 @@ MpiApi::irecv(void *buf, int count, MPI_Datatype datatype, int source,
 
   queue_->recv(req, count, datatype, source, tag, commPtr, buf);
   queue_->nonblockingProgress();
-  finish_mpi_call(MPI_Irecv);
+  FinishMPICall(MPI_Irecv);
 
 #ifdef SSTMAC_OTF2_ENABLED
   if(OTF2Writer_){

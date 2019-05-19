@@ -86,7 +86,6 @@ SculpinSwitch::SculpinSwitch(uint32_t id, SST::Params& params) :
   router_(nullptr),
   congestion_(true),
   vtk_(nullptr),
-  xmit_wait_(nullptr),
   NetworkSwitch(id, params)
 {
   SST::Params rtr_params = params.find_scoped_params("router");
@@ -102,8 +101,6 @@ SculpinSwitch::SculpinSwitch(uint32_t id, SST::Params& params) :
 
   // Ensure topology is set
   Topology::staticTopology(params);
-
-  xmit_wait_ = registerMultiStatistic<double,uint32_t>(params, "xmit_wait");
 
   //vtk_ = registerStatistic<uint64_t,int,double,int>("traffic_intensity", getName());
   //if (vtk_) vtk_->configure(my_addr_, top_);

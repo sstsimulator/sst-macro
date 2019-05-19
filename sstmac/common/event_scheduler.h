@@ -222,9 +222,11 @@ class EventScheduler : public sprockit::printable
     if (lib){
       auto* builder = lib->getBuilder(type);
       if (builder){
-        Stat* stat = builder->create(this, name, "", scoped_params);
+        Stat* stat = builder->create(this, name, subId, scoped_params);
         registerStatisticCore(stat, scoped_params);
         return stat;
+      } else {
+        statNotFound(scoped_params, name, type);
       }
     }
     return nullptr;
@@ -339,6 +341,8 @@ class EventScheduler : public sprockit::printable
 #endif
 
  private:
+  void statNotFound(SST::Params& params, const std::string& name, const std::string& type);
+
   static SST::Params& getEmptyParams();
 
   SST::Component* comp_;

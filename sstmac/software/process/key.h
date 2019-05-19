@@ -68,15 +68,26 @@ class FTQTag {
   friend class library;
   friend class Thread;
 
-  FTQTag() : id_(0) {} //default initialization for thread
+  /**
+   * @brief FTQTag
+   * @param level FTQ scopes can be nested, but only one scope "counts" at a time.
+   * Only an FTQ at a deeper level (more specific) can overwrite a previous tag at a
+   * shallower level (less specific)
+   */
+  FTQTag() : id_(0), level_(0) {} //default initialization for thread
 
   int id_;
+  int level_;
 
  public:
-  FTQTag(const char* name);
+  FTQTag(const char* name, int level);
 
   int id() const {
    return id_;
+  }
+
+  int level() const {
+    return level_;
   }
 
  public:
@@ -86,14 +97,15 @@ class FTQTag {
 
   static int allocateCategoryId(const std::string& name);
 
-  static int event_typeid(const std::string& event_name);
+  static int eventTypeId(const std::string& event_name);
 
-  static int num_categories() {
+  static int numCategories() {
     return category_name_to_id_->size();
   }
 
   static FTQTag null;
   static FTQTag compute;
+  static FTQTag sleep;
 
  private:
   static std::unique_ptr<std::unordered_map<std::string, int>> category_name_to_id_;

@@ -80,7 +80,7 @@ struct Action
   int offset;
   int nelems;
   uint32_t id;
-  double start;
+  sstmac::GlobalTimestamp start;
 
   static const char*
   tostr(type_t ty){

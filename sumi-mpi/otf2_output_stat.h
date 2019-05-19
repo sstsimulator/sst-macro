@@ -53,7 +53,7 @@ class OTF2Writer : public SST::Statistics::CustomStatistic
 
 };
 
-class OTF2Output : public SST::Statistics::StatisticOutput
+class OTF2Output : public sstmac::StatisticOutput
 {
  public:
   SST_ELI_REGISTER_DERIVED(

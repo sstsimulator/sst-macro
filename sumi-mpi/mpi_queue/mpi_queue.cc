@@ -457,7 +457,7 @@ MpiQueue::progressLoop(MpiRequest* req)
     incomingMessage(msg);
 #if SSTMAC_COMM_SYNC_STATS
     if (req->isComplete()){
-      api_->collectSyncDelays(wait_start.sec(), msg);
+      api_->collectSyncDelays(wait_start, msg);
     }
 #endif
   }
@@ -524,7 +524,7 @@ MpiQueue::memcopy(uint64_t bytes)
 void
 MpiQueue::bufferUnexpected(MpiMessage* msg)
 {
-  SSTMACBacktrace(MPIQueueBufferUnexpectedMessage);
+  CallGraphAppend(MPIQueueBufferUnexpectedMessage);
   api_->memcopy(msg->payloadBytes());
 }
 

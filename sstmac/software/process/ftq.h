@@ -61,140 +61,176 @@ Questions? Contact sst-macro-help@sandia.gov
   "Fixed time quanta" collection of the amount of work done in particular time intervals
   over the course of the computation
 */
+
+#if !SSTMAC_INTEGRATED_SST_CORE
 namespace sstmac {
 namespace sw {
 
 
-class FTQEpoch
+class FTQAccumulator : public SST::Statistics::MultiStatistic<int,uint64_t,uint64_t>
 {
- private:
-  friend class AppFTQCalendar;
-
-  uint64_t* totals_;
-
+  using Parent=SST::Statistics::MultiStatistic<int,uint64_t,uint64_t>;
  public:
-  FTQEpoch();
+  SST_ELI_REGISTER_MULTI_STATISTIC(
+    Parent,
+    FTQAccumulator,
+    "macro",
+    "ftq_accumulator",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "fixed-time quanta activity of individual processes")
 
-  virtual ~FTQEpoch();
+  FTQAccumulator(SST::BaseComponent* comp, const std::string& name,
+                 const std::string& subName, SST::Params& params);
 
-  void collect(int key_typeid, uint64_t ticks) {
-    totals_[key_typeid] += ticks;
+  ~FTQAccumulator(){}
+
+  void registerOutputFields(SST::Statistics::StatisticOutput* statOutput) override;
+  void outputStatisticData(SST::Statistics::StatisticOutput* statOutput, bool endOfSim) override;
+
+  void addData_impl(int event_typeid, uint64_t ticks_begin, uint64_t num_ticks) override {
+    event_counts_[event_typeid] += num_ticks;
   }
 
-  void init(int num_events, uint64_t* buffer);
-
-  uint64_t eventTime(int key_typeid) const {
-    return totals_[key_typeid];
-  }
-
-  void setEventTime(int key_typeid, uint64_t count) {
-    totals_[key_typeid] = count;
-  }
+ private:
+  std::vector<uint64_t> event_counts_;
 
 };
 
-class AppFTQCalendar
+class FTQCalendar : public SST::Statistics::MultiStatistic<int,uint64_t,uint64_t>
 {
+  using Parent=SST::Statistics::MultiStatistic<int,uint64_t,uint64_t>;
  public:
-  AppFTQCalendar(int aid, const std::string& appname,
-                 uint64_t nticks_epoch);
+  struct Event {
+    int type;
+    uint64_t start;
+    uint64_t length;
+    Event(int t, uint64_t s, uint64_t l) :
+      type(t), start(s), length(l)
+    {
+    }
+  };
 
-  void dump(const std::string& fileroot);
-
-  virtual ~AppFTQCalendar();
-
-  /**
-    @param event_typeid The type of event (MPI,Compute,Sleep,etc)
-    @param tid The task id (essentially MPI Rank)
-    @param ticks_begin The time the event started
-    @param num_ticks The duration of the event
-  */
-  void collect(int event_typeid, int tid, uint64_t ticks_begin, uint64_t num_ticks);
-
-  void reduce(AppFTQCalendar* cal);
-
-  void globalReduce(ParallelRuntime* rt);
-
- private:
-  std::vector<FTQEpoch> epochs_;
-
-  FTQEpoch aggregate_;
-
-  std::list<uint64_t*> buffers_;
-
-  void dump(std::ofstream& os);
-
-  int aid_;
-
-  int max_tid_;
-
-  uint64_t max_epoch_;
-
-  uint64_t max_epoch_allocated_;
-
-  uint64_t num_ticks_epoch_;
-
-  std::string appname_;
-
-  void dumpMatplotlibHistogram(const std::string& fileroot);
-
-  void allocateEpochs(uint64_t max_epoch);
-
-  static const uint64_t allocation_num_epochs;
-
-};
-
-class FTQCalendar : public SST::Statistics::MultiStatistic<int,int,int,uint64_t,uint64_t>
-{
-  using Parent = SST::Statistics::MultiStatistic<int,int,int,uint64_t,uint64_t>;
- public:
-  /**
-  SST_ELI_REGISTER_CUSTOM_STATISTIC(
-      Parent,
-      FTQCalendar,
-      "macro",
-      "ftq",
-      SST_ELI_ELEMENT_VERSION(1,0,0),
-      "fixed-time quanta activity of individual processes")
-  */
+  SST_ELI_REGISTER_MULTI_STATISTIC(
+    Parent,
+    FTQCalendar,
+    "macro",
+    "ftq_calendar",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "fixed-time quanta activity of individual processes")
 
   FTQCalendar(SST::BaseComponent* comp, const std::string& name,
               const std::string& subName, SST::Params& params);
 
-  void init(uint64_t nticks_per_epoch);
+  ~FTQCalendar(){}
 
-  virtual ~FTQCalendar();
+  void addData_impl(int event_typeid, uint64_t ticks_begin, uint64_t num_ticks);
 
-  void addData_impl(int event_typeid, int aid, int tid,
-          uint64_t ticks_begin, uint64_t num_ticks) override;
+  bool empty() const {
+    return events_.empty();
+  }
 
-  AppFTQCalendar* getCalendar(int aid) const;
+  uint64_t eventsUsed() const {
+    return events_used_;
+  }
 
-  void registerApp(int aid, const std::string& appname);
+  void registerOutputFields(StatisticFieldsOutput *statOutput);
+
+  void outputStatisticData(StatisticFieldsOutput *output, bool endOfSimFlag);
+
+  uint64_t maxTick() const {
+    if (events_.empty()){
+      return 0;
+    } else {
+      auto& ev = events_.back();
+      return ev.start + ev.length;
+    }
+  }
+
+  const std::vector<Event>& events() const {
+    return events_;
+  }
 
  private:
-  static std::unordered_map<int, AppFTQCalendar*> calendars_;
-
-  uint64_t num_ticks_epoch_;
+  std::vector<Event> events_;
+  uint64_t events_used_;
 
 };
+
+class FTQOutput : public sstmac::StatisticOutput
+{
+ public:
+  SST_ELI_REGISTER_DERIVED(
+    SST::Statistics::StatisticOutput,
+    FTQOutput,
+    "macro",
+    "ftq",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "Writes a matplotlib file for FTQ plots")
+
+  FTQOutput(SST::Params& params);
+
+  ~FTQOutput(){}
+
+  void startRegisterGroup(SST::Statistics::StatisticGroup *grp) override {}
+  void stopRegisterGroup() override {}
+
+  void registerStatistic(SST::Statistics::StatisticBase* stat) override {}
+
+  void startOutputGroup(SST::Statistics::StatisticGroup * grp) override;
+  void stopOutputGroup() override;
+
+  void output(SST::Statistics::StatisticBase* statistic, bool endOfSimFlag) override;
+
+  bool checkOutputParameters() override { return true; }
+  void startOfSimulation() override {}
+  void endOfSimulation() override {}
+  void printUsage() override {}
+
+ private:
+  struct EpochList {
+    uint64_t& operator()(int event, uint64_t epoch){
+      uint64_t index = epoch * num_events_ + event;
+      return event_counts_[index];
+    }
+
+    EpochList(int num_events, uint64_t num_epochs) :
+      event_counts_(num_events*num_epochs,0),
+      num_events_(num_events)
+    {
+    }
+
+    std::vector<uint64_t> event_counts_;
+    int num_events_;
+  };
+
+  /** A bitmask of all the events used */
+  uint64_t events_used_;
+  uint64_t max_tick_;
+  uint64_t ticks_per_epoch_;
+  uint64_t num_epochs_;
+  std::vector<FTQCalendar*> calendars_;
+  std::string fileroot_;
+
+};
+
+}
+}
+#endif
+//end not integrated core
+
+//Always include the following classes with both standalone/sst-core
+namespace sstmac {
+namespace sw {
 
 // Ensures an ftq_tag is used for the life of this object
 class FTQScope {
  public:
-  FTQScope(Thread*, FTQTag);
-  FTQScope(Thread*);
+  FTQScope(Thread* thr, const FTQTag& tag);
   ~FTQScope();
 
  private:
-  // We don't want dynamic allocations.
-  // This class is intended to use scoping for construction/deconstruction
-  void* operator new(size_t size) throw();
-
-  // private members
-  bool _tag_previously_protected;
-  FTQTag _previous_tag;
-  Thread* _thread;
+  FTQTag prev_tag_;
+  Thread* thr_;
 };
 
 }

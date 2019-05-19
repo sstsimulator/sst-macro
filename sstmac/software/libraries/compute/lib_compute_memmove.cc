@@ -82,21 +82,21 @@ LibComputeMemmove::doAccess(uint64_t bytes)
 void
 LibComputeMemmove::read(uint64_t bytes)
 {
-  SSTMACBacktrace(memread);
+  CallGraphAppend(memread);
   doAccess(bytes);
 }
 
 void
 LibComputeMemmove::write(uint64_t bytes)
 {
-  SSTMACBacktrace(memwrite);
+  CallGraphAppend(memwrite);
   doAccess(bytes);
 }
 
 void
 LibComputeMemmove::copy(uint64_t bytes)
 {
-  SSTMACBacktrace(memcopy);
+  CallGraphAppend(memcopy);
   doAccess(bytes);
 }
 

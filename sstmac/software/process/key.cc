@@ -57,10 +57,12 @@ namespace sw {
 
 std::unique_ptr<std::unordered_map<std::string,int>> FTQTag::category_name_to_id_;
 std::unique_ptr<std::unordered_map<int,std::string>> FTQTag::category_id_to_name_;
-FTQTag FTQTag::null("Null");
-FTQTag FTQTag::compute("Compute");
+FTQTag FTQTag::null("Null", 0);
+FTQTag FTQTag::compute("Compute", 1);
+FTQTag FTQTag::sleep("Sleep", 1);
 
-FTQTag::FTQTag(const char *name)
+FTQTag::FTQTag(const char *name, int level) :
+  level_(level)
 {
   id_ = allocateCategoryId(name);
 }
@@ -79,12 +81,12 @@ FTQTag::allocateCategoryId(const std::string &name)
 }
 
 int
-FTQTag::event_typeid(const std::string& name)
+FTQTag::eventTypeId(const std::string& name)
 {
   auto it = category_name_to_id_->find(name);
   if (it == category_name_to_id_->end()){
     spkt_throw_printf(sprockit::ValueError,
-      "key::event_typeid: unknown event name %s",
+      "key::eventTypeId: unknown event name %s",
       name.c_str());
   }
   return it->second;

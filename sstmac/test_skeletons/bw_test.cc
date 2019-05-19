@@ -52,7 +52,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 int USER_MAIN(int argc, char** argv)
 {
-  SSTMACBacktrace(main);
+  CallGraphAppend(main);
   sumi::Transport* tport = sumi::Transport::get();
   std::cout << "Rank " << tport->rank() << " starting at " <<
                tport->wallTime() << std::endl;
