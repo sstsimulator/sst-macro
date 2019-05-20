@@ -247,9 +247,7 @@ class SimTransport : public Transport, public sstmac::sw::API {
 
   sstmac::Timestamp poll_delay_;
 
-  sstmac::StatSpyplot* spy_num_messages_;
-
-  sstmac::StatSpyplot* spy_bytes_;
+  sstmac::StatSpyplot<int,int,uint64_t>* spy_bytes_;
 
   sstmac::Timestamp rdma_pin_latency_;
   sstmac::Timestamp rdma_page_delay_;

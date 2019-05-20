@@ -380,17 +380,15 @@ interconnect::interconnect(SST::Params& params, EventManager* mgr,
   
   sprockit::sim_parameters* nic_params = node_params.find_scoped_params("nic");
   sprockit::sim_parameters* inj_params = nic_params.find_scoped_params("injection");
-  sprockit::sim_parameters* ej_params = switch_params.find_scoped_params("ejection"); 
   
   buildEndpoints(node_params, nic_params, mgr);
   buildSwitches(switch_params, mgr);
-  connectEndpoints(inj_params, ej_params);
+  connectEndpoints(inj_params);
   connectSwitches(switch_params); 
 }
 \end{CppCode}
 
 For full details of the functions that build/connect endpoints and switches, consult the source code.
-In general, the \inlinecode{interconnect} object uses the Connectable interface to setup all the connections.
 It uses the topology interface to determine which connections are required, e.g.
 
 \begin{CppCode}

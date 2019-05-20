@@ -16,7 +16,8 @@ if !INTEGRATED_SST_CORE
 STATSTESTS = \
   output_graph_torus \
   output_graph_dragonfly \
-  test_stats_ftq 
+  test_stats_ftq \
+  test_stats_spyplot 
 
 #STATSTESTS += \
 #  test_stats_msg_size_histogram \

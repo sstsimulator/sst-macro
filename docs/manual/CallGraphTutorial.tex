@@ -6,24 +6,26 @@
 Generating call graphs requires a special build of \sstmacro.
 
 \begin{ShellCmd}
-build> ../configure --prefix=$INSTALL_PATH --enable-graphviz
+build> ../configure --prefix=$INSTALL_PATH --enable-call-graph
 \end{ShellCmd}
-The \inlineshell{--enable-graphviz} flag defines an instrumentation macro throughout the \sstmacro code.
-This instrumentation must be \emph{compiled} into \sstmacro.
-In the default build, the instrumentation is not added since the instrumentation has a high overhead.
+The extra flag enables special instrumentation.
+In the default build, the instrumentation is not added to avoid overheads.
 However, \sstmacro only instruments a select group of the most important functions so the overhead should only be 10-50\%.
-After installing the instrumented version of \sstmacro, a call graph must be activated as part of the OS component.
+After installing the instrumented version of \sstmacro, a call graph must be activated for a given application.
 
 \begin{ViFile}
 node {
-  os {
-    callGraph {
-      fileroot = <fileroot>
+  app1 {
+    call_graph {
+      type = call_graph
+      output = cachegrind
+      group = test
     }
   }
 }
 \end{ViFile}
-After running, a \inlineshell{<fileroot>.callgrind.out} file should appear in the folder.
+After running the above, a \inlineshell{test.callgrind.out} file should appear in the folder based on the group name.
+Additionally, a summary CSV file - \inlineshell{test.csv} or other group name - is generated with various aggregate statistics.
 
 To visualize the call graph, you must download KCachegrind: \url{http://kcachegrind.sourceforge.net/html/Download.html}.
 KCachegrind is built on the KDE environment, which is simple to build for Linux but can be very tedious for Mac.
@@ -60,3 +62,29 @@ Here we see the function splits execution time between buffering messages (memcp
 \caption{QCachegrind Expanded Call Graph of Eager 0 Function}
 \label{fig:qcgraphtwo}
 \end{figure}
+
+In the summary file, each function is broken down into ``self'' time (time spent directly in the function itself)
+and time spent in various subroutines.
+
+\begin{ViFile}
+app1.rank0.thread0,main,self,40000000000000
+app1.rank0.thread0,main,sleep,20000000000000000
+app1.rank0.thread0,main,MPI_Init,101362856608
+app1.rank0.thread0,main,MPI_Finalize,40013333328
+app1.rank0.thread0,main,MPI_Allgather,344587523048
+app1.rank0.thread0,main,MPI_Alltoall,80969809408
+app1.rank0.thread0,main,MPI_Allreduce,180006666664
+app1.rank0.thread0,main,MPI_Barrier,320740095096
+app1.rank0.thread0,main,MPI_Gather,160234285648
+app1.rank0.thread0,main,MPI_Reduce,161223333064
+....
+\end{ViFile}
+Here is a breakdown of a benchmark for the \inlinecode{main} routine.
+A small amount of self-time is shown, along with the time spent in other routines.
+Each of these subroutines themselves can also have subroutines:
+
+\begin{ViFile}
+app1.rank0.thread0,MPI_Allgather,self,121499999400
+app1.rank0.thread0,MPI_Allgather,memcopy,3034190336
+\end{ViFile}
+

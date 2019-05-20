@@ -81,7 +81,7 @@ PiscesBuffer::setOutput(int this_outport, int dst_inport, EventLink::ptr&& link,
   }
 }
 
-PiscesBuffer::PiscesBuffer(const std::string& selfname,
+PiscesBuffer::PiscesBuffer(SST::Params& params, const std::string& selfname,
                            const std::string& arb, double bw, int packet_size,
                            SST::Component* parent, int num_vc)
   : PiscesSender(selfname, parent, false/*buffers do not update vc*/),
@@ -97,8 +97,12 @@ PiscesBuffer::PiscesBuffer(const std::string& selfname,
   arb_ = sprockit::create<PiscesBandwidthArbitrator>(
         "macro", arb, bw);
 
-  xmit_wait_ = getTrueComponent()->registerStatistic<double>("xmit_wait", selfname);
-  xmit_bytes_ = getTrueComponent()->registerStatistic<uint64_t>("xmit_bytes", selfname);
+  if (packet_size_ == 0){
+    spkt_abort_printf("In buffer %s, got zero packet size", selfname.c_str());
+  }
+
+  xmit_wait_ = getTrueComponent()->registerStatistic<double>(params, "xmit_wait", selfname);
+  xmit_bytes_ = getTrueComponent()->registerStatistic<uint64_t>(params, "xmit_bytes", selfname);
 }
 
 void

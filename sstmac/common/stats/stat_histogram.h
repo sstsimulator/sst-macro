@@ -73,14 +73,24 @@ class StatHistogram : public SST::Statistics::MultiStatistic<BinType,CountType>
   {
     min_val_ = params.find<SST::UnitAlgebra>("min_value").getValue().toDouble();
     max_val_ = params.find<SST::UnitAlgebra>("max_value").getValue().toDouble();
-    bin_size_ = params.find<SST::UnitAlgebra>("bin_size").getValue().toDouble();
     int num_bins = params.find<int>("num_bins", 20);
     is_log_ = params.find<bool>("logarithmic", false);
     if (is_log_){
       min_val_ = log10(min_val_);
-      max_val_ = log10(min_val_);
+      max_val_ = log10(max_val_);
     }
-    increment_ = (max_val_ - min_val_) / num_bins;
+    bin_size_ = (max_val_ - min_val_) / num_bins;
+    if (bin_size_ == 0){
+      std::stringstream sstr;
+      sstr << "Bad ";
+      if (is_log_) sstr << "logarithmic ";
+      sstr << "bin size:"
+           << " min=" << min_val_
+           << " max=" << max_val_
+           << " nbins=" << num_bins
+           << " - possibly bad integer division?";
+      sprockit::abort(sstr.str());
+    }
     counts_.resize(num_bins);
     fields_.reserve(num_bins + 2);
   }
@@ -91,21 +101,12 @@ class StatHistogram : public SST::Statistics::MultiStatistic<BinType,CountType>
     if (value > max_val_) return; //drop
     if (value < min_val_) return; //drop
 
-    BinType delta = value - max_val_;
-    int bin = delta / increment_;
+    BinType delta = value - min_val_;
+    int bin = delta / bin_size_;
     counts_[bin] += count;
   }
 
-  void registerOutputFields(SST::Statistics::StatisticFieldsOutput* statOutput) override {
-    int fid = 0;
-    statOutput->outputField(fields_[fid++], int(counts_.size()));
-    statOutput->outputField(fields_[fid++], bin_size_);
-    for (auto cnt : counts_){
-      statOutput->outputField(fields_[fid++], cnt);
-    }
-  }
-
-  void outputStatisticData(SST::Statistics::StatisticFieldsOutput* statOutput, bool EndOfSimFlag) override {
+  void registerOutputFields(SST::Statistics::StatisticOutput* statOutput) override {
     fields_.push_back(statOutput->registerField<int>("numBins"));
     fields_.push_back(statOutput->registerField<double>("binSize"));
     for (int i=0; i < counts_.size(); ++i){
@@ -114,12 +115,20 @@ class StatHistogram : public SST::Statistics::MultiStatistic<BinType,CountType>
     }
   }
 
+  void outputStatisticData(SST::Statistics::StatisticOutput* statOutput, bool EndOfSimFlag) override {
+    int fid = 0;
+    statOutput->outputField(fields_[fid++], int(counts_.size()));
+    statOutput->outputField(fields_[fid++], bin_size_);
+    for (auto cnt : counts_){
+      statOutput->outputField(fields_[fid++], cnt);
+    }
+  }
+
  private:
   std::vector<CountType> counts_;
   BinType min_val_;
   BinType max_val_;
   BinType bin_size_;
-  BinType increment_;
   bool is_log_;
 
   std::vector<SST::Statistics::StatisticOutput::fieldHandle_t> fields_;
@@ -132,10 +141,10 @@ class SimpleStatHistogram : public Statistic<BinType> {
   SST_ELI_DECLARE_STATISTIC_TEMPLATE(
       SimpleStatHistogram,
       "macro",
-      "simple_histogram",
+      "histogram",
       SST_ELI_ELEMENT_VERSION(1,0,0),
       "a histogram",
-      "Statistic<Bin,Count>")
+      "Statistic<Bin>")
 
 
   SimpleStatHistogram(SST::BaseComponent* comp, const std::string& name,
@@ -149,11 +158,11 @@ class SimpleStatHistogram : public Statistic<BinType> {
     hist_.addData_impl(value, 1);
   }
 
-  void registerOutputFields(SST::Statistics::StatisticFieldsOutput* statOutput) override {
+  void registerOutputFields(SST::Statistics::StatisticOutput* statOutput) override {
     hist_.registerOutputFields(statOutput);
   }
 
-  void outputStatisticData(SST::Statistics::StatisticFieldsOutput* statOutput, bool EndOfSimFlag) override {
+  void outputStatisticData(SST::Statistics::StatisticOutput* statOutput, bool EndOfSimFlag) override {
     hist_.outputStatisticData(statOutput, EndOfSimFlag);
   }
 

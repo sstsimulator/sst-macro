@@ -2,20 +2,31 @@
 
 \section{OTF2 Trace Creation}
 \label{sec:otf:traceEmission}
-SST/macro can emmit OTF2 traces from MPI simulations. This gets activated by:
+SST/macro can emit OTF2 traces from MPI simulations, if compiled with:
+
+\begin{ShellCmd}
+build> ../configure --enable-otf2=$PATH_TO_OTF2
+\end{ShellCmd}
+ 
+This is an example of a custom statistic, discussed in \ref{subsec:customStats}.
+This gets activated by:
 
 \begin{ViFile}
 ...
 
 node {
  app1 {
-  ...
+  mpi {
     otf2 {
-      fileroot = dump
+      type = otf2writer
+      group = app1
+      output = otf2
     }
-  ...
+  }
  }
 }
-
 \end{ViFile}
+
+The statistic is given to the MPI namespace.
+Good practice is generally to name the group after the app.
 

@@ -171,9 +171,6 @@ class FTQOutput : public sstmac::StatisticOutput
 
   ~FTQOutput(){}
 
-  void startRegisterGroup(SST::Statistics::StatisticGroup *grp) override {}
-  void stopRegisterGroup() override {}
-
   void registerStatistic(SST::Statistics::StatisticBase* stat) override {}
 
   void startOutputGroup(SST::Statistics::StatisticGroup * grp) override;
@@ -209,7 +206,7 @@ class FTQOutput : public sstmac::StatisticOutput
   uint64_t ticks_per_epoch_;
   uint64_t num_epochs_;
   std::vector<FTQCalendar*> calendars_;
-  std::string fileroot_;
+  std::string active_group_;
 
 };
 

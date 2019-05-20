@@ -225,13 +225,12 @@ CallGraph::reassign(int fxnId, uint64_t count, Thread* thr)
 CallGraphOutput::CallGraphOutput(SST::Params& params) :
   sstmac::StatisticOutput(params)
 {
-  fileroot_ = params.find<std::string>("fileroot");
 }
 
 void
 CallGraphOutput::startOutputGroup(StatisticGroup *grp)
 {
-  std::string fname = fileroot_ + ".csv";
+  std::string fname = grp->name + ".csv";
   csv_summary_.open(fname);
 
   csv_summary_ << "Component,Function,CallFunction,Time";
@@ -241,7 +240,7 @@ void
 CallGraphOutput::dumpCallGraph(CallGraph* cgr)
 {
   std::string fname = sprockit::printf("%s.%s.callgrind.out",
-             fileroot_.c_str(), cgr->getStatSubId().c_str());
+             cgr->groupName().c_str(), cgr->getStatSubId().c_str());
   std::cout << "Dumping " << fname << std::endl;
   std::ofstream myfile(fname);
 

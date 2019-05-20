@@ -67,8 +67,6 @@ PiscesNIC::PiscesNIC(SST::Params& params, Node* parent) :
   pending_inject_(1)
 {
   SST::Params inj_params = params.find_scoped_params("injection");
-  SST::Params ej_params = params.find_scoped_params("ejection");
-
   self_mtl_link_ = allocateSubLink("mtl", Timestamp(), parent,
                                     newLinkHandler(this, &NIC::mtlHandle));
 
@@ -79,7 +77,8 @@ PiscesNIC::PiscesNIC(SST::Params& params, Node* parent) :
 
   //PiscesSender::configurePayloadPortLatency(inj_params);
   auto buf_name = sprockit::printf("%s",top_->nodeIdToName(parent->addr()).c_str());
-  inj_buffer_ = new PiscesBuffer(buf_name, arb, inj_bw, packet_size_, parent, 1/*single vc for inj*/);
+  inj_buffer_ = new PiscesBuffer(inj_params, buf_name, arb, inj_bw,
+                                 packet_size_, parent, 1/*single vc for inj*/);
 }
 
 void

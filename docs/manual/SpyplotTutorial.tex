@@ -16,42 +16,23 @@ Larger amounts of data (red) are sent to nearest neighbors while decreasing amou
 \label{fig:spyplot}
 \end{figure}
 
-Various spyplots can be activated by boolean parameters in the input file.
+Various spyplots can be activated.
 The most commonly used are the MPI spyplots, for which you activate the spyplot as part of the MPI subcomponent.
 
 \begin{ViFile}
 node {
   app1 {
     mpi {
-      traffic_matrix {
-        fileroot = test
+      spy_bytes {
+        type = spyplot
+        output = csv
+        group = app1
       }
     }
   }
 }
 \end{ViFile}
-
-After running there will be a .csv and .png file in the folder, with e.g. \inlineshell{fileroot = test}
-
-\begin{ShellCmd}
-example> ls 
-test.png
-test.csv
-\end{ShellCmd}
-\inlineshell{test.png} shows the number of bytes exchanged between MPI ranks.
-To extend the analysis you can instead specify as part of the NIC subcomponent
-
-\begin{ViFile}
-node {
-  nic {
-    traffic_matrix {
-      fileroot = test
-    }
-  }
-}
-\end{ViFile}
-A new csv/png will appear showing the number of bytes exchanged between physical nodes, 
-accumulating together all MPI ranks sharing the same node.
-This gives a better sense of spatial locality when many MPI ranks are on the same node.
-
+After running, there will be a CSV containing the data sent by each component to another component.
+The same statistic can be activated in both the \inlinecode{node.app1.mpi} namespaces and the \inlinecode{node.nic} namespaces.
+The type of the statistic must be spyplot, but the output can be other formats (but just use csv).
 

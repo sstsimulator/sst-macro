@@ -135,7 +135,7 @@ class PiscesSwitch :
     }
   };
 
-  std::vector<PiscesSender*> out_buffers_;
+  std::vector<PiscesBuffer*> out_buffers_;
   std::vector<InputPort> inports_;
 
   PiscesCrossbar* xbar_;

@@ -239,9 +239,6 @@ class CallGraphOutput : public sstmac::StatisticOutput
 
   CallGraphOutput(SST::Params& params);
 
-  void startRegisterGroup(SST::Statistics::StatisticGroup *grp) override {}
-  void stopRegisterGroup() override {}
-
   void registerStatistic(SST::Statistics::StatisticBase* stat) override {}
 
   void startOutputGroup(SST::Statistics::StatisticGroup * grp) override;
@@ -258,7 +255,6 @@ class CallGraphOutput : public sstmac::StatisticOutput
   void dumpSummary(CallGraph* cgr);
 
  private:
-  std::string fileroot_;
   std::ofstream csv_summary_;
 
 };

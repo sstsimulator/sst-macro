@@ -42,14 +42,20 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <mpi.h>
+#include <sstmac/backends/common/parallel_runtime.h>
+#include <sstmac/common/stats/stat_accumulator.h>
+#include <sstmac/common/event_scheduler.h>
+#include <sprockit/spkt_string.h>
+#include <sprockit/sim_parameters.h>
+#include <sprockit/output.h>
+#include <sprockit/util.h>
+#include <math.h>
+#include <sprockit/keyword_registration.h>
 
-#define sstmac_app_name test
+namespace sstmac {
 
-int main(int argc, char** argv)
-{
-  MPI_Init(&argc, &argv);
-  MPI_Barrier(MPI_COMM_WORLD);
-  MPI_Finalize();
-  return 0;
+SST_ELI_INSTANTIATE_STATISTIC(StatAccumulator, double)
+SST_ELI_INSTANTIATE_STATISTIC(StatAccumulator, uint32_t)
+SST_ELI_INSTANTIATE_STATISTIC(StatAccumulator, uint64_t)
+
 }

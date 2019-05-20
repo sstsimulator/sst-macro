@@ -42,42 +42,53 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sstmac/main/driver.h>
+#ifndef sstmac_common_STAT_HISTOGRAM_H
+#define sstmac_common_STAT_HISTOGRAM_H
 
-using namespace sstmac;
+#include <sstmac/common/stats/stat_collector.h>
+#include <sprockit/sim_parameters.h>
+#include <vector>
+#include <cmath>
 
-int main(int argc, char** argv)
-{
-  SimulationQueue queue;
-  queue.init(argc, argv);
+namespace sstmac {
 
-  double bandwidths[] = { 0.1, 0.4, 0.8 };
-  double results[] = {0, 0, 0};
-  int nPoints = sizeof(bandwidths) / sizeof(double);
+template <class T>
+class StatAccumulator : public Statistic<T> {
+ public:
+  SST_ELI_DECLARE_STATISTIC_TEMPLATE(
+      StatAccumulator,
+      "macro",
+      "accumulator",
+      SST_ELI_ELEMENT_VERSION(1,0,0),
+      "a histogram",
+      "Statistic<T>")
 
-  sprockit::sim_parameters params;
-  params["congestion_model"] = "pisces";
-  params["amm_model"] = "amm3";
-  params["sleep_time"] = 0;
-  params["message_size"].setByteLength(16, "KB");
-  
-  for (int i=0; i < nPoints; ++i){
-    //params["injection_bandwidth"].setBandwidth(bandwidths[i], "GB/s");
-    Simulation* sim = queue.fork(params);
-    sim->setLabel(i);
-  }
-  
-  for (int i=0; i < nPoints; ++i){
-    Simulation* sim = queue.waitForForked();
-    int idx = sim->label();
-    results[idx] = sim->simulatedTime();
+
+  StatAccumulator(SST::BaseComponent* comp, const std::string& name,
+                  const std::string& subName, SST::Params& params) :
+      Statistic<T>(comp, name, subName, params),
+      total_(0)
+  {
   }
 
-  for (int i=0; i < nPoints; ++i){
-    printf("BW=%4.2fGB/s T=%8.4fms\n", 
-      bandwidths[i], results[i]*1e3);
+  void addData_impl(T value) override {
+    total_ += value;
   }
 
-  queue.finalize();
-  return 0;
+  void registerOutputFields(SST::Statistics::StatisticOutput* statOutput) override {
+    field_ = statOutput->registerField<T>("total");
+  }
+
+  void outputStatisticData(SST::Statistics::StatisticOutput* statOutput, bool EndOfSimFlag) override {
+    statOutput->outputField(field_, total_);
+  }
+
+ private:
+  T total_;
+  SST::Statistics::StatisticOutput::fieldHandle_t field_;
+
+};
+
 }
+
+#endif // STAT_HISTOGRAM_H

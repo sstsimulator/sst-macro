@@ -49,7 +49,6 @@ class OTF2Writer : public SST::Statistics::CustomStatistic
   uint64_t max_time_;
   std::vector<int> event_counts_;
   std::vector<dumpi::OTF2_MPI_Comm::shared_ptr> all_comms_;
-  std::string fileroot_;
 
 };
 
@@ -65,9 +64,6 @@ class OTF2Output : public sstmac::StatisticOutput
     "Writes OTF2 traces capturing the simulation")
 
   OTF2Output(SST::Params& params);
-
-  void startRegisterGroup(SST::Statistics::StatisticGroup *grp) override {}
-  void stopRegisterGroup() override {}
 
   void registerStatistic(SST::Statistics::StatisticBase* stat) override {}
 

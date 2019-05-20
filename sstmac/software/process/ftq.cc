@@ -174,12 +174,12 @@ FTQOutput::FTQOutput(SST::Params& params) :
   } else {
     spkt_abort_printf("must specify either num_epochs or epoch_length for FTQOutput");
   }
-  fileroot_ = params.find<std::string>("fileroot");
 }
 
 void
 FTQOutput::startOutputGroup(StatisticGroup *grp)
 {
+  active_group_ = grp->name;
 }
 
 void
@@ -257,7 +257,7 @@ FTQOutput::stopOutputGroup()
     }
   }
 
-  std::string dat_fname = sprockit::printf("%s.dat", fileroot_.c_str());
+  std::string dat_fname = sprockit::printf("%s.dat", active_group_.c_str());
   std::ofstream dat_out(dat_fname.c_str());
   //print the first line header
   dat_out << sprockit::printf("%12s", "Epoch(us)");
@@ -295,15 +295,14 @@ FTQOutput::stopOutputGroup()
   dat_out << sstr.str();
   dat_out.close();
 
-  std::string plt_fname = sprockit::printf("%s.py", fileroot_.c_str());
+  std::string plt_fname = sprockit::printf("%s.py", active_group_.c_str());
   std::ofstream plt_out(plt_fname.c_str());
-  plt_out << matplotlib_histogram_text_header << fileroot_ << matplotlib_histogram_text_footer;
+  plt_out << matplotlib_histogram_text_header << active_group_ << matplotlib_histogram_text_footer;
   plt_out.close();
 
   Timestamp stamp_sec(1.0);
   uint64_t ticks_s = stamp_sec.ticks();
-  std::cout << sprockit::printf("Aggregate time stats for %s: \n",
-                                fileroot_.c_str());
+  std::cout << sprockit::printf("Aggregate time stats for %s: \n", active_group_.c_str());
   for (auto& pair : sorted_keys){
     int idx = pair.second;
     double num_s = event_totals[idx] / ticks_s;

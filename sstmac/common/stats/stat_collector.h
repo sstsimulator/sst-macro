@@ -63,6 +63,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #endif
 #include <sstmac/sst_core/integrated_component.h>
 
+#include <sstream>
+
 #if !SSTMAC_INTEGRATED_SST_CORE
 namespace sstmac {
 
@@ -76,7 +78,11 @@ class StatisticBase {
     return name_;
   }
 
-  std::string group() const {
+  std::string groupName() const {
+    return group_name_;
+  }
+
+  StatisticGroup* group() const {
     return group_;
   }
 
@@ -92,6 +98,10 @@ class StatisticBase {
     return output_;
   }
 
+  void setGroup(StatisticGroup* grp){
+    group_ = grp;
+  }
+
   virtual ~StatisticBase(){}
 
  protected:
@@ -101,9 +111,10 @@ class StatisticBase {
 
  private:
   std::string name_;
-  std::string group_;
+  std::string group_name_;
   std::string output_;
   std::string sub_id_;
+  StatisticGroup* group_;
 };
 
 class StatisticOutput
@@ -121,9 +132,6 @@ class StatisticOutput
   virtual void startOfSimulation() = 0;
   virtual void endOfSimulation() = 0;
 
-  virtual void startRegisterGroup(StatisticGroup* grp) = 0;
-  virtual void stopRegisterGroup() = 0;
-
   virtual void registerStatistic(StatisticBase* stat) = 0;
 
   virtual void startOutputGroup(StatisticGroup* grp) = 0;
@@ -138,7 +146,8 @@ struct StatisticGroup {
   StatisticOutput* output;
   std::string outputName;
   std::string name;
-  std::map<std::string, int> columns;
+  std::map<std::string,int> ids;
+  std::map<int,std::string> columns;
   StatisticGroup(const std::string& n) :
     output(nullptr), name(n)
   {}
@@ -150,8 +159,7 @@ class StatisticFieldsOutput : public StatisticOutput
   StatisticFieldsOutput(SST::Params& params) :
     StatisticOutput(params),
     active_group_(nullptr),
-    active_stat_(nullptr),
-    default_group_(new StatisticGroup("default"))
+    active_stat_(nullptr)
   {
   }
 
@@ -162,14 +170,6 @@ class StatisticFieldsOutput : public StatisticOutput
 
   template<typename T> fieldHandle_t registerField(const char* fieldName){
     return implRegisterField(fieldName);
-  }
-
-  void startRegisterGroup(StatisticGroup* grp) override {
-    active_group_ = grp;
-  }
-
-  void stopRegisterGroup() override {
-    active_group_ = nullptr;
   }
 
   virtual void startOutputEntries(StatisticBase* statistic){
@@ -196,24 +196,11 @@ class StatisticFieldsOutput : public StatisticOutput
   void registerStatistic(StatisticBase* stat) override;
 
  private:
-  fieldHandle_t implRegisterField(const char* fieldName){
-    auto* grp = active_group_ ? active_group_ : default_group_;
-    std::string fullName = active_stat_->name() + "." + fieldName;
-    auto iter = grp->columns.find(fieldName);
-    if (iter == grp->columns.end()){
-      int idx = grp->columns.size();
-      grp->columns[fullName] = idx;
-      return idx;
-    } else {
-      return iter->second;
-    }
-  }
+  fieldHandle_t implRegisterField(const char* fieldName);
 
   StatisticBase* active_stat_;
 
   StatisticGroup* active_group_;
-
-  StatisticGroup* default_group_;
 
 };
 
@@ -253,15 +240,11 @@ class StatOutputCSV : public StatisticFieldsOutput {
     output(fieldHandle, data);
   }
 
-  void startOutputGroup(StatisticGroup* grp) override {
-    csv_out_.open(grp->name.c_str());
-  }
+  void startOutputGroup(StatisticGroup* grp) override;
 
-  void startOutputEntries(StatisticBase *stat) override {
-    nextField_ = 0;
-  }
+  void startOutputEntries(StatisticBase *stat) override;
 
-  void stopOutputEntries() override {}
+  void stopOutputEntries() override;
 
   void stopOutputGroup() override {
     csv_out_.close();
@@ -275,17 +258,24 @@ class StatOutputCSV : public StatisticFieldsOutput {
 
  private:
   template <class T> void output(fieldHandle_t handle, T&& data){
-    if (handle != 0) csv_out_ << ",";
-    if (handle != nextField_){
-      std::cout << "Fields not output in order" << std::endl;
-      abort();
+    if (handle == next_field_){
+      csv_out_ << "," << data;
+      ++next_field_;
+      if (!pending_.empty()){
+        outputPending();
+      }
+    } else {
+      std::stringstream tmp;
+      tmp << data;
+      pending_[handle] = tmp.str();
     }
-    csv_out_ << data;
-    ++nextField_;
   }
 
+  void outputPending();
+
   std::ofstream csv_out_;
-  int nextField_;
+  int next_field_;
+  std::map<int, std::string> pending_;
 
 };
 

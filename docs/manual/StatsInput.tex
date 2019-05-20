@@ -1,4 +1,99 @@
 %% !TEX root = manual.tex
 
-\section{Outputing Statistics}
+\section{Statistics}
+SST/macro statistics current only work in standalone mode due to the rigid structure of statistics in SST core.
+Fixes are planned for SST core for the 10.0 release in 2020.
+Until then, most of the statistics will require the standalone core.
+Both standalone and SST core do follow the same basic structure, however, and the tutorial below covers concepts important to both.
+The three abstractions for understanding statistics are collectors, groups, and outputs.
+We will use the running example of a bytes sent statistic.
 
+\subsection{Collectors}
+Statistic collectors inherit from \inlinecode{Statistic<T>} and are used by components to collect individual statistics.
+Statistics are collected through the \inlinecode{addData} function:
+
+\begin{CppCode}
+xmit_bytes_->addData(pkt->byteLength());
+\end{CppCode}
+The statistic only specifies the \emph{type} of data collected, not the manner of collection (histogram, accumulate).
+In this case, e.g., we would have:
+
+\begin{CppCode}
+Statistic<uint64_t>* xmit_bytes_;
+\end{CppCode}
+Statistic objects generally do three things, with the exception of special custom statistics.
+
+\begin{itemize}
+\item Collect data through an \emph{addData} function.
+\item Register output fields before collecting data through the \inlinecode{registerField} function.
+\item Pass along fields to output when done collecting data through the \inlinecode{outputField} function.
+\end{itemize}
+
+The data \emph{collected} and the data \emph{output} are not the same - and may not even be of the same type.
+For an accumulator, data collected and data output are the same (sum of collected values).
+For a histogram, data collected is, e.g., a single integer, while the data output is the counts in a series of bins.
+If there are ten bins, the histogram will register ten output fields at the beginning and output ten fields at the end.
+
+\subsection{Outputs}
+Statistic outputs provide an abstract interface for outputting fields.
+In SQL or Pandas terminology, each statistic defines a row in a table. Each field will be a column.
+Outputs therefore map naturally to a CSV file.
+SST core also provides an HDF5 output, for those statistics that work with SST core.
+
+\subsection{Groups}
+Statistics can be grouped together when appropriate, for example bytes sent statistics for switches may want to be grouped together.
+Each group is associated with a given output.
+Most commonly, a group is only used to link statistics to the same output.
+However, aggregation of statistics can potentially be performed as well for certain cases.
+
+\subsection{SST/macro Standalone Input}
+Each statistic has a name, which specifies a parameter namespace in the parameter file.
+In the case above, we activate an ``xmit\_bytes" statistic.
+
+\begin{ViFile}
+nic {
+  injection {
+   xmit_bytes {
+     type = accumulator
+     output = csv
+     group = test
+   }
+  }
+}
+\end{ViFile}
+As discussed above, we must specify the type of collection, the type of output, and the group name.
+The output file name (test.csv) is generated from the group name. The CSV output looks like:
+
+\begin{ViFile}
+name,component,total
+xmit_bytes,nid0,16952064
+xmit_bytes,nid1,6635264
+xmit_bytes,nid2,7542016
+\end{ViFile}
+For a histogram with 5 bins, we could specify an input:
+
+\begin{ViFile}
+ xmit_bytes {
+  type = histogram
+  output = csv
+  group = all
+  num_bins = 5
+  min_value = 0
+  max_value = 5KB
+}
+\end{ViFile}
+which then generates columns for the bins, e.g.
+
+\begin{ViFile}
+name,component,numBins,binSize,bin0,bin1,bin2,bin3,bin4
+xmit_bytes,nid0,5,1000,1235,559,396,31,3746
+xmit_bytes,nid1,5,1000,870,439,322,11,1292
+xmit_bytes,nid2,5,1000,838,396,279,11,1551
+\end{ViFile}
+
+\subsection{Custom Statistics}\label{subsec:customStats}
+Certain statistics (examples below) do not fit into the model of row/column tables and require special \inlinecode{addData} functions.
+Rather than declare themselves as \inlinecode{Statistic<T>} for some numeric type T, they declare themselves as \inlinecode{Statistic<void>} and have a completely custom collection and output mechanism.
+They also generally do not rely an abstract interfaces. 
+For example, a bytes sent statistic output can choose a CSV histogram or an HDF5 accumulator or a text list.
+Here, the statistic can only have a single type and works with a specific output.
