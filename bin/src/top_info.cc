@@ -62,8 +62,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/fileio.h>
 #include <sprockit/statics.h>
 #include <sprockit/sim_parameters.h>
-#include <sprockit/malloc.h>
-#include <sprockit/spkt_new.h>
 #include <sprockit/output.h>
 #include <sprockit/basic_string_tokenizer.h>
 #include <sprockit/util.h>
@@ -113,11 +111,6 @@ try_top_info_main(int argc, char **argv)
   /** DO NOT CHANGE THE ORDER OF THE INIT FUNCTIONS BELOW - JJW
    *  they actually depend on each other */
 
-
-  //at this point, we have read in parameters - init malloc system
-  //set the global parameters object
-  sprockit::sprockit_init_cxx_heap(params);
-
   params->printParams();
 
   SST::Params top_params = params->getNamespace("topology");
@@ -158,8 +151,6 @@ try_top_info_main(int argc, char **argv)
   }
 
   sprockit::Statics::finish();
-
-  sprockit::sprockit_finalize_cxx_heap();
 
   return 0;
 }

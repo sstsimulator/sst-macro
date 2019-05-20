@@ -67,8 +67,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/fileio.h>
 #include <sprockit/statics.h>
 #include <sprockit/sim_parameters.h>
-#include <sprockit/malloc.h>
-#include <sprockit/spkt_new.h>
 #include <sprockit/output.h>
 #include <sprockit/basic_string_tokenizer.h>
 #include <sprockit/keyword_registration.h>
@@ -149,7 +147,6 @@ finalize(ParallelRuntime* rt)
   rt->finalize();
   sstmac::sw::OperatingSystem::simulationDone();
   sprockit::Statics::finish();
-  sprockit::sprockit_finalize_cxx_heap();
   delete rt;
 }
 
@@ -201,10 +198,6 @@ initParams(ParallelRuntime* rt, opts& oo, sprockit::SimParameters::ptr params, b
   /** DO NOT CHANGE THE ORDER OF THE INIT FUNCTIONS BELOW - JJW
    *  they actually depend on each other */
 
-
-  //at this point, we have read in parameters - init malloc system
-  //set the global parameters object
-  sprockit::sprockit_init_cxx_heap(params);
 
 #if !SSTMAC_INTEGRATED_SST_CORE
   std::string rank = sprockit::printf("%d", rt->me());

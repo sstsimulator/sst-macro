@@ -386,7 +386,9 @@ OperatingSystem::addMemoization(const std::string& name, const std::string& mode
 void
 OperatingSystem::allocateCore(Thread *thr)
 {
+  os_debug("attempting to reserve core for thread %d", thr->threadId());
   compute_sched_->reserveCores(1, thr);
+  os_debug("successfully reserved core for thread %d");
 }
 
 void

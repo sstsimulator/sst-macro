@@ -80,7 +80,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/output.h>
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
-#include <sprockit/malloc.h>
 #include <sprockit/keyword_registration.h>
 
 #ifdef SSTMAC_OTF2_ENABLED

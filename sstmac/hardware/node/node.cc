@@ -71,9 +71,9 @@ RegisterNamespaces("os", "memory", "proc", "node");
 RegisterKeywords(
 { "nsockets", "the number of sockets/processors in a node" },
 { "node_name", "DEPRECATED: the type of node on each endpoint" },
-{ "node_MemoryModel", "DEPRECATED: the type of memory model on each node" },
+{ "node_memory_model", "DEPRECATED: the type of memory model on each node" },
 { "node_sockets", "DEPRECATED: the number of sockets/processors in a node" },
-{ "JobLauncher", "the type of launcher for scheduling jobs on the system - equivalent to MOAB or SLURM" },
+{ "job_launcher", "the type of launcher for scheduling jobs on the system - equivalent to MOAB or SLURM" },
 );
 
 namespace sstmac {
@@ -103,17 +103,25 @@ Node::Node(uint32_t id, SST::Params& params)
   next_outgoing_id_.setSrcNode(my_addr_);
 
   SST::Params nic_params = params.find_scoped_params("nic");
-  nic_ = sprockit::create<NIC>(
-        "macro", nic_params.find<std::string>("name"), nic_params, this);
+  auto nic_name = nic_params.find<std::string>("name");
+  if (nic_name.empty()){
+    spkt_abort_printf("Missing node.nic.name parameter");
+  }
+  nic_ = sprockit::create<NIC>("macro", nic_name, nic_params, this);
 
   SST::Params mem_params = params.find_scoped_params("memory");
-  mem_model_ = sprockit::create<MemoryModel>(
-        "macro", mem_params.find<std::string>("name"), mem_params, this);
+  auto mem_name = mem_params.find<std::string>("name");
+  if (mem_name.empty()){
+    spkt_abort_printf("Missing node.memory.name parameter");
+  }
+  mem_model_ = sprockit::create<MemoryModel>("macro", mem_name, mem_params, this);
 
   SST::Params proc_params = params.find_scoped_params("proc");
-  proc_ = sprockit::create<Processor>(
-     "macro", proc_params.find<std::string>("processor", "instruction"),
-      proc_params, mem_model_, this);
+  auto proc_name = proc_params.find<std::string>("processor", "instruction");
+  if (proc_name.empty()){
+    spkt_abort_printf("Missing node.processor parameter");
+  }
+  proc_ = sprockit::create<Processor>("macro", proc_name, proc_params, mem_model_, this);
 
   nsocket_ = params.find<int>("nsockets", 1);
 

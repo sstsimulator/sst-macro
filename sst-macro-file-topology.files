@@ -273,7 +273,6 @@ sprockit/sprockit/serializer_fwd.h
 sprockit/sprockit/sim_parameters.cc
 sprockit/sprockit/sim_parameters.h
 sprockit/sprockit/sim_parameters_fwd.h
-sprockit/sprockit/spkt_new.h
 sprockit/sprockit/spkt_printf.h
 sprockit/sprockit/spkt_string.cc
 sprockit/sprockit/spkt_string.h
