@@ -11,6 +11,7 @@
 
 include $(top_srcdir)/Makefile.common
 
+# Don't ever change this or Ubuntu linker be unkind
 if INTEGRATED_SST_CORE
 noinst_LTLIBRARIES = libsstmac.la
 else
