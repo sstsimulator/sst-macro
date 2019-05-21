@@ -11,8 +11,13 @@
 
 include $(top_srcdir)/Makefile.common
 
+# Don't ever change this or Ubuntu linker be unkind
+if INTEGRATED_SST_CORE
+noinst_LTLIBRARIES = libsstmac.la
+else
 lib_LTLIBRARIES = libsstmac.la
 libsstmac_la_LDFLAGS = -version-info @SSTMAC_LIBVERSION@
+endif
 
 libsstmac_la_LIBADD = 
 
@@ -55,7 +60,7 @@ DIST_SUBDIRS = $(STD_SUBDIRS)
 
 
 if INTEGRATED_SST_CORE
-lib_LTLIBRARIES += libmacro.la
+lib_LTLIBRARIES = libmacro.la
 libsstmac_la_LIBADD += ../sst_core/libsstmac_sst_core.la
 libmacro_la_SOURCES =
 nodist_EXTRA_libmacro_la_SOURCES = dummy.cxx
