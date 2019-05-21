@@ -31,6 +31,7 @@ char MemPass::ID = 0;
 bool
 MemPass::runOnModule(llvm::Module &M)
 {
+#if 0
   std::cout << "Running on module " << M.getName().str() << std::endl;
 
   for (llvm::Function& f : M.functions()){
@@ -39,6 +40,7 @@ MemPass::runOnModule(llvm::Module &M)
       std::cout << " attribte=" << attr.getAsString() << std::endl;
     }
   }
+#endif
   return false;
 }
 
