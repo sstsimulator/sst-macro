@@ -80,36 +80,17 @@ Message::tostr(class_t ty)
     "message::tostr: invalid message type %d", ty);
 }
 
-#if 0
-void
-message::clone_into(message* cln) const
-{
-  cln->payload_type_ = payload_type_;
-  cln->owns_remote_buffer_ = owns_remote_buffer_;
-  cln->owns_local_buffer_ = owns_local_buffer_;
-  cln->class_ = class_;
-  cln->sender_ = sender_;
-  cln->recver_ = recver_;
-  cln->send_cq_ = send_cq_;
-  cln->RecvCQ_ = RecvCQ_;
-  cln->num_bytes_ = num_bytes_;
-#if SSTMAC_COMM_SYNC_STATS
-  cln->sent_ = sent_;
-  cln->header_arrived_ = header_arrived_;
-  cln->payload_arrived_ = payload_arrived_;
-  cln->synced_ = synced_;
-#endif
-}
-#endif
-
 void
 Message::serialize_order(sstmac::serializer &ser)
 {
-#if SSTMAC_COMM_SYNC_STATS
+#if SSTMAC_COMM_DELAY_STATS
   ser & sent_;
-  ser & header_arrived_;
-  ser & payload_arrived_;
+  ser & arrived_;
+#endif
+#if SSTMAC_COMM_SYNC_STATS
+  ser & started_;
   ser & synced_;
+  ser & sync_arrived_;
 #endif
   ser & sender_;
   ser & recver_;
@@ -119,27 +100,31 @@ Message::serialize_order(sstmac::serializer &ser)
   NetworkMessage::serialize_order(ser);
 }
 
-/**
-void
-transport_message::clone_into(transport_message* cln) const
-{
-  //the payload is actually immutable now - so this is safe
-  cln->payload_ = payload_;
-  cln->src_app_ = src_app_;
-  cln->dest_app_ = dest_app_;
-  cln->src_ = src_;
-  cln->dest_ = dest_;
-  NetworkMessage::clone_into(cln);
-  library_interface::clone_into(cln);
+static uint32_t crc32_for_byte(uint32_t r) {
+  for(int j = 0; j < 8; ++j)
+    r = (r & 1? 0: (uint32_t)0xEDB88320L) ^ r >> 1;
+  return r ^ (uint32_t)0xFF000000L;
 }
 
-void
-system_bcast_message::serialize_order(sstmac::serializer& ser)
+uint32_t crc32(const void *data, size_t n_bytes)
 {
-  message::serialize_order(ser);
-  ser & root_;
-  ser & action_;
+  uint32_t crc;
+  static uint32_t table[0x100];
+  if(*table == 0){
+    for(size_t i = 0; i < 0x100; ++i)
+      table[i] = crc32_for_byte(i);
+  }
+  for(size_t i = 0; i < n_bytes; ++i)
+    crc = table[(uint8_t)crc ^ ((uint8_t*)data)[i]] ^ crc >> 8;
+  return crc;
 }
-*/
+
+size_t
+Message::hash() const
+{
+  uint32_t data[4] = { uint32_t(sender_), uint32_t(recver_),
+                      uint32_t(class_), uint32_t(byte_length_) };
+  return crc32(data, sizeof(data));
+}
 
 }

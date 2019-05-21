@@ -152,8 +152,8 @@ CollectiveActor::domToGlobalDst(int dom_dst)
 void
 DagCollectiveActor::start()
 {
-#if SSTMAC_COMM_SYNC_STATS
-  my_api_->startCollectiveSyncDelays();
+#if SSTMAC_COMM_DELAY_STATS
+  my_api_->startCollectiveMessageLog();
 #endif
   while (!initial_actions_.empty()){
     auto iter = initial_actions_.begin();
@@ -282,11 +282,14 @@ DagCollectiveActor::sendEagerMessage(Action* ac)
 {
   uint64_t num_bytes;
   void* buf = getSendBuffer(ac, num_bytes);
-  my_api_->smsgSend<CollectiveWorkMessage>(ac->phys_partner, num_bytes, buf,
+  auto* msg = my_api_->smsgSend<CollectiveWorkMessage>(ac->phys_partner, num_bytes, buf,
                                               cq_id_, cq_id_, Message::collective,
                                               type_, dom_me_, ac->partner,
                                               tag_, ac->round, ac->nelems, type_size_,
                                               nullptr, CollectiveWorkMessage::eager);
+#if SSTMAC_COMM_SYNC_STATS
+  msg->setTimeStarted(my_api_->now());
+#endif
 
   debug_printf(sumi_collective | sprockit::dbg::sumi,
    "Rank %s, collective %s(%p) sending eager message to %d on tag=%d offset=%d",
@@ -316,11 +319,15 @@ DagCollectiveActor::sendRdmaGetHeader(Action* ac)
 {
   uint64_t num_bytes;
   void* buf = getSendBuffer(ac, num_bytes);
-  my_api_->smsgSend<CollectiveWorkMessage>(ac->phys_partner, 64, //use platform-independent size
-                                              buf, Message::no_ack, cq_id_, Message::collective,
-                                              type_, dom_me_, ac->partner,
-                                              tag_, ac->round,
-                                              ac->nelems, type_size_, buf, CollectiveWorkMessage::get); //do not ack the send
+  auto* msg = my_api_->smsgSend<CollectiveWorkMessage>(ac->phys_partner, 64, //use platform-independent size
+                        buf, Message::no_ack, cq_id_, Message::collective,
+                        type_, dom_me_, ac->partner,
+                        tag_, ac->round,
+                        ac->nelems, type_size_, buf, CollectiveWorkMessage::get); //do not ack the send
+
+#if SSTMAC_COMM_SYNC_STATS
+  msg->setTimeStarted(my_api_->now());
+#endif
 
   debug_printf(sumi_collective | sprockit::dbg::sumi,
    "Rank %s, collective %s(%p) sending RDMA get header to %d on tag=%d offset=%d",
@@ -573,17 +580,17 @@ void
 DagCollectiveActor::dataSent(CollectiveWorkMessage* msg)
 {
   Action* ac = commActionDone(Action::send, msg->round(), msg->domRecver());
-#if SSTMAC_COMM_SYNC_STATS
+#if SSTMAC_COMM_DELAY_STATS
   //the zero doesn't matter here
-  my_api_->collectSyncDelays(ac->start,msg);
+  my_api_->logMessageDelay(ac->start, msg);
 #endif
 }
 
 void
 DagCollectiveActor::dataRecved(Action* ac_, CollectiveWorkMessage* msg, void *recvd_buffer)
 {
-#if SSTMAC_COMM_SYNC_STATS
-  my_api_->collectSyncDelays(sstmac::GlobalTimestamp(),msg);
+#if SSTMAC_COMM_DELAY_STATS
+  my_api_->logMessageDelay(ac_->start, msg);
 #endif
   RecvAction* ac = static_cast<RecvAction*>(ac_);
   //we are allowed to have a null buffer
@@ -757,7 +764,7 @@ DagCollectiveActor::nextRoundReadyToGet(
       header->domSender(), header->round(), tag_, header);
 
 #if SSTMAC_COMM_SYNC_STATS
-  my_api_->setTimeSynced(header);
+  header->setTimeSynced(my_api_->now());
 #endif
 
 }

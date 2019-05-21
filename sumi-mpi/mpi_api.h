@@ -784,6 +784,16 @@ class MpiApi : public sumi::SimTransport
 
   void addImmediateCollective(CollectiveOpBase::ptr&& op, MPI_Request* req);
 
+  void finishCurrentMpiCall();
+
+  void setNewMpiCall(MPI_function func){
+#if SSTMAC_COMM_SYNC_STATS
+    current_call_.ID = func;
+    current_call_.start = last_collection_ = now();
+    //update this to at least the beginning of this function
+#endif
+  }
+
   bool test(MPI_Request *request, MPI_Status *status, int& tag, int& source);
 
   int typeSize(MPI_Datatype type){
@@ -856,24 +866,17 @@ class MpiApi : public sumi::SimTransport
   OTF2Writer* OTF2Writer_;
 #endif
 
-#if SSTMAC_COMM_SYNC_STATS
+#if SSTMAC_COMM_DELAY_STATS
  public:
-  void collectSyncDelays(sstmac::GlobalTimestamp wait_start, Message* msg) override;
+  void logMessageDelay(sstmac::GlobalTimestamp wait_start, Message* msg) override;
 
-  void startCollectiveSyncDelays() override;
-
- private:
-  void setNewMpiCall(MPI_function func){
-    current_call_.ID = func;
-    current_call_.start = last_collection_ = now();
-    //update this to at least the beginning of this function
-  }
-
-  void finishCurrentMpiCall();
+  void startCollectiveMessageLog() override;
 
  private:
   sstmac::GlobalTimestamp last_collection_;
+#endif
 
+#if SSTMAC_COMM_SYNC_STATS
   MPI_Call current_call_;
 #endif
 
@@ -888,21 +891,14 @@ MpiApi* sstmac_mpi();
   sstmac::sw::FTQScope scope(activeThread(), mpi_tag); \
   startAPICall()
 
-#if SSTMAC_COMM_SYNC_STATS
-  #define StartMPICall(fxn) \
-    _StartMPICall_(fxn); \
-    setNewMpiCall(Call_ID_##fxn)
-  #define FinishMPICall(fxn) \
-    mpi_api_debug(sprockit::dbg::mpi, #fxn " finished"); \
-    finishCurrentMpiCall(); \
-    endAPICall()
-#else
-  #define StartMPICall(fxn) _StartMPICall_(fxn)
-  #define start_wait_call(fxn,...) _StartMPICall_(fxn)
-  #define FinishMPICall(fxn) \
-    mpi_api_debug(sprockit::dbg::mpi, #fxn " finished"); \
-    endAPICall()
-#endif
+
+#define StartMPICall(fxn) \
+  _StartMPICall_(fxn); \
+  setNewMpiCall(Call_ID_##fxn)
+#define FinishMPICall(fxn) \
+  mpi_api_debug(sprockit::dbg::mpi, #fxn " finished"); \
+  finishCurrentMpiCall(); \
+  endAPICall()
 
 #define mpi_api_debug(flags, ...) \
   mpi_debug(commWorld()->rank(), flags, __VA_ARGS__)

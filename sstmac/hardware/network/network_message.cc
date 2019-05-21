@@ -133,7 +133,7 @@ NetworkMessage::takeOffWire()
 }
 
 void
-NetworkMessage::intranode_memmove()
+NetworkMessage::intranodeMemmove()
 {
   switch (type()){
     case rdma_get_payload:
@@ -253,6 +253,7 @@ NetworkMessage::serialize_order(serializer& ser)
   ser & payload_bytes_;
   ser & type_;
   ser & aid_;
+  ser & qos_;
   if (type_ == null_netmsg_type){
     spkt_abort_printf("failed serializing network message - got null type");
   }
@@ -305,18 +306,6 @@ NetworkMessage::nicReverse(type_t newtype)
   }
 }
 
-/**
-void
-NetworkMessage::clone_into(NetworkMessage* cln) const
-{
-  cln->needs_ack_ = needs_ack_;
-  cln->toaddr_ = toaddr_;
-  cln->fromaddr_ = fromaddr_;
-  cln->flow_id_ = flow_id_;
-  cln->bytes_ = bytes_;
-  cln->type_ = type_;
-}
-*/
 
 }
 }

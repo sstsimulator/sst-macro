@@ -194,6 +194,8 @@ CHECK_STL_REPLACEMENT_HEADERS()
 
 CHECK_COMM_SYNC_STATS()
 
+CHECK_COMM_DELAY_STATS()
+
 CHECK_CLANG_LLVM()
 
 #-------------------------------------------------
