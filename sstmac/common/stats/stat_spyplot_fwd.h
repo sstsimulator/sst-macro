@@ -47,7 +47,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 
-class StatSpyplot;
+template <class Src, class Dst, class Count> class StatSpyplot;
 
 }
 

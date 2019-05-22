@@ -7,6 +7,7 @@
   bytes_sent_fattree \
   bytes_sent_cascade
 
+
 if !INTEGRATED_SST_CORE
 #------------------------------------------------------------------------------------------#
 #  Stats tests                                                                          {{{#
@@ -14,7 +15,9 @@ if !INTEGRATED_SST_CORE
 
 STATSTESTS = \
   output_graph_torus \
-  output_graph_dragonfly 
+  output_graph_dragonfly \
+  test_stats_ftq \
+  test_stats_spyplot 
 
 #STATSTESTS += \
 #  test_stats_msg_size_histogram \
@@ -31,7 +34,6 @@ STATSTESTS = \
 #  bytes_sent_torus.dat \
 #  bytes_sent_fattree.dat 
 
-#  test_stats_ftq 
 #  ftq_app1.p 
 #  ftq_app1.dat 
 
@@ -39,11 +41,11 @@ STATSTESTS = \
 #  spyplot.num_messages.png 
 
 if COMM_SYNC_STATS
-if DO_GRAPHVIZ_TEST
+if DO_CALL_GRAPH_TEST
 #don't do this test unless also including comm sync stats
-SINGLETESTS += test_stat_graphviz 
+SINGLETESTS += test_stats_call_graph
 endif
-SINGLETESTS += test_sync_stats
+SINGLETESTS += test_stats_sync
 endif
 
 
@@ -54,12 +56,6 @@ test_output_graph_%.$(CHKSUF): $(SSTMACEXEC)
 
 output_graph_%.$(CHKSUF): $(SSTMACEXEC) test_output_graph_%.$(CHKSUF)
 	$(PYRUNTEST) 5 $(top_srcdir) $@ notime $(NOOP) $@
-
-test_stat_graphviz.$(CHKSUF): $(SSTMACEXEC)
-	$(PYRUNTEST) 5 $(top_srcdir) $@ notime \
-	$(SSTMACEXEC) -f $(srcdir)/test_configs/test_ping_all_torus_pisces.ini \
-     --no-wall-time \
-     -p "callGraph=test" 
 
 test.callgrind.$(CHKSUF): $(SSTMACEXEC) test_stat_graphviz.$(CHKSUF)
 	-mv -f test.callgrind.out test.callgrind.chk-out
@@ -98,10 +94,9 @@ spyplot_collectives:
     $(SSTMACEXEC) -f $(srcdir)/test_configs/test_stats_spyplot_collectives.ini --no-wall-time  
 test_stats_spyplot_collectives.$(CHKSUF): spyplot_collectives
 
-ftq_app1:
-	$(PYRUNTEST) 5 $(top_srcdir) test_stats_ftq.$(CHKSUF) True \
-    $(SSTMACEXEC) -f $(srcdir)/test_configs/test_stats_ftq.ini --low-res-timer --no-wall-time  
-test_stats_ftq.$(CHKSUF): ftq_app1
+test_stats_%.$(CHKSUF): $(SSTMACEXEC)
+	$(PYRUNTEST) 10 $(top_srcdir) $@ True \
+    $(SSTMACEXEC) -f $(srcdir)/test_configs/test_stats_$*.ini --low-res-timer --no-wall-time  
 
 parallel_histogram:
 	@launcher_test_args@ $(SSTMACEXEC) -f $(srcdir)/test_configs/test_stats_msg_size_histogram.ini @mt_cmdline_args@ --low-res-timer --no-wall-time > test_stats_msg_size_histogram.$(CHKSUF)

@@ -42,30 +42,20 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef sprockit_common_MALLOC_H
-#define sprockit_common_MALLOC_H
+#include <sstmac/backends/common/parallel_runtime.h>
+#include <sstmac/common/stats/stat_accumulator.h>
+#include <sstmac/common/event_scheduler.h>
+#include <sprockit/spkt_string.h>
+#include <sprockit/sim_parameters.h>
+#include <sprockit/output.h>
+#include <sprockit/util.h>
+#include <math.h>
+#include <sprockit/keyword_registration.h>
 
-#include <stdlib.h>
+namespace sstmac {
 
-#define SPROCKIT_FAKE_PTR ((void*)0x123)
+SST_ELI_INSTANTIATE_STATISTIC(StatAccumulator, double)
+SST_ELI_INSTANTIATE_STATISTIC(StatAccumulator, uint32_t)
+SST_ELI_INSTANTIATE_STATISTIC(StatAccumulator, uint64_t)
 
-#ifdef SSTMAC
-
-#ifdef __cplusplus
-#define large_new(type,size) ((type*)SPROCKIT_FAKE_PTR)
-#endif
-#define large_malloc(size) SPROCKIT_FAKE_PTR
-
-#else
-
-#ifdef __cplusplus
-#define large_new(type,size) new type[size];
-#define large_malloc(size) ::malloc(size)
-#else
-#define large_malloc(size) malloc(size)
-#endif
-
-#endif
-
-
-#endif // MALLOC_H
+}

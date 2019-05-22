@@ -67,11 +67,11 @@ template <class T> class Statistic;
 }
 namespace SST {
 namespace Statistics {
-using sstmac::StatisticOutput;
 using sstmac::StatisticBase;
 using sstmac::StatisticFieldsOutput;
 using sstmac::Statistic;
 using sstmac::StatisticGroup;
+using StatisticOutput = sstmac::StatisticFieldsOutput;
 }
 }
 #endif

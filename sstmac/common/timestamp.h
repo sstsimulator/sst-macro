@@ -199,6 +199,10 @@ struct GlobalTimestamp
   {
   }
 
+  bool empty() const {
+    return time.ticks() == 0;
+  }
+
   explicit GlobalTimestamp(double t) :
     epochs(0), time(t)
   {

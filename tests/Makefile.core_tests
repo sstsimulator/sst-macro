@@ -87,3 +87,7 @@ test_core_apps_%.$(CHKSUF): $(CORE_TEST_DEPS)
 	$(PYRUNTEST) 10 $(top_srcdir) $@ Exact \
     $(MPI_LAUNCHER) $(SSTMACEXEC) -f $(srcdir)/test_configs/test_$*.ini --no-wall-time $(THREAD_ARGS)
 
+test_stats_%s.$(CHKSUF): $(CORE_TEST_DEPS)
+	$(PYRUNTEST) 10 $(top_srcdir) $@ True \
+    $(SSTMACEXEC) -f $(srcdir)/test_configs/test_stats_$*.ini --low-res-timer --no-wall-time  
+

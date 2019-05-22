@@ -69,22 +69,10 @@ PiscesAbstractSwitch::PiscesAbstractSwitch(uint32_t id, SST::Params& params) :
   router_(nullptr),
   NetworkSwitch(id, params)
 {
-  SST::Params xbar_params = params.find_scoped_params("xbar");
-
-  SST::Params buf_params = params.find_scoped_params("output_buffer");
-
   SST::Params rtr_params = params.find_scoped_params("router");
   rtr_params.insert("id", std::to_string(my_addr_));
   router_ = sprockit::create<Router>(
      "macro", rtr_params.find<std::string>("name"), rtr_params, top_, this);
-
-  SST::Params ej_params = params.find_scoped_params("ejection");
-  std::vector<Topology::InjectionPort> conns;
-  top_->endpointsConnectedToEjectionSwitch(my_addr_, conns);
-  if (!ej_params.contains("credits")){
-    //never be limited by credits
-    ej_params.insert("credits", "1GB");
-  }
 }
 
 
@@ -97,6 +85,8 @@ PiscesSwitch::PiscesSwitch(uint32_t id, SST::Params& params)
 : PiscesAbstractSwitch(id, params),
   xbar_(nullptr)
 {
+  mtu_ = params.find<SST::UnitAlgebra>("mtu").getRoundedValue();
+
   SST::Params xbar_params = params.find_scoped_params("xbar");
   SST::Params link_params = params.find_scoped_params("link");
 
@@ -128,15 +118,28 @@ PiscesSwitch::PiscesSwitch(uint32_t id, SST::Params& params)
   xbar_ = new PiscesCrossbar("xbar", xbar_arb, xbar_bw, this,
                              top_->maxNumPorts(), top_->maxNumPorts(),
                              router_->numVC(), true/*yes, update vc*/);
-  out_buffers_.resize(top_->maxNumPorts());
+  int num_ports = top_->maxNumPorts();
+  out_buffers_.resize(num_ports);
+  for (int src_outport=0; src_outport < num_ports; ++src_outport){
+    double scale_factor = top_->portScaleFactor(my_addr_, src_outport);
+    std::string bufname = sprockit::printf(
+        "%s:buffer%d",top_->switchIdToName(my_addr_).c_str(), src_outport);
+    PiscesBuffer* out_buffer = new PiscesBuffer(link_params, bufname, arbType_,
+              link_bw_ * scale_factor, mtu_, this, router_->numVC());
+    out_buffers_[src_outport] = out_buffer;
+  }
+
+
+
   inports_.resize(top_->maxNumPorts());
   for (int i=0; i < inports_.size(); ++i){
     InputPort& inp = inports_[i];
     inp.port = i;
     inp.parent = this;
+    std::string subname = sprockit::printf("%s:port%d",
+             top_->switchIdToName(my_addr_).c_str(), inp.port);
+    inp.recv_bytes_ = registerStatistic<uint64_t>("recv_bytes", subname);
   }
-
-  mtu_ = params.find<SST::UnitAlgebra>("mtu").getRoundedValue();
 
   if (link_credits_ < mtu_){
     spkt_abort_printf("MTU %d is larger than credits %d", mtu_, link_credits_);
@@ -161,11 +164,8 @@ PiscesSwitch::connectOutput(
   int dst_inport,
   EventLink::ptr&& link)
 {
+  auto* out_buffer = out_buffers_[src_outport];
   double scale_factor = top_->portScaleFactor(my_addr_, src_outport);
-
-  PiscesBuffer* out_buffer = new PiscesBuffer(sprockit::printf("%s:buffer%d",top_->switchIdToName(my_addr_).c_str(), src_outport),
-                                              arbType_, link_bw_ * scale_factor, mtu_,
-                                              this, router_->numVC());
   int buffer_inport = 0;
   std::string out_port_name = sprockit::printf("buffer-out%d", src_outport);
   auto out_link = allocateSubLink(out_port_name, Timestamp(), this, //don't put latency on xbar
@@ -189,6 +189,7 @@ PiscesSwitch::InputPort::handle(Event *ev)
   payload->resetStages(payload->edgeOutport(), 0);
   payload->setInport(this->port);
   parent->xbar()->handlePayload(payload);
+  recv_bytes_->addData(payload->byteLength());
 }
 
 void

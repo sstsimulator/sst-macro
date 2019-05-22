@@ -49,8 +49,6 @@ quantiy & A catch-all for a quantity with units. Any of frequency, bandwidth, by
 \hline
 sst\_nthread \paramType{int} & 1 & Positive int & Only relevant for multi-threading. Specifying more threads than cores can lead to deadlock. \\
 \hline
-timestamp\_resolution \paramType{time} & 1ps & & Specifies the length of time occupied by 1 timestamp tick - the smallest resolvable time difference. Numerical stability depends on this parameter matching the time scales of the simulation. \\
-\hline
 serialization\_buffer\_size \paramType{byte length} & 16 KB & & Size to allocate for buffering point-to-point sends in parallel. This should set be large enough to handle serialization of all messages in a given time window, but not so large that significant space is wasted. \\
 \hline
 backup\_buffer\_size \paramType{byte length} & 1 MB & & Size to allocate for special overflow buffers when the standard buffer is overrun. This is the base size and continues to grow if buffers overflow again in a time window. This should be large enough so that buffers do not continuously overflow, but not so large that memory gets filled up. \\
@@ -101,8 +99,6 @@ redundant \paramType{vector of int} & vector of 1's & Positive ints & For Cartes
 \hline
 name \paramType{string} & simple & simple & The type of node model (level of detail) for node-level operations \\
 \hline
-services \paramType{vector of strings} & Empty & Valid service names & For  details, see section on distributed services in developer's manual. Advanced feature. \\
-\hline
 \end{tabular}
 
 \subsection{Namespace ``node.nic''}
@@ -110,37 +106,11 @@ services \paramType{vector of strings} & Empty & Valid service names & For  deta
 
 \openTable
 \hline
-name \paramType{string} & No default & pisces, logP & The type of NIC model (level of detail) for modeling injection of messages (flows) to/from the network. \\
-\hline
-packetizer \paramType{string} & cut\_through & merlin, simple, cut\_through & The type of packetizer for injecting flows into the network. Merlin is part of sst-elements. Simple and cut-through use PISCES \\
+name \paramType{string} & No default & pisces, logp, sculpin & The type of NIC model (level of detail) for modeling injection of messages (flows) to/from the network. \\
 \hline
 negligible\_size \paramType{byte length} & 256B & & Messages (flows) smaller than size will not go through detailed congestion modeling. They will go through a simple analytic model to compute the delay. \\
 \hline
 \end{tabular}
-
-\subsubsection{Namespace ``node.nic.delay\_histogram''}
-\label{subsubsec:node:nic:delayHistogram:Params}
-\input{histogramDescr}
-
-\subsubsection{Namespace ``node.nic.congestion\_spyplot''}
-\label{subsubsec:node:nic:congestionSpyplot:Params}
-\input{spyplotDescr}
-
-\subsubsection{Namespace ``node.nic.traffic\_matrix''}
-\label{subsubsec:node:nic:trafficMatrix:Params}
-\input{spyplotDescr}
-
-\subsubsection{Namespace ``node.nic.local\_bytes\_sent''}
-\label{subsubsec:node:nic:localSent:Params}
-\input{basicStatsDescr}
-
-\subsubsection{Namespace ``node.nic.global\_bytes\_sent''}
-\label{subsubsec:node:nic:globalSent:Params}
-\input{basicStatsDescr}
-
-\subsubsection{Namespace ``node.nic.message\_size\_histogram''}
-\label{subsubsec:node:nic:sizeHistogram:Params}
-\input{histogramDescr}
 
 \subsubsection{Namespace ``node.nic.ejection"}
 \label{subsubsec:node:nic:ejection:Params}
@@ -148,35 +118,8 @@ These parameters do not need to be specified, but can be given.
 Generally, the simulation assumes an infinite buffer size (unlimited memory) and no latency.
 All other parameters can be filled in from \inlinefile{node.nic.injection}.
 
-\openTable
-\hline
-stats \paramType{string} & null & 
-	delay\_histogram,
-  congestion\_spyplot,
-  multi,
-	null 
- & The type of statistics to collect from packets leaving or arriving at the NIC.
-   Null indicates no statistics collected. For details on the other types of statistics, see Section \ref{sec:tutorials:packetStats} \\
-\hline
-callbacks \paramType{vector of string} & No default & Any valid stats name & If \inlinefile{stats} is set to \inlinefile{multi},then multiple different stats can be given here \\
-\hline
-\input{piscesSenderBlock} 
-\hline
-\end{tabular}
-
 \subsubsection{Namespace ``node.nic.injection"}
 \label{subsubsec:node:nic:injection:Params}
-
-\openTable
-\hline
-stats \paramType{string} & null & 
-	delay\_histogram,
-	null 
- & The type of statistics to collect from packets leaving or arriving at the NIC.
-   Null indicates no statistics collected. For details on the other types of statistics, see Section \ref{sec:tutorials:packetStats} \\
-\input{piscesSenderBlock} 
-\hline
-\end{tabular}
 
 
 \subsection{Namespace ``node.memory''}
@@ -206,24 +149,6 @@ compute\_scheduler \paramType{string} & simple & simple, cpuset & The level of d
 stack\_size \paramType{byte length} & 64 KB & & The size of user-space thread stack to allocate for each virtual application \\
 \hline
 stack\_chunk\_size \paramType{byte length} & 1 MB & & The size of memory to allocate at a time when allocating new thread stacks. Rather than allocating one thread stack at a time, multiple stacks are allocated and added to a pool as needed.  \\
-\hline
-\end{tabular}
-
-\subsubsection{Namespace ``node.os.call\_graph"}
-\label{subsubsec:node:os:callGraph:Params}
-\openTable
-\hline
-\input{filerootDescr} \\
-\hline
-\end{tabular}
-
-\subsubsection{Namespace ``node.os.ftq"}
-\label{subsubsec:node:os:ftq:Params}
-\openTable
-\hline
-\input{filerootDescr} \\
-\hline 
-epoch \paramType{time} & No default & & The length of simulation time to treat as a single interval. This is much like a histogram bin, except the bin is partitioned into multiple categories. If too small, not enough data will be collected per interval to give reasonable looking results. If too large, significant changes in system activity over time will not be resolved. \\
 \hline
 \end{tabular}
 
@@ -274,9 +199,9 @@ poll\_delay (time) & 0 & & The minimum time spent by MPI each time it polls for 
 
 \openTable
 \hline
-model \paramType{string} & No default & logP, pisces & The type of switch model (level of detail) for modeling network traffic. \\
+name \paramType{string} & No default & logp, pisces, sculpin & The type of switch model (level of detail) for modeling network traffic. \\
 \hline
-buffer\_size \paramType{byte length} & No default & & The size of input and output buffers on each switch. This determines the number of credits available to other components \\
+mtu \paramType{byte length} & 1024B & & The packet size. All messages (flows) will be broken into units of this size. \\
 \hline
 \end{tabular}
 
@@ -291,57 +216,14 @@ ugal\_threshold \paramType{int} & 0 & & The minimum number of network hops requi
 \hline
 \end{tabular}
 
-\subsection{Namespace ``switch.output\_buffer"}
-\label{subsec:switch:outputBuffer:Params}
-
-\openTable
-\hline
-stats \paramType{string} & null & 
-	delay\_histogram,
-  byte\_hops,
-	null 
- & The type of statistics to collect from packets leaving or arriving at the switch output buffers.
-   Null indicates no statistics collected. For details on the other types of statistics, see Section \ref{sec:tutorials:packetStats} \\
-\hline
-\end{tabular}
-
-\subsubsection{Namespace ``switch.output\_buffer.delay\_histogram''}
-\label{subsubsec:switch:outputBuffer:delayHistogram:Params}
-\input{histogramDescr}
-
-\subsubsection{Namespace ``switch.output\_buffer.byte\_hops''}
-\label{subsubsec:switch:outputBuffer:delayHistogram:Params}
-\input{basicStatsDescr}
 
 \subsection{Namespace ``switch.xbar"}
-\label{sec:switch:outputBuffer:delayHistogram:Params}
-
-\openTable
-\hline
-stats \paramType{string} & null & 
-	bytes\_sent,
-	null 
- & The type of statistics to collect from packets leaving or arriving at the switch crossbar.
-   Null indicates no statistics collected. For details on the other types of statistics, see Section \ref{sec:tutorials:packetStats} \\
-\hline
-\input{piscesSenderBlock}
-\hline
-\end{tabular}
-
-\subsubsection{Namespace ``switch.xbar.bytes\_sent''}
-\label{subsubsec:switch:xbar:bytesSent:Params}
-\input{basicStatsDescr}
+\input{piscesSender}
 
 \subsection{Namespace ``switch.link''}
 \label{subsec:switch:link:Params}
 \input{piscesSender}
 
-\subsection{Namespace ``switch.ejection''}
-\label{subsec:switch:ejection:Params}
-This namespace is not actually required. 
-If unspecified, all of the values here will be filled in from \inlinefile{nic.injection}.
-
-\input{piscesSender}
 
 \section{Namespace ``appN''}
 \label{sec:appN:Params}

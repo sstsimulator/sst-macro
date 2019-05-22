@@ -62,7 +62,7 @@ RegisterKeywords(
 
 int USER_MAIN(int argc, char** argv)
 {
-  SSTMACBacktrace(main);
+  CallGraphAppend(main);
 
   uint32_t inc = 1;
   uint32_t sum = 10;

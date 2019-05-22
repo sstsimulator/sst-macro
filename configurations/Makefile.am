@@ -13,6 +13,7 @@ library_includedir=$(includedir)/sstmac/configurations
 
 library_include_HEADERS = \
   debug.ini \
+  ftq.ini \
   infinite.ini \
   pisces.ini \
   macrels.ini \

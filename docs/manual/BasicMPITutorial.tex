@@ -34,16 +34,25 @@ When \sstmacro launches, it will invoke this routine and pass in any command lin
 the code is now indistinguishable from regular MPI C++ code.  
 In the parameter file to be used with the simulation, you must set
 
-TODO: update to use exe parameters and .so files
-
 \begin{ViFile}
-node.app1.name = simple_test
+node {
+ app1 {
+  name = simple_test
 \end{ViFile}
 
 The name associated to the application is given by the \inlinecode{sstmac_app_name} macro.
 This macro must be defined to a unique string name in the source file containing \inlinecode{main}.
 \sstmacro will automatically associate the given main routine with the string internally.
 That application can then be selected in the input file with \inlineshell{app1.name}.
+
+While MPI would have produced an executable, SST works by loading shared object files using \inlinecode{dlopen}.
+To get SST to load the skeleton, you must specify the path of the ``executable" in the input file.
+
+\begin{ViFile}
+node {
+ app1 {
+  exe = <PATH_TO_EXE>
+\end{ViFile}
 
 At the very top of the file, the \inlineshell{mpi.h} header is actually mapped by the SST compiler to an \sstmacro header file.
 This header provides the MPI API and configures MPI function calls to link to \sstmacro instead of the real MPI library.  
@@ -67,3 +76,5 @@ The code now proceeds:
 }
 \end{CppCode}
 Here the code just checks the MPI rank and sends (rank 0) or receives (rank 1) a message.
+
+For more details on what exactly the SST compiler wrapper is doing, you can specify \inlineshell{SSTMAC_VERBOSE=1} as an environment variable to have SST print out detailed commands. Additionally, you can specify \inlineshell{SSTMAC_DELETE_TEMPS=0} to examine any temporary source-to-source files.

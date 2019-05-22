@@ -52,6 +52,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/software/process/operating_system_fwd.h>
 #include <sstmac/common/sstmac_config.h>
+#include <sstmac/common/timestamp.h>
 #include <sumi/message.h>
 #include <sprockit/thread_safe_new.h>
 
@@ -90,12 +91,6 @@ class Message : public sstmac::hw::NetworkMessage
   Message(int sender, int recver, int send_cq, int recv_cq, class_t cls,
           Args&&... args) :
    sstmac::hw::NetworkMessage(std::forward<Args>(args)...),
-#if SSTMAC_COMM_SYNC_STATS
-    sent_(-1),
-    header_arrived_(-1),
-    payload_arrived_(-1),
-    synced_(-1),
-#endif
     class_(cls),
     sender_(sender),
     recver_(recver),
@@ -222,49 +217,49 @@ class Message : public sstmac::hw::NetworkMessage
 
 #if SSTMAC_COMM_SYNC_STATS
  public:
-  double timeSent() const {
+  sstmac::GlobalTimestamp timeSent() const {
     return sent_;
   }
 
-  double timeHeaderArrived() const {
+  sstmac::GlobalTimestamp timeHeaderArrived() const {
     return header_arrived_;
   }
 
-  double timePayloadArrived() const {
+  sstmac::GlobalTimestamp timePayloadArrived() const {
     return payload_arrived_;
   }
 
-  double timeSynced() const {
+  sstmac::GlobalTimestamp timeSynced() const {
     return synced_;
   }
 
-  void setTimeSent(double now){
-    if (sent_ < 0){
+  void setTimeSent(sstmac::GlobalTimestamp now){
+    if (sent_.empty()){
       //if already set, don't overwrite
       sent_ = now;
     }
   }
 
-  void setTimeArrived(double now){
-    if (header_arrived_ < 0){
+  void setTimeArrived(sstmac::GlobalTimestamp now){
+    if (header_arrived_.empty()){
       header_arrived_ = now;
     } else {
       payload_arrived_ = now;
     }
   }
 
-  void setTimeSynced(double now){
+  void setTimeSynced(sstmac::GlobalTimestamp now){
     synced_ = now;
   }
 
  private:
-  double sent_;
+  sstmac::GlobalTimestamp sent_;
 
-  double header_arrived_;
+  sstmac::GlobalTimestamp header_arrived_;
 
-  double payload_arrived_;
+  sstmac::GlobalTimestamp payload_arrived_;
 
-  double synced_;
+  sstmac::GlobalTimestamp synced_;
 #endif
 };
 

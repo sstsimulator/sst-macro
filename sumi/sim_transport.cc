@@ -62,6 +62,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
 #include <sstmac/common/event_callback.h>
+#include <sstmac/common/stats/stat_spyplot.h>
 #include <sstmac/software/api/api.h>
 
 RegisterKeywords(
@@ -202,12 +203,11 @@ SimTransport::SimTransport(SST::Params& params, sstmac::sw::App* parent, SST::Co
   API(params, parent, comp),
   Transport("sumi", parent->sid(), parent->os()->addr()),
   //the server is what takes on the specified libname
-  spy_num_messages_(nullptr),
   spy_bytes_(nullptr),
   completion_queues_(1),
   default_progress_queue_(parent->os()),
   nic_ioctl_(parent->os()->nicDataIoctl()),
-  node_(parent->os()->node())
+  parent_app_(parent)
 {
   completion_queues_[0] = std::bind(&DefaultProgressQueue::incoming,
                                     &default_progress_queue_, 0, std::placeholders::_1);
@@ -237,12 +237,12 @@ SimTransport::SimTransport(SST::Params& params, sstmac::sw::App* parent, SST::Co
 
   server->registerProc(rank_, this);
 
-  /** TODO - stats
-  spy_num_messages_ = sstmac::optionalStats<sstmac::StatSpyplot>(desScheduler(),
-        params, "traffic_matrix", "ascii", "num_messages");
-  spy_bytes_ = sstmac::optionalStats<sstmac::StatSpyplot>(desScheduler(),
-        params, "traffic_matrix", "ascii", "bytes");
-  */
+#if !SSTMAC_INTEGRATED_SST_CORE
+  std::string subname = sprockit::printf("app%d.rank%d", parent->aid(), parent->tid());
+  auto* spy = comp->registerMultiStatistic<int,int,uint64_t>(params, "spy_bytes", subname);
+  spy_bytes_ = dynamic_cast<sstmac::StatSpyplot<int,int,uint64_t>*>(spy);
+#endif
+
   if (!engine_) engine_ = new CollectiveEngine(params, this);
 
   smp_optimize_ = params.find<bool>("smp_optimize", false);
@@ -339,11 +339,8 @@ void
 SimTransport::send(Message* m)
 {
 #if SSTMAC_COMM_SYNC_STATS
-  msg->setTimeSent(wall_time());
-
-  if (spy_num_messages_){
-    spy_num_messages_->addData(m->sender(), m->recver(), 1);
-  }
+  m->setTimeSent(parent_app_->now());
+#endif
 
   if (spy_bytes_){
     switch(m->sstmac::hw::NetworkMessage::type()){
@@ -358,7 +355,7 @@ SimTransport::send(Message* m)
       break;
     }
   }
-#endif
+
   switch(m->sstmac::hw::NetworkMessage::type()){
     case sstmac::hw::NetworkMessage::payload:
       if (m->recver() == rank_){
@@ -449,7 +446,7 @@ SimTransport::incomingMessage(Message *msg)
 {
 #if SSTMAC_COMM_SYNC_STATS
   if (msg){
-    msg->get_payload()->setTimeArrived(wall_time());
+    msg->setTimeArrived(parent_app_->now());
   }
 #endif
 
@@ -465,6 +462,12 @@ SimTransport::incomingMessage(Message *msg)
     debug_printf(sprockit::dbg::sumi, "Dropping message without CQ: %s", msg->toString().c_str());
     delete msg;
   }
+}
+
+sstmac::GlobalTimestamp
+SimTransport::now() const
+{
+  return parent_app_->now();
 }
 
 CollectiveEngine::CollectiveEngine(SST::Params& params, Transport *tport) :

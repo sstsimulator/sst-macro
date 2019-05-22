@@ -248,12 +248,12 @@ template <class Base, class... Args>
 Base* create(const std::string& elemlib, const std::string& elem, Args&&... args){
   auto* lib = Base::getBuilderLibrary(elemlib);
   if (!lib){
-    spkt_abort_printf("cannot find library %s for base type %s",
+    spkt_abort_printf("cannot find library '%s' for base type '%s'",
                       elemlib.c_str(), GetBaseName<Base>()());
   }
   auto* builder = lib->getBuilder(elem);
   if (!builder){
-    spkt_abort_printf("cannot find builder %s in library %s for base type %s",
+    spkt_abort_printf("cannot find builder '%s' in library '%s' for base type %s",
                       elem.c_str(), elemlib.c_str(), GetBaseName<Base>()());
   }
   return builder->create(std::forward<Args>(args)...);

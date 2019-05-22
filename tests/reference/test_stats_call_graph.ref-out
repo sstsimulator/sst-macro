@@ -1,0 +1,11 @@
+- Finished testing! test successful 
+Total runtime 2004.1831ms
+Dumping test.app1.rank0.thread0.callgrind.out
+Dumping test.app1.rank1.thread0.callgrind.out
+Dumping test.app1.rank2.thread0.callgrind.out
+Dumping test.app1.rank4.thread0.callgrind.out
+Dumping test.app1.rank3.thread0.callgrind.out
+Dumping test.app1.rank5.thread0.callgrind.out
+Dumping test.app1.rank6.thread0.callgrind.out
+Dumping test.app1.rank7.thread0.callgrind.out
+Estimated total runtime of     2.00 seconds

@@ -1767,7 +1767,6 @@ interconnect::interconnect(SST::Params& params, EventManager* mgr,
 
   sprockit::sim_parameters* nic_params = node_params.find_scoped_params("nic");
   sprockit::sim_parameters* inj_params = nic_params.find_scoped_params("injection");
-  sprockit::sim_parameters* ej_params = switch_params.find_scoped_params("ejection"); 
 
   buildEndpoints(node_params, nic_params, mgr);
   buildSwitches(switch_params, mgr);

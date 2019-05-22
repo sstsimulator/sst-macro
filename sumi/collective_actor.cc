@@ -166,7 +166,7 @@ DagCollectiveActor::start()
 void
 DagCollectiveActor::startAction(Action* ac)
 {
-  ac->start = my_api_->wallTime();
+  ac->start = my_api_->now();
   debug_printf(sumi_collective,
    "Rank %s starting action %s to partner %s on round %d offset %d tag %d -> id = %u: %d pending send headers, %d pending recv headers",
     rankStr().c_str(), Action::tostr(ac->type),
@@ -574,7 +574,8 @@ DagCollectiveActor::dataSent(CollectiveWorkMessage* msg)
 {
   Action* ac = commActionDone(Action::send, msg->round(), msg->domRecver());
 #if SSTMAC_COMM_SYNC_STATS
-  my_api_->collectSyncDelays(0,msg); //the zero doesn't matter here
+  //the zero doesn't matter here
+  my_api_->collectSyncDelays(ac->start,msg);
 #endif
 }
 
@@ -582,7 +583,7 @@ void
 DagCollectiveActor::dataRecved(Action* ac_, CollectiveWorkMessage* msg, void *recvd_buffer)
 {
 #if SSTMAC_COMM_SYNC_STATS
-  my_api_->collectSyncDelays(0,msg);
+  my_api_->collectSyncDelays(sstmac::GlobalTimestamp(),msg);
 #endif
   RecvAction* ac = static_cast<RecvAction*>(ac_);
   //we are allowed to have a null buffer
@@ -756,7 +757,7 @@ DagCollectiveActor::nextRoundReadyToGet(
       header->domSender(), header->round(), tag_, header);
 
 #if SSTMAC_COMM_SYNC_STATS
-    header->setTimeSynced(my_api_->wall_time());
+  my_api_->setTimeSynced(header);
 #endif
 
 }

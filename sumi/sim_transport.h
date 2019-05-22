@@ -145,6 +145,8 @@ class SimTransport : public Transport, public sstmac::sw::API {
     return now().sec();
   }
 
+  sstmac::GlobalTimestamp now() const override;
+
   void* allocatePublicBuffer(uint64_t size) override {
     return ::malloc(size);
   }
@@ -245,9 +247,7 @@ class SimTransport : public Transport, public sstmac::sw::API {
 
   sstmac::Timestamp poll_delay_;
 
-  sstmac::StatSpyplot* spy_num_messages_;
-
-  sstmac::StatSpyplot* spy_bytes_;
+  sstmac::StatSpyplot<int,int,uint64_t>* spy_bytes_;
 
   sstmac::Timestamp rdma_pin_latency_;
   sstmac::Timestamp rdma_page_delay_;
@@ -261,7 +261,7 @@ class SimTransport : public Transport, public sstmac::sw::API {
 
   std::queue<int> free_cq_ids_;
 
-  sstmac::hw::Node* node_;
+  sstmac::sw::App* parent_app_;
 
   sstmac::sw::TaskMapping::ptr rank_mapper_;
 

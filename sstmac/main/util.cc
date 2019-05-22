@@ -173,8 +173,7 @@ extern "C" int sstmac_atexit(void (*fxn)(void))
 extern "C"
 int sstmac_gethostname(char* name, size_t len)
 {
-  int addr = sstmac::sw::OperatingSystem::currentOs()->addr();
-  std::string sst_name = sprockit::printf("nid%d", addr);
+  std::string sst_name = sstmac::sw::OperatingSystem::currentOs()->hostname();
   if (sst_name.size() > len){
     return -1;
   } else {

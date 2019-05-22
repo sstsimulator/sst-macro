@@ -1,4 +1,7 @@
-Average time stats for application app1: 
-             MPI: 6917760.02957806 s
-            Null: 6917698.03562378 s
-Estimated total runtime of     5.00 seconds
+- Finished testing! test successful 
+Total runtime 2004.1831ms
+Aggregate time stats for ftq: 
+         Compute:          0.01601 s
+             MPI:         13.01756 s
+           Sleep:          3.00000 s
+Estimated total runtime of     2.00 seconds

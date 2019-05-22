@@ -50,7 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/handler_event_queue_entry.h>
 #include <sstmac/common/sst_event_fwd.h>
 #include <sstmac/common/sstmac_config.h>
-#include <sstmac/common/stats/stat_collector_fwd.h>
+#include <sstmac/common/stats/stat_collector.h>
 #include <sstmac/common/event_manager_fwd.h>
 #include <sstmac/common/event_scheduler_fwd.h>
 #include <sstmac/sst_core/integrated_component.h>
@@ -222,9 +222,11 @@ class EventScheduler : public sprockit::printable
     if (lib){
       auto* builder = lib->getBuilder(type);
       if (builder){
-        Stat* stat = builder->create(this, name, "", scoped_params);
+        Stat* stat = builder->create(this, name, subId, scoped_params);
         registerStatisticCore(stat, scoped_params);
         return stat;
+      } else {
+        statNotFound(scoped_params, name, type);
       }
     }
     return nullptr;
@@ -339,6 +341,8 @@ class EventScheduler : public sprockit::printable
 #endif
 
  private:
+  void statNotFound(SST::Params& params, const std::string& name, const std::string& type);
+
   static SST::Params& getEmptyParams();
 
   SST::Component* comp_;

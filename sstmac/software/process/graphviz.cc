@@ -46,12 +46,14 @@ Questions? Contact sst-macro-help@sandia.gov
 #define __STDC_FORMAT_MACROS
 #endif
 
-#include <sstream>
+#include <sstmac/common/sstmac_config.h>
 
+#if SSTMAC_HAVE_CALL_GRAPH
+
+#include <sstream>
 #include <sstmac/software/process/graphviz.h>
 #include <sprockit/statics.h>
 #include <sprockit/basic_string_tokenizer.h>
-#include <sstmac/common/sstmac_config.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/thread.h>
 #include <sstmac/backends/common/parallel_runtime.h>
@@ -73,12 +75,10 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-int graph_viz_registration::id_count = 0;
-std::unique_ptr<std::map<int,const char*>> graph_viz_registration::names;
+int CallGraphRegistration::id_count = 0;
+std::unique_ptr<std::map<int,const char*>> CallGraphRegistration::names;
 
-static sprockit::NeedDeletestatics<GraphViz> del_statics;
-
-GraphVizIncrementStack::GraphVizIncrementStack(int id)
+CallGraphIncrementStack::CallGraphIncrementStack(int id)
 {
   Thread* thr = OperatingSystem::currentThread();
   if (thr) {
@@ -88,7 +88,7 @@ GraphVizIncrementStack::GraphVizIncrementStack(int id)
   }
 }
 
-GraphVizIncrementStack::~GraphVizIncrementStack()
+CallGraphIncrementStack::~CallGraphIncrementStack()
 {
   Thread* thr = OperatingSystem::currentThread();
   if (thr) {
@@ -97,36 +97,36 @@ GraphVizIncrementStack::~GraphVizIncrementStack()
 }
 
 bool
-GraphViz::Trace::include() const
+CallGraph::FunctionTrace::include() const
 {
-  int ncalls = graph_viz_registration::numIds();
+  int ncalls = CallGraphRegistration::numIds();
   for (int id=0; id < ncalls; ++id){
-    if (calls_[id].counts){
+    if (calls_[id].time_ticks){
       return true;
     }
   }
-  return self_;
+  return self_time_ticks_;
 }
 
 std::string
-GraphViz::Trace::summary(const char* fxn) const
+CallGraph::FunctionTrace::summary(const char* fxn) const
 {
   std::stringstream sstr;
-  int ncalls = graph_viz_registration::numIds();
+  int ncalls = CallGraphRegistration::numIds();
   sstr << "fn=" << (const char*) fxn << "\n";
-  sstr << 0 << " " << self_ << "\n";
+  sstr << 0 << " " << self_time_ticks_ << "\n";
   for (int id=0; id < ncalls; ++id){
-    if (calls_[id].counts){
-      const char* fxn = graph_viz_registration::name(id);
+    if (calls_[id].time_ticks){
+      const char* fxn = CallGraphRegistration::name(id);
       sstr << "cfn=" << fxn << "\n";
       sstr << "calls=" << calls_[id].ncalls << " " << 0 << "\n";
-      sstr << 0 << " " << calls_[id].counts << "\n";
+      sstr << 0 << " " << calls_[id].time_ticks << "\n";
     }
   }
   return sstr.str();
 }
 
-graph_viz_registration::graph_viz_registration(const char* name, int id)
+CallGraphRegistration::CallGraphRegistration(const char* name, int id)
 {
   if (!names){
     names = std::unique_ptr<std::map<int,const char*>>(new std::map<int,const char*>);
@@ -135,56 +135,38 @@ graph_viz_registration::graph_viz_registration(const char* name, int id)
   (*names)[id] = name;
 }
 
-GraphViz::GraphViz(SST::BaseComponent *comp, const std::string &name,
+CallGraph::CallGraph(SST::BaseComponent *comp, const std::string &name,
                    const std::string &subName, SST::Params& params)
-  : Parent(comp, name, subName, params)
+  : SST::Statistics::CustomStatistic(comp, name, subName, params)
 {
-  int nfxns = graph_viz_registration::numIds();
-  auto trace_size = 1 + 2*nfxns;
-  auto total_size = trace_size * nfxns;
-  data_block_ = new uint64_t[total_size];
-  ::memset(data_block_, 0, total_size*sizeof(uint64_t));
-  uint64_t* ptr = data_block_;
-  traces_ = new Trace*[nfxns];
-  for (int i=0; i < nfxns; ++i, ptr += trace_size){
-    Trace* tr = new (ptr) Trace;
-    traces_[i] = tr;
-  }
+  int nfxns = CallGraphRegistration::numIds();
+  traces_.resize(nfxns, FunctionTrace{nfxns});
 }
 
 void
-GraphViz::addCall(
+CallGraph::addCall(
   int ncalls,
   uint64_t count,
   int fxnId,
   int callFxnId
 )
 {
-  Trace* tr = traces_[fxnId];
-  tr->addCall(callFxnId, ncalls, count);
+  traces_[fxnId].addCall(callFxnId, ncalls, count);
 }
 
-void
-GraphViz::deleteStatics()
-{
-}
-
-GraphViz::~GraphViz()
+CallGraph::~CallGraph()
 {
 }
 
 void
-GraphViz::addSelf(int fxnId, uint64_t count)
+CallGraph::addSelf(int fxnId, uint64_t count)
 {
-  traces_[fxnId]->addSelf(count);
+  traces_[fxnId].addSelf(count);
 }
 
 void
-GraphViz::addData_impl(uint64_t count, Thread* thr)
+CallGraph::collect(uint64_t count, Thread* thr)
 {
-#if !SSTMAC_HAVE_GRAPHVIZ
-  return; //nothing to do here
-#else
   /** see how much of the backtrace is new.  we don't
       want to double count the number of calls */
 
@@ -206,33 +188,127 @@ GraphViz::addData_impl(uint64_t count, Thread* thr)
   for (int i=0; i < recollect_stop; ++i) {
     int fxn = stack[i];
     int callfxn = stack[i+1];
-    add_call(0, count, fxn, callfxn);
+    //add time, but don't increment the number of calls (0)
+    addCall(0, count, fxn, callfxn);
   }
 
   for (int i=recollect_stop; i < stack_end; ++i) {
     int fxn = stack[i];
     int callfxn = stack[i+1];
-    add_call(1, count, fxn, callfxn);
+    //add time and increment the number of calls (1)
+    addCall(1, count, fxn, callfxn);
   }
 
   int fxn = stack[stack_end];
-  add_self(fxn, count);
+  addSelf(fxn, count);
 
-  thr->collectBacktrace(nfxn_total);
-#endif
+  thr->recordLastBacktrace(nfxn_total);
 }
 
 void
-GraphViz::reassign(int fxnId, uint64_t count, Thread* thr)
+CallGraph::reassign(int fxnId, uint64_t count, Thread* thr)
 {
-#if SSTMAC_HAVE_GRAPHVIZ
   int nfxn_total = thr->backtraceNumFxn();
   int stack_end = nfxn_total - 1;
   int fxn = thr->backtrace()[stack_end];
-  traces_[fxn]->reassign_self(fxnId, count);
-  traces_[fxnId]->add_self(count);
-#endif
+  if (traces_[fxn].selfTime() < count){
+    spkt_abort_printf(
+     "Bad reassignment on task %d - function %s only has %llu ticks, but %s wants to reassign %llu",
+     thr->tid(), CallGraphRegistration::name(fxn), traces_[fxn].selfTime(),
+     CallGraphRegistration::name(fxnId), count);
+  }
+
+  traces_[fxn].reassignSelf(fxnId, count);
+  traces_[fxnId].addSelf(count);
+}
+
+CallGraphOutput::CallGraphOutput(SST::Params& params) :
+  sstmac::StatisticOutput(params)
+{
+}
+
+void
+CallGraphOutput::startOutputGroup(StatisticGroup *grp)
+{
+  std::string fname = grp->name + ".csv";
+  csv_summary_.open(fname);
+
+  csv_summary_ << "Component,Function,CallFunction,Time";
+}
+
+void
+CallGraphOutput::dumpCallGraph(CallGraph* cgr)
+{
+  std::string fname = sprockit::printf("%s.%s.callgrind.out",
+             cgr->groupName().c_str(), cgr->getStatSubId().c_str());
+  std::cout << "Dumping " << fname << std::endl;
+  std::ofstream myfile(fname);
+
+  myfile << "events: Instructions\n\n";
+
+  int idx = 0;
+  for (auto& tr : cgr->traces()){
+    if (tr.include()){
+      const char* name = CallGraphRegistration::name(idx);
+      myfile << tr.summary(name);
+      myfile << "\n";
+    }
+    ++idx;
+  }
+
+  myfile.close();
+}
+
+void
+CallGraphOutput::dumpSummary(CallGraph* cgr)
+{
+  int idx = 0;
+  for (auto& tr : cgr->traces()){
+    if (tr.include()){
+      const char* name = CallGraphRegistration::name(idx);
+      uint64_t total = tr.selfTime();
+      for (auto& call : tr.calls()){
+        total += call.time_ticks;
+      }
+      //csv_summary_ << "\n" << cgr->getStatSubId() << ","
+      //       << name << ",total," << total;
+      csv_summary_ << "\n" << cgr->getStatSubId() << ","
+             << name << ",self," << tr.selfTime();
+
+      int callIdx = 0;
+      for (auto& call : tr.calls()){
+        if (call.time_ticks){
+          const char* callName = CallGraphRegistration::name(callIdx);
+          csv_summary_ << "\n" << cgr->getStatSubId() << ","
+             << name << "," << callName << "," << call.time_ticks;
+        }
+        ++callIdx;
+      }
+    }
+    ++idx;
+  }
+}
+
+void
+CallGraphOutput::output(StatisticBase *statistic, bool endOfSimFlag)
+{
+  CallGraph* cgr = dynamic_cast<CallGraph*>(statistic);
+  if (!cgr){
+    spkt_abort_printf("CallGraphOutput::output: received bad statistic");
+  }
+
+  dumpCallGraph(cgr);
+  dumpSummary(cgr);
+}
+
+void
+CallGraphOutput::stopOutputGroup()
+{
+  csv_summary_.close();
 }
 
 }
 }
+
+#endif
+

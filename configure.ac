@@ -180,13 +180,13 @@ CHECK_OTF2()
 
 CHECK_VTK()
 
-CHECK_MPI_TIMELINE_STATS()
-
 CHECK_THREAD_PARALLEL()
 
 #CHECK_FORTRAN()
 
-CHECK_BACKTRACE_VIZ()
+CHECK_CALL_GRAPH_VIZ()
+
+CHECK_DOT()
 
 CHECK_INTEGER_TYPES()
 
@@ -203,11 +203,6 @@ CHECK_CLANG_LLVM()
 # Configure dumpi.
 AC_CONFIG_SUBDIRS([sst-dumpi])
 
-#-------------------------------------------------
-# Custom new.  Make sure this is last otherwise 
-# configure tests will fail.
-#-------------------------------------------------
-CHECK_CUSTOM_NEW()
 
 #-------------------------------------------------
 # Finalize 

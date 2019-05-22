@@ -48,6 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/network/network_message_fwd.h>
 #include <sstmac/software/process/software_id.h>
 #include <sstmac/software/process/app_id.h>
+#include <sstmac/common/timestamp.h>
 #include <sumi/message_fwd.h>
 #include <sumi/collective.h>
 #include <sumi/comm_functions.h>
@@ -197,6 +198,8 @@ class Transport {
 
   virtual double wallTime() const = 0;
 
+  virtual sstmac::GlobalTimestamp now() const = 0;
+
   virtual void* allocatePublicBuffer(uint64_t size) = 0;
 
   virtual void* makePublicBuffer(void* buffer, uint64_t size) = 0;
@@ -248,6 +251,12 @@ class Transport {
   CollectiveEngine* engine() const {
     return engine_;
   }
+
+  virtual void collectSyncDelays(sstmac::GlobalTimestamp wait_start, Message* msg){}
+
+  virtual void startCollectiveSyncDelays(){}
+
+  virtual void setTimeSynced(Message* msg){}
 
  private:      
   virtual void send(Message* m) = 0;

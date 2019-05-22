@@ -80,7 +80,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/output.h>
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
-#include <sprockit/malloc.h>
 #include <sprockit/keyword_registration.h>
 
 #ifdef SSTMAC_OTF2_ENABLED
@@ -106,7 +105,7 @@ sprockit::StaticNamespaceRegister queue_ns_reg("queue");
 namespace sumi {
 
 static sprockit::NeedDeletestatics<MpiApi> del_statics;
-sstmac::sw::FTQTag MpiApi::mpi_tag("MPI");
+sstmac::sw::FTQTag MpiApi::mpi_tag("MPI", 1);
 
 MpiApi* sstmac_mpi()
 {
@@ -123,7 +122,6 @@ MpiApi::MpiApi(SST::Params& params, sstmac::sw::App* app,
   status_(is_fresh),
 #if SSTMAC_COMM_SYNC_STATS
   last_collection_(0),
-  dump_comm_times_(false),
 #endif
   next_type_id_(0),
   next_op_id_(first_custom_op_id),
@@ -149,11 +147,6 @@ MpiApi::MpiApi(SST::Params& params, sstmac::sw::App* app,
 
   double test_delay_s = params.find<SST::UnitAlgebra>("test_delay", "0s").getValue().toDouble();
   test_delay_us_ = test_delay_s * 1e6;
-
-#if SSTMAC_COMM_SYNC_STATS
-  dump_comm_times_ = params.find<bool>("dump_comm_times", false);
-#endif
-
 
 #ifdef SSTMAC_OTF2_ENABLED
 #if !SSTMAC_INTEGRATED_SST_CORE
@@ -227,13 +220,20 @@ MpiApi::commRank(MPI_Comm comm, int *rank)
 int
 MpiApi::init(int* argc, char*** argv)
 {
+#if SSTMAC_COMM_SYNC_STATS
+#if SSTMAC_HAVE_CALL_GRAPH
+#else
+#error Synchronization stats require call graph feature to be activated
+#endif
+#endif
+
   auto start_clock = traceClock();
 
   if (status_ == is_initialized){
     sprockit::abort("MPI_Init cannot be called twice");
   }
 
-  start_mpi_call(MPI_Init);
+  StartMPICall(MPI_Init);
 
   sumi::SimTransport::init();
 
@@ -268,6 +268,8 @@ MpiApi::init(int* argc, char*** argv)
   }
 #endif
 
+  FinishMPICall(MPI_Init);
+
   return MPI_SUCCESS;
 }
 
@@ -287,7 +289,7 @@ MpiApi::finalize()
 {
   auto start_clock = traceClock();
 
-  start_mpi_call(MPI_Finalize);
+  StartMPICall(MPI_Finalize);
 
   auto op = startBarrier("MPI_Finalize", MPI_COMM_WORLD);
   waitCollective(std::move(op));
@@ -315,21 +317,6 @@ MpiApi::finalize()
   engine_->cleanUp();
   SimTransport::finish();
 
-#if SSTMAC_COMM_SYNC_STATS
-  if (dump_comm_times_){
-    std::string fname = sprockit::printf("commStats.%d.out", rank);
-    std::ofstream ofs(fname.c_str());
-    ofs << sprockit::printf("%-16s %-16s %-16s\n", "Function", "Comm Delay", "Synchronization");
-    for (auto& pair : mpi_calls_){
-      MPI_function fxn = pair.first;
-      mpi_sync_timing_stats& stats = pair.second;
-      ofs << sprockit::printf("%-16s %-16.8f %-16.8f\n",
-              MPI_Call::ID_str(fxn), stats.nonSync.sec(), stats.sync.sec());
-    }
-    ofs.close();
-  }
-#endif
-
   endAPICall();
 
   return MPI_SUCCESS;
@@ -342,7 +329,7 @@ double
 MpiApi::wtime()
 {
   auto call_start_time = (uint64_t)now().usec();
-  start_mpi_call(MPI_Wtime);
+  StartMPICall(MPI_Wtime);
   return now().sec();
 }
 
@@ -608,63 +595,58 @@ MpiApi::errorString(int errorcode, char *str, int *resultlen)
 
 #if SSTMAC_COMM_SYNC_STATS
 void
-mpi_api::startCollectiveSyncDelays()
+MpiApi::startCollectiveSyncDelays()
 {
-  last_collection_ = now().sec();
+  last_collection_ = now();
 }
 
-GraphVizCreateTag(sync);
+CallGraphCreateTag(idle);
+CallGraphCreateTag(active);
 
 void
-mpi_api::collectSyncDelays(double wait_start, message* msg)
+MpiApi::collectSyncDelays(sstmac::GlobalTimestamp wait_start, Message* msg)
 {
   //there are two possible sync delays
   //#1: For sender, synced - header_arrived
   //#2: For recver, time_sent - wait_start
-
-  double sync_delay = 0;
-  double start = std::max(last_collection_, wait_start);
+  sstmac::Timestamp sync_delay;
+  sstmac::GlobalTimestamp start = std::max(last_collection_, wait_start);
   if (start < msg->timeSent()){
     sync_delay += msg->timeSent() - start;
   }
 
-  double header_arrived = std::max(start, msg->timeHeaderArrived());
+
+  sstmac::GlobalTimestamp header_arrived = std::max(start, msg->timeHeaderArrived());
   if (header_arrived < msg->timeSynced()){
     sync_delay += msg->timeSynced() - header_arrived;
   }
 
-  mpi_api_debug(sprockit::dbg::mpi_sync,
-     "wait=%8.6e,last=%8.6e,sent=%8.6e,header=%8.6e,payload=%10.7e,sync=%10.7e,total=%10.7e",
-     wait_start, last_collection_, msg->timeSent(),
-     msg->timeHeaderArrived(), msg->timePayloadArrived(),
-     msg->timeSynced(), sync_delay);
+  if (sync_delay.ticks()){
+    mpi_api_debug(sprockit::dbg::mpi_sync,
+       "wait=%llu,last=%llu,sent=%llu,header=%llu,payload=%llu,sync=%llu,total=%llu",
+       wait_start.time.ticks(), last_collection_.time.ticks(), msg->timeSent().time.ticks(),
+       msg->timeHeaderArrived().time.ticks(), msg->timePayloadArrived().time.ticks(),
+       msg->timeSynced().time.ticks(), sync_delay.ticks());
 
-  sstmac::timestamp sync = sstmac::timestamp(sync_delay);
-  current_call_.sync += sync;
-  last_collection_ = now().sec();
-
-  if (os_->callGraph()){
-    os_->callGraph()->reassign(GraphVizTag(sync), sync.ticks(), os_->activeThread());
+    current_call_.idle += sync_delay;
   }
+
+  last_collection_ = now();
 }
 
 void
-mpi_api::finishLastMpiCall(MPI_function func, bool dumpThis)
+MpiApi::finishCurrentMpiCall()
 {
-  if (dumpThis && dump_comm_times_ && crossed_comm_world_barrier()){
-    sstmac::timestamp total = now() - current_call_.start;
-    mpi_sync_timing_stats& stats = mpi_calls_[func];
-    sstmac::timestamp nonSync = total - current_call_.sync;
-    stats.nonSync += nonSync;
-    stats.sync += current_call_.sync;
-    mpi_api_debug(sprockit::dbg::mpi_sync,
-       "finishing call %s with total %10.6e, sync %10.6e, comm %10.6e, start %10.6e, now %10.6e",
-       MPI_Call::ID_str(func), total.sec(), current_call_.sync.sec(),
-                  nonSync.sec(), current_call_.start.sec(), now().sec());
+  if (current_call_.idle.ticks()){
+    auto* thr = parent_app_->os()->activeThread();
+    if (thr->callGraph()){
+      mpi_api_debug(sprockit::dbg::mpi_sync,
+             "reassigning %llu ticks to idle", current_call_.idle.ticks());
+      thr->callGraph()->reassign(CallGraphTag(idle), current_call_.idle.ticks(), thr);
+      current_call_.idle = sstmac::Timestamp(); //zero for next guy
+    }
   }
-  current_call_.sync = sstmac::timestamp(); //zero for next guy
 }
-
 #endif
 
 #define enumcase(x) case x: return #x

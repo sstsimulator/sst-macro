@@ -321,10 +321,7 @@ OperatingSystem::OperatingSystem(SST::Params& params, hw::Node* parent) :
 #endif
   node_(parent),
   active_thread_(nullptr),
-  callGraph_(nullptr),
-  callGraph_active_(true), //on by default
   des_context_(nullptr),
-  ftq_trace_(nullptr),
   compute_sched_(nullptr),
   SubComponent("os", parent),
   params_(params)
@@ -336,16 +333,6 @@ OperatingSystem::OperatingSystem(SST::Params& params, hw::Node* parent) :
     "macro", params.find<std::string>("compute_scheduler", "simple"),
     params, this, node_ ? node_->proc()->ncores() : 1, node_ ? node_->nsocket() : 1);
 
-#if SSTMAC_HAVE_GRAPHVIZ
-  stat_descr_t stat_descr;
-  stat_descr.dump_all = false;
-  stat_descr.unique_tag = &cg_tag;
-  callGraph_ = optionalStats<graph_viz>(parent,
-          params, "callGraph", "callGraph", &stat_descr);
-#endif
-
-  //ftq_trace_ = optionalStats<FTQCalendar>(parent, params, "ftq", "ftq");
-
   StackAlloc::init(params);
 
   rebuildMemoizations();
@@ -355,7 +342,12 @@ OperatingSystem::OperatingSystem(SST::Params& params, hw::Node* parent) :
   for (auto& key : keys){
     env_[key] = env_params.find<std::string>(key);
   }
+}
 
+std::string
+OperatingSystem::hostname() const
+{
+  return node_->hostname();
 }
 
 void
@@ -394,7 +386,9 @@ OperatingSystem::addMemoization(const std::string& name, const std::string& mode
 void
 OperatingSystem::allocateCore(Thread *thr)
 {
+  os_debug("attempting to reserve core for thread %d", thr->threadId());
   compute_sched_->reserveCores(1, thr);
+  os_debug("successfully reserved core for thread %d");
 }
 
 void
@@ -434,10 +428,8 @@ OperatingSystem::~OperatingSystem()
   }
   if (compute_sched_) delete compute_sched_;
 
-#if SSTMAC_HAVE_GRAPHVIZ
-  if (callGraph_) delete callGraph_;
-#endif
-
+  //these are owned now by the stats system - don't delete here
+  //if (callGraph_) delete callGraph_;
   //if (ftq_trace_) delete ftq_trace_;
 }
 
@@ -479,6 +471,9 @@ OperatingSystem::deleteStatics()
 void
 OperatingSystem::sleep(Timestamp t)
 {
+  CallGraphAppend(sleep);
+  FTQScope scope(active_thread_, FTQTag::sleep);
+
   sw::UnblockEvent* ev = new sw::UnblockEvent(this, active_thread_);
   sendDelayedExecutionEvent(t, ev);
   int ncores = active_thread_->numActiveCcores();
@@ -493,6 +488,7 @@ OperatingSystem::sleepUntil(GlobalTimestamp t)
 {
   GlobalTimestamp now_ = now();
   if (t > now_){
+    FTQScope scope(active_thread_, FTQTag::sleep);
     sw::UnblockEvent* ev = new sw::UnblockEvent(this, active_thread_);
     sendExecutionEvent(t, ev);
     int ncores = active_thread_->numActiveCcores();
@@ -508,8 +504,7 @@ OperatingSystem::compute(Timestamp t)
 {
   // guard the ftq tag in this function
   const auto& cur_tag = active_thread_->tag();
-  FTQScope scope(active_thread_,
-      cur_tag.id() == FTQTag::null.id() ? FTQTag::compute:cur_tag);
+  FTQScope scope(active_thread_, FTQTag::compute);
 
   sw::UnblockEvent* ev = new sw::UnblockEvent(this, active_thread_);
   sendDelayedExecutionEvent(t, ev);
@@ -665,7 +660,7 @@ OperatingSystem::computeMemoize(const char *token, int n_params, double params[]
 }
 
 void
-OperatingSystem::reassign_cores(Thread *thr)
+OperatingSystem::reassignCores(Thread *thr)
 {
   int ncores = thr->numActiveCcores();
   //this is not equivalent to a no-op
@@ -703,16 +698,8 @@ OperatingSystem::block()
   GlobalTimestamp after = now();
   Timestamp elapsed = after - before;
 
-  if (callGraph_ && callGraph_active_) {
-    callGraph_->addData(elapsed.ticks(), active_thread_);
-  }
-
-  if (ftq_trace_){
-    FTQTag tag = active_thread_->tag();
-    ftq_trace_->addData(tag.id(),
-      active_thread_->aid(), active_thread_->tid(),
-      before.time.ticks(), elapsed.ticks());
-    active_thread_->setTag(FTQTag::null);
+  if (elapsed.ticks()){
+    active_thread_->collectStats(before, elapsed);
   }
 }
 
@@ -978,10 +965,6 @@ OperatingSystem::startApp(App* theapp, const std::string& unique_name)
     int(theapp->tid()), int(theapp->aid()), threadId());
   //this should be called from the actual thread running it
   initThreading(params_);
-  if (ftq_trace_){
-    ftq_trace_->registerApp(theapp->aid(), sprockit::printf("app%d", int(theapp->aid())));
-  }
-
   startThread(theapp);
 }
 
