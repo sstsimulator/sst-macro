@@ -118,6 +118,12 @@ static const char* matplotlib_histogram_text_footer =
 
 #if !SSTMAC_INTEGRATED_SST_CORE
 
+FTQAccumulator::FTQAccumulator(SST::BaseComponent *comp, const std::string &name,
+                               const std::string &subName, SST::Params &params) :
+  SST::Statistics::MultiStatistic<int,uint64_t,uint64_t>(comp,name,subName,params)
+{
+}
+
 void
 FTQAccumulator::registerOutputFields(SST::Statistics::StatisticOutput *statOutput)
 {
