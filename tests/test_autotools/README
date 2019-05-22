@@ -1,0 +1,16 @@
+This is a simple project used to test compatibility of the sst-macro compiler wrappers with autotools environments. 
+
+Bootstrap the project:
+# ./bootstrap
+
+Configure/run the test executable with real mpi compilers (no simulation):
+# ./run_config.sh
+# make
+# ./run_test.sh
+
+Configure/run the test using sst-macro compilers and simulator:
+# ./run_config_macro.sh
+# make
+# ./run_test_macro.sh
+
+Note: Make sure the desired compilers or compiler wrappers are found in your path.

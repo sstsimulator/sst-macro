@@ -137,7 +137,7 @@ parseOpts(int argc, char **argv, opts &oo)
   bool errorflag = false;
   std::list<std::pair<std::string, std::string> > paramlist;
   optind = 1;
-  while ((ch = getopt_long(argc, argv, "Phad:f:p:m:n:u:i:c:b:V:g:D:o:e:", gopt, NULL))
+  while ((ch = getopt_long(argc, argv, "Phad:f:t:p:m:n:u:i:c:b:V:g:D:o:e:", gopt, NULL))
          != -1) {
     switch (ch) {
       case 0:
@@ -245,29 +245,8 @@ parseOpts(int argc, char **argv, opts &oo)
   }
 
   if (oo.configfile == "" && need_config_file){
-    //okay, this is really, really dirty - but okay, sacrifices must be made
-    std::string exe_name = argv[0];
-    auto pos = exe_name.rfind("/");
-    if (pos!= std::string::npos){
-      exe_name = exe_name.substr(pos+1);
-    }
-#if !SSTMAC_INTEGRATED_SST_CORE
-    //TODO - a better to have standalone execution
-    bool is_stand_alone = false; //sstmac::sw::App::factory::isValidName("sstmac_app_name");
-    if (is_stand_alone){
-      int rc = sstmac::runStandalone(argc,argv);
-      if (rc == 0){
-        return PARSE_OPT_EXIT_SUCCESS;
-      } else {
-        return PARSE_OPT_EXIT_FAIL;
-      }
-#else
-    if (false){
-#endif
-    } else {
-      std::cerr << "need to specify input file with -f flag" << std::endl;
-    }
-    return PARSE_OPT_EXIT_SUCCESS;
+    std::cerr << "need to specify input file with -f flag" << std::endl;
+    return PARSE_OPT_EXIT_FAIL;
   }
 
   if (print_params) {
