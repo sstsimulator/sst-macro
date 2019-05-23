@@ -62,12 +62,12 @@ RegisterNamespaces("congestion_delays", "congestion_matrix");
 namespace sstmac {
 namespace hw {
 
-PiscesNIC::PiscesNIC(SST::Params& params, Node* parent) :
-  NIC(params, parent),
+PiscesNIC::PiscesNIC(SST::Component* parent, SST::Params& params) :
+  NIC(parent, params),
   pending_inject_(1)
 {
   SST::Params inj_params = params.find_scoped_params("injection");
-  self_mtl_link_ = allocateSubLink("mtl", Timestamp(), parent,
+  self_mtl_link_ = allocateSubLink("mtl", Timestamp(), parent_,
                                     newLinkHandler(this, &NIC::mtlHandle));
 
   inj_credits_ = inj_params.find<SST::UnitAlgebra>("credits").getRoundedValue();
@@ -76,22 +76,20 @@ PiscesNIC::PiscesNIC(SST::Params& params, Node* parent) :
   packet_size_ = inj_params.find<SST::UnitAlgebra>("mtu").getRoundedValue();
 
   //PiscesSender::configurePayloadPortLatency(inj_params);
-  auto buf_name = sprockit::printf("%s",top_->nodeIdToName(parent->addr()).c_str());
-  inj_buffer_ = new PiscesBuffer(inj_params, buf_name, arb, inj_bw,
-                                 packet_size_, parent, 1/*single vc for inj*/);
+  auto buf_name = sprockit::printf("%s",top_->nodeIdToName(parent_->addr()).c_str());
+  inj_buffer_ = new PiscesBuffer(inj_params, buf_name, componentId(), arb, inj_bw,
+                                 packet_size_, parent_, 1/*single vc for inj*/);
 }
 
 void
 PiscesNIC::init(unsigned int phase)
 {
-  inj_buffer_->init(phase);
 }
 
 void
 PiscesNIC::setup()
 {
   SubComponent::setup();
-  inj_buffer_->setup();
 }
 
 PiscesNIC::~PiscesNIC() throw ()

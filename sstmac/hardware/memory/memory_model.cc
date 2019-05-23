@@ -47,6 +47,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/event_manager.h>
 #include <sprockit/statics.h>
 #include <sprockit/sim_parameters.h>
+#include <sprockit/util.h>
 
 RegisterDebugSlot(memory, "debug info related to memory accesses");
 
@@ -55,11 +56,11 @@ namespace hw {
 
 static sprockit::NeedDeletestatics<MemoryModel> need_del;
 
-MemoryModel::MemoryModel(SST::Params& params, Node* parent_node) :
+MemoryModel::MemoryModel(SST::Component* parent_node, SST::Params& params) :
   SubComponent("mem", parent_node)
 {
-  parent_node_ = parent_node;
-  nodeid_ = parent_node->addr();
+  parent_node_ = safe_cast(Node, parent_node);
+  nodeid_ = parent_node_->addr();
 }
 
 NodeId

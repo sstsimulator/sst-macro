@@ -86,6 +86,16 @@ class OperatingSystem : public SubComponent
   friend class Thread;
 
  public:
+#if SSTMAC_INTEGRATED_SST_CORE
+  SST_ELI_REGISTER_SUBCOMPONENT(
+    OperatingSystem,
+    "macro",
+    "os",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "the operating system for a node",
+    "OS")
+#endif
+
   struct ImplicitState {
     SST_ELI_DECLARE_BASE(ImplicitState)
     SST_ELI_DECLARE_DEFAULT_INFO()
@@ -206,7 +216,7 @@ class OperatingSystem : public SubComponent
     std::vector<int> free_slots_;
   };
 
-  OperatingSystem(SST::Params& params, hw::Node* parent);
+  OperatingSystem(SST::Component* parent, SST::Params& params);
 
   virtual ~OperatingSystem();
 

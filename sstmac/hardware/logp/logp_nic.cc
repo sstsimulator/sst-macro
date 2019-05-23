@@ -55,9 +55,9 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-LogPNIC::LogPNIC(SST::Params& params, Node* parent) :
+LogPNIC::LogPNIC(SST::Component* parent, SST::Params& params) :
   next_out_free_(),
-  NIC(params, parent)
+  NIC(parent, params)
 {
   SST::Params inj_params = params.find_scoped_params("injection");
   inj_byte_delay_ = Timestamp(inj_params.find<SST::UnitAlgebra>("bandwidth").getValue().inverse().toDouble());

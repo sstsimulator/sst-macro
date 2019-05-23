@@ -332,7 +332,7 @@ runStandalone(int argc, char** argv)
 #endif
 
   sstmac::hw::SimpleNode node(0, null_params);
-  sstmac::sw::OperatingSystem os(null_params, &node);
+  sstmac::sw::OperatingSystem os(&node, null_params);
 
   node.init(0);
   node.setup();

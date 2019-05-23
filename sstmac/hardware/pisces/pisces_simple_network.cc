@@ -68,7 +68,7 @@ PiscesSimpleNetwork::PiscesSimpleNetwork(SST::Params& params, SST::Component *co
   double bw = inj_params.find<SST::UnitAlgebra>("bandwidth").getValue().toDouble();
   //PiscesSender::configurePayloadPortLatency(inj_params);
   std::string arb = inj_params.find<std::string>("arbirtrator");
-  inj_buffer_ = new PiscesBuffer(inj_params, "merlin-inj", arb, bw,
+  inj_buffer_ = new PiscesBuffer(inj_params, "merlin-inj", componentId(), arb, bw,
                                  inj_params.find<SST::UnitAlgebra>("mtu").getRoundedValue(),
                                  comp, 1);
 

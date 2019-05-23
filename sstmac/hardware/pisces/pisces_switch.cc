@@ -115,7 +115,7 @@ PiscesSwitch::PiscesSwitch(uint32_t id, SST::Params& params)
     xbar_credits_ = link_credits_;
   }
 
-  xbar_ = new PiscesCrossbar("xbar", xbar_arb, xbar_bw, this,
+  xbar_ = new PiscesCrossbar("xbar", componentId(), xbar_arb, xbar_bw, this,
                              top_->maxNumPorts(), top_->maxNumPorts(),
                              router_->numVC(), true/*yes, update vc*/);
   int num_ports = top_->maxNumPorts();
@@ -124,8 +124,8 @@ PiscesSwitch::PiscesSwitch(uint32_t id, SST::Params& params)
     double scale_factor = top_->portScaleFactor(my_addr_, src_outport);
     std::string bufname = sprockit::printf(
         "%s:buffer%d",top_->switchIdToName(my_addr_).c_str(), src_outport);
-    PiscesBuffer* out_buffer = new PiscesBuffer(link_params, bufname, arbType_,
-              link_bw_ * scale_factor, mtu_, this, router_->numVC());
+    PiscesBuffer* out_buffer = new PiscesBuffer(link_params, bufname, componentId(),
+              arbType_, link_bw_ * scale_factor, mtu_, this, router_->numVC());
     out_buffers_[src_outport] = out_buffer;
   }
 
@@ -215,20 +215,12 @@ PiscesSwitch::toString() const
 void
 PiscesSwitch::setup()
 {
-  for (auto* buf : out_buffers_){
-    if (buf) buf->setup();
-  }
-  xbar_->setup();
   PiscesAbstractSwitch::setup();
 }
 
 void
 PiscesSwitch::init(unsigned int phase)
 {
-  for (auto* buf : out_buffers_){
-    if (buf) buf->init(phase);
-  }
-  xbar_->init(phase);
 }
 
 LinkHandler*
