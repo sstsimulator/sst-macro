@@ -137,6 +137,8 @@ MpiQueue::init()
   if (cmsg->tag() != 0){
     spkt_abort_printf("got bad collective done message in mpi_queue::init");
   }
+  delete cmsg;
+
   if (!init.all_equal){
     spkt_abort_printf("MPI_Init: procs did not agree on completion queue ids");
   }

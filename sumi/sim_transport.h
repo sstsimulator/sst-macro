@@ -83,6 +83,8 @@ class QoSAnalysis {
 
   QoSAnalysis(SST::Params& params){}
 
+  virtual ~QoSAnalysis(){}
+
   virtual int selectQoS(Message* m) = 0;
 
   virtual void logDelay(sstmac::Timestamp delay, Message* m) = 0;

@@ -196,6 +196,8 @@ MpiApi::~MpiApi()
     MpiRequest* req = pair.second;
     delete req;
   }
+
+  if (qos_analysis_) delete qos_analysis_;
 }
 
 int

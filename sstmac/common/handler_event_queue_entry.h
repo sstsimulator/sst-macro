@@ -12,7 +12,9 @@ class HandlerExecutionEvent :
   public sprockit::thread_safe_new<HandlerExecutionEvent>
 {
  public:
+#if SSTMAC_CUSTOM_NEW
   using sprockit::thread_safe_new<HandlerExecutionEvent>::operator delete;
+#endif
 
   virtual ~HandlerExecutionEvent() {}
 

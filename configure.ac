@@ -157,6 +157,8 @@ AM_CONDITIONAL(HAVE_REGEXP, false)
 # thread context switching of applications
 CHECK_THREADING()
 
+CHECK_CUSTOM_NEW()
+
 # Check for whether to support event calendar optimizations
 CHECK_EVENT_CALENDAR()
 

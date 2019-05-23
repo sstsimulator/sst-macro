@@ -85,9 +85,7 @@ class allocator
 
 };
 
-#if SSTMAC_VALGRIND_MODE
-template <class T> using threadSafeAllocator = std::allocator<T>;
-#else
+#if SSTMAC_CUSTOM_NEW
 template <class T>
 class threadSafeAllocator
 {
@@ -127,6 +125,8 @@ class threadSafeAllocator
   }
 
 };
+#else
+template <class T> using threadSafeAllocator = std::allocator<T>;
 #endif
 
 }

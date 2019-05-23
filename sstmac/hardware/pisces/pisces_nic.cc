@@ -177,7 +177,6 @@ PiscesNIC::doSend(NetworkMessage* netmsg)
   nic_debug("packet flow: sending %s", netmsg->toString().c_str());
   int vn = 0; //we only ever use one virtual network
 
-
   uint64_t offset = inject(vn, 0, netmsg);
   if (offset < netmsg->byteLength()){
     pending_inject_[vn].emplace(offset, netmsg->byteLength(), netmsg);
