@@ -25,8 +25,6 @@
 #include <mpi.h>
 #endif
 
-#define sstmac_app_name hpcg
-
 #include <fstream>
 #include <iostream>
 #include <cstdlib>

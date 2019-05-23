@@ -51,6 +51,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <ostream>
 #include <sstream>
 #include "clangHeaders.h"
+#include "util.h"
 
 struct GlobalVarNamespace
 {
@@ -85,24 +86,6 @@ struct GlobalVarNamespace
   void addMemoization(const std::string& name, const std::string& model){
     memoizationModels[name] = model;
   }
-
-  static std::string makeCxxName(const std::string& name){
-    char uniqueFilePrefix[1024];
-    ::strcpy(uniqueFilePrefix, name.c_str());
-    int len = ::strlen(uniqueFilePrefix);
-    for (int i=0; i < len; ++i){
-      switch (uniqueFilePrefix[i]){
-        case '-':
-        case '/':
-        case '.':
-        case ':':
-          uniqueFilePrefix[i] = '_';
-          break;
-      }
-    }
-    return uniqueFilePrefix;
-  }
-
 
   const std::string& uniqueFilePrefix(clang::CompilerInstance* ci, clang::SourceLocation loc){
     if (filenamePrefix.empty()){

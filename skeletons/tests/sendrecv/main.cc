@@ -46,8 +46,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <stddef.h>
 #include <stdio.h>
 
-#define sstmac_app_name runsendrecv
-
 int main(int argc, char** argv)
 {
   MPI_Init(&argc, &argv);

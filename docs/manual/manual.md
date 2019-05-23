@@ -1393,8 +1393,6 @@ This code should be compiled with SST compiler wrappers installed in the `bin` f
 #include <stdio.h>
 #include <mpi.h>
 
-#define sstmac_app_name simple_test
-
 int main(int argc, char **argv) 
 {
   int message_size = 128;
@@ -1420,22 +1418,13 @@ In the parameter file to be used with the simulation, you must set
 ````
 node {
  app1 {
-  name = simple_test
+  exe = <PATH_TO_EXE>
 ````
-
-The name associated to the application is given by the `sstmac_app_name` macro.
-This macro must be defined to a unique string name in the source file containing `main`.
-SST-macro will automatically associate the given main routine with the string internally.
-That application can then be selected in the input file with `app1.name`.
 
 While MPI would have produced an executable, SST works by loading shared object files using `dlopen`.
 To get SST to load the skeleton, you must specify the path of the "executable" in the input file.
-
-````
-node {
- app1 {
-  exe = <PATH_TO_EXE>
-````
+Using `dlopen` tricks, SST finds the main function in the .so file and calls it to spawn the skeleton app.
+Just as an executable can only have one main, SST shared object files can only have a single executable in them at a time.
 
 At the very top of the file, the `mpi.h` header is actually mapped by the SST compiler to an SST-macro header file.
 This header provides the MPI API and configures MPI function calls to link to SST-macro instead of the real MPI library.  
@@ -1461,6 +1450,35 @@ if (nproc != 2) {
 Here the code just checks the MPI rank and sends (rank 0) or receives (rank 1) a message.
 
 For more details on what exactly the SST compiler wrapper is doing, you can specify `SSTMAC_VERBOSE=1` as an environment variable to have SST print out detailed commands. Additionally, you can specify `SSTMAC_DELETE_TEMPS=0` to examine any temporary source-to-source files.
+
+\subsection{DEPRECATED: App name macro}
+Previously, applications had to be ``named" by using the `sstmac_app_name` macro.
+This macro can still be define just above main to give a descriptive name to the skeleton:
+
+````
+#include <mpi.h>
+
+#define sstmac_app_name simple_test
+
+int main(int argc, char **argv) 
+{
+````
+
+This was previously required for starting applications, but now is only used
+for providing descriptive labels for certain applications.
+It is not recommended for use anymore and is ignored. An equivalent naming can just be provided by:
+
+````
+node {
+ app1 {
+   exe = <PATH_TO_EXE>
+   name = simple_test
+ }
+}
+````
+
+
+
 
 
 
@@ -1530,7 +1548,7 @@ app1 {
 
 
 Rather than just looping through the list of available nodes, we explicitly allocate a 2x2 block from the torus.
-If testing how ``topology agnostic" your application is, you can also choose a random allocation.
+If testing how "topology agnostic" your application is, you can also choose a random allocation.
 
 ````
 node.app1.allocation = random

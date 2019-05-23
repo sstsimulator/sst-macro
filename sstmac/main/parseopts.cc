@@ -101,6 +101,7 @@ parseOpts(int argc, char **argv, opts &oo)
   int outputXYZ = 0;
   bool need_config_file = true;
   bool machine_configured = false;
+  int app_exe_num = 1;
   option gopt[] = {
     { "help", no_argument, NULL, 'h' },
     { "benchmark", required_argument, NULL, 'b'},
@@ -143,9 +144,12 @@ parseOpts(int argc, char **argv, opts &oo)
       case 0:
         //this set an input flag
         break;
-      case 'e':
-        oo.params->addParamOverride("node.app1.exe", optarg);
+      case 'e': {
+        std::string param_name = sprockit::printf("node.app%d.exe", app_exe_num);
+        oo.params->addParamOverride(param_name, optarg);
+        app_exe_num++;
         break;
+      }
       case 'h':
         oo.help = 1;
         break;

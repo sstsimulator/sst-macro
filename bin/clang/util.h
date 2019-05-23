@@ -123,6 +123,8 @@ inline bool operator>=(const clang::SourceLocation &LHS, const clang::SourceLoca
   return !(LHS < RHS);
 }
 
+std::string makeCxxName(const std::string& name);
+
 void replace(clang::SourceRange rng, clang::Rewriter& r,
              const std::string& repl, clang::CompilerInstance& CI);
 

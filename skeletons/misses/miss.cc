@@ -52,8 +52,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/util.h>
 #include <sstmac/software/process/thread.h>
 
-#define sstmac_app_name tail_latency
-
 static constexpr double cycle_time = 1e-8;
 
 struct cfg {

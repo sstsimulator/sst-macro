@@ -10,8 +10,6 @@
  */
 #include <osu_pt2pt.h>
 
-#define sstmac_app_name osu_latency
-
 int
 main (int argc, char *argv[])
 {

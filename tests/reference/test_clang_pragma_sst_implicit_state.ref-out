@@ -49,19 +49,8 @@ int fxn()
  sstmac_set_implicit_compute_state1(length,5); memoFxn(i+12); sstmac_unset_implicit_compute_state1(length);;
   return 0;
 }
-
-char sstmac_appname_str[] = "pragma_test";
-extern "C" int sstmac_user_main_pragma_test(){
-
-  return 0;
-}
 #include <sstmac/software/process/global.h>
 #include <sstmac/software/process/memoize.h>
 
 static sstmac::Memoization memoize_forloop("forloop","linear");
 static sstmac::Memoization memoize_memoFxn("memoFxn","linear");
-int userSkeletonMainInitFxn(const char* name, int (*foo)(int,char**));
-extern "C" int sstmac_user_main_pragma_test(int argc, char** argv);
-int pragma_test_sstmac_initer = userSkeletonMainInitFxn("pragma_test",sstmac_user_main_pragma_test);
-
-extern "C" const char exe_main_name[] = "pragma_test";
