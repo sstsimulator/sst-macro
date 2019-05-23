@@ -66,9 +66,6 @@ namespace sstmac {
 namespace sw {
 
 class API
-#if SSTMAC_INTEGRATED_SST_CORE
- : public SST::SubComponent
-#endif
 {
  public:
   SST_ELI_DECLARE_BASE(API)

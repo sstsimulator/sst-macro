@@ -83,7 +83,7 @@ struct PayloadQueue {
 
 };
 
-class PiscesSender : public SubComponent
+class PiscesSender : public sstmac::EventScheduler
 {
  public:
   struct Input {
@@ -110,10 +110,11 @@ class PiscesSender : public SubComponent
 
   virtual std::string piscesName() const = 0;
 
-  std::string toString() const override;
+  std::string toString() const;// override;
 
  protected:
-  PiscesSender(const std::string& selfname, SST::Component* parent, bool update_vc);
+  PiscesSender(const std::string& selfname, uint32_t id,
+               SST::Component* parent, bool update_vc);
 
   void sendCredit(Input& inp, PiscesPacket* payload,
           GlobalTimestamp packet_tail_leaves);

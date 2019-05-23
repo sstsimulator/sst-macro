@@ -86,7 +86,7 @@ class PiscesBuffer :
 
   int queueLength(int vc) const;
 
-  PiscesBuffer(SST::Params& params, const std::string& selfname,
+  PiscesBuffer(SST::Params& params, const std::string& selfname, uint32_t id,
                const std::string& arb, double bw, int packet_size,
                SST::Component* parent, int numVC);
 

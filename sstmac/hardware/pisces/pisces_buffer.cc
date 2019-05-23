@@ -81,10 +81,10 @@ PiscesBuffer::setOutput(int this_outport, int dst_inport, EventLink::ptr&& link,
   }
 }
 
-PiscesBuffer::PiscesBuffer(SST::Params& params, const std::string& selfname,
+PiscesBuffer::PiscesBuffer(SST::Params& params, const std::string& selfname, uint32_t id,
                            const std::string& arb, double bw, int packet_size,
                            SST::Component* parent, int num_vc)
-  : PiscesSender(selfname, parent, false/*buffers do not update vc*/),
+  : PiscesSender(selfname, id, parent, false/*buffers do not update vc*/),
     bytes_delayed_(0),
     num_vc_(num_vc),
     queues_(num_vc),
@@ -101,8 +101,8 @@ PiscesBuffer::PiscesBuffer(SST::Params& params, const std::string& selfname,
     spkt_abort_printf("In buffer %s, got zero packet size", selfname.c_str());
   }
 
-  xmit_wait_ = getTrueComponent()->registerStatistic<double>(params, "xmit_wait", selfname);
-  xmit_bytes_ = getTrueComponent()->registerStatistic<uint64_t>(params, "xmit_bytes", selfname);
+  xmit_wait_ = parent->registerStatistic<double>(params, "xmit_wait", selfname);
+  xmit_bytes_ = parent->registerStatistic<uint64_t>(params, "xmit_bytes", selfname);
 }
 
 void

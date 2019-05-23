@@ -241,15 +241,15 @@ class EventScheduler : public sprockit::printable
   }
 
   void sendExecutionEvent(GlobalTimestamp arrival, ExecutionEvent* ev);
-
-  uint32_t componentId() const {
-    return id_;
-  }
 #endif
 
  public:
   std::string toString() const {
     return "event scheduler";
+  }
+
+  uint32_t componentId() const {
+    return id_;
   }
 
   int nthread() const {
@@ -300,9 +300,9 @@ class EventScheduler : public sprockit::printable
 
   EventScheduler(const std::string& selfname, uint32_t id, SST::Component* base) :
 #if !SSTMAC_INTEGRATED_SST_CORE
-   seqnum_(0), mgr_(nullptr), now_(nullptr), selfLinkId_(EventLink::allocateLinkId()), id_(id),
+   seqnum_(0), mgr_(nullptr), now_(nullptr), selfLinkId_(EventLink::allocateLinkId()),
 #endif
-   comp_(base)
+   comp_(base), id_(id)
   {
 #if SSTMAC_INTEGRATED_SST_CORE
     if (!time_converter_){
@@ -321,6 +321,8 @@ class EventScheduler : public sprockit::printable
   }
 
  private:
+  uint32_t id_;
+
 #if SSTMAC_INTEGRATED_SST_CORE
   SST::Link* self_link_;
   static SST::TimeConverter* time_converter_;
@@ -328,7 +330,6 @@ class EventScheduler : public sprockit::printable
 
   void registerStatisticCore(StatisticBase* base, SST::Params& params);
 
-  uint32_t id_;
   EventManager* mgr_;
   uint32_t seqnum_;
   uint32_t selfLinkId_;
@@ -376,8 +377,26 @@ class Component :
   {
   }
 
-#if !SSTMAC_INTEGRATED_SST_CORE
+#if SSTMAC_INTEGRATED_SST_CORE
+  template <class T> T* loadSub(const std::string& name, SST::Params& params, const std::string& iface){
+    auto* sub = loadSubComponent("macro." + name + "_" + iface, this, params);
+    return dynamic_cast<T*>(sub);
+  }
+
+  template <class T> T* newSub(const std::string& name, SST::Params& params){
+    auto* sub = loadSubComponent("macro." + name, this, params);
+    return dynamic_cast<T*>(sub);
+  }
+#else
   void initLinks(SST::Params& params){} //need for SST core compatibility
+
+  template <class T> T* loadSub(const std::string& name, SST::Params& params, const std::string& iface){
+    return sprockit::create<T>("macro", name, this, params);
+  }
+
+  template <class T> T* newSub(const std::string& name, SST::Params& params){
+    return new T(this, params);
+  }
 #endif
 
 };
@@ -417,12 +436,14 @@ SST::Event::HandlerBase* newLinkHandler(const T* t, Fxn fxn){
   return new SST::Event::Handler<T>(const_cast<T*>(t), fxn);
 }
 
-static inline EventLinkPtr allocateSubLink(const std::string& name, Timestamp lat, SubComponent* subcomp, LinkHandler* handler){
+static inline EventLinkPtr allocateSubLink(const std::string& name, Timestamp lat,
+                                           sstmac::SubComponent* subcomp, LinkHandler* handler){
   SST::Link* self = subcomp->configureSelfLink(name, subcomp->timeConverter(), handler);
   return EventLink::ptr(new EventLink(name, lat, self));
 }
 
-static inline EventLinkPtr allocateSubLink(const std::string& name, Timestamp lat, Component* comp, LinkHandler* handler){
+static inline EventLinkPtr allocateSubLink(const std::string& name, Timestamp lat,
+                                           sstmac::Component* comp, LinkHandler* handler){
   SST::Link* self = comp->configureSelfLink(name, comp->timeConverter(), handler);
   return EventLink::ptr(new EventLink(name, lat, self));
 }
@@ -536,7 +557,8 @@ class SubLink : public EventLink
   EventHandler* handler_;
 };
 
-static inline EventLink::ptr allocateSubLink(const std::string& name, Timestamp lat, Component* comp, LinkHandler* handler)
+static inline EventLink::ptr allocateSubLink(const std::string& name, Timestamp lat,
+                                             SST::Component* comp, LinkHandler* handler)
 {
   return EventLink::ptr(new SubLink(lat, comp, handler));
 }

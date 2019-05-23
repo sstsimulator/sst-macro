@@ -57,6 +57,15 @@ namespace hw {
 class LogPMemoryModel : public MemoryModel
 {
  public:
+#if SSTMAC_INTEGRATED_SST_CORE
+  SST_ELI_REGISTER_SUBCOMPONENT(
+    LogPMemoryModel,
+    "macro",
+    "logp_memory",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "Implements a simple memory model that is just a single link",
+    "memory")
+#else
   SST_ELI_REGISTER_DERIVED(
     MemoryModel,
     LogPMemoryModel,
@@ -64,8 +73,9 @@ class LogPMemoryModel : public MemoryModel
     "logp",
     SST_ELI_ELEMENT_VERSION(1,0,0),
     "Implements a simple memory model that is just a single link")
+#endif
 
-  LogPMemoryModel(SST::Params& params, Node* nd);
+  LogPMemoryModel(SST::Component* comp, SST::Params& params);
 
   virtual ~LogPMemoryModel();
 

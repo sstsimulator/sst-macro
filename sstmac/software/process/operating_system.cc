@@ -311,21 +311,22 @@ bool OperatingSystem::gdb_active_ = false;
 std::map<std::string,std::unique_ptr<OperatingSystem::RegressionModel>> OperatingSystem::memoize_models_;
 std::unique_ptr<std::map<std::string,std::string>> OperatingSystem::memoize_init_ = nullptr;
 
-OperatingSystem::OperatingSystem(SST::Params& params, hw::Node* parent) :
-#if SSTMAC_INTEGRATED_SST_CORE
-  nthread_(1),
-  thread_id_(0),
-#else
-  nthread_(parent->nthread()),
-  thread_id_(parent->threadId()),
-#endif
-  node_(parent),
+OperatingSystem::OperatingSystem(SST::Component* parent, SST::Params& params) :
+  node_(safe_cast(hw::Node,parent)),
   active_thread_(nullptr),
   des_context_(nullptr),
   compute_sched_(nullptr),
   SubComponent("os", parent),
   params_(params)
 {
+#if SSTMAC_INTEGRATED_SST_CORE
+  nthread_ = 1;
+  thread_id_ = 0;
+#else
+  nthread_ = node_->nthread();
+  thread_id_ = node_->threadId();
+#endif
+
   my_addr_ = node_ ? node_->addr() : 0;
 
   //assume macro for now

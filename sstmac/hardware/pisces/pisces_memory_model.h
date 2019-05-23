@@ -58,6 +58,15 @@ namespace hw {
 class PiscesMemoryModel : public MemoryModel
 {
  public:
+#if SSTMAC_INTEGRATED_SST_CORE
+  SST_ELI_REGISTER_SUBCOMPONENT(
+    PiscesMemoryModel,
+    "macro",
+    "pisces_memory",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "a memory model using pisces packet flow for contention",
+    "memory")
+#else
   SST_ELI_REGISTER_DERIVED(
     MemoryModel,
     PiscesMemoryModel,
@@ -65,8 +74,10 @@ class PiscesMemoryModel : public MemoryModel
     "pisces",
     SST_ELI_ELEMENT_VERSION(1,0,0),
     "a memory model using pisces packet flow for contention")
+#endif
 
-  PiscesMemoryModel(SST::Params& params, Node* nd);
+
+  PiscesMemoryModel(SST::Component* nd, SST::Params& params);
 
   virtual ~PiscesMemoryModel();
 

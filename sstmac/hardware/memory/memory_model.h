@@ -63,11 +63,13 @@ namespace hw {
 class MemoryModel : public SubComponent
 {
  public:
+#if !SSTMAC_INTEGRATED_SST_CORE
   SST_ELI_DECLARE_BASE(MemoryModel)
   SST_ELI_DECLARE_DEFAULT_INFO()
-  SST_ELI_DECLARE_CTOR(SST::Params&,Node*)
+  SST_ELI_DECLARE_CTOR(SST::Component*,SST::Params&)
+#endif
 
-  MemoryModel(SST::Params& params, Node* Node);
+  MemoryModel(SST::Component* parent, SST::Params& params);
 
   static void deleteStatics();
 
@@ -93,6 +95,15 @@ class MemoryModel : public SubComponent
 class NullMemoryModel : public MemoryModel
 {
  public:
+#if SSTMAC_INTEGRATED_SST_CORE
+  SST_ELI_REGISTER_SUBCOMPONENT(
+    NullMemoryModel,
+    "macro",
+    "null_memory",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "implements a memory model that models nothing",
+    "memory")
+#else
   SST_ELI_REGISTER_DERIVED(
     MemoryModel,
     NullMemoryModel,
@@ -100,9 +111,10 @@ class NullMemoryModel : public MemoryModel
     "null",
     SST_ELI_ELEMENT_VERSION(1,0,0),
     "implements a memory model that models nothing")
+#endif
 
-  NullMemoryModel(SST::Params& params, Node* nd) :
-    MemoryModel(params, nd)
+  NullMemoryModel(SST::Component* nd, SST::Params& params) :
+    MemoryModel(nd, params)
   {
   }
 

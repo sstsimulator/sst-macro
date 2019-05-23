@@ -98,16 +98,26 @@ class MerlinNIC :
   };
 
  public:
+#if SSTMAC_INTEGRATED_SST_CORE
+  SST_ELI_REGISTER_SUBCOMPONENT(
+    MerlinNIC,
+    "macro",
+    "merlin_nic",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "A NIC wrapping Merlin",
+    "nic")
+#else
   SST_ELI_REGISTER_DERIVED(
     NIC,
-    MerlinNIC ,
+    MerlinNIC,
     "macro",
     "merlin",
     SST_ELI_ELEMENT_VERSION(1,0,0),
     "A NIC wrapping Merlin")
+#endif
 
-  MerlinNIC(SST::Params& params, Node* parent) :
-    NIC(params, parent),
+  MerlinNIC(SST::Component* parent, SST::Params& params) :
+    NIC(parent, params),
     test_size_(0),
     vns_(2)
   {
