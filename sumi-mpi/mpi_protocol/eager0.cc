@@ -62,11 +62,14 @@ Eager0::start(void* buffer, int src_rank, int dst_rank, sstmac::sw::TaskId tid, 
   }
   uint64_t payload_bytes = count*typeobj->packed_size();
   queue_->memcopy(payload_bytes);
-  uint64_t flow_id = mpi_->smsgSend<MpiMessage>(tid, payload_bytes, temp_buf,
+  auto* msg = mpi_->smsgSend<MpiMessage>(tid, payload_bytes, temp_buf,
                               queue_->pt2ptCqId(), queue_->pt2ptCqId(), sumi::Message::pt2pt,
                               src_rank, dst_rank, typeobj->id,  tag, comm, seq_id,
                               count, typeobj->packed_size(), nullptr, EAGER0);
-  send_flows_[flow_id] = temp_buf;
+#if SSTMAC_COMM_SYNC_STATS
+  msg->setTimeStarted(mpi_->now());
+#endif
+  send_flows_[msg->flowId()] = temp_buf;
   req->complete();
 }
 

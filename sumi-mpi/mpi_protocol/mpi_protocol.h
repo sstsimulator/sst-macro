@@ -209,10 +209,10 @@ class RendezvousGet final : public RendezvousProtocol
       req(r), original(0), temporary(t){}
   };
 
-  void incoming_ack(MpiMessage* msg);
-  void incoming_header(MpiMessage* msg);
-  void incoming_payload(MpiMessage* msg);
-  void* configure_send_buffer(int count, void* buffer, MpiType* obj);
+  void incomingAck(MpiMessage* msg);
+  void incomingHeader(MpiMessage* msg);
+  void incomingPayload(MpiMessage* msg);
+  void* configureSendBuffer(int count, void* buffer, MpiType* obj);
 
   std::map<uint64_t,MpiQueueRecvRequest*> recv_flows_;
 

@@ -200,7 +200,7 @@ class NetworkMessage : public Flow
 
   void takeOffWire();
 
-  void intranode_memmove();
+  void intranodeMemmove();
 
   void memmoveRemoteToLocal();
 
@@ -234,6 +234,10 @@ class NetworkMessage : public Flow
   }
 
   void reverse();
+
+  void setQoS(int qos){
+    qos_ = qos;
+  }
 
  protected:
   //void clone_into(NetworkMessage* cln) const;
@@ -272,7 +276,8 @@ class NetworkMessage : public Flow
     payload_bytes_(payload_bytes),
     toaddr_(to),
     fromaddr_(from),
-    type_(ty)
+    type_(ty),
+    qos_(0)
   {
   }
 
@@ -304,6 +309,8 @@ class NetworkMessage : public Flow
   NodeId fromaddr_;
 
   type_t type_;
+
+  int qos_;
 
 };
 

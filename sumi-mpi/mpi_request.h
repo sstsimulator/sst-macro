@@ -233,6 +233,20 @@ class MpiRequest :
     return optype_;
   }
 
+#if SSTMAC_COMM_DELAY_STATS
+  sstmac::GlobalTimestamp waitStart() const {
+    return wait_start_;
+  }
+
+  bool activeWait() const {
+    return !wait_start_.empty();
+  }
+
+  void setWaitStart(sstmac::GlobalTimestamp t) {
+    wait_start_ = t;
+  }
+#endif
+
  private:
   MPI_Status stat_;
   bool complete_;
@@ -241,6 +255,10 @@ class MpiRequest :
 
   PersistentOp* persistent_op_;
   CollectiveOpBase::ptr collective_op_;
+
+#if SSTMAC_COMM_DELAY_STATS
+  sstmac::GlobalTimestamp wait_start_;
+#endif
 
 };
 

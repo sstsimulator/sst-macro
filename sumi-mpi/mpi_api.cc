@@ -120,9 +120,6 @@ MpiApi::MpiApi(SST::Params& params, sstmac::sw::App* app,
                SST::Component* comp) :
   sumi::SimTransport(params, app, comp),
   status_(is_fresh),
-#if SSTMAC_COMM_SYNC_STATS
-  last_collection_(0),
-#endif
   next_type_id_(0),
   next_op_id_(first_custom_op_id),
   group_counter_(MPI_GROUP_SELF+1),
@@ -594,49 +591,106 @@ MpiApi::errorString(int errorcode, char *str, int *resultlen)
 }
 
 #if SSTMAC_COMM_SYNC_STATS
-void
-MpiApi::startCollectiveSyncDelays()
-{
-  last_collection_ = now();
-}
-
 CallGraphCreateTag(idle);
 CallGraphCreateTag(active);
+#endif
+
+#if SSTMAC_COMM_DELAY_STATS
+void
+MpiApi::startCollectiveMessageLog()
+{
+  last_collection_ = now();
+}
 
 void
-MpiApi::collectSyncDelays(sstmac::GlobalTimestamp wait_start, Message* msg)
+MpiApi::logMessageDelay(sstmac::GlobalTimestamp wait_start, Message* msg)
 {
-  //there are two possible sync delays
-  //#1: For sender, synced - header_arrived
-  //#2: For recver, time_sent - wait_start
-  sstmac::Timestamp sync_delay;
   sstmac::GlobalTimestamp start = std::max(last_collection_, wait_start);
-  if (start < msg->timeSent()){
-    sync_delay += msg->timeSent() - start;
-  }
+#if SSTMAC_COMM_SYNC_STATS
+  mpi_api_debug(sprockit::dbg::mpi_sync,
+     "%s: starting with current_call=%llu",
+     (msg->sender() == rank() ? "Send" : "Recv"), current_call_.idle.ticks());
 
+  //there are two possible sync delays
+  //#1: For sender (rendezvous only), synced - header_arrived on the recver side
+  //      this time is in the syncDelay
+  //#2: For recver, time_started - wait_start, if we started waiting
+  //      before
 
-  sstmac::GlobalTimestamp header_arrived = std::max(start, msg->timeHeaderArrived());
-  if (header_arrived < msg->timeSynced()){
-    sync_delay += msg->timeSynced() - header_arrived;
-  }
-
-  if (sync_delay.ticks()){
-    mpi_api_debug(sprockit::dbg::mpi_sync,
-       "wait=%llu,last=%llu,sent=%llu,header=%llu,payload=%llu,sync=%llu,total=%llu",
-       wait_start.time.ticks(), last_collection_.time.ticks(), msg->timeSent().time.ticks(),
-       msg->timeHeaderArrived().time.ticks(), msg->timePayloadArrived().time.ticks(),
-       msg->timeSynced().time.ticks(), sync_delay.ticks());
+  sstmac::Timestamp sync_delay;
+  switch (msg->type()){
+  case Message::rdma_get_sent_ack: {
+    //the time gap between header arriving and being processed
+    //but only count the time we were actively waiting on it
+    if (start < msg->timeSynced()){
+      if (start < msg->timeSyncArrived()){
+        //we were waiting for all of the sync delay
+        sync_delay = msg->timeSynced() - msg->timeSyncArrived();
+      } else {
+        //we were waiting for some of the delay
+        sync_delay = msg->timeSynced() - start;
+      }
+    } else {
+      //sync_delay is zero, we were never waiting before the sync
+    }
 
     current_call_.idle += sync_delay;
+    mpi_api_debug(sprockit::dbg::mpi_sync,
+       "Send: call_start=%llu, wait=%llu, last=%llu, arrived=%llu, synced=%llu, delay=%llu, total=%llu",
+       current_call_.start.time.ticks(),
+       wait_start.time.ticks(), last_collection_.time.ticks(),
+       msg->timeSyncArrived().time.ticks(), msg->timeSynced().time.ticks(),
+       sync_delay.ticks(), current_call_.idle.ticks());
+    break;
   }
+  case Message::rdma_get_payload:
+  case Message::payload: {
+    if (start < msg->timeStarted()){
+      current_call_.idle += msg->timeStarted() - start;
+      sync_delay = msg->timeStarted() - start;
+    }
+    mpi_api_debug(sprockit::dbg::mpi_sync,
+       "Recv: call_start=%llu wait=%llu, last=%llu, started=%llu, delay=%llu, total=%llu",
+       current_call_.start.time.ticks(),
+       wait_start.time.ticks(), last_collection_.time.ticks(),
+       msg->timeStarted().time.ticks(),
+       sync_delay.ticks(), current_call_.idle.ticks());
+    break;
+  }
+  default:
+    break;
+  }
+
+  //sstmac::Timestamp max_delta = now() - current_call_.start;
+  //if (current_call_.idle > max_delta){
+  //  spkt_abort_printf("eaccumulated too much time on sync stat - max is %llu",
+  //                    max_delta.ticks());
+  //}
+#endif
+
+#if SSTMAC_COMM_DELAY_STATS
+  //the message arrived after we started waiting for it
+  sstmac::Timestamp delay;
+  if (msg->timeArrived() > start){
+    delay = msg->timeArrived() - msg->timeSent();
+  }
+  //std::cout << "Arrived=" << msg->timeArrived().sec()
+  //       << " Sent=" << msg->timeSent().sec()
+  //       << " Waited=" << start.sec()
+  //       << " Delay=" << delay.sec()
+  //       << " " << msg->toString() << std::endl;
+  //log the message
+  qos_analysis_->logDelay(delay, msg);
+#endif
 
   last_collection_ = now();
 }
+#endif
 
 void
 MpiApi::finishCurrentMpiCall()
 {
+#if SSTMAC_COMM_SYNC_STATS
   if (current_call_.idle.ticks()){
     auto* thr = parent_app_->os()->activeThread();
     if (thr->callGraph()){
@@ -646,8 +700,8 @@ MpiApi::finishCurrentMpiCall()
       current_call_.idle = sstmac::Timestamp(); //zero for next guy
     }
   }
-}
 #endif
+}
 
 #define enumcase(x) case x: return #x
 

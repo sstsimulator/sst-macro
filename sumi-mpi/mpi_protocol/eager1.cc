@@ -60,10 +60,10 @@ Eager1::start(void* buffer, int src_rank, int dst_rank, sstmac::sw::TaskId tid, 
     eager_buf = fillSendBuffer(count, buffer, typeobj);
   }
 
-  uint64_t flow_id = mpi_->smsgSend<MpiMessage>(tid, 64/*metadata size - use fixed to avoid sizeof*/,
-                                     nullptr, sumi::Message::no_ack, queue_->pt2ptCqId(), sumi::Message::pt2pt,
-                                     src_rank, dst_rank, typeobj->id, tag, comm, seq_id,
-                                     count, typeobj->packed_size(), eager_buf, EAGER1);
+  mpi_->smsgSend<MpiMessage>(tid, 64/*metadata size - use fixed to avoid sizeof*/,
+                   nullptr, sumi::Message::no_ack, queue_->pt2ptCqId(), sumi::Message::pt2pt,
+                   src_rank, dst_rank, typeobj->id, tag, comm, seq_id,
+                   count, typeobj->packed_size(), eager_buf, EAGER1);
 
   key->complete();
 }
