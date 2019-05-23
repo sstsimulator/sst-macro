@@ -45,6 +45,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include "astVisitor.h"
 #include "replacePragma.h"
 #include "computePragma.h"
+#include <sys/time.h>
 #include <iostream>
 #include <fstream>
 #include <sstmac/common/sstmac_config.h>
@@ -2581,14 +2582,19 @@ SkeletonASTVisitor::visitVarDecl(VarDecl* D)
     return false;
   }
 
+  /** don't do it this way anymore
   if (D->getNameAsString() == "sstmac_appname_str"){
     StringLiteral* lit = cast<StringLiteral>(getUnderlyingExpr(D->getInit()));
-    mainName_ = lit->getString();
-    if (opts_.runMemoize){
-      mainName_ = mainName_ + "_memoize";
+    std::string str = lit->getString();
+    if (str != "sstmac_app_name"){
+      //this got overridden by the user
+      mainName_ = makeCxxName(str);
+    } else {
+      //this has not been overriden - we will select a different default later
     }
     return false;
   }
+  */
 
   //memoization should do no refactoring of global variables
   if (opts_.runMemoize)
@@ -2622,16 +2628,21 @@ SkeletonASTVisitor::replaceMain(clang::FunctionDecl* mainFxn)
 
   foundCMain_ = true;
 
-  std::string appname = getAppName();
+  if (mainName_.empty()){
+    //we need to select a unique name for the application
+    //lets just do this as the source file and the date
 
-  if (appname.size() == 0){
-    errorAbort(mainFxn, *ci_, "sstmac_app_name macro not defined before main");
+    timeval t_st;
+    gettimeofday(&t_st, 0);
+    std::stringstream sstr;
+    sstr << sourceFile << "_" << t_st.tv_usec;
+    mainName_ = makeCxxName(sstr.str());
   }
+
   std::stringstream sstr;
   if (!isC) sstr << "extern \"C\" ";
-  sstr << "int sstmac_user_main_" << appname << "(";
+  sstr << "int sstmac_user_main_" << mainName_ << "(";
   if (mainFxn->getNumParams() == 2){
-
     sstr << "int " << mainFxn->getParamDecl(0)->getNameAsString()
          << ", char** " << mainFxn->getParamDecl(1)->getNameAsString();
   }

@@ -47,8 +47,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi.h>
 #include <skeleton.h>
 
-#define sstmac_app_name relocation_ptr
-
 int x;
 
 struct xPtr {

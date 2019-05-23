@@ -46,8 +46,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <stddef.h>
 #include <stdio.h>
 
-#define sstmac_app_name overhead_test
-
 void emptyFxn(){}
 void emptyFxn2(){}
 

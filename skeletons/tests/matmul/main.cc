@@ -47,8 +47,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <cstring>
 #include <algorithm>
 
-#define sstmac_app_name matmul
-
 int main(int argc, char** argv)
 {
     MPI_Init(&argc, &argv);

@@ -79,7 +79,6 @@ AppLauncher::incomingRequest(Request* req)
 
     SoftwareId sid(lreq->aid(), lreq->tid());
     SST::Params app_params = lreq->appParams();
-
     App::dlopenCheck(lreq->aid(), app_params);
     auto app_name = app_params.find<std::string>("name");
     App* theapp = sprockit::create<App>("macro", app_name, app_params, sid, os_);

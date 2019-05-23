@@ -65,8 +65,6 @@
 #define REDIRECT_OUTPUT 0
 #define   MIN(A,B) ((A) < (B) ? (A) : (B))
 
-#define sstmac_app_name comd
-
 static SimFlat* initSimulation(Command cmd);
 static void destroySimulation(SimFlat** ps);
 
