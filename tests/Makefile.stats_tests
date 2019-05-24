@@ -40,6 +40,9 @@ STATSTESTS = \
 #  spyplot.bytes.png 
 #  spyplot.num_messages.png 
 
+if COMM_DELAY_STATS
+endif
+
 if COMM_SYNC_STATS
 if DO_CALL_GRAPH_TEST
 #don't do this test unless also including comm sync stats

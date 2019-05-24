@@ -50,6 +50,7 @@ class TestFxn
 
  public:
   virtual void run() = 0;
+  virtual ~TestFxn(){}
 
 };
 

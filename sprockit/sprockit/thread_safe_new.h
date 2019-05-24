@@ -7,7 +7,7 @@
 
 #define SPKT_TLS_OFFSET 64
 
-#define SPKT_NEW_SUPER_DEBUG 1
+#define SPKT_NEW_SUPER_DEBUG 0
 
 namespace sprockit {
 
@@ -53,16 +53,7 @@ class thread_safe_new {
   static constexpr uint32_t magic_number = std::numeric_limits<uint32_t>::max();
 #endif
 
-#if SSTMAC_VALGRIND_MODE
-  template <class... Args>
-  static T* allocateAtBeginning(Args&&... args){
-    return new T(std::forward<Args>(args)...);
-  }
-
-  static void freeAtEnd(T* ptr){
-    delete ptr;
-  }
-#else
+#if SSTMAC_CUSTOM_NEW
   static void freeAtEnd(T* ptr){
     //do nothing - the allocation is getting cleaned up
   }
@@ -120,7 +111,7 @@ class thread_safe_new {
     all_chunks_.insert(ptr);
 #endif
   }
-#endif
+
 #define SSTMAC_CACHE_ALIGNMENT 64
   static void grow(int thread){
     size_t unitSize = sizeof(T);
@@ -152,11 +143,27 @@ class thread_safe_new {
 #if SPKT_NEW_SUPER_DEBUG
   static std::set<void*> all_chunks_;
 #endif
+
+#else
+  //no custom new operators
+  template <class... Args>
+  static T* allocateAtBeginning(Args&&... args){
+    return new T(std::forward<Args>(args)...);
+  }
+
+  static void freeAtEnd(T* ptr){
+    delete ptr;
+  }
+#endif
 };
 
+#if SSTMAC_CUSTOM_NEW
 template <class T> ThreadAllocatorSet thread_safe_new<T>::alloc_;
+
 #if SPKT_NEW_SUPER_DEBUG
 template <class T> std::set<void*> thread_safe_new<T>::all_chunks_;
+#endif
+
 #endif
 
 }

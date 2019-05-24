@@ -49,7 +49,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #define one_indent "  "
 #define two_indent "    "
 
-#if 1
+#if 0
 #define pflow_arb_debug_printf_l0(format_str, ...) \
   debug_printf(sprockit::dbg::pisces,  \
     " [arbitrator] " format_str , \
@@ -172,8 +172,6 @@ PiscesCutThroughArbitrator(double bw)
     PiscesBandwidthArbitrator(bw)
 {
   cycleLength_ = byteDelay_;
-  if (cycleLength_.sec() > 0.1) abort();
-  if (cycleLength_.ticks() == 0) abort();
   head_ = Epoch::allocateAtBeginning();
   head_->numCycles = std::numeric_limits<uint32_t>::max();
 }
@@ -187,6 +185,12 @@ PiscesCutThroughArbitrator::headTailDelay(PiscesPacket *pkt)
 
 PiscesCutThroughArbitrator::~PiscesCutThroughArbitrator()
 {
+  auto* next = head_;
+  while (next) {
+    auto* toDel = next;
+    next = next->next;
+    Epoch::freeAtEnd(toDel);
+  }
 }
 
 void

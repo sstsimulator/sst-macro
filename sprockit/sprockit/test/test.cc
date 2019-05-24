@@ -52,7 +52,7 @@ UnitTest::validate(std::ostream &os)
 {
   int nfailed = 0;
   for (int i=0; i < tests_.size(); ++i) {
-    TestCase* test = tests_[i];
+    TestCase* test = tests_[i].get();
     bool success = test->is_correct();
     if (success) {
       os << "SUCCESS: ";

@@ -74,6 +74,23 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
+class QoSAnalysis {
+
+ public:
+  SST_ELI_DECLARE_BASE(QoSAnalysis)
+  SST_ELI_DECLARE_DEFAULT_INFO()
+  SST_ELI_DECLARE_CTOR(SST::Params&)
+
+  QoSAnalysis(SST::Params& params){}
+
+  virtual ~QoSAnalysis(){}
+
+  virtual int selectQoS(Message* m) = 0;
+
+  virtual void logDelay(sstmac::Timestamp delay, Message* m) = 0;
+
+};
+
 class SimTransport : public Transport, public sstmac::sw::API {
 
  public:
@@ -268,6 +285,8 @@ class SimTransport : public Transport, public sstmac::sw::API {
   DefaultProgressQueue default_progress_queue_;
 
   std::function<void(sstmac::hw::NetworkMessage*)> nic_ioctl_;
+
+  QoSAnalysis* qos_analysis_;
 
 };
 

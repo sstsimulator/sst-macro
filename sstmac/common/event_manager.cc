@@ -140,6 +140,8 @@ EventManager::~EventManager()
     for (auto* stat : grp->stats){
       if (stat) delete stat;
     }
+    delete grp->output;
+    delete grp;
   }
 }
 

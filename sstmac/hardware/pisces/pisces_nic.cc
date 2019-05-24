@@ -175,7 +175,6 @@ PiscesNIC::doSend(NetworkMessage* netmsg)
   nic_debug("packet flow: sending %s", netmsg->toString().c_str());
   int vn = 0; //we only ever use one virtual network
 
-
   uint64_t offset = inject(vn, 0, netmsg);
   if (offset < netmsg->byteLength()){
     pending_inject_[vn].emplace(offset, netmsg->byteLength(), netmsg);
@@ -189,10 +188,10 @@ PiscesNIC::packetArrived(PiscesPacket* pkt)
   if (msg){
     recvMessage(static_cast<NetworkMessage*>(msg));
   }
-  delete pkt;
   int buffer_port = 0;
   PiscesCredit* credit = new PiscesCredit(buffer_port, pkt->vc(), pkt->byteLength());
   credit_link_->send(credit);
+  delete pkt;
 }
 
 void

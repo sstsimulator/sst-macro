@@ -203,6 +203,8 @@ class Message : public sstmac::hw::NetworkMessage
     recv_cq_ = cq;
   }
 
+  size_t hash() const;
+
  protected:
   //void clone_into(message* cln) const;
   Message(){} //for serialization only
@@ -215,52 +217,61 @@ class Message : public sstmac::hw::NetworkMessage
   int send_cq_;
   int recv_cq_;
 
-#if SSTMAC_COMM_SYNC_STATS
+#if SSTMAC_COMM_DELAY_STATS
  public:
   sstmac::GlobalTimestamp timeSent() const {
     return sent_;
   }
 
-  sstmac::GlobalTimestamp timeHeaderArrived() const {
-    return header_arrived_;
+  sstmac::GlobalTimestamp timeArrived() const {
+    return arrived_;
   }
 
-  sstmac::GlobalTimestamp timePayloadArrived() const {
-    return payload_arrived_;
+  void setTimeSent(sstmac::GlobalTimestamp now){
+    sent_ = now;
+  }
+
+  void setTimeArrived(sstmac::GlobalTimestamp now){
+    arrived_ = now;
+  }
+
+ private:
+  sstmac::GlobalTimestamp sent_;
+
+  sstmac::GlobalTimestamp arrived_;
+#endif
+
+#if SSTMAC_COMM_SYNC_STATS
+ public:
+  sstmac::GlobalTimestamp timeStarted() const {
+    return started_;
   }
 
   sstmac::GlobalTimestamp timeSynced() const {
     return synced_;
   }
 
-  void setTimeSent(sstmac::GlobalTimestamp now){
-    if (sent_.empty()){
-      //if already set, don't overwrite
-      sent_ = now;
-    }
+  sstmac::GlobalTimestamp timeSyncArrived() const {
+    return sync_arrived_;
   }
 
-  void setTimeArrived(sstmac::GlobalTimestamp now){
-    if (header_arrived_.empty()){
-      header_arrived_ = now;
-    } else {
-      payload_arrived_ = now;
-    }
+  void setTimeStarted(sstmac::GlobalTimestamp now){
+    started_ = now;
   }
 
   void setTimeSynced(sstmac::GlobalTimestamp now){
     synced_ = now;
+    sync_arrived_ = arrived_;
   }
 
  private:
-  sstmac::GlobalTimestamp sent_;
-
-  sstmac::GlobalTimestamp header_arrived_;
-
-  sstmac::GlobalTimestamp payload_arrived_;
+  sstmac::GlobalTimestamp started_;
 
   sstmac::GlobalTimestamp synced_;
+
+  sstmac::GlobalTimestamp sync_arrived_;
 #endif
+
 };
 
 class ProtocolMessage : public Message {

@@ -153,7 +153,7 @@ class Transport {
                          void* loc_buffer, void* remote_buffer, int local_cq, int remote_cq) = 0;
 
   template <class T, class... Args>
-  uint64_t rdmaGet(int remote_proc, uint64_t byte_length, void* local_buffer, void* remote_buffer,
+  T* rdmaGet(int remote_proc, uint64_t byte_length, void* local_buffer, void* remote_buffer,
                     int local_cq, int remote_cq, Message::class_t cls, Args&&... args){
     uint64_t flow_id = allocateFlowId();
     bool needs_ack = remote_cq != Message::no_ack;
@@ -163,11 +163,11 @@ class Transport {
                  rankToNode(remote_proc), addr(),
                  byte_length, needs_ack, local_buffer, remote_buffer, Message::rdma_get{});
     send(t);
-    return flow_id;
+    return t;
   }
 
   template <class T, class... Args>
-  uint64_t rdmaPut(int remote_proc, uint64_t byte_length, void* local_buffer, void* remote_buffer,
+  T* rdmaPut(int remote_proc, uint64_t byte_length, void* local_buffer, void* remote_buffer,
                     int local_cq, int remote_cq, Message::class_t cls, Args&&... args){
     uint64_t flow_id = allocateFlowId();
     bool needs_ack = local_cq != Message::no_ack;
@@ -177,11 +177,11 @@ class Transport {
                  rankToNode(remote_proc), addr(),
                  byte_length, needs_ack, local_buffer, remote_buffer, Message::rdma_put{});
     send(t);
-    return flow_id;
+    return t;
   }
 
   template <class T, class... Args>
-  uint64_t smsgSend(int remote_proc, uint64_t byte_length, void* buffer,
+  T* smsgSend(int remote_proc, uint64_t byte_length, void* buffer,
                      int local_cq, int remote_cq, Message::class_t cls, Args&&... args){
     uint64_t flow_id = allocateFlowId();
     bool needs_ack = local_cq != Message::no_ack;
@@ -191,7 +191,7 @@ class Transport {
                  rankToNode(remote_proc), addr(),
                  byte_length, needs_ack, buffer, Message::header{});
     send(t);
-    return flow_id;
+    return t;
   }
 
   virtual void memcopy(uint64_t bytes) = 0;
@@ -252,11 +252,9 @@ class Transport {
     return engine_;
   }
 
-  virtual void collectSyncDelays(sstmac::GlobalTimestamp wait_start, Message* msg){}
+  virtual void logMessageDelay(sstmac::GlobalTimestamp wait_start, Message* msg){}
 
-  virtual void startCollectiveSyncDelays(){}
-
-  virtual void setTimeSynced(Message* msg){}
+  virtual void startCollectiveMessageLog(){}
 
  private:      
   virtual void send(Message* m) = 0;

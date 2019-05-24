@@ -246,7 +246,7 @@ void
 NIC::finishMemcpy(NetworkMessage* payload)
 {
   ackSend(payload);
-  payload->intranode_memmove();
+  payload->intranodeMemmove();
   sendToNode(payload);
 }
 
