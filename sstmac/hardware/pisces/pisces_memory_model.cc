@@ -136,8 +136,8 @@ PiscesMemoryModel::channelFree(int channel)
 {
   if (!stalled_requests_.empty()){
     Request& req = stalled_requests_.front();
-    stalled_requests_.pop_front();
     start(channel, req.bytes_total, req.byte_delay, req.cb);
+    stalled_requests_.pop_front();
   } else {
     channels_available_.push_back(channel);
   }

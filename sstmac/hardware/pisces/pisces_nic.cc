@@ -190,10 +190,10 @@ PiscesNIC::packetArrived(PiscesPacket* pkt)
   if (msg){
     recvMessage(static_cast<NetworkMessage*>(msg));
   }
-  delete pkt;
   int buffer_port = 0;
   PiscesCredit* credit = new PiscesCredit(buffer_port, pkt->vc(), pkt->byteLength());
   credit_link_->send(credit);
+  delete pkt;
 }
 
 void
