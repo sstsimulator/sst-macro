@@ -183,7 +183,7 @@ namespace lblxml {
   extern std::vector<Task*> g_task_map;
 #endif
 
-  extern std::map<int,sstmac::Timestamp> g_message_begin_;
+  extern std::map<int,sstmac::TimeDelta> g_message_begin_;
 
   class boxml : public sstmac::sw::App
   {

@@ -96,6 +96,10 @@ double sstmac_sim_time();
 #include <utility>
 
 #if __cplusplus >= 201103L
+namespace SST {
+class Params;
+}
+
 namespace sstmac {
 
 class vector {
@@ -139,6 +143,9 @@ class vector {
  private:
   unsigned long  size_;
 };
+
+
+SST::Params& appParams();
 
 std::string getAppParam(const std::string& name);
 bool appHasParam(const std::string& name);

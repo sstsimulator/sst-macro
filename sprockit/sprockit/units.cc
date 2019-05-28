@@ -327,7 +327,7 @@ populate_length_names(std::map<std::string, int64_t> &value)
 }
 
 void
-populateTimestampNames(std::map<std::string, double> &value)
+populateTimeDeltaNames(std::map<std::string, double> &value)
 {
   // Accept ps, ns, us, ms, and s with various (lower-case) forms
   // Store time in picoseconds.
@@ -390,11 +390,11 @@ byteLength(const char* value, bool& errorflag, bool print_errors)
 /// Get a timestamp possiblly suffixed with any of the identifiers
 /// psec, nsec, usec, msec, sec, ps, ns, us, ms, s
 double
-getTimestamp(const char *value, bool &errorflag, bool print_errors)
+getTimeDelta(const char *value, bool &errorflag, bool print_errors)
 {
   static std::map<std::string, double> mulmap;
   if (mulmap.empty()) {
-    populateTimestampNames(mulmap);
+    populateTimeDeltaNames(mulmap);
   }
 
   char *endptr = NULL;

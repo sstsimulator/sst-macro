@@ -203,11 +203,11 @@ void parsedumpi_callbacks::init_maps()
 
 
 // Convert a dumpi time difference into a timestamp.
-inline sstmac::Timestamp deltat(const dumpi_clock &left, const dumpi_clock &right)
+inline sstmac::TimeDelta deltat(const dumpi_clock &left, const dumpi_clock &right)
 {
   static const int64_t billion(1e9);
   uint64_t nsec = billion*(left.sec-right.sec) + (left.nsec - right.nsec);
-  return sstmac::Timestamp(nsec, sstmac::Timestamp::one_nanosecond);
+  return sstmac::TimeDelta(nsec, sstmac::TimeDelta::one_nanosecond);
 }
 
 /// Indicate that we are starting an MPI call.
@@ -233,7 +233,7 @@ start_mpi(const dumpi_time *cpu, const dumpi_time *wall,
       }
     } else {
       // We get here if we are not using processor modeling.
-      sstmac::Timestamp dt = parent_->timescaling_ * deltat(wall->start, trace_compute_start_);
+      sstmac::TimeDelta dt = parent_->timescaling_ * deltat(wall->start, trace_compute_start_);
       parent_->compute(dt);
     }
   }

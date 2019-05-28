@@ -76,7 +76,7 @@ LibComputeTime::~LibComputeTime()
 }
 
 void
-LibComputeTime::compute(Timestamp time)
+LibComputeTime::compute(TimeDelta time)
 {
   CallGraphAppend(ComputeTime);
   if (time.sec() < 0) {
@@ -86,7 +86,7 @@ LibComputeTime::compute(Timestamp time)
 }
 
 void
-LibComputeTime::sleep(Timestamp time)
+LibComputeTime::sleep(TimeDelta time)
 {
   CallGraphAppend(Sleep);
   os_->sleep(time);

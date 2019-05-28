@@ -220,7 +220,7 @@ class ParallelRuntime :
 
   virtual void initPartitionParams(SST::Params& params);
 
-  virtual GlobalTimestamp sendRecvMessages(GlobalTimestamp vote){
+  virtual Timestamp sendRecvMessages(Timestamp vote){
     return vote;
   }
 

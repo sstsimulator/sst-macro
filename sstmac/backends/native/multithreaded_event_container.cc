@@ -87,7 +87,7 @@ namespace native {
   (add_int64_atomic(int32_t(0), x) == 0)
   //*x == 0
 
-static inline void wait_on_child_completion(threadQueue* q, GlobalTimestamp& min_time)
+static inline void wait_on_child_completion(threadQueue* q, Timestamp& min_time)
 {
   bool done = atomic_is_zero(q->delta_t);
   while (!done){
@@ -101,7 +101,7 @@ static void
 pthread_run_worker_thread(void* args)
 {
   threadQueue* q = (threadQueue*) args;
-  GlobalTimestamp horizon;
+  Timestamp horizon;
   uint64_t epoch = 0;
   while(1){
     bool stillZero = atomic_is_zero(q->delta_t);
@@ -112,8 +112,8 @@ pthread_run_worker_thread(void* args)
       if (delta_t == terminate_sentinel){
         return;
       } else if (delta_t != 0) {
-        horizon += Timestamp(delta_t, Timestamp::exact);
-        GlobalTimestamp new_min_time = q->mgr->runEvents(horizon);
+        horizon += TimeDelta(delta_t, TimeDelta::exact);
+        Timestamp new_min_time = q->mgr->runEvents(horizon);
         q->min_time = new_min_time;
       }
       if (q->child1) wait_on_child_completion(q->child1, q->min_time);
@@ -200,7 +200,7 @@ MultithreadedEventContainer::MultithreadedEventContainer(
 }
 
 void
-MultithreadedEventContainer::scheduleStop(GlobalTimestamp until)
+MultithreadedEventContainer::scheduleStop(Timestamp until)
 {
   for (int i=0; i < num_subthreads_; ++i){
     EventManager* mgr = thread_managers_[i];
@@ -244,8 +244,8 @@ MultithreadedEventContainer::run_work()
     level_size *= 2;
   }
   
-  GlobalTimestamp last_horizon;
-  GlobalTimestamp lower_bound;
+  Timestamp last_horizon;
+  Timestamp lower_bound;
   uint64_t epoch = 0;
   int num_loops_left = num_profile_loops_;
   if (num_loops_left){
@@ -261,7 +261,7 @@ MultithreadedEventContainer::run_work()
     printf("Running parallel simulation with lookahead %10.6fus\n", lookahead_.usec());
   }
   while (lower_bound != no_events_left_time || num_loops_left > 0){
-    GlobalTimestamp horizon = lower_bound + lookahead_;
+    Timestamp horizon = lower_bound + lookahead_;
     int64_t delta_t = (horizon - last_horizon).ticks();
     if (num_loops_left != 0){
       if (delta_t == 0){
@@ -275,7 +275,7 @@ MultithreadedEventContainer::run_work()
     if (child2) add_int64_atomic(delta_t, child2->delta_t);
 
     auto t_start = rdtsc();
-    GlobalTimestamp min_time = runEvents(horizon);
+    Timestamp min_time = runEvents(horizon);
     auto t_run = rdtsc();
 
     if (child1) wait_on_child_completion(child1, min_time);
@@ -371,7 +371,7 @@ MultithreadedEventContainer::run()
 
   run_work();
 
-  GlobalTimestamp final_time = now_;
+  Timestamp final_time = now_;
 
   for (int i=0; i < num_subthreads_; ++i){
     void* ignore;

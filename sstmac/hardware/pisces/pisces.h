@@ -141,29 +141,29 @@ class PiscesPacket :
     inport_ = port;
   }
 
-  GlobalTimestamp arrival() const {
+  Timestamp arrival() const {
     return arrival_;
   }
 
-  void setArrival(GlobalTimestamp time) {
+  void setArrival(Timestamp time) {
     arrival_ = time;
   }
 
-  void initByteDelay(Timestamp delay){
+  void initByteDelay(TimeDelta delay){
     if (byte_delay_.ticks() == 0){
       byte_delay_ = delay;
     }
   }
 
-  Timestamp byteDelay() const {
+  TimeDelta byteDelay() const {
     return byte_delay_;
   }
 
-  void setByteDelay(Timestamp delay){
+  void setByteDelay(TimeDelta delay){
     byte_delay_ = delay;
   }
 
-  void setMinByteDelay(Timestamp delay){
+  void setMinByteDelay(TimeDelta delay){
     initByteDelay(delay);
     byte_delay_ = std::max(delay, byte_delay_);
   }
@@ -173,9 +173,9 @@ class PiscesPacket :
  private:
   PiscesPacket(){} //for serialization
 
-  Timestamp byte_delay_;
+  TimeDelta byte_delay_;
 
-  GlobalTimestamp arrival_;
+  Timestamp arrival_;
 
   int current_vc_;
 

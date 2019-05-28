@@ -149,7 +149,7 @@ SculpinSwitch::connectOutput(int src_outport, int dst_inport, EventLink::ptr&& l
   double port_bw = scale_factor * link_bw_;
   Port& p = ports_[src_outport];
   p.link = std::move(link);
-  p.byte_delay = Timestamp(1.0/port_bw);
+  p.byte_delay = TimeDelta(1.0/port_bw);
   p.dst_port = dst_inport;
 }
 
@@ -174,19 +174,19 @@ SculpinSwitch::handleCredit(Event *ev)
 }
 
 void
-SculpinSwitch::send(Port& p, SculpinPacket* pkt, GlobalTimestamp now)
+SculpinSwitch::send(Port& p, SculpinPacket* pkt, Timestamp now)
 {
   if (now > p.next_free){
     p.next_free = now;
   }
 
-  Timestamp extra_delay = p.next_free - now;
-  Timestamp time_to_send = pkt->numBytes() * p.byte_delay;
+  TimeDelta extra_delay = p.next_free - now;
+  TimeDelta time_to_send = pkt->numBytes() * p.byte_delay;
   p.next_free += time_to_send;
   pkt->setTimeToSend(time_to_send);
   p.link->send(extra_delay, pkt);
 
-  Timestamp delay = p.next_free - pkt->arrival();
+  TimeDelta delay = p.next_free - pkt->arrival();
 
   //if (xmit_delay_) xmit_delay_->addData(p.id, delay.usec());
 
@@ -248,7 +248,7 @@ SculpinSwitch::pullNext(int portnum)
 void
 SculpinSwitch::tryToSendPacket(SculpinPacket* pkt)
 {
-  GlobalTimestamp now_ = now();
+  Timestamp now_ = now();
 
   pkt->setArrival(now_);
   Port& p = ports_[pkt->nextPort()];
@@ -257,7 +257,7 @@ SculpinSwitch::tryToSendPacket(SculpinPacket* pkt)
   static int max_queue_depth = 0;
 
   if (!congestion_){
-    Timestamp time_to_send = pkt->numBytes() * p.byte_delay;
+    TimeDelta time_to_send = pkt->numBytes() * p.byte_delay;
     p.next_free += time_to_send;
     pkt->setTimeToSend(time_to_send);
     p.link->send(pkt);
@@ -311,13 +311,13 @@ SculpinSwitch::handlePayload(Event *ev)
   router_->route(pkt);
   Port& p = ports_[pkt->nextPort()];
 
-  Timestamp time_to_send = p.byte_delay * pkt->numBytes();
+  TimeDelta time_to_send = p.byte_delay * pkt->numBytes();
   /** I am processing the head flit - so I assume compatibility with wormhole routing
    * The tail flit cannot leave THIS switch prior to its departure time in the prev switch */
   if (pkt->timeToSend() > time_to_send){
     //delay the packet
     auto ev = newCallback(this, &SculpinSwitch::tryToSendPacket, pkt);
-    Timestamp delta_t = pkt->timeToSend() - time_to_send;
+    TimeDelta delta_t = pkt->timeToSend() - time_to_send;
     sendDelayedExecutionEvent(delta_t, ev);
   } else {
     tryToSendPacket(pkt);

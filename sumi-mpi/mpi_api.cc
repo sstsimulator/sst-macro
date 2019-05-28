@@ -605,9 +605,9 @@ MpiApi::startCollectiveMessageLog()
 }
 
 void
-MpiApi::logMessageDelay(sstmac::GlobalTimestamp wait_start, Message* msg)
+MpiApi::logMessageDelay(sstmac::Timestamp wait_start, Message* msg)
 {
-  sstmac::GlobalTimestamp start = std::max(last_collection_, wait_start);
+  sstmac::Timestamp start = std::max(last_collection_, wait_start);
 #if SSTMAC_COMM_SYNC_STATS
   mpi_api_debug(sprockit::dbg::mpi_sync,
      "%s: starting with current_call=%llu",
@@ -619,7 +619,7 @@ MpiApi::logMessageDelay(sstmac::GlobalTimestamp wait_start, Message* msg)
   //#2: For recver, time_started - wait_start, if we started waiting
   //      before
 
-  sstmac::Timestamp sync_delay;
+  sstmac::TimeDelta sync_delay;
   switch (msg->type()){
   case Message::rdma_get_sent_ack: {
     //the time gap between header arriving and being processed
@@ -663,7 +663,7 @@ MpiApi::logMessageDelay(sstmac::GlobalTimestamp wait_start, Message* msg)
     break;
   }
 
-  //sstmac::Timestamp max_delta = now() - current_call_.start;
+  //sstmac::TimeDelta max_delta = now() - current_call_.start;
   //if (current_call_.idle > max_delta){
   //  spkt_abort_printf("eaccumulated too much time on sync stat - max is %llu",
   //                    max_delta.ticks());
@@ -672,7 +672,7 @@ MpiApi::logMessageDelay(sstmac::GlobalTimestamp wait_start, Message* msg)
 
 #if SSTMAC_COMM_DELAY_STATS
   //the message arrived after we started waiting for it
-  sstmac::Timestamp delay;
+  sstmac::TimeDelta delay;
   if (msg->timeArrived() > start){
     delay = msg->timeArrived() - msg->timeSent();
   }
@@ -699,7 +699,7 @@ MpiApi::finishCurrentMpiCall()
       mpi_api_debug(sprockit::dbg::mpi_sync,
              "reassigning %llu ticks to idle", current_call_.idle.ticks());
       thr->callGraph()->reassign(CallGraphTag(idle), current_call_.idle.ticks(), thr);
-      current_call_.idle = sstmac::Timestamp(); //zero for next guy
+      current_call_.idle = sstmac::TimeDelta(); //zero for next guy
     }
   }
 #endif

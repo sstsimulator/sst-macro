@@ -85,34 +85,34 @@ class PiscesMemoryModel : public MemoryModel
     return "packet flow memory model";
   }
 
-  void access(uint64_t bytes, Timestamp min_byte_delay, Callback* cb) override;
+  void access(uint64_t bytes, TimeDelta min_byte_delay, Callback* cb) override;
 
-  Timestamp minFlowByteDelay() const override {
+  TimeDelta minFlowByteDelay() const override {
     return min_flow_byte_delay_;
   }
 
  private:
-  void start(int channel, uint64_t size, Timestamp byte_delay, Callback* cb);
+  void start(int channel, uint64_t size, TimeDelta byte_delay, Callback* cb);
   void channelFree(int channel);
   void dataArrived(int channel, uint32_t bytes);
-  GlobalTimestamp access(int channel, uint32_t bytes, Timestamp byte_delay, Callback* cb);
-  GlobalTimestamp access(int channel, PiscesPacket* pkt, Timestamp byte_delay, Callback* cb);
-  void access(PiscesPacket* pkt, Timestamp byte_delay, Callback* cb);
+  Timestamp access(int channel, uint32_t bytes, TimeDelta byte_delay, Callback* cb);
+  Timestamp access(int channel, PiscesPacket* pkt, TimeDelta byte_delay, Callback* cb);
+  void access(PiscesPacket* pkt, TimeDelta byte_delay, Callback* cb);
 
  private:
   struct Request {
     uint64_t bytes_total;
     uint64_t bytes_arrived;
-    Timestamp byte_delay;
+    TimeDelta byte_delay;
     ExecutionEvent* cb;
     PiscesPacket* pkt;
 
-    Request(uint64_t bytes, Timestamp byt_delay, Callback* c) :
+    Request(uint64_t bytes, TimeDelta byt_delay, Callback* c) :
       bytes_total(bytes), bytes_arrived(0), byte_delay(byt_delay), cb(c), pkt(nullptr)
     {
     }
 
-    Request(Timestamp byt_delay, Callback* c, PiscesPacket* p) :
+    Request(TimeDelta byt_delay, Callback* c, PiscesPacket* p) :
       byte_delay(byt_delay), cb(c), pkt(p)
     {
     }
@@ -124,9 +124,9 @@ class PiscesMemoryModel : public MemoryModel
   std::list<Request, sprockit::threadSafeAllocator<Request>> stalled_requests_;
 
   int nchannels_;
-  Timestamp min_agg_byte_delay_;
-  Timestamp min_flow_byte_delay_;
-  Timestamp latency_;
+  TimeDelta min_agg_byte_delay_;
+  TimeDelta min_flow_byte_delay_;
+  TimeDelta latency_;
   PiscesBandwidthArbitrator* arb_;
   int packet_size_;
 

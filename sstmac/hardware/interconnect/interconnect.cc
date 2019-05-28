@@ -160,7 +160,7 @@ Interconnect::Interconnect(SST::Params& params, EventManager *mgr,
     lookahead_ = lsw->out_in_latency();
   }
 
-  Timestamp lookahead_check = lookahead_;
+  TimeDelta lookahead_check = lookahead_;
   if (EventLink::minRemoteLatency().ticks() > 0){
     lookahead_check = EventLink::minRemoteLatency();
   }
@@ -185,8 +185,8 @@ Interconnect::configureInterconnectLookahead(SST::Params& params)
       .find_scoped_params("nic").find_scoped_params("injection");
 
   SST::Params link_params = switch_params.get_namespace("link");
-  Timestamp hop_latency(link_params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
-  Timestamp injection_latency = Timestamp(inj_params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
+  TimeDelta hop_latency(link_params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
+  TimeDelta injection_latency = TimeDelta(inj_params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
 
   lookahead_ = std::min(injection_latency, hop_latency);
 }
@@ -209,7 +209,7 @@ Interconnect::nodeToLogpSwitch(NodeId nid) const
 
 #if 0
 EventLink*
-Interconnect::allocateIntraProcLink(Timestamp latency, EventManager* mgr, EventHandler* handler,
+Interconnect::allocateIntraProcLink(TimeDelta latency, EventManager* mgr, EventHandler* handler,
                                 EventScheduler* src, EventScheduler* dst)
 {
   EventLink* iplink = nullptr;
@@ -236,12 +236,12 @@ Interconnect::connectEndpoints(EventManager* mgr,
   SST::Params inj_params = ep_params.find_scoped_params("injection");
   SST::Params ej_params = ep_params.find_scoped_params("ejection");
   SST::Params link_params= sw_params.find_scoped_params("link");
-  Timestamp inj_latency(inj_params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
-  Timestamp ej_latency;
+  TimeDelta inj_latency(inj_params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
+  TimeDelta ej_latency;
   if (ej_params.contains("latency")){
-    ej_latency = Timestamp(ej_params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
+    ej_latency = TimeDelta(ej_params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
   } else {
-    ej_latency = Timestamp(link_params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
+    ej_latency = TimeDelta(link_params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
   }
 
 
@@ -324,7 +324,7 @@ Interconnect::connectLogP(EventManager* mgr,
   int my_thread = mgr->thread();
 
   LogPSwitch* local_logp_switch = logp_switches_[my_thread];
-  Timestamp logp_link_latency = local_logp_switch->out_in_latency();
+  TimeDelta logp_link_latency = local_logp_switch->out_in_latency();
   for (int i=0; i < num_switches_; ++i){
     SwitchId sid(i);
     std::vector<Topology::InjectionPort> nodes;
@@ -339,7 +339,7 @@ Interconnect::connectLogP(EventManager* mgr,
       Node* nd = nodes_[conn.nid];
       if (my_rank == target_rank && my_thread == target_thread){
         //nic sends to only its specific logp switch
-        auto* logp_link = new LocalLink(Timestamp(0), mgr,
+        auto* logp_link = new LocalLink(TimeDelta(0), mgr,
             local_logp_switch->payloadHandler(conn.switch_port));
         nd->nic()->connectOutput(NIC::LogP, conn.switch_port, EventLink::ptr(logp_link));
 
@@ -454,7 +454,7 @@ Interconnect::connectSwitches(EventManager* mgr, SST::Params& switch_params)
   int my_thread = mgr->thread();
 
   SST::Params port_params = switch_params.get_namespace("link");
-  Timestamp linkLatency(port_params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
+  TimeDelta linkLatency(port_params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
 
   for (int i=0; i < num_switches_; ++i){
     interconn_debug("interconnect: connecting switch %i", i);

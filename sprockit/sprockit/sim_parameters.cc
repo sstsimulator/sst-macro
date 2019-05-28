@@ -68,7 +68,7 @@ bool
 getQuantityWithUnits(const char *value, double& ret)
 {
   bool error;
-  ret = getTimestamp(value, error);
+  ret = getTimeDelta(value, error);
   if (!error) return false;
   ret= getBandwidth(value, error);
   if (!error) return false;
@@ -128,7 +128,7 @@ double
 get_time_from_str(const char* val, const char* key)
 {
   bool errorflag = false;
-  double ret = getTimestamp(val, errorflag);
+  double ret = getTimeDelta(val, errorflag);
   if (errorflag) {
     spkt_abort_printf("improperly formatted time (%s) for parameter %s", val, key);
   }

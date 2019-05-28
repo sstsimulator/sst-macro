@@ -51,42 +51,42 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/skeleton.h>
 
 
+using sstmac::TimeDelta;
 using sstmac::Timestamp;
-using sstmac::GlobalTimestamp;
 using os = sstmac::sw::OperatingSystem;
 
 extern "C" unsigned int sstmac_sleep(unsigned int secs){
-  os::currentOs()->sleep(Timestamp(secs, Timestamp::one_second));
+  os::currentOs()->sleep(TimeDelta(secs, TimeDelta::one_second));
   return 0;
 }
 
 extern "C" unsigned sstmac_sleepUntil(double t){
-  os::currentOs()->sleepUntil(GlobalTimestamp(t));
+  os::currentOs()->sleepUntil(Timestamp(t));
   return 0;
 }
 
 extern "C" int sstmac_usleep(unsigned int usecs){
-  os::currentOs()->sleep(Timestamp(usecs, Timestamp::one_microsecond));
+  os::currentOs()->sleep(TimeDelta(usecs, TimeDelta::one_microsecond));
   return 0;
 }
 
 extern "C" int sstmac_nanosleep(unsigned int nanosecs){
-  os::currentOs()->sleep(Timestamp(nanosecs, Timestamp::one_nanosecond));
+  os::currentOs()->sleep(TimeDelta(nanosecs, TimeDelta::one_nanosecond));
   return 0;
 }
 
 extern "C" int sstmac_msleep(unsigned int msecs){
-  os::currentOs()->sleep(Timestamp(msecs, Timestamp::one_millisecond));
+  os::currentOs()->sleep(TimeDelta(msecs, TimeDelta::one_millisecond));
   return 0;
 }
 
 extern "C" int sstmac_fsleep(double secs){
-  sstmac::sw::OperatingSystem::currentThread()->parentApp()->sleep(sstmac::Timestamp(secs));
+  sstmac::sw::OperatingSystem::currentThread()->parentApp()->sleep(sstmac::TimeDelta(secs));
   return 0;
 }
 
 extern "C" void sstmac_compute(double secs){
-  sstmac::sw::OperatingSystem::currentOs()->compute(Timestamp(secs));
+  sstmac::sw::OperatingSystem::currentOs()->compute(TimeDelta(secs));
 }
 
 extern "C" void sstmac_memread(uint64_t bytes){

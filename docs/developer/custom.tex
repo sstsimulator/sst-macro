@@ -8,7 +8,7 @@ We want to run a simple test \emph{without} having to modify the \sstmacro build
 We can create a simple external project that links the new topology object to \sstmacro libraries.
 The Makefile can be found in \inlineshell{tutorials/programming/topology}.
 You are free to make \emph{any} Makefile you want.
-After \sstmacro installs, it creates compiler wrappers \inlineshell{sst++} and \inlineshell{sstcc}
+After \sstmacro installs, it creates compiler wrappers \inlineshell{libsst++} and \inlineshell{libsstcc}
 in the chosen \inlineshell{bin} folder.  
 These are essentially analogs of the MPI compiler wrappers.
 This configures all include and linkage for the simulation.
@@ -24,8 +24,8 @@ We begin with the standard typedefs.
 namespace sstmac {
 namespace hw {
 
-class xpress_ring :
-  public structured_topology
+class XpressRing :
+  public StructuredTopology
 {
  public:
   typedef enum {
@@ -49,8 +49,8 @@ We got some functions for free by inheriting from \inlinecode{structured_topolog
 We start with
 
 \begin{CppCode}
-xpress_ring::xpress_ring(SST::Params& params) :
-  structured_topology(params)
+XpressRing::XpressRing(SST::Params& params) :
+  StructuredTopology(params)
 {
   ring_size_ = params.find<int>("xpress_ring_size");
   jump_size_ = params.find<int>("xpress_jump_size");
@@ -61,7 +61,7 @@ determining how many switches are in the ring and how big a ``jump'' link is.
 The topology then needs to tell objects how to connect
 
 \begin{CppCode}
-void xpress_ring::connectedOutports(SwitchId src, std::vector<connection>& conns)
+void XpressRing::connectedOutports(SwitchId src, std::vector<connection>& conns)
 {
   conns.resize(4); //every switch has 4 connections
   auto& plusConn = conns[0];
@@ -95,7 +95,7 @@ We must identify both the outport port for the sender and the input port for the
 To compute the distance between two switches
 
 \begin{CppCode}
-int xpress_ring::num_hops(int total_distance) const
+int XpressRing::numHops(int total_distance) const
 {
   int num_jumps = total_distance / jump_size_;
   int num_steps = total_distance % jump_size_;
@@ -109,7 +109,7 @@ int xpress_ring::num_hops(int total_distance) const
 }
 
 int
-xpress_ring::minimalDistance(
+XpressRing::minimalDistance(
   const coordinates& src_coords,
   const coordinates& dest_coords) const
 {

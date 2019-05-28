@@ -103,7 +103,7 @@ class DummyRuntine : public ParallelRuntime
    * @param buffer The buffer containing a serialized message
    * @param size The size of the buffer being sent
    */
-  void sendEvent(Timestamp t, SwitchId sid, Event* ev) {}
+  void sendEvent(TimeDelta t, SwitchId sid, Event* ev) {}
 
 
 };

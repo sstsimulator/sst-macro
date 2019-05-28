@@ -142,13 +142,13 @@ class StatVTK : public StatCollector
 
   void clear() override;
 
-  void collect_new_intensity(Timestamp time, int port, double intens);
+  void collect_new_intensity(TimeDelta time, int port, double intens);
 
-  void collect_new_color(Timestamp time, int port, double color);
+  void collect_new_color(TimeDelta time, int port, double color);
 
   void reduce(StatCollector *coll) override;
 
-  void finalize(Timestamp t) override;
+  void finalize(TimeDelta t) override;
 
   StatCollector* doClone(SST::Params& params) const override {
     return new StatVTK(params);
@@ -175,13 +175,13 @@ class StatVTK : public StatCollector
   struct port_state {
     int active_ports;
     int congested_ports;
-    Timestamp last_collection;
-    Timestamp pending_collection_start;
+    TimeDelta last_collection;
+    TimeDelta pending_collection_start;
     int current_level;
     double accumulated_color;
     double current_color;
     double active_vtk_color;
-    Timestamp last_wait_finished;
+    TimeDelta last_wait_finished;
     port_state() :
       accumulated_color(0.),
       current_level(0)
@@ -199,7 +199,7 @@ class StatVTK : public StatCollector
 
   std::vector<int> intensity_levels_;
   std::vector<port_state> port_states_;
-  Timestamp min_interval_;
+  TimeDelta min_interval_;
   int id_;
 
   std::vector<std::pair<int,int>> filters_;

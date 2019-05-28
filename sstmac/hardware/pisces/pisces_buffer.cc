@@ -108,9 +108,9 @@ PiscesBuffer::PiscesBuffer(SST::Params& params, const std::string& selfname, uin
 void
 PiscesBuffer::collectIdleTicks()
 {
-  GlobalTimestamp time_now = now();
+  Timestamp time_now = now();
   if (time_now > last_tail_left_){
-    Timestamp time_waiting = time_now - last_tail_left_;
+    TimeDelta time_waiting = time_now - last_tail_left_;
     if (xmit_wait_) xmit_wait_->addData(time_waiting.sec());
   }
 }
@@ -203,7 +203,7 @@ PiscesBuffer::handlePayload(Event* ev)
   }
 }
 
-GlobalTimestamp
+Timestamp
 PiscesBuffer::sendPayload(PiscesPacket *pkt)
 {
   pkt->setArrival(now());

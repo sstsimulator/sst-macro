@@ -185,7 +185,7 @@ struct NullRegression : public OperatingSystem::ThreadSafeTimerModel<double>
   }
 
   /**
-  void finalize(sstmac::Timestamp t) override {
+  void finalize(sstmac::TimeDelta t) override {
     compute_mean();
     std::string file = key() + ".memo";
     std::ofstream ofs(file);
@@ -253,7 +253,7 @@ struct LinearRegression : public OperatingSystem::ThreadSafeTimerModel<std::pair
   }
 
   /**
-  void finalize(sstmac::Timestamp t) override {
+  void finalize(sstmac::TimeDelta t) override {
     computeRegression();
     std::string file = key() + ".memo";
     std::ofstream ofs(file);
@@ -470,7 +470,7 @@ OperatingSystem::deleteStatics()
 }
 
 void
-OperatingSystem::sleep(Timestamp t)
+OperatingSystem::sleep(TimeDelta t)
 {
   CallGraphAppend(sleep);
   FTQScope scope(active_thread_, FTQTag::sleep);
@@ -485,9 +485,9 @@ OperatingSystem::sleep(Timestamp t)
 }
 
 void
-OperatingSystem::sleepUntil(GlobalTimestamp t)
+OperatingSystem::sleepUntil(Timestamp t)
 {
-  GlobalTimestamp now_ = now();
+  Timestamp now_ = now();
   if (t > now_){
     FTQScope scope(active_thread_, FTQTag::sleep);
     sw::UnblockEvent* ev = new sw::UnblockEvent(this, active_thread_);
@@ -501,7 +501,7 @@ OperatingSystem::sleepUntil(GlobalTimestamp t)
 }
 
 void
-OperatingSystem::compute(Timestamp t)
+OperatingSystem::compute(TimeDelta t)
 {
   // guard the ftq tag in this function
   const auto& cur_tag = active_thread_->tag();
@@ -657,7 +657,7 @@ OperatingSystem::computeMemoize(const char *token, int n_params, double params[]
   uintptr_t localStorage = get_sstmac_tls();
   auto* states = (ImplicitState*)(localStorage + SSTMAC_TLS_IMPLICIT_STATE);
   double time = iter->second->compute(n_params, params, states);
-  currentOs()->compute(Timestamp(time));
+  currentOs()->compute(TimeDelta(time));
 }
 
 void
@@ -674,7 +674,7 @@ OperatingSystem::reassignCores(Thread *thr)
 void
 OperatingSystem::block()
 {
-  GlobalTimestamp before = now();
+  Timestamp before = now();
   //back to main DES thread
   ThreadContext* old_context = active_thread_->context();
   if (old_context == des_context_){
@@ -696,8 +696,8 @@ OperatingSystem::block()
   active_thread_->incrementBlockCounter();
 
    //collect any statistics associated with the elapsed time
-  GlobalTimestamp after = now();
-  Timestamp elapsed = after - before;
+  Timestamp after = now();
+  TimeDelta elapsed = after - before;
 
   if (elapsed.ticks()){
     active_thread_->collectStats(before, elapsed);
@@ -705,7 +705,7 @@ OperatingSystem::block()
 }
 
 void
-OperatingSystem::blockTimeout(Timestamp delay)
+OperatingSystem::blockTimeout(TimeDelta delay)
 {
   sendDelayedExecutionEvent(delay, new TimeoutEvent(this, active_thread_));
   block();

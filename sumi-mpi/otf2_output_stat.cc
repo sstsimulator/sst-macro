@@ -35,7 +35,7 @@ OTF2Writer::init(uint64_t start, uint64_t stop, int rank, int size)
   writer_.register_comm_null(MPI_COMM_NULL);
   writer_.register_null_request(MPI_REQUEST_NULL);
   writer_.open_archive(fileroot);
-  writer_.set_clock_resolution(sstmac::Timestamp(1.0).ticks());
+  writer_.set_clock_resolution(sstmac::TimeDelta(1.0).ticks());
   writer_.generic_call(start, stop, "MPI_Init");
 
   std::shared_ptr<dumpi::OTF2_MPI_Comm> world(new dumpi::OTF2_MPI_Comm);

@@ -219,57 +219,57 @@ class Message : public sstmac::hw::NetworkMessage
 
 #if SSTMAC_COMM_DELAY_STATS
  public:
-  sstmac::GlobalTimestamp timeSent() const {
+  sstmac::Timestamp timeSent() const {
     return sent_;
   }
 
-  sstmac::GlobalTimestamp timeArrived() const {
+  sstmac::Timestamp timeArrived() const {
     return arrived_;
   }
 
-  void setTimeSent(sstmac::GlobalTimestamp now){
+  void setTimeSent(sstmac::Timestamp now){
     sent_ = now;
   }
 
-  void setTimeArrived(sstmac::GlobalTimestamp now){
+  void setTimeArrived(sstmac::Timestamp now){
     arrived_ = now;
   }
 
  private:
-  sstmac::GlobalTimestamp sent_;
+  sstmac::Timestamp sent_;
 
-  sstmac::GlobalTimestamp arrived_;
+  sstmac::Timestamp arrived_;
 #endif
 
 #if SSTMAC_COMM_SYNC_STATS
  public:
-  sstmac::GlobalTimestamp timeStarted() const {
+  sstmac::Timestamp timeStarted() const {
     return started_;
   }
 
-  sstmac::GlobalTimestamp timeSynced() const {
+  sstmac::Timestamp timeSynced() const {
     return synced_;
   }
 
-  sstmac::GlobalTimestamp timeSyncArrived() const {
+  sstmac::Timestamp timeSyncArrived() const {
     return sync_arrived_;
   }
 
-  void setTimeStarted(sstmac::GlobalTimestamp now){
+  void setTimeStarted(sstmac::Timestamp now){
     started_ = now;
   }
 
-  void setTimeSynced(sstmac::GlobalTimestamp now){
+  void setTimeSynced(sstmac::Timestamp now){
     synced_ = now;
     sync_arrived_ = arrived_;
   }
 
  private:
-  sstmac::GlobalTimestamp started_;
+  sstmac::Timestamp started_;
 
-  sstmac::GlobalTimestamp synced_;
+  sstmac::Timestamp synced_;
 
-  sstmac::GlobalTimestamp sync_arrived_;
+  sstmac::Timestamp sync_arrived_;
 #endif
 
 };

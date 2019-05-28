@@ -155,9 +155,9 @@ OTF2TraceReplayApp::skeletonMain() {
 
 // Indicate that we are starting an MPI call.
 void
-OTF2TraceReplayApp::startMpi(const sstmac::Timestamp wall) {
+OTF2TraceReplayApp::startMpi(const sstmac::TimeDelta wall) {
   // Time not initialized
-  if (compute_time.ticks() == sstmac::Timestamp::zero) return;
+  if (compute_time.ticks() == sstmac::TimeDelta::zero) return;
 
   if (printTimeDeltas()) {
     cout << "\u0394T " << (wall-compute_time).sec() << " seconds"<< endl;
@@ -167,7 +167,7 @@ OTF2TraceReplayApp::startMpi(const sstmac::Timestamp wall) {
 }
 
 void
-OTF2TraceReplayApp::endMpi(const sstmac::Timestamp wall) {
+OTF2TraceReplayApp::endMpi(const sstmac::TimeDelta wall) {
   compute_time = wall;
 }
 

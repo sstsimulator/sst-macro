@@ -66,9 +66,9 @@ namespace sw {
 
 struct JobAllocation
 {
-  Timestamp requested; //time job was requested to start
-  Timestamp start; //time job actually started
-  Timestamp estimated; //time job is estimated to take
+  TimeDelta requested; //time job was requested to start
+  TimeDelta start; //time job actually started
+  TimeDelta estimated; //time job is estimated to take
   ordered_node_set nodes;
   int nproc_launched;
   int nproc_completed;

@@ -79,7 +79,7 @@ class MerlinNIC :
 {
   struct MyRequest : public SST::Interfaces::SimpleNetwork::Request {
     uint64_t flow_id;
-    GlobalTimestamp start;
+    Timestamp start;
   };
 
   struct MessageEvent : public Event {

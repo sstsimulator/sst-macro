@@ -300,8 +300,8 @@ static void runManager(void* args){
   mgr->run();
 }
 
-GlobalTimestamp
-Manager::run(GlobalTimestamp until)
+Timestamp
+Manager::run(Timestamp until)
 {
   start();
 

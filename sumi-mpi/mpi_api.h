@@ -868,12 +868,12 @@ class MpiApi : public sumi::SimTransport
 
 #if SSTMAC_COMM_DELAY_STATS
  public:
-  void logMessageDelay(sstmac::GlobalTimestamp wait_start, Message* msg) override;
+  void logMessageDelay(sstmac::Timestamp wait_start, Message* msg) override;
 
   void startCollectiveMessageLog() override;
 
  private:
-  sstmac::GlobalTimestamp last_collection_;
+  sstmac::Timestamp last_collection_;
 #endif
 
 #if SSTMAC_COMM_SYNC_STATS

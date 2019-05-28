@@ -67,7 +67,7 @@ PiscesNIC::PiscesNIC(SST::Component* parent, SST::Params& params) :
   pending_inject_(1)
 {
   SST::Params inj_params = params.find_scoped_params("injection");
-  self_mtl_link_ = allocateSubLink("mtl", Timestamp(), parent_,
+  self_mtl_link_ = allocateSubLink("mtl", TimeDelta(), parent_,
                                     newLinkHandler(this, &NIC::mtlHandle));
 
   inj_credits_ = inj_params.find<SST::UnitAlgebra>("credits").getRoundedValue();
@@ -151,7 +151,7 @@ PiscesNIC::inject(int vn, uint64_t offset, NetworkMessage* netmsg)
     payload->updateVC();
     payload->resetStages(0);
     payload->setInport(0);
-    GlobalTimestamp t = inj_buffer_->sendPayload(payload);
+    Timestamp t = inj_buffer_->sendPayload(payload);
 
     pisces_debug("On %s, injecting from %lu->%lu on %s",
                  toString().c_str(), offset, offset + bytes, netmsg->toString().c_str());
@@ -221,7 +221,7 @@ PiscesNIC::incomingPacket(Event* ev)
 //depending on arbitration, this might only by the head flit
   if (pkt->byteDelay().ticks() != 0){
     //these are pipelined
-    Timestamp delay = pkt->byteLength() * pkt->byteDelay();
+    TimeDelta delay = pkt->byteLength() * pkt->byteDelay();
     nic_debug("delaying packet arrival of size %u for %9.5e secs", pkt->byteLength(), delay.sec());
     sendDelayedExecutionEvent(delay, newCallback(this, &PiscesNIC::packetArrived, pkt));
   } else {

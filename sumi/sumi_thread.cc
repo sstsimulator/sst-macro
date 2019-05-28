@@ -64,7 +64,7 @@ SumiThread::start()
 void
 SumiThread::compute(double sec)
 {
-  parent_app_->compute(Timestamp(sec));
+  parent_app_->compute(TimeDelta(sec));
 }
 
 }

@@ -80,7 +80,7 @@ SoftwareLaunchRequest::SoftwareLaunchRequest(SST::Params& params) :
     params.find_array("core_affinities", core_affinities_);
   }
 
-  time_ = GlobalTimestamp(params.find<SST::UnitAlgebra>("start", "0s").getValue().toDouble());
+  time_ = Timestamp(params.find<SST::UnitAlgebra>("start", "0s").getValue().toDouble());
 
   if (params.contains("launch_cmd")){
     parseLaunchCmd(params);

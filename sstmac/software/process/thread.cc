@@ -215,7 +215,7 @@ Thread::startAPICall()
     double duration = host_timer_->stamp();
     debug_printf(sprockit::dbg::host_compute,
                  "host compute for %12.8es", duration);
-    parentApp()->compute(Timestamp(duration));
+    parentApp()->compute(TimeDelta(duration));
   }
 }
 
@@ -296,7 +296,7 @@ Thread::spawn(Thread* thr)
   os_->startThread(thr);
 }
 
-GlobalTimestamp
+Timestamp
 Thread::now()
 {
   return os_->now();
@@ -352,7 +352,7 @@ Thread::computeDetailed(uint64_t flops, uint64_t nintops, uint64_t bytes, int nt
 }
 
 void
-Thread::collectStats(GlobalTimestamp start, Timestamp elapsed)
+Thread::collectStats(Timestamp start, TimeDelta elapsed)
 {
 #if !SSTMAC_INTEGRATED_SST_CORE
 #if SSTMAC_HAVE_CALL_GRAPH

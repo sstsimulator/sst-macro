@@ -117,7 +117,7 @@ class PiscesSender : public sstmac::EventScheduler
                SST::Component* parent, bool update_vc);
 
   void sendCredit(Input& inp, PiscesPacket* payload,
-          GlobalTimestamp packet_tail_leaves);
+          Timestamp packet_tail_leaves);
 
   /**
    * @brief send Invoked to send/bandwidth arbitrator a packet.
@@ -128,13 +128,13 @@ class PiscesSender : public sstmac::EventScheduler
    * @param to_send
    * @return
    */
-  GlobalTimestamp send(PiscesBandwidthArbitrator* arb,
+  Timestamp send(PiscesBandwidthArbitrator* arb,
        PiscesPacket* pkt, Input& to_credit, Output& to_send);
 
  protected:
-  Timestamp send_lat_;
+  TimeDelta send_lat_;
 
-  Timestamp credit_lat_;
+  TimeDelta credit_lat_;
 
   bool update_vc_;
 

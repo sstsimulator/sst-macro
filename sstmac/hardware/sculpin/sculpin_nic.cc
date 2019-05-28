@@ -69,7 +69,7 @@ SculpinNIC::SculpinNIC(SST::Component* parent, SST::Params& params) :
   SST::Params inj_params = params.find_scoped_params("injection");
 
   packet_size_ = inj_params.find<SST::UnitAlgebra>("mtu").getRoundedValue();
-  inj_byte_delay_ = Timestamp(inj_params.find<SST::UnitAlgebra>("bandwidth").getValue().inverse().toDouble());
+  inj_byte_delay_ = TimeDelta(inj_params.find<SST::UnitAlgebra>("bandwidth").getValue().inverse().toDouble());
 }
 
 void
@@ -129,7 +129,7 @@ SculpinNIC::doSend(NetworkMessage* payload)
   uint64_t bytes_left = payload->byteLength();
   uint64_t byte_offset = 0;
 
-  GlobalTimestamp now_ = now();
+  Timestamp now_ = now();
   if (now_ > inj_next_free_){
     inj_next_free_ = now_;
   }
@@ -144,8 +144,8 @@ SculpinNIC::doSend(NetworkMessage* payload)
     byte_offset += pkt_size;
     SculpinPacket* pkt = new SculpinPacket(is_tail ? payload : nullptr, pkt_size, is_tail,
                                              fid, to, from);
-    Timestamp extra_delay = inj_next_free_ - now_;
-    Timestamp time_to_send = pkt_size * inj_byte_delay_;
+    TimeDelta extra_delay = inj_next_free_ - now_;
+    TimeDelta time_to_send = pkt_size * inj_byte_delay_;
     inj_next_free_ += time_to_send;
     pkt_debug("packet injecting at t=%8.4e: %s",
               inj_next_free_.sec(), pkt->toString().c_str());
@@ -173,13 +173,13 @@ SculpinNIC::cqHandle(SculpinPacket* pkt)
 void
 SculpinNIC::eject(SculpinPacket* pkt)
 {
-  GlobalTimestamp now_ = now();
+  Timestamp now_ = now();
   if (now_ > ej_next_free_){
     ej_next_free_ = now_;
   }
   pkt_debug("incoming packet - ejection next free at t=%8.4e: %s",
             ej_next_free_.sec(), pkt->toString().c_str());
-  Timestamp time_to_send = pkt->byteLength() * inj_byte_delay_;
+  TimeDelta time_to_send = pkt->byteLength() * inj_byte_delay_;
   ej_next_free_ = ej_next_free_ + time_to_send;
   auto qev = newCallback(this, &SculpinNIC::cqHandle, pkt);
   sendExecutionEvent(ej_next_free_, qev);
@@ -190,11 +190,11 @@ SculpinNIC::handlePayload(Event *ev)
 {
   SculpinPacket* pkt = static_cast<SculpinPacket*>(ev);
 
-  Timestamp time_to_send = pkt->byteLength() * inj_byte_delay_;
+  TimeDelta time_to_send = pkt->byteLength() * inj_byte_delay_;
   if (time_to_send < pkt->timeToSend()){
     //tail flit cannot arrive here before it leaves the prev switch
     auto ev = newCallback(this, &SculpinNIC::eject, pkt);
-    Timestamp delta_t = pkt->timeToSend() - time_to_send;
+    TimeDelta delta_t = pkt->timeToSend() - time_to_send;
     sendDelayedExecutionEvent(delta_t, ev);
   } else {
     eject(pkt);

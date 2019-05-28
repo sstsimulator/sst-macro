@@ -64,10 +64,10 @@ namespace sstmac {
  *
  * Intended to be reasonably compatible with ns3::HighPrecision time.
  */
-class Timestamp
+class TimeDelta
 {
  public:
-  friend class GlobalTimestamp;
+  friend class Timestamp;
 
   /// The type that holds a timestamp.
   typedef uint64_t tick_t;
@@ -98,21 +98,21 @@ class Timestamp
 
   typedef enum { exact } timestamp_param_type_t;
 
-  explicit Timestamp(double t_seconds){
+  explicit TimeDelta(double t_seconds){
     ticks_ = uint64_t(t_seconds * one_second);
     if (t_seconds > maxTime()) {
-      spkt_abort_printf("Timestamp(): Time value %e out of bounds 0...%e",
+      spkt_abort_printf("TimeDelta(): Time value %e out of bounds 0...%e",
                         t_seconds, maxTime());
     }
   }
 
-  explicit Timestamp(tick_t ticks, timestamp_param_type_t ty) : ticks_(ticks) {}
+  explicit TimeDelta(tick_t ticks, timestamp_param_type_t ty) : ticks_(ticks) {}
 
-  explicit Timestamp(uint64_t num_units, tick_t ticks_per_unit) : ticks_(num_units*ticks_per_unit) {}
+  explicit TimeDelta(uint64_t num_units, tick_t ticks_per_unit) : ticks_(num_units*ticks_per_unit) {}
 
-  explicit Timestamp() : ticks_(0) {}
+  explicit TimeDelta() : ticks_(0) {}
 
-  static uint32_t divideUp(Timestamp num, Timestamp denom){
+  static uint32_t divideUp(TimeDelta num, TimeDelta denom){
     //optimize for architectures that generate remainder bit
     //this should optimize
     uint32_t x = num.ticks();
@@ -151,51 +151,51 @@ class Timestamp
     return max_time_;
   }
 
-  inline bool operator==(const Timestamp &other) const {
+  inline bool operator==(const TimeDelta &other) const {
     return (ticks_ == other.ticks_);
   }
 
-  inline bool operator!=(const Timestamp &other) const {
+  inline bool operator!=(const TimeDelta &other) const {
     return (ticks_ != other.ticks_);
   }
 
-  inline bool operator<(const Timestamp &other) const {
+  inline bool operator<(const TimeDelta &other) const {
     return (ticks_ < other.ticks_);
   }
 
-  inline bool operator<=(const Timestamp &other) const {
+  inline bool operator<=(const TimeDelta &other) const {
     return (ticks_ <= other.ticks_);
   }
 
-  inline bool operator>(const Timestamp &other) const {
+  inline bool operator>(const TimeDelta &other) const {
     return (ticks_ > other.ticks_);
   }
 
-  inline bool operator>=(const Timestamp &other) const {
+  inline bool operator>=(const TimeDelta &other) const {
     return (ticks_ >= other.ticks_);
   }
 
-  Timestamp& operator+=(const Timestamp &other);
-  Timestamp& operator-=(const Timestamp &other);
-  Timestamp& operator*=(double scale);
-  Timestamp& operator/=(double scale);
+  TimeDelta& operator+=(const TimeDelta &other);
+  TimeDelta& operator-=(const TimeDelta &other);
+  TimeDelta& operator*=(double scale);
+  TimeDelta& operator/=(double scale);
 };
 
-struct GlobalTimestamp
+struct Timestamp
 {
-  friend class Timestamp;
+  friend class TimeDelta;
 
-  explicit GlobalTimestamp() : epochs(0), time()
+  explicit Timestamp() : epochs(0), time()
   {
   }
 
-  explicit GlobalTimestamp(uint64_t eps, Timestamp tcks) :
+  explicit Timestamp(uint64_t eps, TimeDelta tcks) :
     epochs(eps), time(tcks)
   {
   }
 
-  explicit GlobalTimestamp(uint64_t eps, uint64_t subticks) :
-    epochs(eps), time(subticks, Timestamp::exact)
+  explicit Timestamp(uint64_t eps, uint64_t subticks) :
+    epochs(eps), time(subticks, TimeDelta::exact)
   {
   }
 
@@ -203,7 +203,7 @@ struct GlobalTimestamp
     return time.ticks() == 0;
   }
 
-  explicit GlobalTimestamp(double t) :
+  explicit Timestamp(double t) :
     epochs(0), time(t)
   {
   }
@@ -224,34 +224,34 @@ struct GlobalTimestamp
     return time.ticks() / time.one_microsecond;
   }
 
-  GlobalTimestamp& operator+=(const Timestamp& t);
+  Timestamp& operator+=(const TimeDelta& t);
 
   uint64_t epochs;
-  Timestamp time;
+  TimeDelta time;
 
   static constexpr uint64_t carry_bits_mask = 0;
   static constexpr uint64_t remainder_bits_mask = ~uint64_t(0);
   static constexpr uint64_t carry_bits_shift = 0;
 };
 
-Timestamp operator+(const Timestamp &a, const Timestamp &b);
-Timestamp operator-(const Timestamp &a, const Timestamp &b);
-Timestamp operator*(const Timestamp &t, double scaling);
-Timestamp operator*(double scaling, const Timestamp &t);
-Timestamp operator/(const Timestamp &t, double scaling);
-static inline uint64_t operator/(const Timestamp& a, const Timestamp& b){
+TimeDelta operator+(const TimeDelta &a, const TimeDelta &b);
+TimeDelta operator-(const TimeDelta &a, const TimeDelta &b);
+TimeDelta operator*(const TimeDelta &t, double scaling);
+TimeDelta operator*(double scaling, const TimeDelta &t);
+TimeDelta operator/(const TimeDelta &t, double scaling);
+static inline uint64_t operator/(const TimeDelta& a, const TimeDelta& b){
   return a.ticks() / b.ticks();
 }
 
-static inline GlobalTimestamp operator+(const GlobalTimestamp& a, const Timestamp& b)
+static inline Timestamp operator+(const Timestamp& a, const TimeDelta& b)
 {
   uint64_t sum = a.time.ticks() + b.ticks();
-  uint64_t carry = (sum & GlobalTimestamp::carry_bits_mask) << GlobalTimestamp::carry_bits_shift;
-  uint64_t rem = sum & GlobalTimestamp::remainder_bits_mask;
-  return GlobalTimestamp(carry + a.epochs, Timestamp(rem, Timestamp::exact));
+  uint64_t carry = (sum & Timestamp::carry_bits_mask) << Timestamp::carry_bits_shift;
+  uint64_t rem = sum & Timestamp::remainder_bits_mask;
+  return Timestamp(carry + a.epochs, TimeDelta(rem, TimeDelta::exact));
 }
 
-static inline Timestamp operator-(const GlobalTimestamp& a, const GlobalTimestamp& b){
+static inline TimeDelta operator-(const Timestamp& a, const Timestamp& b){
   if (a.epochs == b.epochs){
     return a.time - b.time;
   } else {
@@ -259,29 +259,29 @@ static inline Timestamp operator-(const GlobalTimestamp& a, const GlobalTimestam
   }
 }
 
-static inline GlobalTimestamp operator+(const Timestamp& a, const GlobalTimestamp& b){
+static inline Timestamp operator+(const TimeDelta& a, const Timestamp& b){
   return b + a;
 }
 
-static inline GlobalTimestamp operator+(const GlobalTimestamp& a, const GlobalTimestamp& b){
-  GlobalTimestamp tmp = a.time + b;
+static inline Timestamp operator+(const Timestamp& a, const Timestamp& b){
+  Timestamp tmp = a.time + b;
   tmp.epochs += a.epochs;
   return tmp;
 }
 
-static inline GlobalTimestamp operator-(const GlobalTimestamp& a, const Timestamp b){
+static inline Timestamp operator-(const Timestamp& a, const TimeDelta b){
   if (a.time > b){
-    GlobalTimestamp tmp = a;
+    Timestamp tmp = a;
     tmp.time -= b;
     return tmp;
   } else {
-    uint64_t ticks = GlobalTimestamp::remainder_bits_mask - b.ticks();
-    GlobalTimestamp gt(a.epochs-1, Timestamp(ticks, Timestamp::exact));
+    uint64_t ticks = Timestamp::remainder_bits_mask - b.ticks();
+    Timestamp gt(a.epochs-1, TimeDelta(ticks, TimeDelta::exact));
     return gt;
   }
 }
 
-static inline bool operator>=(const GlobalTimestamp& a, const GlobalTimestamp& b){
+static inline bool operator>=(const Timestamp& a, const Timestamp& b){
   if (a.epochs == b.epochs){
     return a.time >= b.time;
   } else {
@@ -289,7 +289,7 @@ static inline bool operator>=(const GlobalTimestamp& a, const GlobalTimestamp& b
   }
 }
 
-static inline bool operator!=(const GlobalTimestamp& a, const GlobalTimestamp& b){
+static inline bool operator!=(const Timestamp& a, const Timestamp& b){
   if (a.epochs == b.epochs){
     return a.time != b.time;
   } else {
@@ -297,7 +297,7 @@ static inline bool operator!=(const GlobalTimestamp& a, const GlobalTimestamp& b
   }
 }
 
-static inline bool operator<(const GlobalTimestamp& a, const GlobalTimestamp& b){
+static inline bool operator<(const Timestamp& a, const Timestamp& b){
   if (a.epochs == b.epochs){
     return a.time < b.time;
   } else {
@@ -305,15 +305,15 @@ static inline bool operator<(const GlobalTimestamp& a, const GlobalTimestamp& b)
   }
 }
 
-static inline bool operator==(const GlobalTimestamp& a, const GlobalTimestamp& b){
+static inline bool operator==(const Timestamp& a, const Timestamp& b){
   return a.epochs == b.epochs && a.time == b.time;
 }
 
-static inline bool operator>(const GlobalTimestamp& a, const GlobalTimestamp& b){
+static inline bool operator>(const Timestamp& a, const Timestamp& b){
   return b < a;
 }
 
-static inline bool operator<=(const GlobalTimestamp& a, const GlobalTimestamp& b){
+static inline bool operator<=(const Timestamp& a, const Timestamp& b){
   if (a.epochs == b.epochs){
     return a.time <= b.time;
   } else {
@@ -321,26 +321,26 @@ static inline bool operator<=(const GlobalTimestamp& a, const GlobalTimestamp& b
   }
 }
 
-std::ostream& operator<<(std::ostream &os, const Timestamp &t);
+std::ostream& operator<<(std::ostream &os, const TimeDelta &t);
 
-std::string to_printf_type(Timestamp t);
+std::string to_printf_type(TimeDelta t);
 
 
 } // end of namespace sstmac
 
 START_SERIALIZATION_NAMESPACE
-template <> class serialize<sstmac::Timestamp>
+template <> class serialize<sstmac::TimeDelta>
 {
  public:
-  void operator()(sstmac::Timestamp& t, serializer& ser){
+  void operator()(sstmac::TimeDelta& t, serializer& ser){
     ser.primitive(t);
   }
 };
 
-template <> class serialize<sstmac::GlobalTimestamp>
+template <> class serialize<sstmac::Timestamp>
 {
  public:
-  void operator()(sstmac::GlobalTimestamp& t, serializer& ser){
+  void operator()(sstmac::Timestamp& t, serializer& ser){
     ser.primitive(t);
   }
 };

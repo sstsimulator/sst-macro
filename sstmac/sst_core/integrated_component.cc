@@ -65,7 +65,7 @@ SSTIntegratedComponent::SSTIntegratedComponent(
   sprockit::output::init_errn(&std::cerr);
 
   link_map_ = SST::Simulation::getSimulation()->getComponentLinkMap(id);
-  Timestamp::initStamps(100); //100 as per tick
+  TimeDelta::initStamps(100); //100 as per tick
 }
 
 void
@@ -81,7 +81,7 @@ SSTIntegratedComponent::initLinks(SST::Params& params)
     istr >> port_type;
     istr >> src_outport;
     istr >> dst_inport;
-    EventLink::ptr ev_link{new EventLink(pair.first, Timestamp(), link)};
+    EventLink::ptr ev_link{new EventLink(pair.first, TimeDelta(), link)};
 
     if (port_type == "input"){
       //setup up the link for sending credits back to source
