@@ -74,9 +74,9 @@ class LibComputeTime :
     Library::incomingEvent(ev);
   }
 
-  void compute(Timestamp time);
+  void compute(TimeDelta time);
 
-  void sleep(Timestamp time);
+  void sleep(TimeDelta time);
 
 };
 

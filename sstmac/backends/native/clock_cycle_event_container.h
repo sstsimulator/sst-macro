@@ -85,7 +85,7 @@ class ClockCycleEventMap :
 
   virtual ~ClockCycleEventMap() throw() {}
 
-  void renewScheduler(int thread, Timestamp t, EventScheduler* es);
+  void renewScheduler(int thread, TimeDelta t, EventScheduler* es);
 
  protected:
   /**
@@ -93,9 +93,9 @@ class ClockCycleEventMap :
    * @param vote The minimum event time I have
    * @return The minimum event time across all LPs
    */
-  GlobalTimestamp receiveIncomingEvents(GlobalTimestamp vote) override;
+  Timestamp receiveIncomingEvents(Timestamp vote) override;
 
-  void computeFinalTime(GlobalTimestamp vote);
+  void computeFinalTime(Timestamp vote);
 
   int num_profile_loops_;
 

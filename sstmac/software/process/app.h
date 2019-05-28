@@ -108,9 +108,9 @@ class App : public Thread
 
   static void deleteStatics();
 
-  void sleep(Timestamp time);
+  void sleep(TimeDelta time);
 
-  void compute(Timestamp time);
+  void compute(TimeDelta time);
 
   void computeInst(ComputeEvent* cmsg);
 

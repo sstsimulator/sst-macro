@@ -118,14 +118,14 @@ class MpiQueue
   void finalizeRecv(MpiMessage* msg,
                 MpiQueueRecvRequest* req);
 
-  sstmac::GlobalTimestamp progressLoop(MpiRequest* req);
+  sstmac::Timestamp progressLoop(MpiRequest* req);
 
   void nonblockingProgress();
 
   void startProgressLoop(const std::vector<MpiRequest*>& req);
 
   void startProgressLoop(const std::vector<MpiRequest*>& req,
-                      sstmac::Timestamp timeout);
+                      sstmac::TimeDelta timeout);
 
   void finishProgressLoop(const std::vector<MpiRequest*>& req);
 

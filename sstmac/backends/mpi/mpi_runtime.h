@@ -97,7 +97,7 @@ class MpiRuntime :
 
   void initRuntimeParams(SST::Params& params) override;
 
-  GlobalTimestamp sendRecvMessages(GlobalTimestamp vote) override;
+  Timestamp sendRecvMessages(Timestamp vote) override;
 
  protected:
   void doReduce(void* data, int nelems, MPI_Datatype ty, MPI_Op op, int root);

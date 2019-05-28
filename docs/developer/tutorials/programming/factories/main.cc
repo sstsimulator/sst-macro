@@ -43,14 +43,16 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sstmac/skeleton.h>
+#include <sprockit/sim_parameters.h>
 #include "actor.h"
-
-#define sstmac_app_name rob_reiner
 
 int
 main(int argc, char **argv)
 {
-  sstmac::tutorial::actor* the_guy = sstmac::tutorial::actor_factory::getParam("actor_name", getParams());
+  auto& params = sstmac::appParams();
+  auto name = params.find<std::string>("actor_name");
+  sstmac::tutorial::Actor* the_guy = sprockit::create<sstmac::tutorial::Actor>("macro", name, params);
   the_guy->act();
   return 0;
 }
+

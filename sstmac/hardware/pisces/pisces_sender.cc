@@ -84,13 +84,13 @@ PiscesSender::PiscesSender(
 void
 PiscesSender::sendCredit(
   Input& inp, PiscesPacket* payload,
-  GlobalTimestamp credits_ready)
+  Timestamp credits_ready)
 {
   int src_vc = payload->vc(); //we have not updated to the new virtual channel
   PiscesCredit* credit = new PiscesCredit(inp.port_to_credit,
                                          src_vc, payload->numBytes());
 
-  Timestamp credit_departure_delay = credits_ready - now();
+  TimeDelta credit_departure_delay = credits_ready - now();
 
   pisces_debug(
       "On %s:%p on inport %d, crediting %s:%p port:%d:%d vc:%d {%s}"
@@ -105,13 +105,13 @@ PiscesSender::sendCredit(
   inp.link->send(credit_departure_delay, credit);
 }
 
-GlobalTimestamp
+Timestamp
 PiscesSender::send(
   PiscesBandwidthArbitrator* arb,
   PiscesPacket* pkt,
   Input& to_credit, Output& to_send)
 {
-  GlobalTimestamp now_ = now();
+  Timestamp now_ = now();
   PiscesBandwidthArbitrator::IncomingPacket st;
   st.incoming_byte_delay = pkt->byteDelay();
   st.now = now_;
@@ -150,7 +150,7 @@ PiscesSender::send(
   if (update_vc_) pkt->updateVC();
   pkt->advanceStage();
 
-  Timestamp departure_delay = st.head_leaves - now_;
+  TimeDelta departure_delay = st.head_leaves - now_;
   to_send.link->send(departure_delay, pkt);
 
   return st.tail_leaves;

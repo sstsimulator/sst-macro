@@ -112,14 +112,14 @@ class SculpinNIC :
   void eject(SculpinPacket* pkt);
 
  private:
-  GlobalTimestamp inj_next_free_;
+  Timestamp inj_next_free_;
   EventLink::ptr inj_link_;
 
-  Timestamp inj_byte_delay_;
+  TimeDelta inj_byte_delay_;
 
   uint32_t packet_size_;
 
-  GlobalTimestamp ej_next_free_;
+  Timestamp ej_next_free_;
   RecvCQ cq_;
 };
 

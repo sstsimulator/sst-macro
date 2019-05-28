@@ -1,11 +1,11 @@
 ---
-title: Manual for SST-Macro 9.0.x
+title: Manual for SST-Macro 8.0.x
 published: true
 category: SSTDocumentation
 ---
 
 
-# SST/macro 9.0: Developer's Reference
+# SST/macro 8.0: Developer's Reference
 
 
 ![](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/sstlogo.png) 
@@ -33,7 +33,6 @@ category: SSTDocumentation
    - [Chapter 4: SProCKit](#chapter:sprockit)
       - [Section 4.1: Debug](#sec:debug)
       - [Section 4.2: Serialization](#sec:serialize)
-      - [Section 4.3: Keyword Registration](#sec:keywords)
    - [Chapter 5: Discrete Event Simulation](#chapter:des)
       - [Section 5.1: Event Managers](#sec:eventManagers)
          - [5.1.1: Event Handlers](#subsec:eventHandlers)
@@ -45,8 +44,6 @@ category: SSTDocumentation
       - [Section 6.2: Libraries](#sec:libraries)
          - [6.2.1: API](#subsec:softwareAPI)
          - [6.2.2: Service](#subsec:service)
-      - [Section 6.3: Distributed Service](#sec:distService)
-         - [6.3.1: Coordinating servers and clients](#subsec:coordinatingServersClients)
    - [Chapter 7: Hardware Models](#chapter:hardware)
       - [Section 7.1: Overview](#sec:topOverview)
       - [Section 7.2: Connectables](#sec:Connectables)
@@ -151,7 +148,7 @@ Most template wizardry is hidden in easy-to-use macros.
 While C++ allows a great deal of flexibility in syntax and code structure, we are striving towards a unified coding style.
 
 Boost is no longer required or even used.
-Some C++11 features like `unordered_map` and `shared_ptr` are used heavily throughout the code.
+Some C++11 features like `unordered_map` and `unique_ptr` are used heavily throughout the code.
 
 
 ![Figure 2: Structure of the simulation connecting components with links and event handlers.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/EventHandler) 
@@ -168,18 +165,18 @@ In general, when module 1 sends a message to module 2, module 1 only sees an abs
 The polymorphic type of module 2 can vary freely to employ different physics or congestions models without affecting the implementation of module 1. 
 Polymorphism, while greatly simplifying modularity and interchangeability, does have some consequences.
 The "workhorse" of SST/macro is the base `event`, `Component`, and `EventHandler` classes.
-To increase polymorphism and flexibility, every SST/macro module that receives events does so via the generic function
+To increase polymorphism and flexibility, every SST/macro module that receives events does so via a generic function
 
 ````
-void handle(event* ev){
+void handle(Event* ev){
 ...
 }
 ````
 The prototype therefore accepts any event type. 
 The interaction of these types is illustrated in Figure~[2](#fig:abstractHandlers)).
-Event handlers are created as dispatch wrappers to member functions of an en `Component`.
+Event handlers are created as dispatch wrappers to member functions of a `Component` or `SubComponent`.
 There are special helper functions and template classes in SST/macro designed to simplify this process.
-A `link` is created connecting two components.
+A `Link` is created connecting two components.
 An `EventHandler` is created that dispatches to the `Listener::recv` member function.
 When events are pushed onto the link by `Pinger`,
 the simulation core computes the correct link delay.
@@ -189,11 +186,8 @@ the simulation core invokes the event handler, which delivers the event to the `
 Misusing types in SST/macro is not a compile-time error.
 The onus of correct event types falls on runtime assertions.
 All event types may not be valid for a given module.
-A module for the memory subsystem should throw an error if the developer accidentally passes it an event intended for the OS or the NIC.
-Efforts are being made to convert runtime errors into compile-time errors.
-In many cases, though, this cannot be avoided.
 The other consequence is that a lot of dynamic casts appear in the code.
-An abstract `event` type is received, but must be converted to the specific message type desired.
+An abstract `Event` type is received, but must be converted to the specific event type desired.
 NOTE: While some dynamic casts are sometimes very expensive in C++ (and are implementation-dependent),
 most SST/macro dynamic casts are simple equality tests involving virtual table pointers and relatively low overhead.
 
@@ -202,8 +196,6 @@ in many cases certain physical models are simply not compatible.
 For example, using a fluid flow model for memory reads cannot be easily combined with a packet-based model for the network.
 Again, pairing incompatible modules is not a compile-time error.
 Only when the types are fully defined at runtime can an incompatibility error be detected.
-Again, efforts are being made to convert as many type-usage problems into compiler errors.
-We prefer simulation flexibility to compiler strictness, though. 
 
 ### Section 1.3: Most Important Style and Coding Rules<a name="sec:stylerules"></a>
 
@@ -212,13 +204,14 @@ Here is a selection of C++ rules we have tended to follow.
 Detailed more below, example scripts are included to reformat the code style however you may prefer for local editing.
 However, if committing changes to the repository, only use the default formatting in the example scripts.
 
--   snake\_case is used for variable and class names.
+-   CapitalCase is use for class names
+-   camelCase is used for member function names
 -   We use "one true brace`` style (OTBS) for source files.
 -   In header files, all functions are inline style with attached brackets.
 -   To keep code compact horizontally, indent is set to two spaces. Namespaces are not indented.
 -   Generally, all if-else and for-loops have brackets even if a single line.
--   Accessor functions are not prefixed, i.e. a function would be called `name()` not `get_name()`, except
-where conflicts require a prefix. Functions for modifying variables are prefixed with `set_`,
+-   Accessor functions are not prefixed, i.e. a function would be called `name()` not `getName()`, except
+where conflicts require a prefix. Functions for modifying variables are prefixed with `setX`,
 -   We use .h and .cc instead of .hpp and .cpp
 -   As much implementation as possible should go in .cc files.
 	Header files can end up in long dependency lists in the make system.  
@@ -228,15 +221,13 @@ where conflicts require a prefix. Functions for modifying variables are prefixed
 	 Many short files are better than a few really long ones.
 -   Document, document, document.  If it isn't obvious what a function does, add doxygen-compatible documentation.
 	Examples are better than abstract wording.
--   Use STL and Boost containers for data structures.  Do not worry about performance until much later.
-	Premature optimization is the root of all evil. If determined that an optimized data structure is needed,
-	please do that after the entire class is complete and debugged.
+-   Use STL containers for data structures.  Do not worry about performance until much later.
 -   Forward declarations.  There are a lot of interrelated classes, often creating circular dependencies. In addition, you can add up with an explosion of include files, often involving classes that are never used in a given `.cc` file.  For cleanliness of compilation, you will find many `*_fwd.h` files throughout the code. If you need a forward declaration, we encourage including this header file rather than ad hoc forward declarations throughout the code.
 
-Since we respect the sensitivity of code-style wars, we include scripts that demonstrate basic usage of the C++ code formatting tool astyle.
-This can be downloaded from {http://astyle.sourceforge.net}. 
-A python script called `fix_style` is included in the top-level bin directory.
-It recursively reformats all files in a given directory and its subdirectories.
+
+
+
+
 
 
 
@@ -268,7 +259,7 @@ The example files can be found in `tutorials/programming/factories`.
 
 
 Before looking at how to implement factory types, let's look at how they are used.
-Here we consider the example of an abstract interface called `actor`.
+Here we consider the example of an abstract interface called `Actor`.
 The code example is found in `main.cc`. The file begins
 
 ````
@@ -278,22 +269,21 @@ The code example is found in `main.cc`. The file begins
 namespace sstmac {
     namespace tutorial {
 
-#define sstmac_app_name rob_reiner
-
 int main(int argc, char **argv)
 {
 ````
 The details of declaring and using external apps is found in the user's manual.
-Briefly, SST-macro (using the `sstmac_app_name` define) reroutes the main function to be callable within a simulation.
+Briefly, the SST-macro compiler wrapper reroutes the main function to be callable within a simulation.
 From here it should be apparent that we defined a new application with name `rob_reiner`.
-Inside the main function, we create an object of type `actor`.
+Inside the main function, we create an object of type `Actor`.
 
 ````
-actor* the_guy = actor_factory::getParam("actor_name", getParams());
+auto actor_name = getParams().find<std::string>("actor_name");
+Actor* the_guy = sprockit::create<Actor>(actor_name, getParams());
 the_guy->act();
 return 0;
 ````
-We use the `actor_factory` to create the object.
+Unseen here, there is an `Actor` factory called via the `sprockit::create` function to create the object.
 The value of `actor_name` is read from the input file `parameters.ini` in the directory.
 Depending on the value in the input file, a different type will be created.
 The input file contains several parameters related to constructing a machine model - ignore these for now.
@@ -302,7 +292,7 @@ The important parameters are:
 ````
 node {
  app1 {
-  name = rob_reiner
+  exe = ./runtest
   biggest_fan = jeremy_wilke
   actor_name = patinkin
   sword_hand = right
@@ -323,7 +313,7 @@ If we change the parameters:
 ````
 node {
  app1 {
-  name = rob_reiner
+  exe = ./runtest
   biggest_fan = jeremy_wilke
   actor_name = guest
   num_fingers = 6
@@ -354,7 +344,7 @@ To declare a new factory type, you must include the factory header file
 namespace sstmac {
     namespace tutorial {
 
-class actor {
+class Actor {
 ````
 
 
@@ -362,14 +352,14 @@ We now define the public interface for the actor class
 
 ````
 public:
-  actor(SST::Params& params);
+  Actor(SST::Params& params);
 
   virtual void act() = 0;
 
   virtual ~actor(){}
 ````
 Again, we must have a public, virtual destructor.
-Each instance of the actor class must implement the `act` method.
+Each instance of the `Actor` class must implement the `act` method.
 
 For factory types, each class must take a parameter object in the constructor.
 The parent class has a single member variable
@@ -379,12 +369,14 @@ protected:
   std::string biggest_fan_;
 ````
 
-After finishing the class, we need to invoke a macro
+Inside the class, we need to register and describe the base type to SST.
 
 ````
-DeclareFactory(actor);
+SST_ELI_DECLARE_BASE(Actor)
+  SST_ELI_DECLARE_DEFAULT_INFO()
+  SST_ELI_DECLARE_CTOR(SST::Params&)
 ````
-making SST-macro aware of the new factory type.
+In almost all cases, only the default info is needed.
 
 Moving to the `actor.cc` file, we see the implementation
 
@@ -392,23 +384,17 @@ Moving to the `actor.cc` file, we see the implementation
 namespace sstmac {
     namespace tutorial {
 
-actor::actor(SST::Params& params)
+Actor::Actor(SST::Params& params)
 {
   biggest_fan_ = params.find<std::string>("biggest_fan");
 }
 ````
-We initialize the member variable from the parameter object.  We additionally need a macro
-
-````
-ImplementFactory(sstmac::tutorial::actor);
-````
-that defines certain symbols needed for implementing the new factory type.
-For subtle reasons, this must be done in the global namespace.
+We initialize the member variable from the parameter object.  
 
 #### 2.1.3: Child Class<a name="subsec:childClass"></a>
 
 
-Let's now look at a fully implemented, complete actor type.  We declare it
+Let's now look at a fully implemented, complete `Actor` type.  We declare it
 
 ````
 #include "actor.h"
@@ -416,14 +402,19 @@ Let's now look at a fully implemented, complete actor type.  We declare it
 namespace sstmac {
     namespace tutorial {
 
-class mandy_patinkin :
-    public actor
+class MandyPatinkin :
+    public Actor
 {
  public:
-  mandy_patinkin(SST::Params& params);
+   MandyPatinkin(SST::Params& params);
 
-  FactoryRegister("patinkin", actor, mandy_patinkin,
-    "He's on one of those shows now... NCIS? CSI?");
+   SST_ELI_REGISTER_DERIVED(
+    Actor,
+    MandyPatinkin,
+    "macro",
+    "patinkin",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "He's on one of those shows now... NCIS? CSI?")
 ````
 
 We have a single member variable
@@ -437,7 +428,7 @@ This is a complete type that can be instantiated.
 To create the class we will need the constructor:
 
 ````
-mandy_patinkin(SST::Params& params);
+MandyPatinkin(SST::Params& params);
 ````
 
 And finally, to satisfy the `actor` public interface, we need
@@ -446,16 +437,17 @@ And finally, to satisfy the `actor` public interface, we need
 virtual void act() override;
 ````
 
-In the class declaration, we need to invoke the macro `FactoryRegister` to register
+In the class declaration, we need to invoke the macro `SST_ELI_REGISTER_DERIVED` to register
 the new child class type with the given string identifier.
-The first argument is the string descriptor that will be linked to the type.
-The second argument is the parent base class. 
-The third argument is the specific child type.
-Finally, a documentation string should be given with a brief description.
+The first argument is the parent base class. 
+The second argument is the specific child type.
+The third argument is the element library to register into  (in the case macro).
+The fourth argument is the string descriptor that will be linked to the type.
+Finally, a version declaration and documentation string should be given with a brief description.
 We can now implement the constructor:
 
 ````
-mandy_patinkin::mandy_patinkin(SST::Params& params) :
+MandyPatinkin::MandyPatinkin(SST::Params& params) :
   actor(params)
 {
   sword_hand_ = params.find<std::string>("sword_hand");
@@ -474,7 +466,7 @@ The child class must invoke the parent class method.
 Finally, we specify the acting behavior
 
 ````
-void mandy_patinkin::act()
+void MandyPatinkin::act()
 {
     std::cout << "Hello. My name is Inigo Montoya. You killed my father. Prepare to die!"
               << std::endl;
@@ -580,17 +572,18 @@ The Python module generation is specific to SST core and is not part of SST-macr
 The component registration macro is:
 
 ````
-RegisterComponent("dummy", test_component, dummy_switch,
-       "test", COMPONENT_CATEGORY_NETWORK,
-       "A dummy switch for teaching")
+SST_ELI_REGISTER_DERIVED_COMPONENT(
+    TestComponent,
+    DummySwitch,
+    "macro",
+    "dummy",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "A dummy switch",
+    COMPONENT_CATEGORY_NETWORK)
 ````
-This is similar to the factory registration macro, but extends it for the special case of independent hardware components.
+This is similar to the registration macro for `Actor`, but extends it for the special case of independent hardware components.
 If the component registration macro is used, then the factory registration macro is not required.
-The first field is a unique string identifier for the component.
-The second field is the parent factory type.
-The third field is the actual class name.
-The fourth field is the module name matching the Python module name at the top of the `component.cc` file.
-The fifth field is a generic component category.
+The last field is a generic component category.
 The currently allowed categories are defined in SST core as:
 
 ````
@@ -782,7 +775,7 @@ To serialize custom objects, a C++ class must implement the serializable interfa
 
 ````
 namespace my_ns {
-class my_object : 
+class MyObject : 
   public sstmac::serializable
 {
  ImplementSerializable(my_object)
@@ -800,7 +793,7 @@ The forced inheritance allows more safety checks to ensure types are being set u
 All that remains now is defining the `serialize_order` in the source file:
 
 ````
-void my_object::serialize_order(sstmac::serializer& ser)
+void MyObject::serialize_order(sstmac::serializer& ser)
 {
   ser & my_int_;
   set << my_double_;
@@ -811,7 +804,7 @@ void my_object::serialize_order(sstmac::serializer& ser)
 For inheritance, only the top-level parent class needs to inherit from `serializable`.
 
 ````
-class parent_object : 
+class ParentObject : 
   public sstmac::serializable
 {
 ...
@@ -819,55 +812,31 @@ class parent_object :
 ...
 };
 
-class my_object :
-  public parent_object
+class MyObject :
+  public ParentObject
 {
- ImplementSerializable(my_object)
+ ImplementSerializable(MyObject)
  ...
  void serialize_order(sstmac::serializer& ser);
  ...
 };
 ````
-In the above code, only `my_object` can be serialized.
-The `parent_object` is not a full serializable type because no descriptor is registered for it
+In the above code, only `MyObject` can be serialized.
+The `ParentObject` is not a full serializable type because no descriptor is registered for it
 using the macro `ImplementSerializable`.
 Only the child can be serialized and deserialized.
 However, the parent class can still contribute variables to the serialization.
 In the source file, we would have
 
 ````
-void my_object::serializer_order(sstmac::serializer& ser)
+void MyObject::serializer_order(sstmac::serializer& ser)
 {
-  parent_object::serialize_order(ser);
+  ParentObject::serialize_order(ser);
   ...
 }
 ````
 The child object should always remember to invoke the parent serialization method.
 
-### Section 4.3: Keyword Registration<a name="sec:keywords"></a>
-
-
-As stated previously, SProCKit actually implements all the machinery for parameter files.
-This is not part of the SST-macro core.
-To avoid annoying bugs, the SProCKit input system provides mechanisms for having allowed values be declared ahead of time.
-This can happen in any source file through static initialization macros.
-Only one invocation is allowed per source file,
-but keywords can be registered in as many source files as desired.
-The macro is used in the global namespace:
-
-````
-RegisterKeywords(
- {"nx", "the number in x dimension"},
- {"ny", "the number in y dimension"},
- {"nz", "the number in z dimension}}
-);
-````
-This registers some basic keywords that might be used in a 3D grid application.
-The first entry in the pair is the keyword name, followed by a doc string.
-If strict mode is turned on, any parameters in the input file not matching a known parameter will produce an error.
-
-In many cases a parameter is an enumerated value or fits a pattern.
-Numbers are ignored at the end of a keyword in determining whether it is valid, e.g. `link3 = X` will be valid if the keyword `"link"` is registered.
 
 
 
@@ -895,7 +864,7 @@ There are a variety of classes the cooperate in driving the simulation, which we
 The driver for simulations is an event manager that provides the function
 
 ````
-virtual void schedule(timestamp start_time, event* event) = 0;
+virtual void schedule(TimeDelta start_time, Event* event) = 0;
 ````
 This function must receive events and order them according to timestamp.
 Two main types of data structures can be used, which we briefly describe below.
@@ -933,76 +902,43 @@ There are generally two basic event types in SST-macro, which we now introduce.
 
 
 In most cases, the event is represented as an event sent to an object called an `EventHandler at a specific simulation time.
-In handling the Event, the event handlers change their internal state and may cause more events
+In handling the event, the event handlers change their internal state and may cause more events
 by scheduling new events at other event handlers (or scheduling messages to itself) at a future time.
-The workhorses for SST-macro are therefore classes that inherit from \inlinecode{EventHandler.
-The only method that must be implemented is
-
-````
-void handle(Event* ev);
-````
-The function is the common interface for numerous different operations from network injection to memory access to MPI operations.
-In general, objects have two "directions" for the action - send or receive.
-A NIC could "handle" a packet by injecting it into the network or "handle" a message by reporting up the network stack the message has arrived.
-In most cases, the handled message must therefore carry with it some notion of directionality or final destination.
-An event handler will therefore either process the message and delete the message, or, if that handler is not the final destination, forward it along.
-Some event handlers will only ever receive, such as a handler representing a blocking \inlinecode{MPI_Recv` call.
-Some event handlers will always receive and then send, such as network switches who are always intermediate steps between the start and endpoints of a network message.
 
 In most cases, events are created by calling the function
 
 ````
-void schedule(Timestamp t,
-  EventHandler* handler,
-  Event* ev);
+auto* ev = newCallback(this, &Actor::act);
 ````
 
-This then creates a class of type `ExecutionEvent`, for which the execute function is
+This then creates a class of type \inlinecode{ExecutionEvent`, for which the execute function is
 
 ````
-void HandlerExecutionEvent::execute()
-{
-  if (!canceled_) {
-    handler_->handle(ev_to_deliver_);
-  }
+template <int ...S> void dispatch(seq<S...>){
+  (obj_->*fxn_)(std::get<S>(params_)...);
 }
+
+Fxn fxn_;
+Cls* obj_;
+std::tuple<Args...> params_;
 ````
 
-Handler are created by on-the-fly creation through C++ templates.
-The interface does not actually expose C++ templates.
-The function `newHandler` defined in `event_callback.h` has the prototype:
+For example, given a class `Actor` with the member function `act`
 
 ````
-template<class Cls, typename Fxn, class... Args>
-EventHandler* 
-newHandler(Cls* cls, Fxn fxn, const Args&... args);
-````
-
-Here `Fxn` is a member function pointer.
-When an `event* ev` is scheduled to the Event handler, the member function pointer gets invoked:
-
-````
-(cls->*fxn)(ev, args...);
-````
-
-For example, given a class `actor` with the member function `act`
-
-````
-void actor::actor(Event* ev, int ev_id){...}
+void Actor::Actor(Event* ev, int ev_id){...}
 ````
 we can create an event handler
 
 ````
-actor* a = ....;
-EventHandler* handler = newHandler(a, &actor::act, 42);
-...
-event* ev = ....;
-schedule(time, handler, ev);
+Actor* a = ....;
+auto* ev = newCallback(a, &actor::act, 42);
+schedule(time, , ev);
 ````
-When the time arrives for the Event, the member function will be invoked
+When the time arrives for the event, the member function will be invoked
 
 ````
-a->act(ev, 42);
+a->act(42);
 ````
 
 
@@ -1011,7 +947,7 @@ a->act(ev, 42);
 
 The major distinction between different event containers is the data structured used.
 The simplest data structure is an event heap or ordered event map.
-The event manager needs to always be processing the minimum Event time, which maps naturally onto a min-heap structure.
+The event manager needs to always be processing the minimum event time, which maps naturally onto a min-heap structure.
 Insertion and removal are therefore log(N) operations where N is the number of currently scheduled events.
 For most cases, the number and length of events is such that the min-heap is fine.
 
@@ -1021,7 +957,7 @@ For most cases, the number and length of events is such that the min-heap is fin
 The simulation is partitioned into objects that are capable of scheduling events.
 Common examples of `EventScheduler` objects are nodes, NICs, memory systems, or the operating system.
 In serial runs, an event scheduler is essentially just a wrapper for the `EventManager` and the class is not strictly necessary.
-There are two types of Event scheduler: `Component` and `SubComponent`.
+There are two types of event scheduler: `Component` and `SubComponent`.
 In parallel simulation, though, the simulation must be partitioned into different scheduling units.
 Scheduling units are then distributed amongst the parallel processes.
 Components are the basic unit.  Currently only nodes and network switches are components.
@@ -1040,11 +976,11 @@ all subcomponents must belong to a component.  A subcomponent cannot be separate
 
 The driver for most simulations is a skeleton application.
 Although this can be arbitrary source code, we will consider the example of an MPI application below.
-We will discuss distributed services in Section [6.3](#sec:distService) below, which is similar to an application.  In general, when we refer to applications we mean scientific codes or client codes that are doing "domain-specific" work.  These will be different from service applications like parallel file systems.
+We will discuss distributed services in Section  below, which is similar to an application.  In general, when we refer to applications we mean scientific codes or client codes that are doing "domain-specific" work.  These will be different from service applications like parallel file systems.
 
 We will be very specific with the use of the terms "virtual" and "real" or "physical".  
 Virtual refers to anything being modeled in the simulator. 
-Real or physical refers to actual processes running on a supercomputer.
+Real or physical refers to actual processes running on a host system.
 When referring to a skeleton application in the simulator, we refer only to virtual MPI ranks.
 The term process only applies to physical MPI ranks since virtual MPI ranks are not true processes, 
 but rather a user-space thread.  
@@ -1069,7 +1005,7 @@ This therefore requires the Clang source-to-source compiler to redirect all glob
 
 
 
-In a standard discrete Event simulation (DES), you have only components and events.
+In a standard discrete event simulation (DES), you have only components and events.
 Components send events to other components, which may in turn create and send more events.
 Each event has an arrival time associated with it.
 Components must process events in time-order and keep a sorted queue of events.
@@ -1108,7 +1044,7 @@ When necessary, SST/macro will block the active user-space thread and context-sw
 
 We can illustrate time advancing with a simple `MPI_Send` example.
 We have discussed that a user-space thread is allocated for each virtual MPI rank.
-The discrete Event core, however, still runs on the main application thread (stack).
+The discrete event core, however, still runs on the main application thread (stack).
 Generally, the main thread (DES thread) will handle hardware events while the user-space threads will handle software events (this is relaxed in some places for optimization purposes).
 Figure [3](#fig:desThreadsMPISend), shows a flow chart for execution of the send.
 Operations occurring on the application user-space thread are shaded in blue while operations on the DES thread are shaded in pink.
@@ -1120,9 +1056,9 @@ Virtual time in the simulation therefore advances inside the `MPI_Send` call,
 but the details of how this happens are not apparent in the skeleton app.
 
 
-![Figure 3: Flow of events for completing a send operation.  Shows basic function calls, block/unblock context switches, and Event schedules. User-space thread (application) operations are shown in blue. Main event thread (OS/kernel) operations are shown in pink.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/DES) 
+![Figure 3: Flow of events for completing a send operation.  Shows basic function calls, block/unblock context switches, and event schedules. User-space thread (application) operations are shown in blue. Main event thread (OS/kernel) operations are shown in pink.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/DES) 
 
-*Figure 3: Flow of events for completing a send operation.  Shows basic function calls, block/unblock context switches, and Event schedules. User-space thread (application) operations are shown in blue. Main event thread (OS/kernel) operations are shown in pink.*
+*Figure 3: Flow of events for completing a send operation.  Shows basic function calls, block/unblock context switches, and event schedules. User-space thread (application) operations are shown in blue. Main event thread (OS/kernel) operations are shown in pink.*
 
 
 
@@ -1141,11 +1077,11 @@ Thus all state specific to each MPI rank (virtual thread) must be stashed somewh
 This basically means converting all global variables into user-space thread-local variables.
 When each user-space thread is spawned a `thread` object is allocated and associated with the thread.
 This object acts as a container for holding all state specific to that virtual thread.
-Rather than store MPI state in global variables, MPI state in stored in a class `mpi_api`, 
-with one `mpi_api` object allocated per virtual MPI rank.
-The operating system class provides a static function `current_thread` that makes the leap from
+Rather than store MPI state in global variables, MPI state in stored in a class `MpiApi`, 
+with one `MpiApi` object allocated per virtual MPI rank.
+The operating system class provides a static function `currentThread` that makes the leap from
 global variables to thread-local storage.
-To access a specific API, a special helper template function `get_api` exists on each thread object.
+To access a specific API, a special helper template function `getApi` exists on each thread object.
 Thus, instead of calling a global function `MPI_Send`,
 SST/macro redirects to a member function `send` on an `mpi_api` object that is specific to a virtual MPI rank.
 
@@ -1171,7 +1107,7 @@ allowing the operating system to access specific libraries at specific times.
 ````
 class OperatingSystem {
   ...
-  map<string,library*> libs_;
+  map<string,Library*> libs_;
   ...
 };
 ````
@@ -1179,8 +1115,8 @@ class OperatingSystem {
 Each library object has access to the operating system, being allowed to call
 
 ````
-event* ev = ...
-os_->execute_kernel(ty, ev);
+Event* ev = ...
+os_->executeKernel(ty, ev);
 ````
 where an enum argument `ty` specifies the type of computation or communication and the event object carries all the data needed to model it.
 This allows a library to call out to the operating system.
@@ -1189,39 +1125,23 @@ In executing a computation or communication, the operating system may block insi
 Calls to `execute_kernel` can occur on either a user-space thread or the main event thread.
 Here the operating system acts as a service and never blocks.
 
-Conversely, each `library` must provide a `incoming_event` method that allows the operating system to call back to the library
+Conversely, each `library` must provide a `incomingEvent` method that allows the operating system to call back to the library
 
 ````
-void incoming_event(Event* ev){...}
+void incomingEvent(event* ev){...}
 ````
-Generally speaking, Event notifications will arrive from the NIC (new messages, ACKs), memory system (data arrived), processor (computation complete), etc.
+Generally speaking, event notifications will arrive from the NIC (new messages, ACKs), memory system (data arrived), processor (computation complete), etc.
 These hardware events must be routed to the correct software library for processing.
 
-The operating system provides an abstract interface (independent of the exact implementation of threading library) through `key` objects.
-Each blocking call:
-
 ````
-key* k = key::construct();
-os->block(k);
-````
-
-must be matched with a corresponding unblock on the same key object.
-Usually libraries stash keys in some sort of lookup table to track event completions.
-
-````
-key* k = blockers[ev->uid()];
-os->unblock(k);
-````
-
-````
-void OperatingSystem::handleEvent(Event* ev) {
+void OperatingSystem::handleEvent(event* ev) {
   library* lib = libs_[ev->libName()];
-  lib->incoming_event(ev);
+  lib->incomingEvent(ev);
 }
 ````
-In order to route events to the correct library, the operating system maintains a string lookup table of `library` objects.
+In order to route events to the correct library, the operating system maintains a string lookup table of `Library` objects.
 All events associated with that library must be constructed with the correct string label, 
-accessible through the event accessor function `lib_name`.
+accessible through the event accessor function `libName`.
 
 #### 6.2.1: API<a name="subsec:softwareAPI"></a>
 
@@ -1239,17 +1159,17 @@ API objects are accessible in skeleton apps through a global template function i
 
 ````
 template <class T>
-T* get_api();
+T* getApi(const std::string& name);
 ````
 for which the implementation is
 
 ````
-thread* thr = OperatingSystem::currentThread();
-return thr->get_api<T>();
+Thread* thr = OperatingSystem::currentThread();
+return thr->getApi<T>(const std::string& name);
 ````
 which converts the global template function into a thread-specific accessor.
-The most prominent example of an API is the `mpi_api` object for encapsulating an MPI rank.
-Other prominent examples include the various computation APIs such as `blas_api` that provides bindings for simulation various linear algebra functions.
+The most prominent example of an API is the `MpiApi` object for encapsulating an MPI rank.
+Other prominent examples include the various computation APIs such as `BlasApi` that provides bindings for simulation various linear algebra functions.
 
 
 #### 6.2.2: Service<a name="subsec:service"></a>
@@ -1266,110 +1186,108 @@ Examples of services are MPI or filesystem services that sort messages arriving 
 If a service is "heavy-weight" and must model computational delays,
 it must run as a full thread with its own user-space thread stack.
 
-### Section 6.3: Distributed Service<a name="sec:distService"></a>
 
 
-In many cases, a service is just local to a node and is part of the operating system or a runtime library, such as a local filesystem or a server receiving incoming network messages.  In cases of something like a distributed file system like LUSTRE or distributed key-value store like Memcached, a service spans multiple nodes.  These services are like skeleton applications in that they require a parallel launch with node allocation and rank indexing.
-
-To create a new distributed service, you have to inherit from `sstmac::distributed_service` in \\
-`sstmac/libraries/sumi/distributed_service.h`.  
-Distributed services require a network transport layer to communicate between service nodes.
-In contrast to other libraries and services that are found in `sstmac/software`, distributed services are linked to SUMI (SST unified message interface).
-A distributed service must implement the `void run()` virtual member function.
-In general, the `run` function will almost always perform something like:
-
-````
-void example_service::run()
-{
- //some init
- bool block  = true;
- message* msg = poll_for_message(block);
- while (msg && !terminated()){
-   process(msg);
-   msg = poll_for_message(block);
- }
-}
-````
-The function `poll_for_message` goes into a network polling loop looking for incoming messages.
-Depending on the boolean parameter, the function will block until a message arrives or returns immediately if no message is available.
-The service may receive a terminate message.
-This gets processed automatically.
-Whether a shutdown message has been received can be queried for by the `terminated` function.
-
-Launching a distributed service is very similar to launching an application with a few subtle differences.
-The services to be launched are listed in the input file as:
-
-````
-services = insitu_viz filesystem
-````
-As a space-separated list.
-This would launch services registered using the standard sprockit registration:
-
-````
-SpktRegister("filesystem", distributed_service, test_filesystem);
-````
-The launch parameters and any service-specific parameters are done exactly as for applications, but go in a namespace corresponding to the service:
-
-````
-filesystem.launch_cmd = aprun -n 10 -N 1
-filesystem.allocation = first_available
-filesystem.reed_solomon_k = 5
-filesystem.reed_solomon_n = 7
-...
-````
-This launches ten filesystem service nodes using a given node allocation strategy.
-Some filesystem-specific parameters are given (in this case dealing with Reed-Solomon protection codes).
-
-#### 6.3.1: Coordinating servers and clients<a name="subsec:coordinatingServersClients"></a>
 
 
-Slightly more complicated is the process of communicating between service and client applications.
-In many HPC simulations, the only thing being simulated is a single MPI application.
-The default `send` function in `sumi_transport` assumes messages are being sent within a given application.
 
-````
-void sendPayload(int dst, message* msg, bool needs_ack);
-````
-The only thing that must be specified is a destination rank, which is the virtual ID within a given session layer.
-The transport layer itself will map that to the correct physical node address and deliver the message.
 
-An alternative function exists for sending from client to server:
 
-````
-void client_server_send(
-  int dest_rank,
-  NodeId dest_node,
-  app_id dest_app,
-  sumi::message* msg);
-````
-While a session rank must be given, a physical node ID and an application ID must be given.
-These can no longer be filled in automatically.
 
-For a client to get all of the information about a distributed service, a special object is supplied that can be fetched:
 
-````
-sstmac::sw::app_launch* srv = sstmac::sw::app_launch::service_info("filesystem");
-````
-The object `srv` has functions that can be queried to figure out all the `client_server_send` parameters.  
-The parameter to the static `service_info` function is the service name given to `SpktRegister` and given in the input file.
 
-The same `client_server_send` function is used for both clients making requests to servers and servers returning responses to clients.
-In most cases, the clients will use `service_info` to "discover" the servers.
-In order to receive responses, the clients should send messages containing all the relevant info with rank, physical node ID, and app ID.
 
-Generally, an application knowns when it is done (e.g. reaches some convergence criterion). 
-A service does not usually have a clean termination condition since it never knows when more client requests may arrive.
-In this case, the function `shutdown_server` can be called by a client application.
+%````
+%void example_service::run()
+%{
+% //some init
+% bool block  = true;
+% message* msg = poll_for_message(block);
+% while (msg && !terminated()){
+%   process(msg);
+%   msg = poll_for_message(block);
+% }
+%}
 
-````
-void shutdown_server(
-  int dest_rank,
-  NodeId dest_node,
-  app_id dest_app);
-````
 
-A single shutdown message to any server is sufficient to bring down the entire service.
-The shutdown message will be automatically broadcast to all other nodes.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%\begin{CppCode}
+%SpktRegister("filesystem", distributed_service, test_filesystem);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%\begin{CppCode}
+%void sendPayload(int dst, message* msg, bool needs_ack);
+
+
+
+
+
+
+%\begin{CppCode}
+%void client_server_send(
+%  int dest_rank,
+%  NodeId dest_node,
+%  app_id dest_app,
+%  sumi::message* msg);
+
+
+
+
+
+
+%\begin{CppCode}
+%sstmac::sw::app_launch* srv = sstmac::sw::app_launch::service_info("filesystem");
+
+
+
+
+
+
+
+
+
+
+
+
+%\begin{CppCode}
+%void shutdown_server(
+%  int dest_rank,
+%  NodeId dest_node,
+%  app_id dest_app);
+
+
+
+
 
 
 
@@ -1431,9 +1349,9 @@ The network switch requires the computed paths (ports) from the router.
 We can dive in deeper to the operations that occur on an individual component, mos importantly the crossbar on the network switch. Figure [6](#fig:xbarFlow) shows code and program flow for a packet arriving at a network switch.  The packet is routed (virtual function, configurable via input file parameters), credits are allocated to the packet, and finally the packet is arbitrated across the crossbar. After arbitration, a statistics callback can be invoked to collect any performance metrics of interest (congestion, traffic, idle time).
 
 
-![Figure 6: Code flow for routing, arbitration, and stats collections of packets traversing the crossbar on the network switch.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/RoutingFlow) 
+![Figure 6: Code flow for routing and arbitration of packets traversing the crossbar on the network switch.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/RoutingFlow) 
 
-*Figure 6: Code flow for routing, arbitration, and stats collections of packets traversing the crossbar on the network switch.*
+*Figure 6: Code flow for routing and arbitration of packets traversing the crossbar on the network switch.*
 
 
 
@@ -1452,7 +1370,7 @@ Inheritance from the base packet class is used to create packet types that are c
 For different routing or endpoint (NIC) methods, the packet object allocates blocks to be used as metadata for the different classes. 
 These metadata blocks can then be cast as needed for each of the different functions.
 
-````
+\begin{CppCode}
 char rtr_metadata_[MAX_HEADER_BYTES];
 char nic_metadata_[MAX_NIC_BYTES];
 ````
@@ -1461,7 +1379,7 @@ In the same way that a router or NIC allocates bits for certain functions, SST/m
 For example, for adaptive routing on a dragonfly, we have the following bitset:
 
 ````
-struct routing_header  {
+struct RoutingHeader  {
  char is_tail : 1;
  uint16_t edge_port; 
  uint8_t deadlock_vc : 4;
@@ -1476,7 +1394,7 @@ For flow control on a particular type of switch, e.g. PISCES (see User's manual)
 that inherits from `packet` and adds the following fields:
 
 ````
-class PiscesPacket : public packet {
+class PiscesPacket : public Packet {
 ....
 uint8_t stage;
 uint8_t outports[3];
@@ -1493,7 +1411,7 @@ These provide the path and flow control information needed to implement the PISC
 Inside router or switch flow control code, the metadata regions can be accessed as:
 ````
 template <class T>
-T* rtr_header()  {
+T* rtrHeader()  {
   return (T*) (&rtr_metadata_);
 }
 ````
@@ -1614,11 +1532,7 @@ The most important functions in the `topology` class are
 ````
 class topology {
 ...
-virtual bool uniform_network_ports() const = 0;
-
-virtual bool uniform_switches_non_uniform_network_ports() const = 0;
-
-virtual bool uniformSwitches() const = 0;
+virtual double portScaleFactor(uint32_t addr, int port) const;
 
 virtual void connectedOutports(SwitchId src, std::vector<topology::connection>& conns) const = 0;
 
@@ -1629,7 +1543,7 @@ virtual in numSwitches() const = 0;
 
 virtual int numNodes() const = 0;
 
-virtual int num_endpoints() const = 0;
+virtual int numEndpoints() const = 0;
 
 virtual int maxNumPorts() const = 0;
 
@@ -1647,11 +1561,13 @@ The first few functions just give the number of switches, number of nodes, and f
 Each compute node will be connected to an injector switch and an ejector switch (often the same switch).
 The most important functions are `endpointsConnectedToInjectionSwitch` - which nodes are connected to which switches and which ports make the links -
 and also `connected_outports` - which switches are connected to which switches and which ports make the links.
+If certain ports have higher bandwidth or larger buffers,
+this is described via the `portScaleFactor` function.
 
 The `connection` struct is:
 
 ````
-struct connection {
+struct Connection {
     SwitchId src;
     SwitchId dst;
     int src_outport;
@@ -1662,7 +1578,7 @@ which specifies a source and destination switch for a given link and which ports
 Similarly, the struct `injection_port` is:
 
 ````
-struct injection_port {
+struct InjectionPort {
   NodeId nid;
   int switch_port;
   int ep_port;
@@ -1682,7 +1598,7 @@ The router has a simple public interface
 ````
 class router {
 ...
-  virtual void route(packet* pkt) = 0;
+  virtual void route(Packet* pkt) = 0;
 ...
 };
 ````
@@ -1695,7 +1611,7 @@ For adaptive routing, a bit more work is done.
 Each router is connect to a switch object which holds all the information about queue lengths, e.g.
 
 ````
-int test_length = get_switch()->queueLength(paths[i].outport);
+int test_length = switch()->queueLength(paths[i].outport);
 ````
 allowing the router to select an alternate path if the congestion is too high. 
 
@@ -1721,13 +1637,13 @@ The basic scheme for most switches follows the code below for the `pisces` model
 ````
 void PiscesSwitch::handleCredit(event *ev)
 {
-  pisces_credit* credit = static_cast<pisces_credit*>(ev);
+  PiscesCredit* credit = static_cast<PiscesCredit*>(ev);
   out_buffers_[credit->port()]->handleCredit(credit);
 }
 
 void PiscesSwitch::handlePayload(event *ev)
 {
-  pisces_payload* payload = static_cast<pisces_payload*>(ev);
+  PiscesPayload* payload = static_cast<PiscesPayload*>(ev);
   router_->route(payload);
   xbar_->handlePayload(payload);
 }
@@ -1748,40 +1664,33 @@ For example, if you were going to introduce some custom FPGA device that connect
 the interconnect is responsible for creating it.
 
 To illustrate, here is the code for the interconnect that creates the node objects. 
-The interconnect is itself a factory object, configured from a parameter file.
 
 ````
-interconnect::interconnect(SST::Params& params, EventManager* mgr, 
-	partition* part, parallel_runtime* rt)
+Interconnect::Interconnect(SST::Params& params, EventManager* mgr, 
+	Partition* part, ParallelRuntime* rt)
 {
-  sprockit::sim_parameters* top_params = params.find_scoped_params("topology");
-  topology_ = topology_factory::getParam("name", top_params);
-  num_nodes_ = topology_->numNodes();
-  num_switches_ = topology_->numSwitches();
+  ...
+  SST::Params node_params = params.get_namespace("node");
+  SST::Params nic_params = node_params.get_namespace("nic");
+  SST::Params switch_params = params.get_namespace("switch");
 
   switches_.resize(num_switches_);
   nodes_.resize(num_nodes_);
 
-  sprockit::sim_parameters* node_params = params.find_scoped_params("node");
-  sprockit::sim_parameters* switch_params = params.find_scoped_params("switch");
-
-  sprockit::sim_parameters* nic_params = node_params.find_scoped_params("nic");
-  sprockit::sim_parameters* inj_params = nic_params.find_scoped_params("injection");
-
   buildEndpoints(node_params, nic_params, mgr);
   buildSwitches(switch_params, mgr);
-  connectEndpoints(inj_params, ej_params);
-  connectSwitches(switch_params); 
+  connectSwitches(mgr, switch_params);
+  connectEndpoints(mgr, nic_params, switch_params);
+  configureInterconnectLookahead(params);
 }
 ````
 
 For full details of the functions that build/connect endpoints and switches, consult the source code.
-In general, the `interconnect` object uses the Connectable interface to setup all the connections.
 It uses the topology interface to determine which connections are required, e.g.
 
 ````
 SwitchId src = ...
-std::vector<topology::connection> outports;
+std::vector<Topology::Connection> outports;
 topology_->connectedOutports(src, outports);
 for (auto& conn : outports){
   NetworkSwitch* dst_sw = switches_[conn.dst];
@@ -1791,7 +1700,7 @@ for (auto& conn : outports){
   				       src_sw->creditHandler(conn.src_outport));
 }
 ````
-The `connected_outports` function takes a given source switch and returns all the connections that the
+The `connectedOutports` function takes a given source switch and returns all the connections that the
 switch is supposed to make.  Each switch must provide `payloadHandler` and `ack_handler` functions to return
 the `EventHandler` that should receive either new packets (payload) or credits (ack) for the connections.
 
@@ -1837,19 +1746,21 @@ For the bare-bones class `LogPNIC`, the function is
 ````
 void LogPNIC::doSend(NetworkMessage* msg)
 {
-  long num_bytes = msg->byte_length();
-  timestamp now_ = now();
-  timestamp start_send = now_ > next_free_ ? now_ : next_free_;
-  timestamp time_to_inject = inj_lat_ + timestamp(inj_bw_inverse_ * num_bytes);
-  //leave the injection latency term to the interconnect
-  schedule_now(injection_switch_, msg);
+  uint64_t num_bytes = msg->byteLength();
+  Timestamp now_ = now();
+  Timestamp start_send = now_ > next_out_free_ ? now_ : next_out_free_;
 
-  next_free_ = start_send + time_to_inject;
-  if (msg->needs_ack()) {
-    //do whatever you need to do so that this msg decouples all pointers
-    NetworkMessage* acker = msg->clone_injection_ack();
-    schedule(next_free_, parent_->self_handler(), acker); //send to node
+  TimeDelta time_to_inject = inj_lat_ + inj_byte_delay_ * num_bytes;
+  next_out_free_ = start_send + time_to_inject;
+
+  if (msg->needsAck()){
+    NetworkMessage* acker = msg->cloneInjectionAck();
+    auto ack_ev = newCallback(parent_, &Node::handle, acker);
+    parent_->sendExecutionEvent(next_out_free_, ack_ev);
   }
+
+  TimeDelta extra_delay = start_send - now_;
+  logp_link_->send(extra_delay, new NicEvent(msg));
 }
 ````
 After injecting, the NIC creates an ACK and delivers the notification to the `node`.
@@ -1901,7 +1812,7 @@ We want to run a simple test without having to modify the SST-macro build system
 We can create a simple external project that links the new topology object to SST-macro libraries.
 The Makefile can be found in `tutorials/programming/topology`.
 You are free to make any Makefile you want.
-After SST-macro installs, it creates compiler wrappers `sst++` and `sstcc`
+After SST-macro installs, it creates compiler wrappers `libsst++` and `libsstcc`
 in the chosen `bin` folder.  
 These are essentially analogs of the MPI compiler wrappers.
 This configures all include and linkage for the simulation.
@@ -1917,8 +1828,8 @@ We begin with the standard typedefs.
 namespace sstmac {
 namespace hw {
 
-class xpress_ring :
-  public structured_topology
+class XpressRing :
+  public StructuredTopology
 {
  public:
   typedef enum {
@@ -1941,8 +1852,8 @@ We got some functions for free by inheriting from `structured_topology`.
 We start with
 
 ````
-xpress_ring::xpress_ring(SST::Params& params) :
-  structured_topology(params)
+XpressRing::XpressRing(SST::Params& params) :
+  StructuredTopology(params)
 {
   ring_size_ = params.find<int>("xpress_ring_size");
   jump_size_ = params.find<int>("xpress_jump_size");
@@ -1953,7 +1864,7 @@ determining how many switches are in the ring and how big a "jump" link is.
 The topology then needs to tell objects how to connect
 
 ````
-void xpress_ring::connectedOutports(SwitchId src, std::vector<connection>& conns)
+void XpressRing::connectedOutports(SwitchId src, std::vector<connection>& conns)
 {
   conns.resize(4); //every switch has 4 connections
   auto& plusConn = conns[0];
@@ -1987,7 +1898,7 @@ We must identify both the outport port for the sender and the input port for the
 To compute the distance between two switches
 
 ````
-int xpress_ring::num_hops(int total_distance) const
+int XpressRing::numHops(int total_distance) const
 {
   int num_jumps = total_distance / jump_size_;
   int num_steps = total_distance % jump_size_;
@@ -2001,7 +1912,7 @@ int xpress_ring::num_hops(int total_distance) const
 }
 
 int
-xpress_ring::minimalDistance(
+XpressRing::minimalDistance(
   const coordinates& src_coords,
   const coordinates& dest_coords) const
 {

@@ -118,9 +118,9 @@ class OTF2TraceReplayApp : public sstmac::sw::App {
 
   int skeletonMain() override;
 
-  void startMpi(sstmac::Timestamp);
+  void startMpi(sstmac::TimeDelta);
 
-  void endMpi(sstmac::Timestamp);
+  void endMpi(sstmac::TimeDelta);
 
   OTF2_ClockProperties otf2_clock_properties;
   std::map<OTF2_StringRef, std::string> otf2_string_table;
@@ -139,7 +139,7 @@ class OTF2TraceReplayApp : public sstmac::sw::App {
  private:
   CallQueue call_queue_;
 
-  sstmac::Timestamp compute_time;
+  sstmac::TimeDelta compute_time;
 
   std::map<MPI_Comm, MPI_Comm> global_to_local_comm_;
 

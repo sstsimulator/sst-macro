@@ -271,7 +271,7 @@ namespace lblxml {
 
   std::map<int, std::vector<bool> > g_reduce_to_box_running;
 
-  std::map<int,sstmac::Timestamp> g_message_begin_;
+  std::map<int,sstmac::TimeDelta> g_message_begin_;
 
   double g_total_idle_time = 0;
   double g_total_barrier_time = 0;
@@ -445,11 +445,11 @@ namespace lblxml {
   void
   boxml::barrier()
   {
-    sstmac::Timestamp start = now();
+    sstmac::TimeDelta start = now();
     if (debug_ > 1) printf("rank %d starting barrier %d\n",rank_,barrier_tag_);
     comm_barrier(barrier_tag_);
     comm_collective_block(sumi::Collective::barrier, barrier_tag_);
-    sstmac::Timestamp end = now();
+    sstmac::TimeDelta end = now();
     double time = (end - start).sec();
     g_total_barrier_time += time;
     ++barrier_tag_;

@@ -102,7 +102,7 @@ validate_bw(double test_bw)
 PiscesBandwidthArbitrator::
 PiscesBandwidthArbitrator(double bw)
 {
-  byteDelay_ = Timestamp(1.0/bw);
+  byteDelay_ = TimeDelta(1.0/bw);
 }
 
 PiscesSimpleArbitrator::PiscesSimpleArbitrator(double bw) :
@@ -114,21 +114,21 @@ PiscesSimpleArbitrator::PiscesSimpleArbitrator(double bw) :
 void
 PiscesSimpleArbitrator::arbitrate(IncomingPacket &st)
 {
-  GlobalTimestamp start_send = next_free_ < st.now ? st.now : next_free_;
-  Timestamp arrive_delay = st.pkt->byteLength() * st.pkt->byteDelay();
-  Timestamp output_delay = st.pkt->byteLength() * byteDelay_;
+  Timestamp start_send = next_free_ < st.now ? st.now : next_free_;
+  TimeDelta arrive_delay = st.pkt->byteLength() * st.pkt->byteDelay();
+  TimeDelta output_delay = st.pkt->byteLength() * byteDelay_;
   next_free_ = start_send + output_delay;
   st.pkt->initByteDelay(byteDelay_);
-  Timestamp creditDelay = output_delay > arrive_delay
+  TimeDelta creditDelay = output_delay > arrive_delay
         ? output_delay - arrive_delay //if going out slower, delay credit
-        : Timestamp();
+        : TimeDelta();
 
   //store and forward
   //head/tail are linked and go "at same time"
   st.head_leaves = st.tail_leaves = next_free_;
   //head and tail arrive at same time - there is no delay
   //for additional bytes to arrive
-  st.pkt->setByteDelay(Timestamp());
+  st.pkt->setByteDelay(TimeDelta());
 }
 
 PiscesNullArbitrator::PiscesNullArbitrator(double bw) :
@@ -136,7 +136,7 @@ PiscesNullArbitrator::PiscesNullArbitrator(double bw) :
 {
 }
 
-Timestamp
+TimeDelta
 PiscesNullArbitrator::headTailDelay(PiscesPacket *pkt)
 {
   return pkt->numBytes() * pkt->byteDelay();
@@ -149,10 +149,10 @@ PiscesNullArbitrator::arbitrate(IncomingPacket &st)
   pflow_arb_debug_printf_l0("Null: starting packet %p:%llu of size %u with byte_delay=%9.5e epoch_delay=%9.5e: %s",
                             payload, payload->flowId(),
                             payload->numBytes(), payload->byteDelay().sec(), byteDelay_.sec());
-  Timestamp byteDelay = std::max(byteDelay_, st.pkt->byteDelay());
+  TimeDelta byteDelay = std::max(byteDelay_, st.pkt->byteDelay());
   st.pkt->setByteDelay(byteDelay_);
-  Timestamp actual_delay = st.pkt->numBytes() * byteDelay;
-  Timestamp min_delay = st.pkt->numBytes() * byteDelay_;
+  TimeDelta actual_delay = st.pkt->numBytes() * byteDelay;
+  TimeDelta min_delay = st.pkt->numBytes() * byteDelay_;
 #if SSTMAC_SANITY_CHECK
   if (actual_delay < min_delay){
     spkt_abort_printf("null arbitrator computed bad delay");
@@ -177,7 +177,7 @@ PiscesCutThroughArbitrator(double bw)
 }
 
 
-Timestamp
+TimeDelta
 PiscesCutThroughArbitrator::headTailDelay(PiscesPacket *pkt)
 {
   return pkt->numBytes() * pkt->byteDelay();
@@ -194,17 +194,17 @@ PiscesCutThroughArbitrator::~PiscesCutThroughArbitrator()
 }
 
 void
-PiscesCutThroughArbitrator::clearOut(GlobalTimestamp now)
+PiscesCutThroughArbitrator::clearOut(Timestamp now)
 {
   Epoch* epoch = head_;
   while (epoch){
     cut_through_epoch_debug("clearing at %9.5e", now.sec());
-    GlobalTimestamp end = epoch->start + epoch->numCycles * cycleLength_;
+    Timestamp end = epoch->start + epoch->numCycles * cycleLength_;
     if (now <= epoch->start){
       return;
     } else if (now < end){
       if (epoch->next){
-        Timestamp lostTime = now - epoch->start;
+        TimeDelta lostTime = now - epoch->start;
         uint32_t lostCycles = lostTime / cycleLength_;
         epoch->numCycles -= lostCycles;
       } else {
@@ -260,7 +260,7 @@ PiscesCutThroughArbitrator::arbitrate(IncomingPacket &st)
 
   clearOut(st.now);
 
-  GlobalTimestamp fullyBufferedTime = st.now + st.pkt->byteDelay() * st.pkt->numBytes();
+  Timestamp fullyBufferedTime = st.now + st.pkt->byteDelay() * st.pkt->numBytes();
   Epoch* epoch = head_;
   Epoch* prev = nullptr;
   uint32_t bytesSent = 0;
@@ -273,8 +273,8 @@ PiscesCutThroughArbitrator::arbitrate(IncomingPacket &st)
       spkt_abort_printf("ran out of epochs on arbitrator %p: this should not be possible", this);
     }
 #endif
-    Timestamp epochLength = epoch->numCycles * cycleLength_;
-    GlobalTimestamp epochEnd = epoch->start + epochLength;
+    TimeDelta epochLength = epoch->numCycles * cycleLength_;
+    Timestamp epochEnd = epoch->start + epochLength;
     if (st.pkt->byteDelay() <= cycleLength_){
       //every cycle gets used, arriving faster than leaving
       if (epoch->numCycles <= bytesLeft){
@@ -334,7 +334,7 @@ PiscesCutThroughArbitrator::arbitrate(IncomingPacket &st)
         //buffering finishes in the middle of the epoch
         //split the epochs on buffering finishing and repeat
         Epoch* next = new Epoch;
-        Timestamp deltaT = fullyBufferedTime - epoch->start;
+        TimeDelta deltaT = fullyBufferedTime - epoch->start;
         uint32_t preCycles = deltaT  / cycleLength_;
         uint32_t postCycles = epoch->numCycles - preCycles;
         cut_through_arb_debug("buffering finishes during epoch: pre=%u post=%u",
@@ -355,12 +355,12 @@ PiscesCutThroughArbitrator::arbitrate(IncomingPacket &st)
     }
   }
 
-  Timestamp newByteDelay = (st.tail_leaves - st.head_leaves) / st.pkt->numBytes();
+  TimeDelta newByteDelay = (st.tail_leaves - st.head_leaves) / st.pkt->numBytes();
   st.pkt->setByteDelay(newByteDelay);
 
 #if SSTMAC_SANITY_CHECK
   Epoch* end_ep = head_;
-  GlobalTimestamp end_last;
+  Timestamp end_last;
   while(end_ep){
 #if PRINT_EPOCHS
     std::cout << "End epoch " << this << ": " << end_ep->start.time.ticks() << ": " << end_ep->numCycles << std::endl;

@@ -58,7 +58,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #define sstmac_app_name user_app_cxx
 using namespace sumi;
-using sstmac::Timestamp;
+using sstmac::TimeDelta;
 using sstmac::hw::traffic_pattern;
 using sstmac::NodeId;
 using sstmac::Env;
@@ -217,7 +217,7 @@ main(int argc, char** argv)
                      "throughput application did not find injection bandwidth");
   }
 
-  Timestamp inject_time = params.find<SST::UnitAlgebra>("inject_time");
+  TimeDelta inject_time = params.find<SST::UnitAlgebra>("inject_time");
   long inject_length = offered_load_bw * inject_time.sec();
 
   run_test(ty, inject_length, offered_load_bw);

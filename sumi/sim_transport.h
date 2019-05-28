@@ -87,7 +87,7 @@ class QoSAnalysis {
 
   virtual int selectQoS(Message* m) = 0;
 
-  virtual void logDelay(sstmac::Timestamp delay, Message* m) = 0;
+  virtual void logDelay(sstmac::TimeDelta delay, Message* m) = 0;
 
 };
 
@@ -162,7 +162,7 @@ class SimTransport : public Transport, public sstmac::sw::API {
     return now().sec();
   }
 
-  sstmac::GlobalTimestamp now() const override;
+  sstmac::Timestamp now() const override;
 
   void* allocatePublicBuffer(uint64_t size) override {
     return ::malloc(size);
@@ -183,7 +183,7 @@ class SimTransport : public Transport, public sstmac::sw::API {
 
   void incomingEvent(sstmac::Event *ev);
 
-  void compute(sstmac::Timestamp t);
+  void compute(sstmac::TimeDelta t);
 
   void incomingMessage(Message* msg);
 
@@ -258,16 +258,16 @@ class SimTransport : public Transport, public sstmac::sw::API {
 
   std::vector<std::function<void(Message*)>> completion_queues_;
 
-  sstmac::Timestamp post_rdma_delay_;
+  sstmac::TimeDelta post_rdma_delay_;
 
-  sstmac::Timestamp post_header_delay_;
+  sstmac::TimeDelta post_header_delay_;
 
-  sstmac::Timestamp poll_delay_;
+  sstmac::TimeDelta poll_delay_;
 
   sstmac::StatSpyplot<int,int,uint64_t>* spy_bytes_;
 
-  sstmac::Timestamp rdma_pin_latency_;
-  sstmac::Timestamp rdma_page_delay_;
+  sstmac::TimeDelta rdma_pin_latency_;
+  sstmac::TimeDelta rdma_page_delay_;
   int page_size_;
   bool pin_delay_;
 

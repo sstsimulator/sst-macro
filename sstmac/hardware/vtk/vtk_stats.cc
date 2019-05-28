@@ -362,7 +362,7 @@ StatVTK::outputExodus(const std::string& fileroot,
 StatVTK::StatVTK(SST::Params& params) :
   StatCollector(params), active_(true)
 {
-  min_interval_ = sstmac::Timestamp(params.find<SST::UnitAlgebra>("min_interval", "1us").getValue().toDouble());
+  min_interval_ = sstmac::TimeDelta(params.find<SST::UnitAlgebra>("min_interval", "1us").getValue().toDouble());
   display_cfg_.bidirectional_shift = params.find<double>("bidirectional_shift", 0.02);
   display_cfg_.highlight_link_color = params.find<double>("highlight_link_color", 1.0);
   display_cfg_.highlight_switch_color = params.find<double>("highlight_switch_color", 1.0);
@@ -408,7 +408,7 @@ StatVTK::reduce(StatCollector* element)
 }
 
 void
-StatVTK::finalize(Timestamp t)
+StatVTK::finalize(TimeDelta t)
 {
   if (!active_) return;
 
@@ -469,12 +469,12 @@ StatVTK::configure(SwitchId sid, Topology *top)
 }
 
 void
-StatVTK::collect_new_color(Timestamp time, int port, double color)
+StatVTK::collect_new_color(TimeDelta time, int port, double color)
 {
   if (!active_ || port >= port_states_.size()) return;
 
   port_state& port_int = port_states_[port];
-  Timestamp interval_length = time - port_int.pending_collection_start;
+  TimeDelta interval_length = time - port_int.pending_collection_start;
 
   if (min_interval_.ticks() == 0){
     //log all events - no aggregation or averaging
@@ -517,7 +517,7 @@ StatVTK::collect_new_color(Timestamp time, int port, double color)
 }
 
 void
-StatVTK::collect_new_intensity(Timestamp time, int port, double intensity)
+StatVTK::collect_new_intensity(TimeDelta time, int port, double intensity)
 {
   if (!active_ || port >= port_states_.size()) return;
 

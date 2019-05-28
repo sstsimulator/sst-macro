@@ -251,8 +251,8 @@ MpiRuntime::bcast(void *buffer, int bytes, int root)
   MPI_Bcast(buffer, bytes, MPI_BYTE, root, MPI_COMM_WORLD);
 }
 
-GlobalTimestamp
-MpiRuntime::sendRecvMessages(GlobalTimestamp vote)
+Timestamp
+MpiRuntime::sendRecvMessages(Timestamp vote)
 {
   //okay - it's possible that we have pending events
   //that aren't serialized yet because we overran the buffers
@@ -314,7 +314,7 @@ MpiRuntime::sendRecvMessages(GlobalTimestamp vote)
 
   std::swap(payload_tag, next_payload_tag);
   ++epoch_;
-  return GlobalTimestamp(incoming.time_vote, Timestamp::exact);
+  return Timestamp(incoming.time_vote, TimeDelta::exact);
 }
 
 void

@@ -101,25 +101,25 @@ API::endAPICall()
 {
   if (host_timer_) {
     double time = host_timer_->stamp();
-    parent_->compute(Timestamp(time));
+    parent_->compute(TimeDelta(time));
   }
   activeThread()->endAPICall();
 }
 
-GlobalTimestamp
+Timestamp
 API::now() const 
 {
   return parent_->os()->now();
 }
 
 void
-API::schedule(GlobalTimestamp t, ExecutionEvent* ev)
+API::schedule(Timestamp t, ExecutionEvent* ev)
 {
   parent_->os()->sendExecutionEvent(t, ev);
 }
 
 void
-API::scheduleDelay(Timestamp t, ExecutionEvent* ev)
+API::scheduleDelay(TimeDelta t, ExecutionEvent* ev)
 {
   parent_->os()->sendDelayedExecutionEvent(t, ev);
 }

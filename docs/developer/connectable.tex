@@ -92,17 +92,18 @@ The Python module generation is specific to SST core and is not part of \sstmacr
 The component registration macro is:
 
 \begin{CppCode}
-RegisterComponent("dummy", test_component, dummy_switch,
-       "test", COMPONENT_CATEGORY_NETWORK,
-       "A dummy switch for teaching")
+  SST_ELI_REGISTER_DERIVED_COMPONENT(
+    TestComponent,
+    DummySwitch,
+    "macro",
+    "dummy",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "A dummy switch",
+    COMPONENT_CATEGORY_NETWORK)
 \end{CppCode}
-This is similar to the factory registration macro, but extends it for the special case of independent hardware components.
+This is similar to the registration macro for \inlinecode{Actor}, but extends it for the special case of independent hardware components.
 If the component registration macro is used, then the factory registration macro is not required.
-The first field is a unique string identifier for the component.
-The second field is the parent factory type.
-The third field is the actual class name.
-The fourth field is the module name matching the Python module name at the top of the \inlinecode{component.cc} file.
-The fifth field is a generic component category.
+The last field is a generic component category.
 The currently allowed categories are defined in SST core as:
 
 \begin{CppCode}

@@ -68,11 +68,11 @@ class PiscesBandwidthArbitrator
 
   struct IncomingPacket
   {
-    Timestamp incoming_byte_delay;
-    GlobalTimestamp now;
-    GlobalTimestamp head_leaves;
-    GlobalTimestamp tail_leaves;
-    GlobalTimestamp credit_leaves;
+    TimeDelta incoming_byte_delay;
+    Timestamp now;
+    Timestamp head_leaves;
+    Timestamp tail_leaves;
+    Timestamp credit_leaves;
     PiscesPacket* pkt;
     int src_outport;
     int dst_inport;
@@ -84,13 +84,13 @@ class PiscesBandwidthArbitrator
   */
   virtual void arbitrate(IncomingPacket& st) = 0;
 
-  virtual Timestamp headTailDelay(PiscesPacket* pkt) = 0;
+  virtual TimeDelta headTailDelay(PiscesPacket* pkt) = 0;
 
   virtual std::string toString() const = 0;
 
   virtual ~PiscesBandwidthArbitrator(){}
 
-  Timestamp byteDelay() const {
+  TimeDelta byteDelay() const {
     return byteDelay_;
   }
 
@@ -98,7 +98,7 @@ class PiscesBandwidthArbitrator
   PiscesBandwidthArbitrator(double bw);
 
  protected:
-  Timestamp byteDelay_;
+  TimeDelta byteDelay_;
 
 };
 
@@ -126,7 +126,7 @@ class PiscesNullArbitrator :
     return "pisces null arbitrator";
   }
 
-  Timestamp headTailDelay(PiscesPacket *pkt) override;
+  TimeDelta headTailDelay(PiscesPacket *pkt) override;
 
 };
 
@@ -157,13 +157,13 @@ class PiscesSimpleArbitrator :
     return "pisces simple arbitrator";
   }
 
-  Timestamp headTailDelay(PiscesPacket *pkt) override {
+  TimeDelta headTailDelay(PiscesPacket *pkt) override {
     //no delay
-    return Timestamp();
+    return TimeDelta();
   }
 
  protected:
-  GlobalTimestamp next_free_;
+  Timestamp next_free_;
 
 };
 
@@ -197,22 +197,22 @@ class PiscesCutThroughArbitrator :
     return "cut through arbitrator";
   }
 
-  Timestamp headTailDelay(PiscesPacket *pkt) override;
+  TimeDelta headTailDelay(PiscesPacket *pkt) override;
 
  private:
   struct Epoch : public sprockit::thread_safe_new<Epoch> {
-    GlobalTimestamp start;
+    Timestamp start;
     uint32_t numCycles;
     Epoch* next;
   };
 
   Epoch* advance(Epoch* epoch, Epoch* prev);
 
-  void clearOut(GlobalTimestamp now);
+  void clearOut(Timestamp now);
 
   Epoch* head_;
-  Timestamp cycleLength_;
-  GlobalTimestamp lastEpochEnd_;
+  TimeDelta cycleLength_;
+  Timestamp lastEpochEnd_;
 
 };
 

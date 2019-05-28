@@ -131,18 +131,18 @@ PiscesBranchedSwitch::initComponents(SST::Params& params)
   // don't put latency on internal links
   for (int i=0; i < n_local_xbars_; ++i) {
     PiscesMuxer* mux = input_muxers_[i].mux;
-    auto out_lnk = allocateSubLink(Timestamp(), this, xbar_->payloadHandler());
+    auto out_lnk = allocateSubLink(TimeDelta(), this, xbar_->payloadHandler());
     mux->setOutput(input_params,0,i,out_lnk,input_credits_);
-    auto in_lnk = allocateSubLink(Timestamp(), this, mux->creditHandler());
+    auto in_lnk = allocateSubLink(TimeDelta(), this, mux->creditHandler());
     xbar_->setInput(xbar_params,i,0,in_lnk);
   }
 
   // connect output demuxers to central xbar
   for (int i=0; i < n_local_xbars_; ++i) {
     PiscesDemuxer* demux = output_demuxers_[i];
-    auto out_link = allocateSubLink(Timestamp(), this, demux->payloadHandler());
+    auto out_link = allocateSubLink(TimeDelta(), this, demux->payloadHandler());
     xbar_->setOutput(xbar_params,i,0,out_link,xbar_credits_);
-    auto in_link = allocateSubLink(Timestamp(), this, xbar_->creditHandler());
+    auto in_link = allocateSubLink(TimeDelta(), this, xbar_->creditHandler());
     demux->setInput(output_params,0,i,in_link);
   }
 #endif

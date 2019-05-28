@@ -13,7 +13,7 @@ The example files can be found in \inlineshell{tutorials/programming/factories}.
 
 \subsection{Usage}\label{subsec:usage}
 Before looking at how to implement factory types, let's look at how they are used.
-Here we consider the example of an abstract interface called \inlinecode{actor}.
+Here we consider the example of an abstract interface called \inlinecode{Actor}.
 The code example is found in \inlineshell{main.cc}. The file begins
 
 \begin{CppCode}
@@ -23,22 +23,21 @@ The code example is found in \inlineshell{main.cc}. The file begins
 namespace sstmac {
     namespace tutorial {
 
-#define sstmac_app_name rob_reiner
-
 int main(int argc, char **argv)
 {
 \end{CppCode}
 The details of declaring and using external apps is found in the user's manual.
-Briefly, \sstmacro (using the \inlinecode{sstmac_app_name} define) reroutes the main function to be callable within a simulation.
+Briefly, the \sstmacro compiler wrapper reroutes the main function to be callable within a simulation.
 From here it should be apparent that we defined a new application with name \inlinecode{rob_reiner}.
-Inside the main function, we create an object of type \inlinecode{actor}.
+Inside the main function, we create an object of type \inlinecode{Actor}.
 
 \begin{CppCode}
-actor* the_guy = actor_factory::getParam("actor_name", getParams());
+auto actor_name = getParams().find<std::string>("actor_name");
+Actor* the_guy = sprockit::create<Actor>(actor_name, getParams());
 the_guy->act();
 return 0;
 \end{CppCode}
-We use the \inlinecode{actor_factory} to create the object.
+Unseen here, there is an \inlinecode{Actor} factory called via the \inlinecode{sprockit::create} function to create the object.
 The value of \inlineshell{actor_name} is read from the input file \inlineshell{parameters.ini} in the directory.
 Depending on the value in the input file, a different type will be created.
 The input file contains several parameters related to constructing a machine model - ignore these for now.
@@ -47,7 +46,7 @@ The important parameters are:
 \begin{ViFile}
 node {
  app1 {
-  name = rob_reiner
+  exe = ./runtest
   biggest_fan = jeremy_wilke
   actor_name = patinkin
   sword_hand = right
@@ -68,7 +67,7 @@ If we change the parameters:
 \begin{ViFile}
 node {
  app1 {
-  name = rob_reiner
+  exe = ./runtest
   biggest_fan = jeremy_wilke
   actor_name = guest
   num_fingers = 6
@@ -97,7 +96,7 @@ To declare a new factory type, you must include the factory header file
 namespace sstmac {
     namespace tutorial {
 
-class actor {
+class Actor {
 \end{CppCode}
 
 
@@ -105,14 +104,14 @@ We now define the public interface for the actor class
 
 \begin{CppCode}
  public:
-  actor(SST::Params& params);
+  Actor(SST::Params& params);
   
   virtual void act() = 0;
 
   virtual ~actor(){}
 \end{CppCode}
 Again, we must have a public, virtual destructor.
-Each instance of the actor class must implement the \inlinecode{act} method.
+Each instance of the \inlinecode{Actor} class must implement the \inlinecode{act} method.
 
 For factory types, each class must take a parameter object in the constructor.
 The parent class has a single member variable
@@ -122,12 +121,14 @@ The parent class has a single member variable
   std::string biggest_fan_;
 \end{CppCode}
 
-After finishing the class, we need to invoke a macro
+Inside the class, we need to register and describe the base type to SST.
 
 \begin{CppCode}
-DeclareFactory(actor);
+  SST_ELI_DECLARE_BASE(Actor)
+  SST_ELI_DECLARE_DEFAULT_INFO()
+  SST_ELI_DECLARE_CTOR(SST::Params&)
 \end{CppCode}
-making \sstmacro aware of the new factory type.
+In almost all cases, only the default info is needed.
 
 Moving to the \inlineshell{actor.cc} file, we see the implementation
 
@@ -135,21 +136,15 @@ Moving to the \inlineshell{actor.cc} file, we see the implementation
 namespace sstmac {
     namespace tutorial {
 
-actor::actor(SST::Params& params)
+Actor::Actor(SST::Params& params)
 {
   biggest_fan_ = params.find<std::string>("biggest_fan");
 }
 \end{CppCode}
-We initialize the member variable from the parameter object.  We additionally need a macro
-
-\begin{CppCode}
-ImplementFactory(sstmac::tutorial::actor);
-\end{CppCode}
-that defines certain symbols needed for implementing the new factory type.
-For subtle reasons, this must be done in the global namespace.
+We initialize the member variable from the parameter object.  
 
 \subsection{Child Class}\label{subsec:childClass}
-Let's now look at a fully implemented, complete actor type.  We declare it
+Let's now look at a fully implemented, complete \inlinecode{Actor} type.  We declare it
 
 \begin{CppCode}
 #include "actor.h"
@@ -157,14 +152,19 @@ Let's now look at a fully implemented, complete actor type.  We declare it
 namespace sstmac {
     namespace tutorial {
 
-class mandy_patinkin :
-    public actor
+class MandyPatinkin :
+    public Actor
 {
  public:
-  mandy_patinkin(SST::Params& params);
+   MandyPatinkin(SST::Params& params);
   
-  FactoryRegister("patinkin", actor, mandy_patinkin,
-    "He's on one of those shows now... NCIS? CSI?");
+   SST_ELI_REGISTER_DERIVED(
+    Actor,
+    MandyPatinkin,
+    "macro",
+    "patinkin",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "He's on one of those shows now... NCIS? CSI?")
 \end{CppCode}
 
 We have a single member variable
@@ -178,7 +178,7 @@ This is a complete type that can be instantiated.
 To create the class we will need the constructor:
 
 \begin{CppCode}
-mandy_patinkin(SST::Params& params);
+MandyPatinkin(SST::Params& params);
 \end{CppCode}
 
 And finally, to satisfy the \inlinecode{actor} public interface, we need
@@ -187,16 +187,17 @@ And finally, to satisfy the \inlinecode{actor} public interface, we need
 virtual void act() override;
 \end{CppCode}
 
-In the class declaration, we need to invoke the macro \inlinecode{FactoryRegister} to register
+In the class declaration, we need to invoke the macro \inlinecode{SST_ELI_REGISTER_DERIVED} to register
 the new child class type with the given string identifier.
-The first argument is the string descriptor that will be linked to the type.
-The second argument is the parent base class. 
-The third argument is the specific child type.
-Finally, a documentation string should be given with a brief description.
+The first argument is the parent base class. 
+The second argument is the specific child type.
+The third argument is the element library to register into  (in the case macro).
+The fourth argument is the string descriptor that will be linked to the type.
+Finally, a version declaration and documentation string should be given with a brief description.
 We can now implement the constructor:
 
 \begin{CppCode}
-mandy_patinkin::mandy_patinkin(SST::Params& params) :
+MandyPatinkin::MandyPatinkin(SST::Params& params) :
   actor(params)
 {
   sword_hand_ = params.find<std::string>("sword_hand");
@@ -215,7 +216,7 @@ The child class must invoke the parent class method.
 Finally, we specify the acting behavior
 
 \begin{CppCode}
-void mandy_patinkin::act()
+void MandyPatinkin::act()
 {
     std::cout << "Hello. My name is Inigo Montoya. You killed my father. Prepare to die!"
               << std::endl;

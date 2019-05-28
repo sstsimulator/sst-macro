@@ -113,7 +113,7 @@ class ComputeEvent_impl :
 
  public:
   bool isTimedCompute() const override {
-    return std::is_same<T,Timestamp>::value;
+    return std::is_same<T,TimeDelta>::value;
   }
 
   T& data() {
@@ -135,7 +135,7 @@ struct basic_instructions_st
   int nthread = 1;
 };
 
-typedef ComputeEvent_impl<Timestamp> TimedComputeEvent;
+typedef ComputeEvent_impl<TimeDelta> TimedComputeEvent;
 typedef ComputeEvent_impl<basic_instructions_st> BasicComputeEvent;
 
 }

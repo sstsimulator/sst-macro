@@ -344,13 +344,13 @@ App::cleanup()
 }
 
 void
-App::sleep(Timestamp time)
+App::sleep(TimeDelta time)
 {
   computeLib()->sleep(time);
 }
 
 void
-App::compute(Timestamp time)
+App::compute(TimeDelta time)
 {
   computeLib()->compute(time);
 }
@@ -735,7 +735,7 @@ void computeTime(double tsec)
   Thread* t = OperatingSystem::currentThread();
   App* a = safe_cast(App, t,
      "cannot cast current thread to app in compute_time function");
-  a->compute(Timestamp(tsec));
+  a->compute(TimeDelta(tsec));
 }
 
 }

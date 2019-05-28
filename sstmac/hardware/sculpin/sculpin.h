@@ -88,19 +88,19 @@ class SculpinPacket :
     return rtrHeader<Header>()->edge_port;
   }
 
-  GlobalTimestamp arrival() const {
+  Timestamp arrival() const {
     return arrival_;
   }
 
-  void setArrival(GlobalTimestamp time) {
+  void setArrival(Timestamp time) {
     arrival_ = time;
   }
 
-  Timestamp timeToSend() const {
+  TimeDelta timeToSend() const {
     return time_to_send_;
   }
 
-  void setTimeToSend(Timestamp time) {
+  void setTimeToSend(TimeDelta time) {
     time_to_send_ = time;
   }
 
@@ -125,9 +125,9 @@ class SculpinPacket :
  private:
   uint32_t seqnum_;
 
-  GlobalTimestamp arrival_;
+  Timestamp arrival_;
 
-  Timestamp time_to_send_;
+  TimeDelta time_to_send_;
 
   int priority_;
 

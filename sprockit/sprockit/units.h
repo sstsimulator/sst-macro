@@ -65,13 +65,13 @@ double getFrequency(const char* value, bool& errorflag, bool print_errors = fals
 
 long byteLength(const char* value, bool& errorflag, bool print_errors = false);
 
-void populateTimestampNames(std::map<std::string, int64_t> &value);
+void populateTimeDeltaNames(std::map<std::string, int64_t> &value);
 
 void populateFrequencyNames(std::map<std::string, int64_t> &value);
 
 /// Get a timestamp possiblly suffixed with any of the identifiers
 /// psec, nsec, usec, msec, sec, ps, ns, us, ms, s
-double getTimestamp(const char *value, bool &errorflag, bool print_errors = false);
+double getTimeDelta(const char *value, bool &errorflag, bool print_errors = false);
 
 }
 

@@ -75,11 +75,11 @@ class MemoryModel : public SubComponent
 
   virtual ~MemoryModel();
 
-  virtual void access(uint64_t bytes, Timestamp byte_delay, Callback* cb) = 0;
+  virtual void access(uint64_t bytes, TimeDelta byte_delay, Callback* cb) = 0;
 
   virtual std::string toString() const = 0;
 
-  virtual Timestamp minFlowByteDelay() const = 0;
+  virtual TimeDelta minFlowByteDelay() const = 0;
 
   NodeId addr() const;
 
@@ -120,9 +120,9 @@ class NullMemoryModel : public MemoryModel
 
   std::string toString() const override { return "null memory"; }
 
-  Timestamp minFlowByteDelay() const override { return Timestamp(1e-9); } //use 1 ns
+  TimeDelta minFlowByteDelay() const override { return TimeDelta(1e-9); } //use 1 ns
 
-  void access(uint64_t bytes, Timestamp byte_delay, Callback *cb) override {}
+  void access(uint64_t bytes, TimeDelta byte_delay, Callback *cb) override {}
 };
 
 }

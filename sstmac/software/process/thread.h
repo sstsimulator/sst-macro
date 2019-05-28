@@ -207,7 +207,7 @@ class Thread
     return os_;
   }
 
-  void collectStats(GlobalTimestamp start, Timestamp elapsed);
+  void collectStats(Timestamp start, TimeDelta elapsed);
 
 #if SSTMAC_HAVE_CALL_GRAPH
   const int* backtrace() const {
@@ -363,7 +363,7 @@ class Thread
 
   void setTlsValue(long thekey, void* ptr);
 
-  GlobalTimestamp now();
+  Timestamp now();
 
   void startAPICall();
 

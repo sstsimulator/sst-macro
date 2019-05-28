@@ -164,7 +164,7 @@ remapParams(sprockit::SimParameters::ptr params, bool verbose)
 {
   double timescale = 100e-18;//params->get_optional_time_param("timestamp_resolution", 100e-18);
   int as_per_tick = round(timescale/1e-18) + 0.02;
-  Timestamp::initStamps(100);
+  TimeDelta::initStamps(100);
 
   sprockit::SimParameters::ptr top_params = params->getNamespace("topology");
   bool auto_top = top_params->getOptionalBoolParam("auto", false);

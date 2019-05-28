@@ -114,12 +114,12 @@ ClockCycleEventMap::handleIncoming(char* buf)
 #endif
 }
 
-GlobalTimestamp
-ClockCycleEventMap::receiveIncomingEvents(GlobalTimestamp vote)
+Timestamp
+ClockCycleEventMap::receiveIncomingEvents(Timestamp vote)
 {
   if (nproc_ == 1) return vote;
 
-  GlobalTimestamp min_time = no_events_left_time;
+  Timestamp min_time = no_events_left_time;
   if (!stopped_){
     event_debug("voting for minimum time %lu:%lu on epoch %d",
                 vote.epochs, vote.time.ticks(), epoch_);
@@ -151,7 +151,7 @@ ClockCycleEventMap::run()
 {
   interconn_->setup();
 
-  GlobalTimestamp lower_bound;
+  Timestamp lower_bound;
   int num_loops_left = num_profile_loops_;
   if (num_loops_left && rt_->me() == 0){
     printf("Running %d profile loops\n", num_loops_left);
@@ -165,9 +165,9 @@ ClockCycleEventMap::run()
   }
   uint64_t epoch = 0;
   while (lower_bound != no_events_left_time || num_loops_left > 0){
-    GlobalTimestamp horizon = lower_bound + lookahead_;
+    Timestamp horizon = lower_bound + lookahead_;
     auto t_start = rdtsc();
-    GlobalTimestamp min_time = runEvents(horizon);
+    Timestamp min_time = runEvents(horizon);
     auto t_run = rdtsc();
     lower_bound = receiveIncomingEvents(min_time);
     auto t_stop = rdtsc();
@@ -190,7 +190,7 @@ ClockCycleEventMap::run()
 }
 
 void
-ClockCycleEventMap::computeFinalTime(GlobalTimestamp vote)
+ClockCycleEventMap::computeFinalTime(Timestamp vote)
 {
   if (nproc_ == 1){
     final_time_ = vote;
@@ -203,7 +203,7 @@ ClockCycleEventMap::computeFinalTime(GlobalTimestamp vote)
       final_ticks = 0;
     }
     rt_->allreduceMax(final_ticks);
-    final_time_ = GlobalTimestamp(final_epochs, final_ticks);
+    final_time_ = Timestamp(final_epochs, final_ticks);
   }
 }
 

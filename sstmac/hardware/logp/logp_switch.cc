@@ -91,17 +91,17 @@ LogPSwitch::LogPSwitch(uint32_t cid, SST::Params& params) :
   top_ = Topology::staticTopology(topParams);
 
   std::string net_bw = params.find<std::string>("bandwidth");
-  byte_delay_ = Timestamp(SST::UnitAlgebra(net_bw).getValue().inverse().toDouble());
+  byte_delay_ = TimeDelta(SST::UnitAlgebra(net_bw).getValue().inverse().toDouble());
 
-  hop_latency_ = Timestamp(params.find<SST::UnitAlgebra>("hop_latency").getValue().toDouble());
+  hop_latency_ = TimeDelta(params.find<SST::UnitAlgebra>("hop_latency").getValue().toDouble());
 
-  out_in_lat_ = Timestamp(params.find<SST::UnitAlgebra>("out_in_latency").getValue().toDouble());
+  out_in_lat_ = TimeDelta(params.find<SST::UnitAlgebra>("out_in_latency").getValue().toDouble());
 
   if (params.contains("random_seed")){
     random_seed_ = params.find<int>("random_seed");
     rng_ = RNG::MWC::construct();
-    random_max_extra_latency_ = Timestamp(params.find<SST::UnitAlgebra>("random_max_extra_latency").getValue().toDouble());
-    random_max_extra_byte_delay_ = Timestamp(params.find<SST::UnitAlgebra>("random_max_extra_byte_delay").getValue().toDouble());
+    random_max_extra_latency_ = TimeDelta(params.find<SST::UnitAlgebra>("random_max_extra_latency").getValue().toDouble());
+    random_max_extra_byte_delay_ = TimeDelta(params.find<SST::UnitAlgebra>("random_max_extra_byte_delay").getValue().toDouble());
   }
 
   SST::Params contention_params = params.find_scoped_params("contention");
@@ -134,9 +134,9 @@ LogPSwitch::sendEvent(Event *ev)
 }
 
 void
-LogPSwitch::send(GlobalTimestamp start, NetworkMessage* msg)
+LogPSwitch::send(Timestamp start, NetworkMessage* msg)
 {
-  Timestamp delay;
+  TimeDelta delay;
   if (rng_){
     uint64_t t = start.time.ticks();
     t = ((t*random_seed_) << 5) + random_seed_;
@@ -162,7 +162,7 @@ LogPSwitch::send(GlobalTimestamp start, NetworkMessage* msg)
                byte_delay_.sec(), 1.0/byte_delay_.sec(),
                msg->byteLength(), msg->toString().c_str());
 
-  Timestamp extra_delay = start - now() + delay;
+  TimeDelta extra_delay = start - now() + delay;
 
   nic_links_[dst]->send(extra_delay, new NicEvent(msg));
 }

@@ -130,8 +130,8 @@ class SculpinSwitch :
   struct Port {
     int id;
     int dst_port;
-    GlobalTimestamp next_free;
-    Timestamp byte_delay;
+    Timestamp next_free;
+    TimeDelta byte_delay;
     uint32_t seqnum;
     std::set<SculpinPacket*, priority_compare> priority_queue;
     EventLink::ptr link;
@@ -164,7 +164,7 @@ class SculpinSwitch :
   double link_bw_;
 
  private:
-  void send(Port& p, SculpinPacket* pkt, GlobalTimestamp now);
+  void send(Port& p, SculpinPacket* pkt, Timestamp now);
 
   void tryToSendPacket(SculpinPacket* pkt);
 

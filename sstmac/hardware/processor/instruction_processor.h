@@ -78,14 +78,14 @@ class InstructionProcessor :
 
   void setFlopDistribution(double stdev);
 
-  Timestamp instructionTime(sw::BasicComputeEvent* msg);
+  TimeDelta instructionTime(sw::BasicComputeEvent* msg);
 
  protected:
-  Timestamp tflop_;
-  Timestamp tintop_;
-  Timestamp tmemseq_;
-  Timestamp tmemrnd_;
-  Timestamp min_flow_byte_delay_;//in sec/byte
+  TimeDelta tflop_;
+  TimeDelta tintop_;
+  TimeDelta tmemseq_;
+  TimeDelta tmemrnd_;
+  TimeDelta min_flow_byte_delay_;//in sec/byte
 
   uint64_t negligible_bytes_;
 

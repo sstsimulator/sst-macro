@@ -3,17 +3,19 @@
 namespace sstmac {
 namespace tutorial {
 
-class mandy_patinkin :
-  public actor
+class MandyPatinkin :
+  public Actor
 {
-  FactoryRegister("patinkin", actor, mandy_patinkin,
-              "He's on one of those shows now... NCIS? CSI?")
  public:
-  mandy_patinkin(SST::Params& params);
+  SST_ELI_REGISTER_DERIVED(
+    Actor,
+    MandyPatinkin,
+    "macro",
+    "patinkin",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "He's on CSI now?")
 
-  std::string toString() const override {
-    return "inigo montoya";
-  }
+  MandyPatinkin(SST::Params& params);
 
   virtual void act() override;
 
