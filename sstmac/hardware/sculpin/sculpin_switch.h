@@ -153,8 +153,6 @@ class SculpinSwitch :
 
   bool congestion_;
 
-  SST::Statistics::MultiStatistic<double,uint32_t>* xmit_wait_;
-
   std::set<NodeId> src_stat_filter_;
   std::set<NodeId> dst_stat_filter_;
   std::set<NodeId> src_stat_highlight_;

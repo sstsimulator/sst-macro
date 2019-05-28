@@ -22,7 +22,6 @@ EXTRA_DIST = libsprockit.c
 
 SOURCES = \
   sim_parameters.cc \
-  malloc.cc \
   debug.cc \
   statics.cc \
   output.cc \
@@ -55,8 +54,6 @@ nobase_library_include_HEADERS = \
   thread_safe_new.h \
   thread_safe.h \
   stl_string.h \
-  spkt_new.h \
-  malloc.h \
   typedefs.h \
   util.h \
   units.h \

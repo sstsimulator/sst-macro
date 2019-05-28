@@ -1,21 +1,15 @@
-
 AC_DEFUN([CHECK_CUSTOM_NEW], [
-AC_ARG_ENABLE(custom-new,
-  [AS_HELP_STRING(
-    [--(dis|en)able-custom-new],
-    [Control whether or not the global operator new is overwritten for all allocations [default=no]]
-    )],
-  [
-    enable_custom_new=$enableval
-  ], [
-    enable_custom_new=no
-  ]
+
+AC_ARG_ENABLE([custom-new],
+  [AS_HELP_STRING([--(dis|en)able-custom-new],
+    [enable custom new on certain classes for efficient, thread-safe mem pools [default=enable]])],
+  [with_custom_new=$enableval],
+  [with_custom_new=yes]
 )
-if test "X$enable_custom_new" = "Xyes"; then
-    AM_CONDITIONAL([USE_CUSTOM_NEW], true)
-    CPPFLAGS="$CPPFLAGS -DUSE_CUSTOM_NEW"
-else
-    AM_CONDITIONAL([USE_CUSTOM_NEW], false)
+
+if test "X$with_custom_new" = "Xyes"; then
+  AC_DEFINE_UNQUOTED([CUSTOM_NEW], 1, [Track communcation synchronization stats])
 fi
+
 ])
 

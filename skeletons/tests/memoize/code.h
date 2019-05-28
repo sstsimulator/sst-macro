@@ -51,8 +51,6 @@ static void run(){
   sleep(1);
 }
 
-#define sstmac_app_name memoize_sleep
-
 int main(int argc, char** argv)
 {
   double wall_start = sstmacWallTime();

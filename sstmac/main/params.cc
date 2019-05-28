@@ -62,8 +62,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/fileio.h>
 #include <sprockit/statics.h>
 #include <sprockit/sim_parameters.h>
-#include <sprockit/malloc.h>
-#include <sprockit/spkt_new.h>
 #include <sprockit/output.h>
 #include <sprockit/basic_string_tokenizer.h>
 

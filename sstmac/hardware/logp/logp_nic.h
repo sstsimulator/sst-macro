@@ -59,6 +59,15 @@ class LogPNIC :
   public NIC
 {
  public:
+#if SSTMAC_INTEGRATED_SST_CORE
+  SST_ELI_REGISTER_SUBCOMPONENT(
+    LogPNIC,
+    "macro",
+    "logp_nic",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "implements a nic that models messages via a simple latency/bandwidth injection delay",
+    "nic")
+#else
   SST_ELI_REGISTER_DERIVED(
     NIC,
     LogPNIC,
@@ -66,8 +75,9 @@ class LogPNIC :
     "logp",
     SST_ELI_ELEMENT_VERSION(1,0,0),
     "implements a nic that models messages via a simple latency/bandwidth injection delay")
+#endif
 
-  LogPNIC(SST::Params& params, Node* parent);
+  LogPNIC(SST::Component* parent, SST::Params& params);
 
   virtual ~LogPNIC();
 

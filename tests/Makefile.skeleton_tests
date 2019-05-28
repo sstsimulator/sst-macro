@@ -116,6 +116,15 @@ test_skeleton_multiapp.$(CHKSUF): multiapp
     $(PYRUNTEST) 60 $(top_srcdir) $@ Exact \
     $(SSTMACEXEC) -f $(top_builddir)/tests/skeletons/multiapp/parameters.ini --no-wall-time
 
+test_skeleton_sendrecv.$(CHKSUF): sendrecv
+	SST_LIB_PATH=skeletons/sendrecv \
+    $(PYRUNTEST) 60 $(top_srcdir) $@ Exact \
+    $(SSTMACEXEC) \
+      --exe=./skeletons/sendrecv/runsendrecv \
+      --exe=./skeletons/sendrecv/runsendrecv \
+      -f $(top_builddir)/tests/skeletons/sendrecv/parameters.ini \
+      --no-wall-time
+
 test_skeleton_%.$(CHKSUF): % 
 	SST_LIB_PATH=skeletons/$* \
     $(PYRUNTEST) 60 $(top_srcdir) $@ Exact \

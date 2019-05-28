@@ -63,6 +63,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #endif
 #include <sstmac/sst_core/integrated_component.h>
 
+#include <sstream>
+
 #if !SSTMAC_INTEGRATED_SST_CORE
 namespace sstmac {
 
@@ -76,12 +78,28 @@ class StatisticBase {
     return name_;
   }
 
-  std::string group() const {
+  std::string groupName() const {
+    return group_name_;
+  }
+
+  StatisticGroup* group() const {
     return group_;
+  }
+
+  std::string getStatName() const {
+    return name_;
+  }
+
+  std::string getStatSubId() const {
+    return sub_id_;
   }
 
   std::string output() const {
     return output_;
+  }
+
+  void setGroup(StatisticGroup* grp){
+    group_ = grp;
   }
 
   virtual ~StatisticBase(){}
@@ -93,8 +111,10 @@ class StatisticBase {
 
  private:
   std::string name_;
-  std::string group_;
+  std::string group_name_;
   std::string output_;
+  std::string sub_id_;
+  StatisticGroup* group_;
 };
 
 class StatisticOutput
@@ -112,9 +132,6 @@ class StatisticOutput
   virtual void startOfSimulation() = 0;
   virtual void endOfSimulation() = 0;
 
-  virtual void startRegisterGroup(StatisticGroup* grp) = 0;
-  virtual void stopRegisterGroup() = 0;
-
   virtual void registerStatistic(StatisticBase* stat) = 0;
 
   virtual void startOutputGroup(StatisticGroup* grp) = 0;
@@ -129,7 +146,8 @@ struct StatisticGroup {
   StatisticOutput* output;
   std::string outputName;
   std::string name;
-  std::map<std::string, int> columns;
+  std::map<std::string,int> ids;
+  std::map<int,std::string> columns;
   StatisticGroup(const std::string& n) :
     output(nullptr), name(n)
   {}
@@ -141,8 +159,7 @@ class StatisticFieldsOutput : public StatisticOutput
   StatisticFieldsOutput(SST::Params& params) :
     StatisticOutput(params),
     active_group_(nullptr),
-    active_stat_(nullptr),
-    default_group_(new StatisticGroup("default"))
+    active_stat_(nullptr)
   {
   }
 
@@ -153,14 +170,6 @@ class StatisticFieldsOutput : public StatisticOutput
 
   template<typename T> fieldHandle_t registerField(const char* fieldName){
     return implRegisterField(fieldName);
-  }
-
-  void startRegisterGroup(StatisticGroup* grp) override {
-    active_group_ = grp;
-  }
-
-  void stopRegisterGroup() override {
-    active_group_ = nullptr;
   }
 
   virtual void startOutputEntries(StatisticBase* statistic){
@@ -187,24 +196,11 @@ class StatisticFieldsOutput : public StatisticOutput
   void registerStatistic(StatisticBase* stat) override;
 
  private:
-  fieldHandle_t implRegisterField(const char* fieldName){
-    auto* grp = active_group_ ? active_group_ : default_group_;
-    std::string fullName = active_stat_->name() + "." + fieldName;
-    auto iter = grp->columns.find(fieldName);
-    if (iter == grp->columns.end()){
-      int idx = grp->columns.size();
-      grp->columns[fullName] = idx;
-      return idx;
-    } else {
-      return iter->second;
-    }
-  }
+  fieldHandle_t implRegisterField(const char* fieldName);
 
   StatisticBase* active_stat_;
 
   StatisticGroup* active_group_;
-
-  StatisticGroup* default_group_;
 
 };
 
@@ -244,15 +240,11 @@ class StatOutputCSV : public StatisticFieldsOutput {
     output(fieldHandle, data);
   }
 
-  void startOutputGroup(StatisticGroup* grp) override {
-    csv_out_.open(grp->name.c_str());
-  }
+  void startOutputGroup(StatisticGroup* grp) override;
 
-  void startOutputEntries(StatisticBase *stat) override {
-    nextField_ = 0;
-  }
+  void startOutputEntries(StatisticBase *stat) override;
 
-  void stopOutputEntries() override {}
+  void stopOutputEntries() override;
 
   void stopOutputGroup() override {
     csv_out_.close();
@@ -266,17 +258,24 @@ class StatOutputCSV : public StatisticFieldsOutput {
 
  private:
   template <class T> void output(fieldHandle_t handle, T&& data){
-    if (handle != 0) csv_out_ << ",";
-    if (handle != nextField_){
-      std::cout << "Fields not output in order" << std::endl;
-      abort();
+    if (handle == next_field_){
+      csv_out_ << "," << data;
+      ++next_field_;
+      if (!pending_.empty()){
+        outputPending();
+      }
+    } else {
+      std::stringstream tmp;
+      tmp << data;
+      pending_[handle] = tmp.str();
     }
-    csv_out_ << data;
-    ++nextField_;
   }
 
+  void outputPending();
+
   std::ofstream csv_out_;
-  int nextField_;
+  int next_field_;
+  std::map<int, std::string> pending_;
 
 };
 
@@ -381,15 +380,7 @@ class NullStatisticBase : public Statistic<T>
 template <class T>
 class NullStatisticBase<T,false> : public Statistic<T>
 {
- public:
-  SST_ELI_DECLARE_STATISTIC_TEMPLATE(
-     NullStatistic,
-     "macro",
-     "null",
-     SST_ELI_ELEMENT_VERSION(1,0,0),
-     "a null stat that collects nothing",
-     "Statistic<...>")
-
+ protected:
   NullStatisticBase(EventScheduler* parent,
             const std::string& name, const std::string& subName,
             SST::Params& params) :
@@ -407,15 +398,7 @@ template <class... Args>
 class NullStatisticBase<std::tuple<Args...>,false> :
     public Statistic<std::tuple<Args...>>
 {
- public:
-  SST_ELI_DECLARE_STATISTIC_TEMPLATE(
-     NullStatistic,
-     "macro",
-     "null",
-     SST_ELI_ELEMENT_VERSION(1,0,0),
-     "a null stat that collects nothing",
-     "Statistic<...>")
-
+ protected:
   NullStatisticBase(EventScheduler* parent,
             const std::string& name, const std::string& subName,
             SST::Params& params) :
@@ -427,17 +410,20 @@ class NullStatisticBase<std::tuple<Args...>,false> :
 
 };
 
+template <>
+class NullStatisticBase<void,true> : public Statistic<void> {
+ protected:
+   NullStatisticBase(EventScheduler* parent,
+            const std::string& name, const std::string& subName,
+            SST::Params& params) :
+    Statistic<void>(parent, name, subName, params)
+   {
+   }
+};
+
 template <class T>
 class NullStatisticBase<T,true> : public Statistic<T> {
- public:
-  SST_ELI_DECLARE_STATISTIC_TEMPLATE(
-     NullStatistic,
-     "macro",
-     "null",
-     SST_ELI_ELEMENT_VERSION(1,0,0),
-     "a null stat that collects nothing",
-     "Statistic<...>")
-
+ protected:
   NullStatisticBase(EventScheduler* parent,
             const std::string& name, const std::string& subName,
             SST::Params& params) :
@@ -452,15 +438,23 @@ class NullStatisticBase<T,true> : public Statistic<T> {
 template <class T, bool isFund=std::is_fundamental<T>::value>
 class NullStatistic : public NullStatisticBase<T,isFund> {
  public:
+  SST_ELI_DECLARE_STATISTIC_TEMPLATE(
+     NullStatistic,
+     "macro",
+     "null",
+     SST_ELI_ELEMENT_VERSION(1,0,0),
+     "a null stat that collects nothing",
+     "Statistic<...>")
+
   NullStatistic(EventScheduler* parent, const std::string& name,
                 const std::string& subName, SST::Params& params) :
     NullStatisticBase<T,isFund>(parent, name, subName, params)
   {
   }
 
-  void outputStatisticData(StatisticOutput *output, bool endOfSimFlag) override {}
+  void outputStatisticData(SST::Statistics::StatisticOutput *output, bool endOfSimFlag) override {}
 
-  void registerOutputFields(StatisticOutput *statOutput) override {}
+  void registerOutputFields(SST::Statistics::StatisticOutput *statOutput) override {}
 
   static bool isLoaded(){
     return loaded_;
@@ -471,6 +465,13 @@ class NullStatistic : public NullStatisticBase<T,isFund> {
 };
 template <class T, bool isFund> bool NullStatistic<T,isFund>::loaded_ = true;
 
+template <class Stat>
+struct NullEquivalent { };
+
+template <class... Args>
+struct NullEquivalent<Statistic<std::tuple<Args...>>> {
+  using type = NullStatistic<std::tuple<Args...>>;
+};
 
 } // end of namespace sstmac
 
@@ -478,17 +479,30 @@ namespace SST {
 namespace Statistics {
 
 template <class... Args>
-using MultiStatistic = Statistic<std::tuple<Args...>>;
+using MultiStatistic = sstmac::Statistic<std::tuple<Args...>>;
 
-using CustomStatistic = Statistic<void>;
+using CustomStatistic = sstmac::Statistic<void>;
 
-using StatisticOuput = StatisticFieldsOutput;
+using StatisticOutput = sstmac::StatisticFieldsOutput;
 
 }
 }
 
 #define SST_ELI_REGISTER_CUSTOM_STATISTIC(cls,lib,name,version,desc) \
-  SPKT_REGISTER_DERIVED(SST::Statistics::CustomStatistic,cls,lib,name,desc)
+  SPKT_REGISTER_DERIVED(SST::Statistics::CustomStatistic,cls,lib,name,desc) \
+
+#define SST_ELI_REGISTER_MULTI_STATISTIC(parent,cls,lib,name,version,desc) \
+  bool ELI_isLoaded() { \
+    using null_eqv = sstmac::NullEquivalent<parent>::type; \
+    return sprockit::InstantiateBuilder<parent,cls>::isLoaded() && \
+      sprockit::InstantiateBuilder<parent,null_eqv>::isLoaded(); \
+  } \
+  static const std::string SPKT_getLibrary() { \
+    return lib; \
+  } \
+  static const std::string SPKT_getName() { \
+    return name; \
+  }
 
 #define SST_ELI_INSTANTIATE_STATISTIC(cls,field) \
   struct cls##_##field##_##shortName : public cls<field> { \

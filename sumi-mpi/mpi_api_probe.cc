@@ -48,7 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/thread.h>
 
 #define start_probe_call(fxn,comm,src,tag) \
-  start_mpi_call(fxn); \
+  StartMPICall(fxn); \
   mpi_api_debug(sprockit::dbg::mpi, "%s(%s,%s,%s)", \
     #fxn, srcStr(source).c_str(), tagStr(tag).c_str(), commStr(comm).c_str());
 

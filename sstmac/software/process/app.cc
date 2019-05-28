@@ -144,13 +144,15 @@ App::dlopenCheck(int aid, SST::Params& params, bool check_name)
       if (name){
         const char* str_name = (const char*) name;
         if (params.contains("name")){
-          if (params.find<std::string>("name") != std::string(str_name)){
-            spkt_abort_printf("if given both exe= and name= parameters for app%d, they must agree\n"
-                              "'%s' != '%s'", aid, str_name, params.find<std::string>("name").c_str());
+          std::string given_name = params.find<std::string>("name");
+          if (given_name != std::string(str_name)){
+            std::cout << sprockit::printf("App %d loaded from exe %s. "
+               "User-specified name '%s' overriding default name",
+               aid, libname.c_str(), given_name.c_str()) << std::endl;
           }
-        } else {
-          params.insert("name", str_name);
+          params.insert("label", given_name);
         }
+        params.insert("name", str_name);
       }
     }
 
@@ -425,7 +427,7 @@ App::getPrebuiltApi(const std::string &name)
 void
 App::run()
 {
-  SSTMACBacktrace(main);
+  CallGraphAppend(main);
   os_->incrementAppRefcount();
   endAPICall(); //this initializes things, "fake" api call at beginning
   rc_ = skeletonMain();

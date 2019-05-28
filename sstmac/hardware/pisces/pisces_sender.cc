@@ -73,10 +73,10 @@ PayloadQueue::pop(int num_credits)
 }
 
 PiscesSender::PiscesSender(
-  const std::string& selfname,
+  const std::string& selfname, uint32_t id,
   SST::Component* parent,
   bool update_vc) :
-  SubComponent(selfname, parent), //no self handlers
+  EventScheduler(selfname, id, parent), //no self handlers
   update_vc_(update_vc)
 {
 }

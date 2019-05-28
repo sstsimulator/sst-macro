@@ -62,8 +62,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/stats/stat_collector.h>
 
 #include <sstmac/software/libraries/service_fwd.h>
-#include <sstmac/software/process/ftq_fwd.h>
-#include <sstmac/software/process/graphviz_fwd.h>
 #include <sstmac/software/process/compute_scheduler_fwd.h>
 #include <sstmac/software/process/global.h>
 #include <sstmac/hardware/common/flow_fwd.h>
@@ -88,6 +86,16 @@ class OperatingSystem : public SubComponent
   friend class Thread;
 
  public:
+#if SSTMAC_INTEGRATED_SST_CORE
+  SST_ELI_REGISTER_SUBCOMPONENT(
+    OperatingSystem,
+    "macro",
+    "os",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "the operating system for a node",
+    "OS")
+#endif
+
   struct ImplicitState {
     SST_ELI_DECLARE_BASE(ImplicitState)
     SST_ELI_DECLARE_DEFAULT_INFO()
@@ -208,7 +216,7 @@ class OperatingSystem : public SubComponent
     std::vector<int> free_slots_;
   };
 
-  OperatingSystem(SST::Params& params, hw::Node* parent);
+  OperatingSystem(SST::Component* parent, SST::Params& params);
 
   virtual ~OperatingSystem();
 
@@ -245,7 +253,7 @@ class OperatingSystem : public SubComponent
     return nthread_;
   }
 
-  void reassign_cores(Thread* thr);
+  void reassignCores(Thread* thr);
 
   static void deleteStatics();
 
@@ -368,15 +376,13 @@ class OperatingSystem : public SubComponent
     return my_addr_;
   }
 
-  GraphViz* callGraph() const {
-    return callGraph_;
-  }
-
   static void simulationDone();
 
   SST::Params& params() {
     return params_;
   }
+
+  std::string hostname() const;
 
   std::map<std::string,std::string>::const_iterator env_begin() const {
     return env_.begin();
@@ -415,14 +421,6 @@ class OperatingSystem : public SubComponent
   void decrementAppRefcount();
 
   void incrementAppRefcount();
-
-  void setCallGraphActive(bool flag){
-    callGraph_active_ = flag;
-  }
-
-  bool callGraphActive() const {
-    return callGraph_active_;
-  }
 
   static void gdbSwitchToThread(uint32_t thr_id);
 
@@ -494,12 +492,6 @@ class OperatingSystem : public SubComponent
   SST::Params params_;
 
   ComputeScheduler* compute_sched_;
-
-  GraphViz* callGraph_;
-
-  FTQCalendar* ftq_trace_;
-
-  bool callGraph_active_;
 
   static std::map<std::string, std::unique_ptr<RegressionModel>> memoize_models_;
   static std::unique_ptr<std::map<std::string, std::string>> memoize_init_;

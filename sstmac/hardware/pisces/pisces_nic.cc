@@ -62,14 +62,12 @@ RegisterNamespaces("congestion_delays", "congestion_matrix");
 namespace sstmac {
 namespace hw {
 
-PiscesNIC::PiscesNIC(SST::Params& params, Node* parent) :
-  NIC(params, parent),
+PiscesNIC::PiscesNIC(SST::Component* parent, SST::Params& params) :
+  NIC(parent, params),
   pending_inject_(1)
 {
   SST::Params inj_params = params.find_scoped_params("injection");
-  SST::Params ej_params = params.find_scoped_params("ejection");
-
-  self_mtl_link_ = allocateSubLink("mtl", Timestamp(), parent,
+  self_mtl_link_ = allocateSubLink("mtl", Timestamp(), parent_,
                                     newLinkHandler(this, &NIC::mtlHandle));
 
   inj_credits_ = inj_params.find<SST::UnitAlgebra>("credits").getRoundedValue();
@@ -78,21 +76,20 @@ PiscesNIC::PiscesNIC(SST::Params& params, Node* parent) :
   packet_size_ = inj_params.find<SST::UnitAlgebra>("mtu").getRoundedValue();
 
   //PiscesSender::configurePayloadPortLatency(inj_params);
-  auto buf_name = sprockit::printf("%s",top_->nodeIdToName(parent->addr()).c_str());
-  inj_buffer_ = new PiscesBuffer(buf_name, arb, inj_bw, packet_size_, parent, 1/*single vc for inj*/);
+  auto buf_name = sprockit::printf("%s",top_->nodeIdToName(parent_->addr()).c_str());
+  inj_buffer_ = new PiscesBuffer(inj_params, buf_name, componentId(), arb, inj_bw,
+                                 packet_size_, parent_, 1/*single vc for inj*/);
 }
 
 void
 PiscesNIC::init(unsigned int phase)
 {
-  inj_buffer_->init(phase);
 }
 
 void
 PiscesNIC::setup()
 {
   SubComponent::setup();
-  inj_buffer_->setup();
 }
 
 PiscesNIC::~PiscesNIC() throw ()
@@ -178,7 +175,6 @@ PiscesNIC::doSend(NetworkMessage* netmsg)
   nic_debug("packet flow: sending %s", netmsg->toString().c_str());
   int vn = 0; //we only ever use one virtual network
 
-
   uint64_t offset = inject(vn, 0, netmsg);
   if (offset < netmsg->byteLength()){
     pending_inject_[vn].emplace(offset, netmsg->byteLength(), netmsg);
@@ -192,10 +188,10 @@ PiscesNIC::packetArrived(PiscesPacket* pkt)
   if (msg){
     recvMessage(static_cast<NetworkMessage*>(msg));
   }
-  delete pkt;
   int buffer_port = 0;
   PiscesCredit* credit = new PiscesCredit(buffer_port, pkt->vc(), pkt->byteLength());
   credit_link_->send(credit);
+  delete pkt;
 }
 
 void

@@ -55,18 +55,21 @@ void
 Eager0::start(void* buffer, int src_rank, int dst_rank, sstmac::sw::TaskId tid, int count, MpiType* typeobj,
               int tag, MPI_Comm comm, int seq_id, MpiRequest* req)
 {
-  SSTMACBacktrace(MPIEager0Protocol_Send_Header);
+  CallGraphAppend(MPIEager0Protocol_Send_Header);
   void* temp_buf = nullptr;
   if (isNonNullBuffer(buffer)){
     temp_buf = fillSendBuffer(count, buffer, typeobj);
   }
   uint64_t payload_bytes = count*typeobj->packed_size();
   queue_->memcopy(payload_bytes);
-  uint64_t flow_id = mpi_->smsgSend<MpiMessage>(tid, payload_bytes, temp_buf,
+  auto* msg = mpi_->smsgSend<MpiMessage>(tid, payload_bytes, temp_buf,
                               queue_->pt2ptCqId(), queue_->pt2ptCqId(), sumi::Message::pt2pt,
                               src_rank, dst_rank, typeobj->id,  tag, comm, seq_id,
                               count, typeobj->packed_size(), nullptr, EAGER0);
-  send_flows_[flow_id] = temp_buf;
+#if SSTMAC_COMM_SYNC_STATS
+  msg->setTimeStarted(mpi_->now());
+#endif
+  send_flows_[msg->flowId()] = temp_buf;
   req->complete();
 }
 
@@ -82,7 +85,7 @@ Eager0::incoming(MpiMessage *msg, MpiQueueRecvRequest *req)
     ::memcpy(req->recv_buffer_, msg->smsgBuffer(), msg->byteLength());
   }
 #if SSTMAC_COMM_SYNC_STATS
-  msg->setTimeSynced(queue->now());
+  msg->setTimeSynced(mpi_->now());
 #endif
   queue_->notifyProbes(msg);
   queue_->memcopy(msg->payloadBytes());
@@ -93,7 +96,7 @@ Eager0::incoming(MpiMessage *msg, MpiQueueRecvRequest *req)
 void
 Eager0::incoming(MpiMessage* msg)
 {
-  SSTMACBacktrace(MPIEager0Protocol_Handle_Header);
+  CallGraphAppend(MPIEager0Protocol_Handle_Header);
   if (msg->sstmac::hw::NetworkMessage::type() == MpiMessage::payload_sent_ack){
     char* temp_buf = (char*) msg->smsgBuffer();
     if (temp_buf) delete[] temp_buf;

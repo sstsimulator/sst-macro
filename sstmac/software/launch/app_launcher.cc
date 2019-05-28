@@ -79,10 +79,9 @@ AppLauncher::incomingRequest(Request* req)
 
     SoftwareId sid(lreq->aid(), lreq->tid());
     SST::Params app_params = lreq->appParams();
-
     App::dlopenCheck(lreq->aid(), app_params);
-    App* theapp = sprockit::create<App>(
-          "macro", app_params.find<std::string>("name"), app_params, sid, os_);
+    auto app_name = app_params.find<std::string>("name");
+    App* theapp = sprockit::create<App>("macro", app_name, app_params, sid, os_);
     theapp->setUniqueName(lreq->uniqueName());
     int intranode_rank = num_apps_launched_[lreq->aid()]++;
     int core_affinity = lreq->coreAffinity(intranode_rank);

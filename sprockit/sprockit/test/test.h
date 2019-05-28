@@ -48,18 +48,20 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <vector>
 #include <iostream>
 #include <string.h>
+#include <memory>
 #include <sprockit/test/output.h>
 #include <sprockit/test/equality.h>
 #include <sprockit/test/container.h>
 #include <sprockit/test/fxn.h>
 #include <sprockit/spkt_string.h>
 
-const char*
-truncate_file(const char* file);
+const char* truncate_file(const char* file);
 
 class TestCase
 {
  public:
+  virtual ~TestCase(){}
+
   virtual bool is_correct() const = 0;
 
   virtual void print_error(std::ostream& os) const = 0;
@@ -129,11 +131,11 @@ class UnitTest
 {
 
  private:
-  std::vector<TestCase*> tests_;
+  std::vector<std::unique_ptr<TestCase>> tests_;
 
  public:
   void append(TestCase* test_case) {
-    tests_.push_back(test_case);
+    tests_.push_back(std::unique_ptr<TestCase>(test_case));
   }
 
   /**
@@ -589,7 +591,8 @@ void assertThrows_impl(UnitTest& test_set, const char* descr, const char* file,
                        int line, const char* exc, TestFxn* fxn)
 {
   try {
-    fxn->run();
+    auto ptr = std::unique_ptr<TestFxn>(fxn);
+    ptr->run();
     test_set.append(new ExceptionTestCase(descr, file, line, exc, "No Exception",
                                           "SHOULD THROW", false));
   }

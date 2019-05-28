@@ -90,12 +90,8 @@ However, for large packet sizes, it can produce erroneously high latencies.
 To tune the packet size for abstract machine models, set:
 
 \begin{ViFile}
-accuracy_parameter = 1024B
-\end{ViFile}
-or equivalently 
-
-\begin{ViFile}
-mtu = 1024B
+switch.mtu = 1024B
+node.nic.mtu = 1024B
 \end{ViFile}
 which sets the packet size to 1024B. 
 For the simple model, packet sizes larger than 256-512B are not recommended.

@@ -157,6 +157,8 @@ AM_CONDITIONAL(HAVE_REGEXP, false)
 # thread context switching of applications
 CHECK_THREADING()
 
+CHECK_CUSTOM_NEW()
+
 # Check for whether to support event calendar optimizations
 CHECK_EVENT_CALENDAR()
 
@@ -180,19 +182,21 @@ CHECK_OTF2()
 
 CHECK_VTK()
 
-CHECK_MPI_TIMELINE_STATS()
-
 CHECK_THREAD_PARALLEL()
 
 #CHECK_FORTRAN()
 
-CHECK_BACKTRACE_VIZ()
+CHECK_CALL_GRAPH_VIZ()
+
+CHECK_DOT()
 
 CHECK_INTEGER_TYPES()
 
 CHECK_STL_REPLACEMENT_HEADERS()
 
 CHECK_COMM_SYNC_STATS()
+
+CHECK_COMM_DELAY_STATS()
 
 CHECK_CLANG_LLVM()
 
@@ -203,11 +207,6 @@ CHECK_CLANG_LLVM()
 # Configure dumpi.
 AC_CONFIG_SUBDIRS([sst-dumpi])
 
-#-------------------------------------------------
-# Custom new.  Make sure this is last otherwise 
-# configure tests will fail.
-#-------------------------------------------------
-CHECK_CUSTOM_NEW()
 
 #-------------------------------------------------
 # Finalize 

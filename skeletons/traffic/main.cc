@@ -56,10 +56,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sys/time.h>
 #include <cstring>
 
-#define sstmac_app_name traffic_pattern
-
-
-
 static const int nrepeat = 40;
 static const int warmup = 10;
 static const int max_buffer_size = 1024*1024;

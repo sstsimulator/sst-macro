@@ -31,9 +31,4 @@ int fxn()
   return 0;
 }
 
-char sstmac_appname_str[] = "pragma_test";
-int main()
-{
-  return 0;
-}
 

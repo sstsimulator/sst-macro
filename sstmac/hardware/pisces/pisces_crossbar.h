@@ -60,7 +60,7 @@ class PiscesNtoMQueue :
  public:
   virtual ~PiscesNtoMQueue();
 
-  PiscesNtoMQueue(const std::string& selfname,
+  PiscesNtoMQueue(const std::string& selfname, uint32_t id,
                   const std::string& arb, double bw,
                   SST::Component* parent,
                   int num_in_ports, int num_out_ports, int num_vc,
@@ -127,7 +127,7 @@ class PiscesDemuxer :
   public PiscesNtoMQueue
 {
  public:
-  PiscesDemuxer(const std::string& selfname,
+  PiscesDemuxer(const std::string& selfname, uint32_t id,
                 const std::string& arb, double bw,
                 SST::Component* parent,
                 int num_out_ports, int num_vc,
@@ -144,7 +144,7 @@ class PiscesMuxer :
   public PiscesNtoMQueue
 {
  public:
-  PiscesMuxer(const std::string& selfname,
+  PiscesMuxer(const std::string& selfname, uint32_t id,
               const std::string& arb, double bw,
               SST::Component* parent,
               int num_in_ports, int num_vc,
@@ -159,7 +159,7 @@ class PiscesCrossbar :
   public PiscesNtoMQueue
 {
  public:
-  PiscesCrossbar(const std::string& name,
+  PiscesCrossbar(const std::string& name, uint32_t id,
                  const std::string& arb, double bw,
                  SST::Component* parent,
                  int num_in_ports, int num_out_ports, int num_vc,

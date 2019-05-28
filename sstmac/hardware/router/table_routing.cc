@@ -56,9 +56,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstream>
 #include <fstream>
 
-RegisterKeywords(
-{ "fileroot", "the file prefix for reading in tables" },
-);
 
 namespace sstmac {
 namespace hw {

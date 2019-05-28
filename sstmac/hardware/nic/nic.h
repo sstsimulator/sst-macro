@@ -102,9 +102,11 @@ class NicEvent :
 class NIC : public ConnectableSubcomponent
 {
  public:
+#if !SSTMAC_INTEGRATED_SST_CORE
   SST_ELI_DECLARE_BASE(NIC)
   SST_ELI_DECLARE_DEFAULT_INFO()
-  SST_ELI_DECLARE_CTOR(SST::Params&,Node*)
+  SST_ELI_DECLARE_CTOR(SST::Component*,SST::Params&)
+#endif
 
   typedef enum {
     Injection,
@@ -120,6 +122,10 @@ class NIC : public ConnectableSubcomponent
    */
   NodeId addr() const {
     return my_addr_;
+  }
+
+  Topology* topology() const {
+    return top_;
   }
 
   /**
@@ -177,7 +183,7 @@ class NIC : public ConnectableSubcomponent
   virtual std::function<void(NetworkMessage*)> dataIoctl();
 
  protected:
-  NIC(SST::Params& params, Node* parent);
+  NIC(SST::Component* parent, SST::Params& params);
 
   Node* parent() const {
     return parent_;
@@ -194,16 +200,15 @@ class NIC : public ConnectableSubcomponent
     return bytes <= negligibleSize_;
   }
 
-  NodeId my_addr_;
   int negligibleSize_;
   Node* parent_;
+  NodeId my_addr_;
   EventLink::ptr logp_link_;
   Topology* top_;
 
  private:
-  StatSpyplot* spy_num_messages_;
-  StatSpyplot* spy_bytes_;
-  Statistic<uint64_t>* msg_sizes_;
+  StatSpyplot<int,int,uint64_t>* spy_bytes_;
+  Statistic<uint64_t>* xmit_flows_;
   sw::SingleProgressQueue<NetworkMessage> queue_;
 
  protected:
@@ -226,6 +231,15 @@ class NIC : public ConnectableSubcomponent
 class NullNIC : public NIC
 {
  public:
+#if SSTMAC_INTEGRATED_SST_CORE
+  SST_ELI_REGISTER_SUBCOMPONENT(
+    NullNIC,
+    "macro",
+    "null_nic",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "implements a nic that models nothing - stand-in only",
+    "nic")
+#else
   SST_ELI_REGISTER_DERIVED(
     NIC,
     NullNIC,
@@ -233,9 +247,10 @@ class NullNIC : public NIC
     "null",
     SST_ELI_ELEMENT_VERSION(1,0,0),
     "implements a nic that models nothing - stand-in only")
+#endif
 
-  NullNIC(SST::Params& params, Node* parent) :
-    NIC(params, parent)
+  NullNIC(SST::Component* parent, SST::Params& params) :
+    NIC(parent, params)
   {
   }
 

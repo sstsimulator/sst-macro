@@ -62,6 +62,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
 #include <sstmac/common/event_callback.h>
+#include <sstmac/common/stats/stat_spyplot.h>
 #include <sstmac/software/api/api.h>
 
 RegisterKeywords(
@@ -202,12 +203,12 @@ SimTransport::SimTransport(SST::Params& params, sstmac::sw::App* parent, SST::Co
   API(params, parent, comp),
   Transport("sumi", parent->sid(), parent->os()->addr()),
   //the server is what takes on the specified libname
-  spy_num_messages_(nullptr),
   spy_bytes_(nullptr),
   completion_queues_(1),
   default_progress_queue_(parent->os()),
   nic_ioctl_(parent->os()->nicDataIoctl()),
-  node_(parent->os()->node())
+  parent_app_(parent),
+  qos_analysis_(nullptr)
 {
   completion_queues_[0] = std::bind(&DefaultProgressQueue::incoming,
                                     &default_progress_queue_, 0, std::placeholders::_1);
@@ -235,14 +236,18 @@ SimTransport::SimTransport(SST::Params& params, sstmac::sw::App* parent, SST::Co
   rank_mapper_ = sstmac::sw::TaskMapping::globalMapping(sid().app_);
   nproc_ = rank_mapper_->nproc();
 
+  auto qos_params = params.find_scoped_params("qos");
+  auto qos_name = qos_params.find<std::string>("name", "null");
+  qos_analysis_ = sprockit::create<QoSAnalysis>("macro", qos_name, qos_params);
+
   server->registerProc(rank_, this);
 
-  /** TODO - stats
-  spy_num_messages_ = sstmac::optionalStats<sstmac::StatSpyplot>(desScheduler(),
-        params, "traffic_matrix", "ascii", "num_messages");
-  spy_bytes_ = sstmac::optionalStats<sstmac::StatSpyplot>(desScheduler(),
-        params, "traffic_matrix", "ascii", "bytes");
-  */
+#if !SSTMAC_INTEGRATED_SST_CORE
+  std::string subname = sprockit::printf("app%d.rank%d", parent->aid(), parent->tid());
+  auto* spy = comp->registerMultiStatistic<int,int,uint64_t>(params, "spy_bytes", subname);
+  spy_bytes_ = dynamic_cast<sstmac::StatSpyplot<int,int,uint64_t>*>(spy);
+#endif
+
   if (!engine_) engine_ = new CollectiveEngine(params, this);
 
   smp_optimize_ = params.find<bool>("smp_optimize", false);
@@ -338,12 +343,9 @@ SimTransport::compute(sstmac::Timestamp t)
 void
 SimTransport::send(Message* m)
 {
-#if SSTMAC_COMM_SYNC_STATS
-  msg->setTimeSent(wall_time());
-
-  if (spy_num_messages_){
-    spy_num_messages_->addData(m->sender(), m->recver(), 1);
-  }
+  int qos = qos_analysis_->selectQoS(m);
+  m->setQoS(qos);
+  m->setTimeSent(parent_app_->now());
 
   if (spy_bytes_){
     switch(m->sstmac::hw::NetworkMessage::type()){
@@ -358,7 +360,7 @@ SimTransport::send(Message* m)
       break;
     }
   }
-#endif
+
   switch(m->sstmac::hw::NetworkMessage::type()){
     case sstmac::hw::NetworkMessage::payload:
       if (m->recver() == rank_){
@@ -447,9 +449,9 @@ SimTransport::allocateFlowId()
 void
 SimTransport::incomingMessage(Message *msg)
 {
-#if SSTMAC_COMM_SYNC_STATS
+#if SSTMAC_COMM_DELAY_STATS
   if (msg){
-    msg->get_payload()->setTimeArrived(wall_time());
+    msg->setTimeArrived(parent_app_->now());
   }
 #endif
 
@@ -465,6 +467,12 @@ SimTransport::incomingMessage(Message *msg)
     debug_printf(sprockit::dbg::sumi, "Dropping message without CQ: %s", msg->toString().c_str());
     delete msg;
   }
+}
+
+sstmac::GlobalTimestamp
+SimTransport::now() const
+{
+  return parent_app_->now();
 }
 
 CollectiveEngine::CollectiveEngine(SST::Params& params, Transport *tport) :
@@ -980,6 +988,82 @@ CollectiveEngine::blockUntilNext(int cq_id)
     "Rank %d, exiting collective progress on CQ %d", tport_->rank(), cq_id);
   return dmsg;
 }
+
+class NullQoSAnalysis : public QoSAnalysis
+{
+ public:
+  SST_ELI_REGISTER_DERIVED(
+    QoSAnalysis,
+    NullQoSAnalysis,
+    "macro",
+    "null",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "perform a QoS analyis based on pattern")
+
+  NullQoSAnalysis(SST::Params& params) :
+    QoSAnalysis(params)
+  {
+
+  }
+
+  int selectQoS(Message *m) override {
+    return 0;
+  }
+
+  void logDelay(sstmac::Timestamp delay, Message *m) override {
+
+  }
+
+};
+
+class PatternQoSAnalysis : public QoSAnalysis
+{
+ public:
+  SST_ELI_REGISTER_DERIVED(
+    QoSAnalysis,
+    PatternQoSAnalysis,
+    "macro",
+    "pattern",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "perform a QoS analyis based on pattern")
+
+  PatternQoSAnalysis(SST::Params& params) :
+    QoSAnalysis(params)
+  {
+    rtLatency_ = Timestamp(params.find<SST::UnitAlgebra>("rt_latency").getValue().toDouble());
+    eagerLatency_ = Timestamp(params.find<SST::UnitAlgebra>("eager_latency").getValue().toDouble());
+    rdmaLatency_ = Timestamp(params.find<SST::UnitAlgebra>("rdma_latency").getValue().toDouble());
+    byteDelay_ = Timestamp(params.find<SST::UnitAlgebra>("bandwidth").getValue().inverse().toDouble());
+    rdmaCutoff_ = params.find<SST::UnitAlgebra>("rdma_cutoff").getRoundedValue();
+  }
+
+  int selectQoS(Message *m) override {
+    return 0;
+  }
+
+  void logDelay(sstmac::Timestamp delay, Message *m) override {
+    sstmac::Timestamp acceptable_delay = allowedDelay_ + m->byteLength() * byteDelay_;
+    if (m->byteLength() > rdmaCutoff_){
+      acceptable_delay += rdmaLatency_ + 2*eagerLatency_ + 3*rtLatency_;
+    } else {
+      acceptable_delay += eagerLatency_ + rtLatency_;
+    }
+
+    printf("Message %12lu: %2u->%2u %8llu %10.4e %10.4e\n",
+       m->hash(), m->sender(), m->recver(), m->byteLength(),
+       delay.sec(), acceptable_delay.sec());
+
+  }
+
+ private:
+  uint32_t rdmaCutoff_;
+  sstmac::Timestamp eagerLatency_;
+  sstmac::Timestamp rdmaLatency_;
+  sstmac::Timestamp byteDelay_;
+  sstmac::Timestamp rtLatency_;
+  sstmac::Timestamp allowedDelay_;
+};
+
 
 
 }

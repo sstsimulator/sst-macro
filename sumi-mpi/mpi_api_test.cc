@@ -53,7 +53,7 @@ namespace sumi {
 bool
 MpiApi::test(MPI_Request *request, MPI_Status *status, int& tag, int& source)
 {
-  _start_mpi_call_(MPI_Test);
+  _StartMPICall_(MPI_Test);
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request, "MPI_Test(...)");
 
   if (*request == MPI_REQUEST_NULL){
@@ -84,7 +84,7 @@ MpiApi::test(MPI_Request *request, int *flag, MPI_Status *status)
   MPI_Request req_cpy = *request;
   auto start_clock = traceClock();
   int tag, source;
-  _start_mpi_call_(MPI_Test);
+  _StartMPICall_(MPI_Test);
   if (test(request, status, tag, source)){
     mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request, "MPI_Test(...)");
     *flag = 1;
@@ -116,7 +116,7 @@ MpiApi::testall(int count, MPI_Request array_of_requests[], int *flag, MPI_Statu
   std::vector<dumpi::OTF2_Writer::mpi_status_t> statuses(count);
 #endif
 
-  _start_mpi_call_(MPI_Testall);
+  _StartMPICall_(MPI_Testall);
   *flag = 1;
   bool ignore_status = array_of_statuses == MPI_STATUSES_IGNORE;
   for (int i=0; i < count; ++i){

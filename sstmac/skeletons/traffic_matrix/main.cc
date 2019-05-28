@@ -237,8 +237,6 @@ quiesce(sumi::Transport* tport,
   }
 }
 
-#define sstmac_app_name traffic_matrix
-
 int USER_MAIN(int argc, char** argv)
 {
   sumi::Transport* tport = sumi::Transport::get();

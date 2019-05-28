@@ -282,6 +282,8 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     sstCppFlags.append("-DSSTMAC_NO_REFACTOR_MAIN")
   if memoizing:
     sstCppFlags.append("-DSSTMAC_NO_REPLACEMENTS")
+  #always indicate that we are compiling an external skeleton app
+  sstCppFlags.append("-DSSTMAC_EXTERNAL")
 
   newLdFlags = []
   for entry in sstLdFlags:

@@ -52,6 +52,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/software/process/operating_system_fwd.h>
 #include <sstmac/common/sstmac_config.h>
+#include <sstmac/common/timestamp.h>
 #include <sumi/message.h>
 #include <sprockit/thread_safe_new.h>
 
@@ -90,12 +91,6 @@ class Message : public sstmac::hw::NetworkMessage
   Message(int sender, int recver, int send_cq, int recv_cq, class_t cls,
           Args&&... args) :
    sstmac::hw::NetworkMessage(std::forward<Args>(args)...),
-#if SSTMAC_COMM_SYNC_STATS
-    sent_(-1),
-    header_arrived_(-1),
-    payload_arrived_(-1),
-    synced_(-1),
-#endif
     class_(cls),
     sender_(sender),
     recver_(recver),
@@ -208,6 +203,8 @@ class Message : public sstmac::hw::NetworkMessage
     recv_cq_ = cq;
   }
 
+  size_t hash() const;
+
  protected:
   //void clone_into(message* cln) const;
   Message(){} //for serialization only
@@ -220,52 +217,61 @@ class Message : public sstmac::hw::NetworkMessage
   int send_cq_;
   int recv_cq_;
 
-#if SSTMAC_COMM_SYNC_STATS
+#if SSTMAC_COMM_DELAY_STATS
  public:
-  double timeSent() const {
+  sstmac::GlobalTimestamp timeSent() const {
     return sent_;
   }
 
-  double timeHeaderArrived() const {
-    return header_arrived_;
+  sstmac::GlobalTimestamp timeArrived() const {
+    return arrived_;
   }
 
-  double timePayloadArrived() const {
-    return payload_arrived_;
+  void setTimeSent(sstmac::GlobalTimestamp now){
+    sent_ = now;
   }
 
-  double timeSynced() const {
-    return synced_;
-  }
-
-  void setTimeSent(double now){
-    if (sent_ < 0){
-      //if already set, don't overwrite
-      sent_ = now;
-    }
-  }
-
-  void setTimeArrived(double now){
-    if (header_arrived_ < 0){
-      header_arrived_ = now;
-    } else {
-      payload_arrived_ = now;
-    }
-  }
-
-  void setTimeSynced(double now){
-    synced_ = now;
+  void setTimeArrived(sstmac::GlobalTimestamp now){
+    arrived_ = now;
   }
 
  private:
-  double sent_;
+  sstmac::GlobalTimestamp sent_;
 
-  double header_arrived_;
-
-  double payload_arrived_;
-
-  double synced_;
+  sstmac::GlobalTimestamp arrived_;
 #endif
+
+#if SSTMAC_COMM_SYNC_STATS
+ public:
+  sstmac::GlobalTimestamp timeStarted() const {
+    return started_;
+  }
+
+  sstmac::GlobalTimestamp timeSynced() const {
+    return synced_;
+  }
+
+  sstmac::GlobalTimestamp timeSyncArrived() const {
+    return sync_arrived_;
+  }
+
+  void setTimeStarted(sstmac::GlobalTimestamp now){
+    started_ = now;
+  }
+
+  void setTimeSynced(sstmac::GlobalTimestamp now){
+    synced_ = now;
+    sync_arrived_ = arrived_;
+  }
+
+ private:
+  sstmac::GlobalTimestamp started_;
+
+  sstmac::GlobalTimestamp synced_;
+
+  sstmac::GlobalTimestamp sync_arrived_;
+#endif
+
 };
 
 class ProtocolMessage : public Message {

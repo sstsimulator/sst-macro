@@ -5,6 +5,36 @@ import sst.macro
 
 smallLatency = "1ps"
 
+def getParam(params, paramName, paramNS=None):
+  if not params.has_key(paramName):
+    import sys
+    if paramNs:
+      sys.stderr.write("Missing parameter '%s' in namespace '%s'\n" % (paramName, paramNS))
+    else:
+      sys.stderr.write("Missing parameter '%s'\n" % (paramName, paramNS))
+    raise Exception("failed configuring SST/macro")
+  return params[paramName]
+
+def getParamNamespace(params, ns, parentNs=None):
+  if not params.has_key(ns):
+    import sys
+    if parentNs:
+      sys.stderr.write("Missing parameter namespace '%s' in namespace '%s'\n" % (ns, parentNS))
+    else:
+      sys.stderr.write("Missing parameter namespace '%s'\n" % (ns))
+    raise Exception("failed configuring SST/macro")
+  return params[ns]
+
+def getNestedParamNamespace(params, *xargs):
+  nestedNs = ""
+  nextParams = params
+  for entry in xargs:
+    if not nextParams.has_key(entry):
+      sys.stderr.write("Missing parameter namespace %s in params %s\n" % (entry, nestedNs))
+      raise Exception("failed configuring SST/macro")
+    nextParams = nextParams[entry]
+    nestedNs += "%s." % entry
+  return nextParams
 
 def makeUniLink(linkType,srcComp,srcId,srcPort,dstComp,dstId,dstPort,outLat=None,inLat=None):
   if not outLat: outLat = inLat
@@ -88,8 +118,10 @@ class Interconnect:
     return self.num_switches
 
   def defaultEpFxn(self, nodeID):
-    nodeParams = self.params["node"]
-    compName = nodeParams["name"].lower() + "_node"
+    nodeParams = getParamNamespace(self.params, "node")
+    compName = getParam(nodeParams, "name", "node").lower()
+    if not compName.endswith("_node"):
+      compName += "_node"
     node = sst.Component("Node %d" % nodeID, "macro.%s" % compName)
     node.addParams(macroToCoreParams(nodeParams))
     node.addParam("id", nodeID)
@@ -97,8 +129,10 @@ class Interconnect:
 
   def buildSwitches(self):
     for i in range(self.num_switches):
-      switchParams = self.params["switch"]
-      compName = switchParams["name"].lower() + "_switch"
+      switchParams = getParamNamespace(self.params, "switch")
+      compName = getParam(switchParams, "name", "switch").lower()
+      if not compName.endswith("_switch"):
+        compName += "_switch"
       switch = sst.Component("Switch %d" % i, "macro.%s" % compName)
       switch.addParams(macroToCoreParams(switchParams))
       switch.addParam("id", i)
@@ -135,9 +169,9 @@ class Interconnect:
     return num
 
   def connectSwitches(self):
-    switchParams = self.params["switch"]
+    switchParams = getParamNamespace(self.params, "switch")
     for i in range(self.num_switches):
-      linkParams = switchParams["link"]
+      linkParams = getParamNamespace(switchParams, "link", "switch")
       connections = self.system.switchConnections(i)
       srcSwitch, params = self.switches[i]
       lat = self.latency(linkParams)
@@ -149,10 +183,8 @@ class Interconnect:
 
   def connectEndpoints(self):
     lat = ""
-    if self.params.has_key("injection_latency"):
-      lat = self.params["injection_latency"]
-    else:
-      lat = self.params["node"]["nic"]["injection"]["latency"]
+    latNs = getNestedParamNamespace(self.params,"node","nic","injection")
+    lat = getParam(latNs, "latency")
 
     for swId in range(self.num_switches):
       connections = self.system.injectionConnections(swId)
@@ -228,8 +260,8 @@ def readCmdLineParams():
   return sst.macro.readParams(sys.argv)
 
 def setupDeprecatedParams(params, debugList=[]):
-  nodeParams = params["node"]
-  swParams = params["switch"]
+  nodeParams = getParamNamespace(params, "node")
+  swParams = getParamNamespace(params, "switch")
 
   builtinApps = [
     "apitest",
@@ -240,6 +272,7 @@ def setupDeprecatedParams(params, debugList=[]):
     "mpi_print_nodes",
     "mpi_topology",
     "parsedumpi",
+    "parseotf2",
     "sstmac_mpi_testall",
     "traffic_matrix",
     "UserAppCxxEmptyMain",
@@ -258,11 +291,12 @@ def setupDeprecatedParams(params, debugList=[]):
       del params[ns]
 
   icParams = {}
-  icParams["topology"] = params["topology"]
+  topParams = getParamNamespace(params,"topology")
+  icParams["topology"] = topParams
   nodeParams["interconnect"] = icParams
   if debugList:
     nodeParams["debug"] = "[" + ",".join(debugList) + "]"
-  swParams["topology"] = params["topology"]
+  swParams["topology"] = topParams
 
   #move every param in the global namespace 
   #into the individal namespaces

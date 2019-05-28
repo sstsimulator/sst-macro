@@ -5,12 +5,12 @@ SAVE_CPPFLAGS="$CPPFLAGS"
 SAVE_LDFLAGS="$LDFLAGS"
 SAVE_LIBS="$LIBS"
 
-AC_ARG_ENABLE(otf2,
+AC_ARG_WITH(otf2,
   [AS_HELP_STRING(
-    [--(dis|en)able-otf2],
-    [Enable otf2 supported trace replay],
+    [--with-otf2],
+    [Enable OTF2 features by specificying OTF2 installation],
     )],
-  [ enable_otf2=$enableval ], 
+  [ enable_otf2=$withval ], 
   [ enable_otf2=no ]
 )
 SHOULD_HAVE_OTF2=no
@@ -36,7 +36,7 @@ AC_CHECK_HEADER([otf2/otf2.h],
 )
 
 if test "X$SHOULD_HAVE_OTF2" = "Xyes" -a "X$HAVE_OTF2" != "Xyes"; then
-  AC_MSG_ERROR([OTF2 libraries required by --enable-otf2 not found])
+  AC_MSG_ERROR([OTF2 libraries required by --with-otf2 not found])
 fi
 
 AM_CONDITIONAL([HAVE_OTF2], [test "x$HAVE_OTF2" = "xyes" -a "X$enable_otf2" != "X$no"])

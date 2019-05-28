@@ -784,6 +784,16 @@ class MpiApi : public sumi::SimTransport
 
   void addImmediateCollective(CollectiveOpBase::ptr&& op, MPI_Request* req);
 
+  void finishCurrentMpiCall();
+
+  void setNewMpiCall(MPI_function func){
+#if SSTMAC_COMM_SYNC_STATS
+    current_call_.ID = func;
+    current_call_.start = last_collection_ = now();
+    //update this to at least the beginning of this function
+#endif
+  }
+
   bool test(MPI_Request *request, MPI_Status *status, int& tag, int& source);
 
   int typeSize(MPI_Datatype type){
@@ -856,34 +866,18 @@ class MpiApi : public sumi::SimTransport
   OTF2Writer* OTF2Writer_;
 #endif
 
-#if SSTMAC_COMM_SYNC_STATS
+#if SSTMAC_COMM_DELAY_STATS
  public:
-  void collectSyncDelays(double wait_start, message* msg) override;
+  void logMessageDelay(sstmac::GlobalTimestamp wait_start, Message* msg) override;
 
-  void startCollectiveSyncDelays() override;
-
- private:
-  void setNewMpiCall(MPI_function func){
-    current_call_.ID = func;
-    current_call_.sync = sstmac::timestamp();
-    current_call_.start = now();
-  }
-
-  void finishLastMpiCall(MPI_function func, bool dumpThis = true);
+  void startCollectiveMessageLog() override;
 
  private:
-  double last_collection_;
+  sstmac::GlobalTimestamp last_collection_;
+#endif
 
-  bool dump_comm_times_;
-
+#if SSTMAC_COMM_SYNC_STATS
   MPI_Call current_call_;
-
-  struct mpi_sync_timing_stats {
-    sstmac::timestamp nonSync;
-    sstmac::timestamp sync;
-  };
-
-  std::map<MPI_function, mpi_sync_timing_stats> mpi_calls_;
 #endif
 
 };
@@ -892,27 +886,19 @@ MpiApi* sstmac_mpi();
 
 }
 
-#define _start_mpi_call_(fxn) \
-  SSTMACBacktrace(fxn); \
+#define _StartMPICall_(fxn) \
+  CallGraphAppend(fxn); \
   sstmac::sw::FTQScope scope(activeThread(), mpi_tag); \
   startAPICall()
 
-#if SSTMAC_COMM_SYNC_STATS
-  #define start_mpi_call(fxn) \
-    _start_mpi_call_(fxn); \
-    setNewMpiCall(Call_ID_##fxn)
-  #define finish_mpi_call(fxn) \
-    mpi_api_debug(sprockit::dbg::mpi, #fxn " finished"); \
-    finishLastMpiCall(Call_ID_##fxn); \
-    endAPICall()
-#else
-  #define start_mpi_call(fxn) _start_mpi_call_(fxn)
-  #define start_wait_call(fxn,...) _start_mpi_call_(fxn)
-  #define finish_mpi_call(fxn) \
-    mpi_api_debug(sprockit::dbg::mpi, #fxn " finished"); \
-    endAPICall()
-  #define finish_Impi_call(fxn) endAPICall()
-#endif
+
+#define StartMPICall(fxn) \
+  _StartMPICall_(fxn); \
+  setNewMpiCall(Call_ID_##fxn)
+#define FinishMPICall(fxn) \
+  mpi_api_debug(sprockit::dbg::mpi, #fxn " finished"); \
+  finishCurrentMpiCall(); \
+  endAPICall()
 
 #define mpi_api_debug(flags, ...) \
   mpi_debug(commWorld()->rank(), flags, __VA_ARGS__)

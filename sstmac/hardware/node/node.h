@@ -126,6 +126,8 @@ class Node : public ConnectableComponent
   */
   virtual std::string toString() const override;
 
+  std::string hostname() const;
+
   /**
    @return  A unique integer identifier
   */

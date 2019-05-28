@@ -42,24 +42,53 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef sprockit_common_custom_new_h
-#define sprockit_common_custom_new_h
-#ifdef __cplusplus
+#ifndef sstmac_common_STAT_HISTOGRAM_H
+#define sstmac_common_STAT_HISTOGRAM_H
 
-#include <cstring>
-#include <new>
-#include <sprockit/sim_parameters_fwd.h>
+#include <sstmac/common/stats/stat_collector.h>
+#include <sprockit/sim_parameters.h>
+#include <vector>
+#include <cmath>
 
-namespace sprockit {
+namespace sstmac {
 
-void sprockit_init_cxx_heap(sprockit::SimParametersPtr);
+template <class T>
+class StatAccumulator : public Statistic<T> {
+ public:
+  SST_ELI_DECLARE_STATISTIC_TEMPLATE(
+      StatAccumulator,
+      "macro",
+      "accumulator",
+      SST_ELI_ELEMENT_VERSION(1,0,0),
+      "a histogram",
+      "Statistic<T>")
 
-void sprockit_finalize_cxx_heap();
 
-void sprockit_init_allocator_chunks();
+  StatAccumulator(SST::BaseComponent* comp, const std::string& name,
+                  const std::string& subName, SST::Params& params) :
+      Statistic<T>(comp, name, subName, params),
+      total_(0)
+  {
+  }
+
+  void addData_impl(T value) override {
+    total_ += value;
+  }
+
+  void registerOutputFields(SST::Statistics::StatisticOutput* statOutput) override {
+    field_ = statOutput->registerField<T>("total");
+  }
+
+  void outputStatisticData(SST::Statistics::StatisticOutput* statOutput, bool EndOfSimFlag) override {
+    statOutput->outputField(field_, total_);
+  }
+
+ private:
+  T total_;
+  SST::Statistics::StatisticOutput::fieldHandle_t field_;
+
+};
 
 }
 
-
-#endif
-#endif
+#endif // STAT_HISTOGRAM_H

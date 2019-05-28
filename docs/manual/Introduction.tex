@@ -79,7 +79,7 @@ if (rank == 0){
 \end{CppCode}
 
 This is exactly the functionality that SST/macro provides.
-Instead of using \inlineshell{mpic++}, you compile the code with {sst++}.
+Instead of using \inlineshell{mpic++}, you compile the code with \inlineshell{sst++}.
 This modifies your code and intercepts MPI calls, running them through the simulator instead of an actual MPI implementation.
 Your code will execute and run exactly the same, and your application won't even know the difference.
 You now need a parameter file with information like:

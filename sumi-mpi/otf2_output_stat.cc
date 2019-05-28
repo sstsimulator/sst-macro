@@ -19,7 +19,6 @@ OTF2Writer::OTF2Writer(SST::BaseComponent* parent, const std::string& name,
   min_time_(std::numeric_limits<uint64_t>::max()),
   max_time_(std::numeric_limits<uint64_t>::min())
 {
-  fileroot_ = params.find<std::string>("fileroot");
 }
 
 void
@@ -29,11 +28,13 @@ OTF2Writer::init(uint64_t start, uint64_t stop, int rank, int size)
   size_ = size;
   writer_.set_verbosity(dumpi::OWV_WARN);
 
+  std::string fileroot = groupName();
+
   writer_.register_comm_world(MPI_COMM_WORLD, size, rank);
   writer_.register_comm_self(MPI_COMM_SELF);
   writer_.register_comm_null(MPI_COMM_NULL);
   writer_.register_null_request(MPI_REQUEST_NULL);
-  writer_.open_archive(fileroot_);
+  writer_.open_archive(fileroot);
   writer_.set_clock_resolution(sstmac::Timestamp(1.0).ticks());
   writer_.generic_call(start, stop, "MPI_Init");
 

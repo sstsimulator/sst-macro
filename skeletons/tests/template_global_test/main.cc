@@ -48,9 +48,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <skeleton.h>
 #include <iostream>
 
-#define sstmac_app_name template_global
-
-
 template <class T>
 void fxn(T check){
   static T t = 0;

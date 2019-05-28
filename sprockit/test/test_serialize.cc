@@ -102,11 +102,12 @@ test_serialize_array(UnitTest& unit)
   ser.start_unpacking(buf, bufsize);
   ser & array(test_array, test_size);
   std::vector<int> test(test_array, test_array + test_size);
+  delete[] test_array;
 
   assertEqual(unit, "array size", test_size, correct_size);
   assertEqual(unit, "test arrays", test, correct);
 
-  void* test_buffer;
+  int* test_buffer;
   ser & array(test_buffer, test_size);
   test_size /= sizeof(int)/sizeof(char);
   test_array = (int*) test_buffer;
@@ -114,6 +115,8 @@ test_serialize_array(UnitTest& unit)
 
   assertEqual(unit, "buffer size", test_size, correct_size);
   assertEqual(unit, "test buffers", buftest, correct);
+
+  delete[] test_buffer;
 }
 
 void overpack_buffer()
@@ -177,6 +180,8 @@ void test_serialize_map(UnitTest& unit)
     assertEqual(unit, "map key", itin->first, itout->first);
     assertEqual(unit, "map value", itin->second, itout->second);
   }
+
+  delete[] buffer;
 }
 
 template <class Container>
@@ -216,6 +221,8 @@ void test_serialize_container(UnitTest& unit)
   for (itin=input.begin(), itout=output.begin(); itin != end; ++itin, ++itout){
     assertEqual(unit, "list value", *itout, *itin);
   }
+
+  delete[] buffer;
 }
 
 class Base : public serializable
@@ -266,6 +273,8 @@ test_serializable(UnitTest& unit)
 
   assertEqual(unit, "serialized class name", output->name(), std::string("A"));
   assertEqual(unit, "serialized class member", output->x(), input->x());
+  delete input;
+  delete output;
 
   input = new B;
   ser.start_packing(buffer, sizeof(buffer));
@@ -276,6 +285,9 @@ test_serializable(UnitTest& unit)
 
   assertEqual(unit, "serialized class name", output->name(), std::string("B"));
   assertEqual(unit, "serialized class member", output->x(), input->x());
+
+  delete input;
+  delete output;
 }
 
 int 

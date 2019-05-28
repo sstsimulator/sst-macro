@@ -81,22 +81,28 @@ PiscesBuffer::setOutput(int this_outport, int dst_inport, EventLink::ptr&& link,
   }
 }
 
-PiscesBuffer::PiscesBuffer(const std::string& selfname,
+PiscesBuffer::PiscesBuffer(SST::Params& params, const std::string& selfname, uint32_t id,
                            const std::string& arb, double bw, int packet_size,
                            SST::Component* parent, int num_vc)
-  : PiscesSender(selfname, parent, false/*buffers do not update vc*/),
+  : PiscesSender(selfname, id, parent, false/*buffers do not update vc*/),
     bytes_delayed_(0),
     num_vc_(num_vc),
     queues_(num_vc),
     credits_(num_vc, 0),
     initial_credits_(num_vc,0),
     packet_size_(packet_size),
-    xmit_wait_(nullptr)
+    xmit_wait_(nullptr),
+    xmit_bytes_(nullptr)
 {
   arb_ = sprockit::create<PiscesBandwidthArbitrator>(
         "macro", arb, bw);
 
-  xmit_wait_ = getTrueComponent()->registerStatistic<double>("xmit_wait", selfname);
+  if (packet_size_ == 0){
+    spkt_abort_printf("In buffer %s, got zero packet size", selfname.c_str());
+  }
+
+  xmit_wait_ = parent->registerStatistic<double>(params, "xmit_wait", selfname);
+  xmit_bytes_ = parent->registerStatistic<uint64_t>(params, "xmit_bytes", selfname);
 }
 
 void
@@ -152,6 +158,7 @@ PiscesBuffer::handleCredit(Event* ev)
     //this actually doesn't create any new delay
     //this message was already queued so num_bytes
     //was already added to bytes_delayed
+    xmit_bytes_->addData(payload->byteLength());
     last_tail_left_ = send(arb_, payload, input_, output_);
     payload = queues_[vc].pop(num_credits);
   }
@@ -184,6 +191,7 @@ PiscesBuffer::handlePayload(Event* ev)
   bytes_delayed_ += pkt->numBytes();
   if (num_credits >= pkt->numBytes()) {
     num_credits -= pkt->numBytes();
+    xmit_bytes_->addData(pkt->byteLength());
     last_tail_left_ = send(arb_, pkt, input_, output_);
   } else {
 #if SSTMAC_SANITY_CHECK
@@ -205,6 +213,7 @@ PiscesBuffer::sendPayload(PiscesPacket *pkt)
   // either way there's a delay accumulating for other messages
   bytes_delayed_ += pkt->numBytes();
   num_credits -= pkt->numBytes();
+  xmit_bytes_->addData(pkt->byteLength());
   last_tail_left_ = send(arb_, pkt, input_, output_);
   return last_tail_left_;
 }

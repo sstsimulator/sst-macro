@@ -52,8 +52,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <errno.h>
 #include <math.h>
 #include <signal.h>
-#include <sprockit/malloc.h>
-#include <sprockit/spkt_new.h>
 #include <sprockit/output.h>
 #include <sprockit/util.h>
 #include <sprockit/basic_string_tokenizer.h>

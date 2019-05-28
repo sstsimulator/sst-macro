@@ -137,6 +137,8 @@ MpiQueue::init()
   if (cmsg->tag() != 0){
     spkt_abort_printf("got bad collective done message in mpi_queue::init");
   }
+  delete cmsg;
+
   if (!init.all_equal){
     spkt_abort_printf("MPI_Init: procs did not agree on completion queue ids");
   }
@@ -241,10 +243,14 @@ MpiQueue::recv(MpiRequest* key, int count,
 }
 
 void
-MpiQueue::finalizeRecv(MpiMessage* msg,
-                         MpiQueueRecvRequest* req)
+MpiQueue::finalizeRecv(MpiMessage* msg, MpiQueueRecvRequest* req)
 {
   req->key_->complete(msg);
+#if SSTMAC_COMM_DELAY_STATS
+  if (req->key_->activeWait()){
+    api_->logMessageDelay(req->key_->waitStart(), msg);
+  }
+#endif
   if (req->recv_buffer_ != req->final_buffer_){
     req->type_->unpack_recv(req->recv_buffer_, req->final_buffer_, msg->count());
     delete[] req->recv_buffer_;
@@ -446,7 +452,6 @@ MpiQueue::progressLoop(MpiRequest* req)
 
   mpi_queue_debug("entering progress loop");
 
-  //SSTMACBacktrace(MPIQueuePoll);
   sstmac::GlobalTimestamp wait_start = api_->now();
   while (!req->isComplete()) {
     mpi_queue_debug("blocking on progress loop");
@@ -454,12 +459,10 @@ MpiQueue::progressLoop(MpiRequest* req)
     if (!msg){
       spkt_abort_printf("polling returned null message");
     }
-    incomingMessage(msg);
-#if SSTMAC_COMM_SYNC_STATS
-    if (req->isComplete()){
-      api_->collectSyncDelays(wait_start.sec(), msg);
-    }
+#if SSTMAC_COMM_DELAY_STATS
+    req->setWaitStart(wait_start);
 #endif
+    incomingMessage(msg);
   }
 
   mpi_queue_debug("finishing progress loop");
@@ -524,7 +527,7 @@ MpiQueue::memcopy(uint64_t bytes)
 void
 MpiQueue::bufferUnexpected(MpiMessage* msg)
 {
-  SSTMACBacktrace(MPIQueueBufferUnexpectedMessage);
+  CallGraphAppend(MPIQueueBufferUnexpectedMessage);
   api_->memcopy(msg->payloadBytes());
 }
 

@@ -46,8 +46,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <stdio.h>
 #include <sys/time.h>
 
-#define sstmac_app_name runopenmp
-
 double get_time()
 {
   timeval t_st;

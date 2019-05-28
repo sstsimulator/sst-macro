@@ -50,6 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/common/event_manager.h>
 #include <sstmac/common/event_callback.h>
+#include <sstmac/common/stats/stat_spyplot.h>
 #include <sstmac/hardware/memory/memory_model.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <sprockit/statics.h>
@@ -82,47 +83,28 @@ NicEvent::serialize_order(serializer &ser)
   ser & msg_;
 }
 
-NIC::NIC(SST::Params& params, Node* parent) :
-  spy_num_messages_(nullptr),
+NIC::NIC(SST::Component* parent, SST::Params& params) :
   spy_bytes_(nullptr),
-  msg_sizes_(nullptr),
-  parent_(parent),
-  my_addr_(parent->addr()),
+  xmit_flows_(nullptr),
+  parent_(safe_cast(Node, parent)), //better be a node
+  my_addr_(parent_->addr()),
   logp_link_(nullptr),
-  os_(parent->os()),
-  queue_(parent->os()),
+  os_(parent_->os()),
+  queue_(parent_->os()),
   ConnectableSubcomponent("nic", parent) //no self events with NIC
 {
   negligibleSize_ = params.find<int>("negligible_size", DEFAULT_NEGLIGIBLE_SIZE);
   top_ = Topology::staticTopology(params);
 
-  /** TODO stats
-  spy_num_messages_ = optionalStats<StatSpyplot>(parent,
-        params, "traffic_matrix", "ascii", "num_messages");
-  spy_bytes_ = optionalStats<StatSpyplot>(parent,
-        params, "traffic_matrix", "ascii", "bytes");
-  local_bytes_sent_ = optionalStats<StatLocalInt>(parent,
-        params, "local_bytes_sent", "local_int");
-  global_bytes_sent_ = optionalStats<StatGlobalInt>(parent,
-        params, "global_bytes_sent", "global_int");
-  //global_bytes_sent_->setLabel("NIC Total Bytes Sent");
-  hist_msg_size_ = optionalStats<StatHistogram>(parent,
-        params, "message_size_histogram", "histogram");
-  */
+  std::string subname = sprockit::printf("NIC.%d", my_addr_);
+  auto* spy = parent->registerMultiStatistic<int,int,uint64_t>(params, "spy_bytes", subname);
+  spy_bytes_ = dynamic_cast<StatSpyplot<int,int,uint64_t>*>(spy);
+
+  xmit_flows_ = parent->registerStatistic<uint64_t>(params, "xmit_flows", subname);
 }
 
 NIC::~NIC()
 {
-  //if (node_handler_) delete node_handler_;
-  //if (event_mtlHandler_) delete event_mtlHandler_;
-  //if (spy_bytes_) delete spy_bytes_;
-  //if (spy_num_messages_) delete spy_num_messages_;
-  //if (local_bytes_sent_) delete local_bytes_sent_;
-  //if (global_bytes_sent_) delete global_bytes_sent_;
-  //if (hist_msg_size_) delete hist_msg_size_;
-#if !SSTMAC_INTEGRATED_SST_CORE
-  //delete link_mtlHandler_;
-#endif
 }
 
 EventHandler*
@@ -264,7 +246,7 @@ void
 NIC::finishMemcpy(NetworkMessage* payload)
 {
   ackSend(payload);
-  payload->intranode_memmove();
+  payload->intranodeMemmove();
   sendToNode(payload);
 }
 
@@ -284,17 +266,10 @@ NIC::recordMessage(NetworkMessage* netmsg)
     netmsg->setType(NetworkMessage::payload);
   }
 
-  if (spy_num_messages_) {
-    //spy_num_messages_->addData(netmsg->fromaddr(), netmsg->toaddr(), 1);
+  if (spy_bytes_){
+    spy_bytes_->addData(netmsg->fromaddr(), netmsg->toaddr(), netmsg->byteLength());
   }
-
-  if (spy_bytes_) {
-    //spy_bytes_->addData(netmsg->fromaddr(), netmsg->toaddr(), netmsg->byteLength());
-  }
-
-  if (msg_sizes_) {
-    //msg_sizes_->addData(netmsg->byteLength());
-  }
+  xmit_flows_->addData(netmsg->byteLength());
 }
 
 void

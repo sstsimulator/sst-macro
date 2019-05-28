@@ -140,6 +140,8 @@ EventManager::~EventManager()
     for (auto* stat : grp->stats){
       if (stat) delete stat;
     }
+    delete grp->output;
+    delete grp;
   }
 }
 
@@ -210,10 +212,10 @@ EventManager::serializeSchedule(char* buf)
 void
 EventManager::registerStatisticCore(StatisticBase* base, SST::Params& params)
 {
-  StatisticGroup* grp = stat_groups_[base->group()];
+  StatisticGroup* grp = stat_groups_[base->groupName()];
   if (!grp){
-    grp = new StatisticGroup(base->group());
-    stat_groups_[base->group()] = grp;
+    grp = new StatisticGroup(base->groupName());
+    stat_groups_[base->groupName()] = grp;
   }
 
   if (grp->outputName.empty()){
@@ -221,7 +223,7 @@ EventManager::registerStatisticCore(StatisticBase* base, SST::Params& params)
     grp->outputName = base->output();
   } else if (grp->outputName != base->output()){
     spkt_abort_printf("group %s requested output name %s does not match previously requested %s",
-                      base->group().c_str(), grp->outputName.c_str(), base->output().c_str());
+                      base->groupName().c_str(), grp->outputName.c_str(), base->output().c_str());
   }
 
   if (!grp->output){
@@ -229,19 +231,14 @@ EventManager::registerStatisticCore(StatisticBase* base, SST::Params& params)
   }
 
   grp->stats.push_back(base);
+
+  base->setGroup(grp);
+  grp->output->registerStatistic(base);
 }
 
 void
 EventManager::finalizeStatsInit()
 {
-  for (auto& pair : stat_groups_){
-    StatisticGroup* grp = pair.second;
-    grp->output->startRegisterGroup(grp);
-    for (auto* stat : grp->stats){
-      grp->output->registerStatistic(stat);
-    }
-    grp->output->stopRegisterGroup();
-  }
 }
 
 void

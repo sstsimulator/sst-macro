@@ -47,7 +47,15 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #define SSTPP_QUOTE(name) #name
 #define SSTPP_STR(name) SSTPP_QUOTE(name)
+
+#if SSTMAC_EXTERNAL
+#define SST_APP_NAME_QUOTED __FILE__ __DATE__
+#define SST_DEFINE_EXE_NAME extern "C" const char exe_main_name[] = SST_APP_NAME_QUOTED;
+#else
 #define SST_APP_NAME_QUOTED SSTPP_STR(sstmac_app_name)
+#define SST_DEFINE_EXE_NAME
+#endif
+
 #define ELI_NAME(app) app##_eli
 typedef int (*main_fxn)(int,char**);
 typedef int (*empty_main_fxn)();
@@ -195,11 +203,12 @@ static void* nullptr = 0;
  typedef int (*this_file_main_fxn)(__VA_ARGS__); \
  int userSkeletonMainInitFxn(const char* name, this_file_main_fxn fxn); \
  static int userSkeletonMain(__VA_ARGS__); \
+ SST_DEFINE_EXE_NAME \
  static int dont_ignore_this = \
   userSkeletonMainInitFxn(SST_APP_NAME_QUOTED, userSkeletonMain); \
  static int userSkeletonMain(__VA_ARGS__)
 #else
-#define main sstmac_ignore_for_app_name(); static const char* sstmac_appname_str = SST_APP_NAME_QUOTED; int main
+#define main sstmac_ignore_for_app_name(); int main
 #endif
 
 

@@ -45,8 +45,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <mpi.h>
 #include <stddef.h>
 
-#define sstmac_app_name allgather_test
-
 int main(int argc, char** argv)
 {
   MPI_Init(&argc, &argv);

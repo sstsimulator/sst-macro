@@ -64,9 +64,9 @@ RendezvousGet::~RendezvousGet()
 }
 
 void*
-RendezvousGet::configure_send_buffer(int count, void *buffer, MpiType* type)
+RendezvousGet::configureSendBuffer(int count, void *buffer, MpiType* type)
 {
-  SSTMACBacktrace(MPIRendezvousProtocol_RDMA_Configure_Buffer);
+  CallGraphAppend(MPIRendezvousProtocol_RDMA_Configure_Buffer);
   mpi_->pinRdma(count*type->packed_size());
 
   if (isNonNullBuffer(buffer)){
@@ -84,24 +84,27 @@ void
 RendezvousGet::start(void* buffer, int src_rank, int dst_rank, sstmac::sw::TaskId tid, int count, MpiType* type,
                       int tag, MPI_Comm comm, int seq_id, MpiRequest* req)
 {
-  void* send_buf = configure_send_buffer(count, buffer, type);
-  uint64_t flow_id = mpi_->smsgSend<MpiMessage>(tid, 64/*fixed size, not sizeof()*/, nullptr,
-                             sumi::Message::no_ack, queue_->pt2ptCqId(), sumi::Message::pt2pt,
-                             src_rank, dst_rank, type->id,  tag, comm, seq_id,
-                             count, type->packed_size(), send_buf, RENDEZVOUS_GET);
+  void* send_buf = configureSendBuffer(count, buffer, type);
+  auto* msg = mpi_->smsgSend<MpiMessage>(tid, 64/*fixed size, not sizeof()*/, nullptr,
+                           sumi::Message::no_ack, queue_->pt2ptCqId(), sumi::Message::pt2pt,
+                           src_rank, dst_rank, type->id,  tag, comm, seq_id,
+                           count, type->packed_size(), send_buf, RENDEZVOUS_GET);
+#if SSTMAC_COMM_SYNC_STATS
+  msg->setTimeStarted(mpi_->now());
+#endif
   send_flows_.emplace(std::piecewise_construct,
-                      std::forward_as_tuple(flow_id),
+                      std::forward_as_tuple(msg->flowId()),
                       std::forward_as_tuple(req, buffer, send_buf));
 }
 
 void
-RendezvousGet::incoming_ack(MpiMessage *msg)
+RendezvousGet::incomingAck(MpiMessage *msg)
 {
   mpi_queue_protocol_debug("RDMA get incoming ack %s", msg->toString().c_str());
   auto iter = send_flows_.find(msg->flowId());
   if (iter == send_flows_.end()){
     spkt_abort_printf("could not find matching ack for %s", msg->toString().c_str());
-    incoming_header(msg);
+    incomingHeader(msg);
   }
 
   auto& s = iter->second;
@@ -110,7 +113,13 @@ RendezvousGet::incoming_ack(MpiMessage *msg)
     delete[] (char*) s.temporary;
   }
   s.req->complete();
+#if SSTMAC_COMM_DELAY_STATS
+  if (s.req->activeWait()){
+    mpi_->logMessageDelay(s.req->waitStart(), msg);
+  }
+#endif
   send_flows_.erase(iter);
+  delete msg;
 }
 
 void
@@ -120,17 +129,17 @@ RendezvousGet::incoming(MpiMessage* msg)
   switch(msg->sstmac::hw::NetworkMessage::type()){
   case sstmac::hw::NetworkMessage::payload: {
     if (msg->stage() == 0){
-      incoming_header(msg);
+      incomingHeader(msg);
     } else {
-      incoming_ack(msg);
+      incomingAck(msg);
     }
     break;
   }
   case sstmac::hw::NetworkMessage::rdma_get_payload:
-    incoming_payload(msg);
+    incomingPayload(msg);
     break;
   case sstmac::hw::NetworkMessage::rdma_get_sent_ack: {
-    incoming_ack(msg);
+    incomingAck(msg);
     break;
   }
   default:
@@ -140,10 +149,10 @@ RendezvousGet::incoming(MpiMessage* msg)
 }
 
 void
-RendezvousGet::incoming_header(MpiMessage* msg)
+RendezvousGet::incomingHeader(MpiMessage* msg)
 {
   mpi_queue_protocol_debug("RDMA get incoming header %s", msg->toString().c_str());
-  SSTMACBacktrace(MPIRendezvousProtocol_RDMA_Handle_Header);
+  CallGraphAppend(MPIRendezvousProtocol_RDMA_Handle_Header);
   MpiQueueRecvRequest* req = queue_->findMatchingRecv(msg);
   if (req) incoming(msg, req);
 
@@ -156,7 +165,7 @@ RendezvousGet::incoming(MpiMessage *msg, MpiQueueRecvRequest* req)
   mpi_queue_protocol_debug("RDMA get matched payload %s", msg->toString().c_str());
 #if SSTMAC_COMM_SYNC_STATS
   //this is a bit of a hack
-  msg->setTimeSynced(queue->now());
+  msg->setTimeSynced(mpi_->now());
 #endif
   mpi_->pinRdma(msg->payloadBytes());
   mpi_queue_action_debug(
@@ -172,7 +181,7 @@ RendezvousGet::incoming(MpiMessage *msg, MpiQueueRecvRequest* req)
 }
 
 void
-RendezvousGet::incoming_payload(MpiMessage* msg)
+RendezvousGet::incomingPayload(MpiMessage* msg)
 {
   auto iter = recv_flows_.find(msg->flowId());
   if (iter == recv_flows_.end()){

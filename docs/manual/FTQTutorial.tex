@@ -34,15 +34,27 @@ optional arguments:
 \end{ShellCmd}
 
 Generating the histogram requires matplotlib, and visualizing the histogram interactively with \inlineshell{--show} requires a screen or X11 forwarding.
-FTQ aggregates tags into tunable time "epocs".
-An epoc states the ratio of each tag represented at a point in time.
-Larger epocs will smooth the graph and decrease the quantity of data required to render a plot; while a smaller epoc will add more detail, at the risk of making the plot excessively volatile.
+FTQ aggregates tags into tunable time "epochs".
+An epoch states the ratio of each tag represented at a point in time.
+Larger epochs will smooth the graph and decrease the quantity of data required to render a plot; while a smaller epoc will add more detail, at the risk of making the plot excessively volatile.
 
 
-SST/macro activates FTQ when the following two parameters are found in the ".ini" file:
+SST/macro activates FTQ for a given application as:
 
 \begin{ViFile}
-node.os.ftq.fileroot=<fileroot>
-node.os.ftq.epoch=5us
+node {
+ app1 {
+  name = sstmac_mpi_testall
+  launch_cmd = aprun -n 8 -N 2
+  ftq {
+   type = ftq_calendar
+   epoch_length = 1ms
+   output = ftq
+   group = app1
+  }
+  print_times = false
+  message_size = 400B
+ }
+}
 \end{ViFile}
 where the \inlinefile{fileroot} a path and a file name prefix.

@@ -56,42 +56,42 @@ namespace sstmac {
 namespace hw {
 
 PiscesCrossbar::PiscesCrossbar(
-  const std::string& selfname,
+  const std::string& selfname, uint32_t id,
   const std::string& arb, double bw,
   SST::Component* parent,
   int num_in_ports, int num_out_ports, int num_vc,
   bool update_vc) :
-  PiscesNtoMQueue(selfname, arb, bw, parent, num_in_ports, num_out_ports,
+  PiscesNtoMQueue(selfname, id, arb, bw, parent, num_in_ports, num_out_ports,
                   num_vc, update_vc)
 {
 }
 
 PiscesDemuxer::PiscesDemuxer(
-  const std::string& selfname,
+  const std::string& selfname, uint32_t id,
   const std::string& arb, double bw,
   SST::Component* parent, int num_out_ports, int num_vc,
   bool update_vc) :
-  PiscesNtoMQueue(selfname, arb, bw, parent, 1, num_out_ports,
+  PiscesNtoMQueue(selfname, id, arb, bw, parent, 1, num_out_ports,
                   num_vc, update_vc)
 {
 }
 
 PiscesMuxer::PiscesMuxer(
-  const std::string& selfname,
+  const std::string& selfname, uint32_t id,
   const std::string& arb, double bw,
   SST::Component* parent, int num_in_ports, int num_vc,
   bool update_vc) :
-  PiscesNtoMQueue(selfname, arb, bw, parent, num_in_ports, 1,
+  PiscesNtoMQueue(selfname, id, arb, bw, parent, num_in_ports, 1,
                   num_vc, update_vc)
 {
 }
 
 PiscesNtoMQueue::
-PiscesNtoMQueue(const std::string& selfname,
+PiscesNtoMQueue(const std::string& selfname, uint32_t id,
                 const std::string& arb, double bw, SST::Component* parent,
                 int num_in_ports, int num_out_ports, int num_vc,
                 bool update_vc)
-  : PiscesSender(selfname, parent, update_vc),
+  : PiscesSender(selfname, id, parent, update_vc),
     num_vc_(num_vc),
 #if SSTMAC_SANITY_CHECK
     initial_credits_(num_vc * num_out_ports),

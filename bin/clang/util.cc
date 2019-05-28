@@ -176,3 +176,22 @@ insertAfter(const Stmt *s, Rewriter &r, const std::string &text)
   r.InsertText(getEnd(s), text, true);
 }
 
+std::string
+makeCxxName(const std::string& name)
+{
+  char uniqueFilePrefix[1024];
+  ::strcpy(uniqueFilePrefix, name.c_str());
+  int len = ::strlen(uniqueFilePrefix);
+  for (int i=0; i < len; ++i){
+    switch (uniqueFilePrefix[i]){
+      case '-':
+      case '/':
+      case '.':
+      case ':':
+        uniqueFilePrefix[i] = '_';
+        break;
+    }
+  }
+  return uniqueFilePrefix;
+}
+

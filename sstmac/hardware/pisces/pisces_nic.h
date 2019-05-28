@@ -60,6 +60,15 @@ namespace hw {
 class PiscesNIC : public NIC
 {
  public:
+#if SSTMAC_INTEGRATED_SST_CORE
+  SST_ELI_REGISTER_SUBCOMPONENT(
+    PiscesNIC,
+    "macro",
+    "pisces_nic",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "implements a nic that models messages as a packet flow",
+    "nic")
+#else
   SST_ELI_REGISTER_DERIVED(
     NIC,
     PiscesNIC,
@@ -67,8 +76,9 @@ class PiscesNIC : public NIC
     "pisces",
     SST_ELI_ELEMENT_VERSION(1,0,0),
     "implements a nic that models messages as a packet flow")
+#endif
 
-  PiscesNIC(SST::Params& params, Node* parent);
+  PiscesNIC(SST::Component* parent, SST::Params& params);
 
   std::string toString() const override {
     return sprockit::printf("packet flow nic(%d)", int(addr()));

@@ -118,9 +118,7 @@ Interconnect::Interconnect(SST::Params& params, EventManager *mgr,
 
   SST::Params node_params = params.get_namespace("node");
   SST::Params nic_params = node_params.get_namespace("nic");
-  SST::Params inj_params = nic_params.get_namespace("injection");
   SST::Params switch_params = params.get_namespace("switch");
-  SST::Params ej_params = switch_params.find_scoped_params("ejection");
 
   Topology* top = topology_;
 
@@ -185,19 +183,12 @@ Interconnect::configureInterconnectLookahead(SST::Params& params)
   SST::Params switch_params = params.get_namespace("switch");
   SST::Params inj_params = params.get_namespace("node")
       .find_scoped_params("nic").find_scoped_params("injection");
-  SST::Params ej_params = params.find_scoped_params("ejection");
 
   SST::Params link_params = switch_params.get_namespace("link");
   Timestamp hop_latency(link_params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
   Timestamp injection_latency = Timestamp(inj_params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
 
-  Timestamp ejection_latency = injection_latency;
-  if (ej_params.contains("latency")){
-    ejection_latency = Timestamp(ej_params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
-  }
-
   lookahead_ = std::min(injection_latency, hop_latency);
-  lookahead_ = std::min(lookahead_, ejection_latency);
 }
 #endif
 
@@ -243,15 +234,16 @@ Interconnect::connectEndpoints(EventManager* mgr,
   int me = rt_->me();
   std::vector<Topology::InjectionPort> ports;
   SST::Params inj_params = ep_params.find_scoped_params("injection");
-  SST::Params ej_params = sw_params.find_scoped_params("ejection");
+  SST::Params ej_params = ep_params.find_scoped_params("ejection");
   SST::Params link_params= sw_params.find_scoped_params("link");
+  Timestamp inj_latency(inj_params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
   Timestamp ej_latency;
   if (ej_params.contains("latency")){
     ej_latency = Timestamp(ej_params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
   } else {
     ej_latency = Timestamp(link_params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
   }
-  Timestamp inj_latency(inj_params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
+
 
 
   for (int i=0; i < num_switches; ++i){
