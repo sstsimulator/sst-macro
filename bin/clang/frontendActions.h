@@ -65,7 +65,7 @@ class ReplaceAction : public clang::ASTFrontendAction {
   void EndSourceFileAction() override;
 
   std::unique_ptr<clang::ASTConsumer>
-  CreateASTConsumer(clang::CompilerInstance& CI, clang::StringRef file) override {
+  CreateASTConsumer(clang::CompilerInstance& CI, clang::StringRef /* file */) override {
     rewriter_.setSourceMgr(CI.getSourceManager(), CI.getLangOpts());
     visitor_.setCompilerInstance(CI);
     initPragmas(CI);
@@ -75,11 +75,11 @@ class ReplaceAction : public clang::ASTFrontendAction {
  private:
   void initPragmas(clang::CompilerInstance& CI);
 
-  SkeletonASTVisitor visitor_;
   clang::Rewriter rewriter_;
   GlobalVarNamespace globalNs_;
-  clang::CompilerInstance* ci_;
+  clang::CompilerInstance* ci_ = nullptr;
   PragmaConfig prgConfig_;
+  SkeletonASTVisitor visitor_;
 };
 
 #endif
