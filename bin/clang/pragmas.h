@@ -57,8 +57,6 @@ struct SSTReplacePragma;
 struct SSTNullVariablePragma;
 struct SSTNullVariableGeneratorPragma;
 struct PragmaConfig {
-  int pragmaDepth;
-  bool makeNoChanges;
   std::map<std::string,SSTReplacePragma*> replacePragmas;
   std::map<clang::Decl*,SSTNullVariablePragma*> nullVariables;
   std::map<clang::FunctionDecl*,std::set<SSTPragma*>> functionPragmas;
@@ -66,14 +64,15 @@ struct PragmaConfig {
   std::set<const clang::DeclRefExpr*> deletedRefs;
   std::set<std::string> newParams;
   std::string dependentScopeGlobal;
-  SkeletonASTVisitor* astVisitor;
-  PragmaConfig() : pragmaDepth(0),
-    makeNoChanges(false),
-    nullifyDeclarationsPragma(nullptr)
-  {}
   std::string computeMemorySpec;
   std::list<std::pair<SSTNullVariablePragma*,clang::TypedefDecl*>> pendingTypedefs;
-  SSTNullVariableGeneratorPragma* nullifyDeclarationsPragma;
+
+  int pragmaDepth = 0;
+  bool makeNoChanges = false;
+  SkeletonASTVisitor* astVisitor = nullptr;
+  SSTNullVariableGeneratorPragma* nullifyDeclarationsPragma = nullptr;
+
+  PragmaConfig() = default; 
 };
 
 struct SSTPragmaList;
