@@ -116,6 +116,10 @@ Topology::Topology(SST::Params& params)
 
   dot_file_ = params.find<std::string>("output_graph", "");
   xyz_file_ = params.find<std::string>("outputXYZ", "");
+
+  if (params.contains("dump_file")){
+    dump_file_ = params.find<std::string>("dump_file");
+  }
 }
 
 Topology::~Topology()
@@ -310,6 +314,21 @@ Topology::initHostnameMap(SST::Params& params)
     idmap_[name] = i;
     hostmap_[i] = name;
   }
+}
+
+void
+Topology::dumpPorts()
+{
+  if (!dump_file_.empty()){
+    std::cout << "Dumping topology port configuration to " << dump_file_ << std::endl;
+    portConfigDump(dump_file_);
+  }
+}
+
+void
+Topology::portConfigDump(const std::string &dumpFile)
+{
+  spkt_abort_printf("Topology chosen does not support port dump");
 }
 
 class MerlinTopology : public Topology {

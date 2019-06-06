@@ -45,13 +45,11 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef SSTMAC_SOFTWARE_LIBRARIES_MPI_MPIREQUEST_H_INCLUDED
 #define SSTMAC_SOFTWARE_LIBRARIES_MPI_MPIREQUEST_H_INCLUDED
 
-#include <sstmac/software/process/key.h>
 #include <sumi/collective.h>
 #include <sumi-mpi/mpi_status.h>
 #include <sumi-mpi/mpi_message.h>
 #include <sumi-mpi/mpi_comm/mpi_comm_fwd.h>
 #include <sstmac/common/sstmac_config.h>
-
 
 namespace sumi {
 

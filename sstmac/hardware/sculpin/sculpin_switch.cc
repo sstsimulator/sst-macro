@@ -99,16 +99,20 @@ SculpinSwitch::SculpinSwitch(uint32_t id, SST::Params& params) :
   SST::Params link_params = params.find_scoped_params("link");
   link_bw_ = link_params.find<SST::UnitAlgebra>("bandwidth").getValue().toDouble();
 
+  int credits = link_params.find<int>("credits", -1);
+
   // Ensure topology is set
   Topology::staticTopology(params);
 
   //vtk_ = registerStatistic<uint64_t,int,double,int>("traffic_intensity", getName());
   //if (vtk_) vtk_->configure(my_addr_, top_);
 
-  ports_.resize(top_->maxNumPorts());
-  for (int i=0; i < ports_.size(); ++i){
-    ports_[i].id = i;
-    ports_[i].seqnum = 0;
+  outports_.resize(top_->maxNumPorts());
+  inports_.resize(top_->maxNumPorts());
+  for (int i=0; i < outports_.size(); ++i){
+    outports_[i].id = i;
+    outports_[i].seqnum = 0;
+    outports_[i].credits = uint32_t(credits);
   }
   initLinks(params);
 
@@ -147,7 +151,7 @@ SculpinSwitch::connectOutput(int src_outport, int dst_inport, EventLink::ptr&& l
 {
   double scale_factor = top_->portScaleFactor(my_addr_, src_outport);
   double port_bw = scale_factor * link_bw_;
-  Port& p = ports_[src_outport];
+  OutPort& p = outports_[src_outport];
   p.link = std::move(link);
   p.byte_delay = TimeDelta(1.0/port_bw);
   p.dst_port = dst_inport;
@@ -157,24 +161,32 @@ void
 SculpinSwitch::connectInput(int src_outport, int dst_inport, EventLink::ptr&& link)
 {
   //no-op
+  auto& port = inports_[dst_inport];
+  port.src_outport = src_outport;
+  port.link = std::move(link);
 }
 
 int
 SculpinSwitch::queueLength(int port, int vc) const
 {
-  auto& p = ports_[port];
+  auto& p = outports_[port];
   //VC basically ignored, all ports on "same" VC
   return p.priority_queue.size();
 }
 
 void
-SculpinSwitch::handleCredit(Event *ev)
+SculpinSwitch::handleCredit(Event *ev, int port)
 {
-  spkt_abort_printf("SculpinSwitch::handleCredit: should never be called");
+  auto* credit = static_cast<SculpinCredit*>(ev);
+  auto& p = outports_[port];
+  p.credits += credit->numBytes();
+  if (p.isStalled()){
+    pullNext(port);
+  }
 }
 
 void
-SculpinSwitch::send(Port& p, SculpinPacket* pkt, Timestamp now)
+SculpinSwitch::send(OutPort& p, SculpinPacket* pkt, Timestamp now)
 {
   if (now > p.next_free){
     p.next_free = now;
@@ -187,6 +199,8 @@ SculpinSwitch::send(Port& p, SculpinPacket* pkt, Timestamp now)
   p.link->send(extra_delay, pkt);
 
   TimeDelta delay = p.next_free - pkt->arrival();
+  auto& inport = inports_[pkt->inport()];
+  inport.link->send(extra_delay, new SculpinCredit(pkt->byteLength(), inport.src_outport));
 
   //if (xmit_delay_) xmit_delay_->addData(p.id, delay.usec());
 
@@ -231,16 +245,28 @@ SculpinSwitch::send(Port& p, SculpinPacket* pkt, Timestamp now)
 }
 
 void
+SculpinSwitch::addStallStatistics(OutPort& p, Timestamp now)
+{
+}
+
+void
 SculpinSwitch::pullNext(int portnum)
 {
-  Port& p = ports_[portnum];
+  OutPort& p = outports_[portnum];
+#if SSTMAC_SANITY_CHECK
   if (p.priority_queue.empty()){
     spkt_abort_printf("SculpinSwitch::pull_next: incorrectly scheduled pull on switch %d from empty port %d",
                       int(addr()), p.id);
   }
+#endif
   pkt_debug("pulling pending packet from port %d with %d queued", portnum, p.priority_queue.size());
   auto iter = p.priority_queue.begin();
   SculpinPacket* pkt = *iter;
+  //no credits to send!
+  if (pkt->byteLength() > p.credits){
+    return;
+  }
+
   p.priority_queue.erase(iter);
   send(p, pkt, now());
 }
@@ -251,7 +277,7 @@ SculpinSwitch::tryToSendPacket(SculpinPacket* pkt)
   Timestamp now_ = now();
 
   pkt->setArrival(now_);
-  Port& p = ports_[pkt->nextPort()];
+  OutPort& p = outports_[pkt->nextPort()];
   pkt->setSeqnum(p.seqnum++);
 
   static int max_queue_depth = 0;
@@ -304,12 +330,14 @@ SculpinSwitch::doNotFilterPacket(SculpinPacket* pkt)
 }
 
 void
-SculpinSwitch::handlePayload(Event *ev)
+SculpinSwitch::handlePayload(Event *ev, int inport)
 {
   SculpinPacket* pkt = safe_cast(SculpinPacket, ev);
+  pkt->setInport(inport);
   switch_debug("handling payload %s", pkt->toString().c_str());
   router_->route(pkt);
-  Port& p = ports_[pkt->nextPort()];
+  OutPort& p = outports_[pkt->nextPort()];
+  p.occupancy += pkt->byteLength();
 
   TimeDelta time_to_send = p.byte_delay * pkt->numBytes();
   /** I am processing the head flit - so I assume compatibility with wormhole routing
@@ -333,13 +361,13 @@ SculpinSwitch::toString() const
 LinkHandler*
 SculpinSwitch::creditHandler(int port)
 {
-  return newLinkHandler(this, &SculpinSwitch::handleCredit);
+  return newLinkHandler(this, &SculpinSwitch::handleCredit, port);
 }
 
 LinkHandler*
 SculpinSwitch::payloadHandler(int port)
 {
-  return newLinkHandler(this, &SculpinSwitch::handlePayload);
+  return newLinkHandler(this, &SculpinSwitch::handlePayload, port);
 }
 
 }

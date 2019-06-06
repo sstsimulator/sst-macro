@@ -43,6 +43,8 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sstmac/common/event_callback.h>
+#include <sstmac/common/stats/ftq.h>
+#include <sstmac/software/process/ftq_scope.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/backtrace.h>
 #include <sstmac/software/libraries/compute/lib_compute_inst.h>
@@ -51,7 +53,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/sim_parameters.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/thread.h>
-#include <sstmac/software/process/ftq.h>
 
 RegisterDebugSlot(lib_compute_inst);
 

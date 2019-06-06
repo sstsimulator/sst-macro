@@ -50,7 +50,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/api/api.h>
 #include <sstmac/software/launch/task_mapping.h>
 #include <sstmac/software/libraries/service.h>
-#include <sstmac/software/process/key.h>
 #include <sstmac/software/process/progress_queue.h>
 #include <sstmac/hardware/network/network_message_fwd.h>
 #include <sstmac/hardware/node/node_fwd.h>
@@ -264,7 +263,7 @@ class SimTransport : public Transport, public sstmac::sw::API {
 
   sstmac::TimeDelta poll_delay_;
 
-  sstmac::StatSpyplot<int,int,uint64_t>* spy_bytes_;
+  sstmac::StatSpyplot<int,uint64_t>* spy_bytes_;
 
   sstmac::TimeDelta rdma_pin_latency_;
   sstmac::TimeDelta rdma_page_delay_;

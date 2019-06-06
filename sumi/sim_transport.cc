@@ -89,7 +89,6 @@ RegisterKeywords(
 #include <sumi/message.h>
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/operating_system.h>
-#include <sstmac/software/process/key.h>
 #include <sstmac/software/launch/job_launcher.h>
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/common/event_callback.h>
@@ -244,8 +243,8 @@ SimTransport::SimTransport(SST::Params& params, sstmac::sw::App* parent, SST::Co
 
 #if !SSTMAC_INTEGRATED_SST_CORE
   std::string subname = sprockit::printf("app%d.rank%d", parent->aid(), parent->tid());
-  auto* spy = comp->registerMultiStatistic<int,int,uint64_t>(params, "spy_bytes", subname);
-  spy_bytes_ = dynamic_cast<sstmac::StatSpyplot<int,int,uint64_t>*>(spy);
+  auto* spy = comp->registerMultiStatistic<int,uint64_t>(params, "spy_bytes", subname);
+  spy_bytes_ = dynamic_cast<sstmac::StatSpyplot<int,uint64_t>*>(spy);
 #endif
 
   if (!engine_) engine_ = new CollectiveEngine(params, this);
@@ -350,11 +349,11 @@ SimTransport::send(Message* m)
   if (spy_bytes_){
     switch(m->sstmac::hw::NetworkMessage::type()){
     case sstmac::hw::NetworkMessage::payload:
-      spy_bytes_->addData(m->sender(), m->recver(), m->byteLength());
+      spy_bytes_->addData(m->recver(), m->byteLength());
       break;
     case sstmac::hw::NetworkMessage::rdma_get_request:
     case sstmac::hw::NetworkMessage::rdma_put_payload:
-      spy_bytes_->addData(m->sender(), m->recver(), m->payloadBytes());
+      spy_bytes_->addData(m->recver(), m->payloadBytes());
       break;
     default:
       break;

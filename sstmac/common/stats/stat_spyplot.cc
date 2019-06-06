@@ -54,7 +54,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 
-SST_ELI_INSTANTIATE_MULTI_STATISTIC(StatSpyplot,int,int,uint64_t)
+SST_ELI_INSTANTIATE_MULTI_STATISTIC(StatSpyplot,int,uint64_t)
 
 
 } //end namespace

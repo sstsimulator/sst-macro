@@ -42,9 +42,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sstmac/software/process/ftq.h>
 #include <sstmac/software/process/thread.h>
 #include <sstmac/backends/common/parallel_runtime.h>
+#include <sstmac/common/stats/ftq.h>
+#include <sstmac/common/stats/ftq_tag.h>
 #include <sstmac/common/thread_lock.h>
 #include <sstmac/common/event_scheduler.h>
 #include <sprockit/sim_parameters.h>
@@ -57,7 +58,6 @@ RegisterKeywords(
 );
 
 namespace sstmac {
-namespace sw {
 
 static const char* matplotlib_histogram_text_header =
     "#!/usr/bin/env python3\n"
@@ -320,19 +320,5 @@ FTQOutput::stopOutputGroup()
 }
 #endif
 
-// ftq_scope member functions
-FTQScope::FTQScope(Thread* thr, const FTQTag& tag) :
-  prev_tag_(thr->tag()), thr_(thr)
-{
-  if (tag.level() >= thr->tag().level()){
-    thr->setTag(tag);
-  }
 }
 
-FTQScope::~FTQScope()
-{
-  thr_->setTag(prev_tag_);
-}
-
-}
-}

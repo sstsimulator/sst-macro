@@ -65,7 +65,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/thread.h>
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/operating_system.h>
+#include <sstmac/software/process/ftq_scope.h>
 #include <sstmac/software/launch/job_launcher.h>
+
 
 #include <sumi-mpi/mpi_protocol/mpi_protocol.h>
 #include <sumi-mpi/mpi_comm/mpi_comm_factory.h>
@@ -105,7 +107,7 @@ sprockit::StaticNamespaceRegister queue_ns_reg("queue");
 namespace sumi {
 
 static sprockit::NeedDeletestatics<MpiApi> del_statics;
-sstmac::sw::FTQTag MpiApi::mpi_tag("MPI", 1);
+sstmac::FTQTag MpiApi::mpi_tag("MPI", 1);
 
 MpiApi* sstmac_mpi()
 {

@@ -50,6 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/event_callback.h>
 #include <sstmac/common/runtime.h>
 #include <sstmac/common/event_manager.h>
+#include <sstmac/common/stats/ftq.h>
 #include <sstmac/software/launch/launch_request.h>
 #include <sstmac/software/launch/launch_event.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
@@ -57,14 +58,13 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/libraries/service.h>
 #include <sstmac/software/launch/app_launcher.h>
 #include <sstmac/software/process/graphviz.h>
-#include <sstmac/software/process/ftq.h>
 #include <sstmac/software/process/app.h>
-#include <sstmac/software/process/key.h>
 #include <sstmac/software/process/time.h>
 #include <sstmac/software/process/progress_queue.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/compute_scheduler.h>
 #include <sstmac/software/process/thread_info.h>
+#include <sstmac/software/process/ftq_scope.h>
 #include <sstmac/software/launch/app_launcher.h>
 #include <sstmac/software/libraries/unblock_event.h>
 #include <sstmac/software/libraries/compute/compute_event.h>

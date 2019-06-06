@@ -58,10 +58,7 @@ namespace sstmac {
 namespace hw {
 
 /**
- @class pisces
- Encapsulates a group of machine packets traveling together on the
- same path between endpoints.  This is usually one fraction of
- a larger message.
+ @class SculpinPacket
  */
 class SculpinPacket :
   public Packet,
@@ -120,6 +117,14 @@ class SculpinPacket :
     seqnum_ = s;
   }
 
+  uint32_t inport() const {
+    return inport_;
+  }
+
+  void setInport(uint32_t port){
+    inport_ = port;
+  }
+
   void serialize_order(serializer& ser) override;
 
  private:
@@ -131,8 +136,50 @@ class SculpinPacket :
 
   int priority_;
 
+  int inport_; //used for sending credits
+
 
 };
+
+/**
+ @class SculpinPacket
+ */
+class SculpinCredit :
+  public Event,
+  public sprockit::thread_safe_new<SculpinCredit>
+{
+  ImplementSerializable(SculpinCredit)
+
+ public:
+  SculpinCredit(uint32_t num_bytes, int port) :
+    num_bytes_(num_bytes),
+    port_(port)
+  {
+  }
+
+  std::string toString() const;
+
+  uint32_t numBytes() const {
+    return num_bytes_;
+  }
+
+  int port() const {
+    return port_;
+  }
+
+  SculpinCredit(){} //for serialization
+
+  virtual ~SculpinCredit() {}
+
+  void serialize_order(serializer& ser) override;
+
+ private:
+  uint32_t num_bytes_;
+  int port_;
+
+
+};
+
 
 }
 }

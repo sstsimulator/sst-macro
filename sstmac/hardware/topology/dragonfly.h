@@ -243,6 +243,9 @@ class Dragonfly : public CartesianTopology
     return group_wiring_->randomIntermediate(rtr,current,dest,seed);
   }
 
+ private:
+  void portConfigDump(const std::string& dump_file) override;
+
  protected:
   int a_;
   int h_;

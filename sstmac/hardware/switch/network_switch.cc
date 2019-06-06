@@ -56,7 +56,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/sst_core/integrated_component.h>
 #endif
 
-RegisterDebugSlot(NetworkSwitch)
+RegisterDebugSlot(network_switch)
 
 RegisterKeywords(
  { "switch_name", "DEPRECATED: the name of the switch model to use" },

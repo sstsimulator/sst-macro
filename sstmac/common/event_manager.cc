@@ -324,6 +324,7 @@ EventManager::spinDown()
   if (nactive_threads == 0){
     //delete here while we are still on a user-space thread
     //annoying but necessary
+    interconn_->deadlockCheck();
     hw::Interconnect::clearStaticInterconnect();
   }
   active_lock.unlock();

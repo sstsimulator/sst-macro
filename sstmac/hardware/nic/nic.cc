@@ -97,8 +97,8 @@ NIC::NIC(SST::Component* parent, SST::Params& params) :
   top_ = Topology::staticTopology(params);
 
   std::string subname = sprockit::printf("NIC.%d", my_addr_);
-  auto* spy = parent->registerMultiStatistic<int,int,uint64_t>(params, "spy_bytes", subname);
-  spy_bytes_ = dynamic_cast<StatSpyplot<int,int,uint64_t>*>(spy);
+  auto* spy = parent->registerMultiStatistic<int,uint64_t>(params, "spy_bytes", subname);
+  spy_bytes_ = dynamic_cast<StatSpyplot<int,uint64_t>*>(spy);
 
   xmit_flows_ = parent->registerStatistic<uint64_t>(params, "xmit_flows", subname);
 }
@@ -267,7 +267,7 @@ NIC::recordMessage(NetworkMessage* netmsg)
   }
 
   if (spy_bytes_){
-    spy_bytes_->addData(netmsg->fromaddr(), netmsg->toaddr(), netmsg->byteLength());
+    spy_bytes_->addData(netmsg->toaddr(), netmsg->byteLength());
   }
   xmit_flows_->addData(netmsg->byteLength());
 }

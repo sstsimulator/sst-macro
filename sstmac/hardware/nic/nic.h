@@ -207,7 +207,7 @@ class NIC : public ConnectableSubcomponent
   Topology* top_;
 
  private:
-  StatSpyplot<int,int,uint64_t>* spy_bytes_;
+  StatSpyplot<int,uint64_t>* spy_bytes_;
   Statistic<uint64_t>* xmit_flows_;
   sw::SingleProgressQueue<NetworkMessage> queue_;
 

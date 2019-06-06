@@ -47,14 +47,14 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/common/node_address.h>
 #include <sstmac/common/timestamp.h>
+#include <sstmac/common/stats/ftq_tag.h>
+#include <sstmac/common/stats/ftq_fwd.h>
 #include <sstmac/software/process/process_context.h>
 #include <sstmac/software/process/software_id.h>
 #include <sstmac/software/api/api.h>
 #include <sprockit/errors.h>
 
 #include <sstmac/software/process/graphviz.h>
-#include <sstmac/software/process/ftq_fwd.h>
-#include <sstmac/software/process/key.h>
 #include <sstmac/software/process/app_fwd.h>
 #include <sstmac/software/process/operating_system_fwd.h>
 #include <sstmac/software/process/thread_fwd.h>

@@ -42,17 +42,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef sstmac_software_process_FTQ_FWD_H
-#define sstmac_software_process_FTQ_FWD_H
+#ifndef sstmac_common_stats_FTQ_FWD_H
+#define sstmac_common_stats_FTQ_FWD_H
 
 namespace sstmac {
-namespace sw {
 
 class FTQCalendar;
 class FTQTag;
 class FTQScope;
 
-}
 }
 
 

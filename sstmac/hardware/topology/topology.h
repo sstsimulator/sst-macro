@@ -491,6 +491,8 @@ class Topology : public sprockit::printable
     return std::string("switch") + std::to_string(id);
   }
 
+  void dumpPorts();
+
   static void clearStaticTopology(){
     if (staticTopology_) delete staticTopology_;
     staticTopology_ = nullptr;
@@ -503,6 +505,8 @@ class Topology : public sprockit::printable
 
   virtual void initHostnameMap(SST::Params& params);
 
+  virtual void portConfigDump(const std::string& dumpFile);
+
  protected:
   static Topology* main_top_;
   std::unordered_map<std::string,NodeId> idmap_;
@@ -512,6 +516,8 @@ class Topology : public sprockit::printable
   static Topology* staticTopology_;
   std::string dot_file_;
   std::string xyz_file_;
+  std::string dump_file_;
+
 };
 
 static inline std::ostream& operator<<(std::ostream& os, const Topology::xyz& v) {

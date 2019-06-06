@@ -44,7 +44,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/libraries/blas/blas_api.h>
 #include <sstmac/software/process/operating_system.h>
-#include <sstmac/software/process/key.h>
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/libraries/compute/lib_compute_inst.h>
 #include <sstmac/software/libraries/compute/compute_event.h>

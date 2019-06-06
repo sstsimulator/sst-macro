@@ -110,6 +110,8 @@ Interconnect::Interconnect(SST::Params& params, EventManager *mgr,
 #if !SSTMAC_INTEGRATED_SST_CORE
   components_.resize(topology_->numNodes() + topology_->numSwitches());
 
+  topology_->dumpPorts();
+
   partition_ = part;
   rt_ = rt;
   int nproc = rt_->nproc();
@@ -440,6 +442,14 @@ uint32_t
 Interconnect::nodeComponentId(NodeId nid) const
 {
   return nid;
+}
+
+void
+Interconnect::deadlockCheck()
+{
+  for (auto* sw : switches_){
+    if (sw) sw->deadlockCheck();
+  }
 }
 
 void

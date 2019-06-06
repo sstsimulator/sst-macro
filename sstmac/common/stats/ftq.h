@@ -42,12 +42,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef sstmac_software_process_FTQ_H
-#define sstmac_software_process_FTQ_H
+#ifndef sstmac_common_stats_FTQ_H
+#define sstmac_common_stats_FTQ_H
 
 #include <sstmac/common/stats/stat_collector.h>
 #include <sstmac/common/sstmac_config.h>
-#include <sstmac/software/process/key.h>
 #include <sstmac/software/process/thread_fwd.h>
 #include <stdint.h>
 #include <vector>
@@ -64,7 +63,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #if !SSTMAC_INTEGRATED_SST_CORE
 namespace sstmac {
-namespace sw {
 
 
 class FTQAccumulator : public SST::Statistics::MultiStatistic<int,uint64_t,uint64_t>
@@ -211,26 +209,7 @@ class FTQOutput : public sstmac::StatisticOutput
 };
 
 }
-}
 #endif
 //end not integrated core
-
-//Always include the following classes with both standalone/sst-core
-namespace sstmac {
-namespace sw {
-
-// Ensures an ftq_tag is used for the life of this object
-class FTQScope {
- public:
-  FTQScope(Thread* thr, const FTQTag& tag);
-  ~FTQScope();
-
- private:
-  FTQTag prev_tag_;
-  Thread* thr_;
-};
-
-}
-}
 
 #endif // FTQ_H

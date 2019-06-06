@@ -42,7 +42,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sstmac/software/process/key.h>
+#include <sstmac/common/stats/ftq_tag.h>
 #include <sstmac/common/thread_lock.h>
 #include <sprockit/output.h>
 #include <sprockit/statics.h>
@@ -53,7 +53,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <vector>
 
 namespace sstmac {
-namespace sw {
 
 std::unique_ptr<std::unordered_map<std::string,int>> FTQTag::category_name_to_id_;
 std::unique_ptr<std::unordered_map<int,std::string>> FTQTag::category_id_to_name_;
@@ -92,5 +91,4 @@ FTQTag::eventTypeId(const std::string& name)
   return it->second;
 }
 
-}
 } // end of namespace sstmac.

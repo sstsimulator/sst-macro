@@ -263,6 +263,47 @@ Dragonfly::getVtkGeometry(SwitchId sid) const
   return geom;
 }
 
+void
+Dragonfly::portConfigDump(const std::string &dump_file)
+{
+  std::ofstream ofs(dump_file);
+  int num_switches = numSwitches();
+  std::vector<Connection> net_ports;
+  std::vector<InjectionPort> inj_ports;
+
+  ofs << "component,port,destination,inport,level,type";
+  for (int i=0; i < num_switches; ++i){
+    connectedOutports(i, net_ports);
+    int srcG = computeG(i);
+    for (Connection& conn : net_ports){
+      ofs << "\n" << switchIdToName(i)
+          << "," << conn.src_outport
+          << "," << switchIdToName(conn.dst)
+          << "," << conn.dst_inport;
+      int dstG = computeG(conn.dst);
+      if (srcG == dstG){
+        ofs << ",1," << "intra";
+      } else {
+        ofs << ",2," << "global";
+      }
+    }
+    endpointsConnectedToInjectionSwitch(i, inj_ports);
+    for (InjectionPort& port : inj_ports){
+      ofs << "\n" << switchIdToName(i)
+          << "," << port.switch_port
+          << "," << nodeIdToName(port.nid)
+          << "," << port.ep_port
+          << ",0,ejection";
+      ofs << "\n" << nodeIdToName(port.nid)
+          << ",0"
+          << "," << switchIdToName(i)
+          << "," << port.switch_port
+          << ",0,injection";
+    }
+  }
+  ofs.close();
+}
+
 InterGroupWiring::InterGroupWiring(SST::Params& params, int a, int g, int h) :
   a_(a), g_(g), h_(h)
 {

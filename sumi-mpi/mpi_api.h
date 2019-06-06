@@ -48,6 +48,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/libraries/library.h>
 #include <sstmac/software/api/api.h>
 
+#include <sstmac/common/stats/ftq_tag.h>
+
 #include <sumi/message_fwd.h>
 
 #include <sumi-mpi/mpi_types.h>
@@ -66,7 +68,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/backtrace.h>
 #include <sstmac/software/process/operating_system_fwd.h>
 #include <sstmac/common/stats/stat_spyplot_fwd.h>
-#include <sstmac/software/process/ftq.h>
 
 #include <sprockit/sim_parameters_fwd.h>
 #include <unordered_map>
@@ -824,7 +825,7 @@ class MpiApi : public sumi::SimTransport
   static const MPI_Op first_custom_op_id = 1000;
   MPI_Op next_op_id_;
 
-  static sstmac::sw::FTQTag mpi_tag;
+  static sstmac::FTQTag mpi_tag;
 
   MpiCommFactory comm_factory_;
 

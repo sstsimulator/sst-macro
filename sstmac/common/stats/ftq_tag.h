@@ -55,7 +55,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <memory>
 
 namespace sstmac {
-namespace sw {
 
 /**
  * @brief The ftq_tag class
@@ -113,7 +112,6 @@ class FTQTag {
 
 };
 
-}
 } // end of namespace sstmac
 
 #endif

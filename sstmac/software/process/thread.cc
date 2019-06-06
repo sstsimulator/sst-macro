@@ -43,12 +43,11 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sstmac/common/thread_safe_int.h>
+#include <sstmac/common/stats/ftq.h>
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/software/process/thread.h>
 #include <sstmac/software/process/operating_system.h>
-#include <sstmac/software/process/key.h>
 #include <sstmac/software/process/app.h>
-#include <sstmac/software/process/ftq.h>
 #include <sstmac/software/libraries/library.h>
 #include <sstmac/software/libraries/compute/compute_event.h>
 #include <sstmac/software/api/api.h>

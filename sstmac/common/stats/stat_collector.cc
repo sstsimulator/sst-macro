@@ -95,11 +95,13 @@ StatisticFieldsOutput::registerStatistic(StatisticBase *stat)
 void
 StatOutputCSV::startOutputGroup(StatisticGroup *grp)
 {
-  std::string fname = grp->name + ".csv";
-  csv_out_.open(fname);
-  csv_out_ << "name,component";
-  for (auto& pair : grp->columns){
-    csv_out_ << "," << pair.second;
+  if (!grp->columns.empty()){
+    std::string fname = grp->name + ".csv";
+    csv_out_.open(fname);
+    csv_out_ << "name,component";
+    for (auto& pair : grp->columns){
+      csv_out_ << "," << pair.second;
+    }
   }
 }
 
