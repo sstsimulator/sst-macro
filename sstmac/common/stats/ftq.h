@@ -205,6 +205,8 @@ class FTQOutput : public sstmac::StatisticOutput
   uint64_t num_epochs_;
   std::vector<FTQCalendar*> calendars_;
   std::string active_group_;
+  bool use_ftq_tags_;
+  bool compute_mean_;
 
 };
 

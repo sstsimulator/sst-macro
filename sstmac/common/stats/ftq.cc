@@ -59,7 +59,7 @@ RegisterKeywords(
 
 namespace sstmac {
 
-static const char* matplotlib_histogram_text_header =
+static const char* matplotlib_text_header =
     "#!/usr/bin/env python3\n"
     "\n"
     "try:\n"
@@ -116,6 +116,30 @@ static const char* matplotlib_histogram_text_footer =
     "if args.show:\n"
     "    plt.show()\n";
 
+
+static const char* matplotlib_mean_text_footer =
+    "'\n"
+    "with open(file_name + '.dat') as f:\n"
+    "    names = f.readline().split()\n"
+    "    data = np.loadtxt(f, dtype=float).transpose()\n"
+    "    time, means = data[0], data[1]"
+    "\n"
+    "# Plot fomatting\n"
+    "plt.xlabel('Time (us)')\n"
+    "plt.xlim(time[0], time[-1])\n"
+    "plt.ylabel('Mean')\n"
+    "plt.title(args.title)\n"
+    "polys = plt.plot(time, means)\n"
+    "# Saving\n"
+    "if args.eps: plt.savefig(file_name + '.eps')\n"
+    "if args.pdf: plt.savefig(file_name + '.pdf')\n"
+    "if args.png: plt.savefig(file_name + '.png')\n"
+    "if args.svg: plt.savefig(file_name + '.svg')\n"
+    "\n"
+    "if args.show:\n"
+    "    plt.show()\n";
+
+
 #if !SSTMAC_INTEGRATED_SST_CORE
 
 FTQAccumulator::FTQAccumulator(SST::BaseComponent *comp, const std::string &name,
@@ -155,13 +179,13 @@ FTQCalendar::addData_impl(int event_typeid, uint64_t ticks_begin, uint64_t num_t
 void
 FTQCalendar::registerOutputFields(StatisticFieldsOutput *statOutput)
 {
-  sprockit::abort("FTQCalendar::registerOutputFields: should never be called");
+  sprockit::abort("FTQCalendar::registerOutputFields: should never be called - ensure output is type 'ftq'");
 }
 
 void
 FTQCalendar::outputStatisticData(StatisticFieldsOutput *output, bool endOfSimFlag)
 {
-  sprockit::abort("FTQCalendar::outputStatisticData: should never be called");
+  sprockit::abort("FTQCalendar::outputStatisticData: should never be called - ensure output is type 'ftq'");
 }
 
 FTQOutput::FTQOutput(SST::Params& params) :
@@ -179,6 +203,13 @@ FTQOutput::FTQOutput(SST::Params& params) :
     ticks_per_epoch_ = time.ticks();
   } else {
     spkt_abort_printf("must specify either num_epochs or epoch_length for FTQOutput");
+  }
+  compute_mean_ = params.find<bool>("compute_mean", false);
+  use_ftq_tags_ = params.find<bool>("use_ftq_tags", !compute_mean_);
+
+
+  if (use_ftq_tags_ && compute_mean_){
+    spkt_abort_printf("FTQOutput: cannot use FTQ tags with mean computation");
   }
 }
 
@@ -228,6 +259,7 @@ FTQOutput::stopOutputGroup()
   int sparse_index[64];
   uint64_t event_totals[64];
   int num_event_types = 0;
+
   for (int i=0; i < 64; ++i){
     uint64_t mask = uint64_t(1)<<i;
     if (mask & events_used_){
@@ -238,11 +270,13 @@ FTQOutput::stopOutputGroup()
     event_totals[i] = 0;
   }
 
+  int num_epoch_columns = compute_mean_ ? 1 : num_event_types;
 
-  EpochList epochs(num_event_types, num_epochs_);
+  EpochList epochs(num_epoch_columns, num_epochs_);
   for (FTQCalendar* calendar : calendars_){
     for (auto& ev : calendar->events()){
-      int event_id_remapped = dense_index[ev.type];
+      int event_id_remapped = compute_mean_ ? 0 : dense_index[ev.type];
+      int scale = compute_mean_ ? ev.type : 1;
 
       event_totals[event_id_remapped] += ev.length;
       uint64_t event_stop = ev.start + ev.length;
@@ -253,11 +287,11 @@ FTQOutput::stopOutputGroup()
         epochs(event_id_remapped,start_epoch) += ev.length;
       } else {
         uint64_t first_time = (start_epoch+1)*ticks_per_epoch_ - ev.start;
-        epochs(event_id_remapped,start_epoch) += first_time;
+        epochs(event_id_remapped,start_epoch) += first_time * scale;
         uint64_t last_time = event_stop - stop_epoch*ticks_per_epoch_;
-        epochs(event_id_remapped,stop_epoch) += last_time;
+        epochs(event_id_remapped,stop_epoch) += last_time * scale;
         for (uint64_t ep=start_epoch+1; ep < stop_epoch; ++ep){
-          epochs(event_id_remapped,ep) += ticks_per_epoch_;
+          epochs(event_id_remapped,ep) += ticks_per_epoch_ * scale;
         }
       }
     }
@@ -270,32 +304,51 @@ FTQOutput::stopOutputGroup()
 
   //sort the categories
   std::map<std::string, int> sorted_keys;
-  for (int i=0; i < num_event_types; ++i){
-    int index = sparse_index[i];
-    sorted_keys[FTQTag::name(index)] = i;
+  if (use_ftq_tags_){
+    for (int i=0; i < num_event_types; ++i){
+      int index = sparse_index[i];
+      sorted_keys[FTQTag::name(index)] = i;
+    }
+  } else {
+    for (int i=0; i < num_event_types; ++i){
+      int index = sparse_index[i];
+      sorted_keys[sprockit::printf("%d", index)] = i;
+    }
   }
 
-  for (auto& pair : sorted_keys){
-    dat_out << sprockit::printf(" %12s", pair.first.c_str());
+  if (compute_mean_){
+    dat_out << sprockit::printf(" %12s", "Mean");
+  } else {
+    for (auto& pair : sorted_keys){
+      dat_out << sprockit::printf(" %12s", pair.first.c_str());
+    }
+    dat_out << sprockit::printf(" %12s", "Total");
   }
 
-  dat_out << sprockit::printf(" %12s", "Total");
 
   std::stringstream sstr;
   sstr << "\n";
   TimeDelta one_ms(1e-3);
-  int64_t ticks_ms = one_ms.ticks();
+  uint64_t ticks_ms = one_ms.ticks();
+  double mean_denominator = calendars_.size() * ticks_per_epoch_;
   for (uint64_t ep=0; ep < num_epochs_; ++ep) {
     //figure out how many us
     double num_ms = double(ep * ticks_per_epoch_) / (double) ticks_ms;
     sstr << sprockit::printf("%12.4f", num_ms);
     uint64_t total_ticks = 0;
-    for (int i=0; i < num_event_types; ++i) {
+    for (int i=0; i < num_epoch_columns; ++i) {
       uint64_t total_ev_ticks = epochs(i,ep);
-      sstr << sprockit::printf(" %12llu", total_ev_ticks);
+      if (compute_mean_){
+        double mean = total_ev_ticks / mean_denominator;
+        sstr << sprockit::printf(" %12.8f", mean);
+      } else {
+        sstr << sprockit::printf(" %12llu", total_ev_ticks);
+      }
       total_ticks += total_ev_ticks;
     }
-    sstr << sprockit::printf(" %12llu", total_ticks);
+    if (!compute_mean_){
+      sstr << sprockit::printf(" %12llu", total_ticks);
+    }
     sstr << "\n";
   }
   dat_out << sstr.str();
@@ -303,20 +356,29 @@ FTQOutput::stopOutputGroup()
 
   std::string plt_fname = sprockit::printf("%s.py", active_group_.c_str());
   std::ofstream plt_out(plt_fname.c_str());
-  plt_out << matplotlib_histogram_text_header << active_group_ << matplotlib_histogram_text_footer;
+  plt_out << matplotlib_text_header;
+  plt_out << active_group_;
+  if (compute_mean_){
+    plt_out << matplotlib_mean_text_footer;
+  } else {
+    plt_out << matplotlib_histogram_text_footer;
+  }
   plt_out.close();
 
-  TimeDelta stamp_sec(1.0);
-  uint64_t ticks_s = stamp_sec.ticks();
-  std::cout << sprockit::printf("Aggregate time stats for %s: \n", active_group_.c_str());
-  for (auto& pair : sorted_keys){
-    int idx = pair.second;
-    double num_s = event_totals[idx] / ticks_s;
-    uint64_t remainder = event_totals[idx] - ticks_s*num_s;
-    double rem_s = double(remainder) / double(ticks_s);
-    double t_sec = num_s + rem_s;
-    std::cout << sprockit::printf("%16s: %16.5f s\n", pair.first.c_str(), t_sec);
+  if (!compute_mean_){
+    TimeDelta stamp_sec(1.0);
+    uint64_t ticks_s = stamp_sec.ticks();
+    std::cout << sprockit::printf("Aggregate time stats for %s: \n", active_group_.c_str());
+    for (auto& pair : sorted_keys){
+      int idx = pair.second;
+      double num_s = event_totals[idx] / ticks_s;
+      uint64_t remainder = event_totals[idx] - ticks_s*num_s;
+      double rem_s = double(remainder) / double(ticks_s);
+      double t_sec = num_s + rem_s;
+      std::cout << sprockit::printf("%16s: %16.5f s\n", pair.first.c_str(), t_sec);
+    }
   }
+
 }
 #endif
 

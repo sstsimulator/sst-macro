@@ -52,37 +52,35 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/debug.h>
 
 
-DeclareDebugSlot(sculpin)
+DeclareDebugSlot(snappr)
 
 namespace sstmac {
 namespace hw {
 
 /**
- @class pisces
- Encapsulates a group of machine packets traveling together on the
- same path between endpoints.  This is usually one fraction of
- a larger message.
+ @class SnapprPacket
  */
-class SculpinPacket :
+class SnapprPacket :
   public Packet,
-  public sprockit::thread_safe_new<SculpinPacket>
+  public sprockit::thread_safe_new<SnapprPacket>
 {
-  ImplementSerializable(SculpinPacket)
+  ImplementSerializable(SnapprPacket)
 
  public:
-  SculpinPacket(
+  SnapprPacket(
     Flow* msg,
     uint32_t numBytes,
     bool isTail,
     uint64_t flowId,
     NodeId toaddr,
-    NodeId fromaddr);
+    NodeId fromaddr,
+    int qos = 0);
 
-  SculpinPacket(){} //for serialization
+  SnapprPacket(){} //for serialization
 
   std::string toString() const override;
 
-  virtual ~SculpinPacket() {}
+  virtual ~SnapprPacket() {}
 
   int nextPort() const {
     return rtrHeader<Header>()->edge_port;
@@ -94,6 +92,26 @@ class SculpinPacket :
 
   void setArrival(Timestamp time) {
     arrival_ = time;
+  }
+
+  void setVirtualLane(int vl){
+    vl_ = vl;
+  }
+
+  void saveInputVirtualLane(){
+    input_vl_ = vl_;
+  }
+
+  int inputVirtualLane() const {
+    return input_vl_;
+  }
+
+  int virtualLane() const {
+    return vl_;
+  }
+
+  int qos() const {
+    return qos_;
   }
 
   TimeDelta timeToSend() const {
@@ -120,6 +138,14 @@ class SculpinPacket :
     seqnum_ = s;
   }
 
+  uint32_t inport() const {
+    return inport_;
+  }
+
+  void setInport(uint32_t port){
+    inport_ = port;
+  }
+
   void serialize_order(serializer& ser) override;
 
  private:
@@ -129,10 +155,63 @@ class SculpinPacket :
 
   TimeDelta time_to_send_;
 
+  int qos_;
+
+  int vl_;
+
   int priority_;
+
+  int inport_; //used for sending credits
+
+  int input_vl_;
+
+};
+
+/**
+ @class SnapprCredit
+ */
+class SnapprCredit :
+  public Event,
+  public sprockit::thread_safe_new<SnapprCredit>
+{
+  ImplementSerializable(SnapprCredit)
+
+ public:
+  SnapprCredit(uint32_t num_bytes, int vl, int port) :
+    num_bytes_(num_bytes),
+    port_(port),
+    vl_(vl)
+  {
+  }
+
+  int virtualLane() const {
+    return vl_;
+  }
+
+  std::string toString() const;
+
+  uint32_t numBytes() const {
+    return num_bytes_;
+  }
+
+  int port() const {
+    return port_;
+  }
+
+  SnapprCredit(){} //for serialization
+
+  virtual ~SnapprCredit() {}
+
+  void serialize_order(serializer& ser) override;
+
+ private:
+  uint32_t num_bytes_;
+  int vl_;
+  int port_;
 
 
 };
+
 
 }
 }

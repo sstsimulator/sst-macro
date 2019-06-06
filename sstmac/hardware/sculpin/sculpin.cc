@@ -63,7 +63,6 @@ SculpinPacket::SculpinPacket(
   NodeId toaddr,
   NodeId fromaddr) :
   priority_(0),
-  inport_(-1),
   Packet(msg, num_bytes, flow_id, is_tail, fromaddr, toaddr)
 {
 }
@@ -86,22 +85,7 @@ SculpinPacket::serialize_order(serializer& ser)
   ser & arrival_;
   ser & time_to_send_;
   ser & priority_;
-  ser & inport_;
 }
-
-std::string
-SculpinCredit::toString() const {
-  return sprockit::printf("credit bytes=%" PRIu32 " port=%d", num_bytes_, port_);
-}
-
-void
-SculpinCredit::serialize_order(serializer &ser)
-{
-  Event::serialize_order(ser);
-  ser & port_;
-  ser & num_bytes_;
-}
-
 
 }
 }

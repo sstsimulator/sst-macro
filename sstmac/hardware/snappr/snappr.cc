@@ -42,100 +42,72 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef sculpin_packet_h
-#define sculpin_packet_h
+#ifndef __STDC_FORMAT_MACROS
+#define __STDC_FORMAT_MACROS
+#endif
 
-#include <sstmac/hardware/common/packet.h>
-#include <sstmac/hardware/common/flow.h>
-#include <sprockit/thread_safe_new.h>
-#include <sprockit/factory.h>
-#include <sprockit/debug.h>
+#include <inttypes.h>
 
+#include <sstmac/hardware/snappr/snappr.h>
 
-DeclareDebugSlot(sculpin)
+RegisterDebugSlot(snappr, "print all the details of the snappr model")
 
 namespace sstmac {
 namespace hw {
 
-/**
- @class pisces
- Encapsulates a group of machine packets traveling together on the
- same path between endpoints.  This is usually one fraction of
- a larger message.
- */
-class SculpinPacket :
-  public Packet,
-  public sprockit::thread_safe_new<SculpinPacket>
+SnapprPacket::SnapprPacket(
+  Flow* msg,
+  uint32_t num_bytes,
+  bool is_tail,
+  uint64_t flow_id,
+  NodeId toaddr,
+  NodeId fromaddr,
+  int qos) :
+  priority_(0),
+  inport_(-1),
+  qos_(qos),
+  Packet(msg, num_bytes, flow_id, is_tail, fromaddr, toaddr)
 {
-  ImplementSerializable(SculpinPacket)
+}
 
- public:
-  SculpinPacket(
-    Flow* msg,
-    uint32_t numBytes,
-    bool isTail,
-    uint64_t flowId,
-    NodeId toaddr,
-    NodeId fromaddr);
-
-  SculpinPacket(){} //for serialization
-
-  std::string toString() const override;
-
-  virtual ~SculpinPacket() {}
-
-  int nextPort() const {
-    return rtrHeader<Header>()->edge_port;
-  }
-
-  Timestamp arrival() const {
-    return arrival_;
-  }
-
-  void setArrival(Timestamp time) {
-    arrival_ = time;
-  }
-
-  TimeDelta timeToSend() const {
-    return time_to_send_;
-  }
-
-  void setTimeToSend(TimeDelta time) {
-    time_to_send_ = time;
-  }
-
-  int priority() const {
-    return priority_;
-  }
-
-  void setPriority(int p) {
-    priority_ = p;
-  }
-
-  uint32_t seqnum() const {
-    return seqnum_;
-  }
-
-  void setSeqnum(uint32_t s){
-    seqnum_ = s;
-  }
-
-  void serialize_order(serializer& ser) override;
-
- private:
-  uint32_t seqnum_;
-
-  Timestamp arrival_;
-
-  TimeDelta time_to_send_;
-
-  int priority_;
-
-
-};
+std::string
+SnapprPacket::toString() const
+{
+  return sprockit::printf("pkt bytes=%" PRIu32 " flow %" PRIu64 ": %s",
+                          numBytes(), flowId(), orig()
+                          ? sprockit::toString(orig()).c_str()
+                          : "no payload");
 
 }
+
+void
+SnapprPacket::serialize_order(serializer& ser)
+{
+  //routable::serialize_order(ser);
+  Packet::serialize_order(ser);
+  ser & arrival_;
+  ser & time_to_send_;
+  ser & priority_;
+  ser & inport_;
+  ser & qos_;
+  ser & vl_;
+  ser & input_vl_;
+}
+
+std::string
+SnapprCredit::toString() const {
+  return sprockit::printf("credit bytes=%" PRIu32 " port=%d", num_bytes_, port_);
+}
+
+void
+SnapprCredit::serialize_order(serializer &ser)
+{
+  Event::serialize_order(ser);
+  ser & port_;
+  ser & num_bytes_;
+  ser & vl_;
 }
 
 
-#endif // PACKETFLOW_H
+}
+}

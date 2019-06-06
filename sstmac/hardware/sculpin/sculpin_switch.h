@@ -49,7 +49,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/sculpin/sculpin.h>
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/common/stats/stat_collector.h>
-#include <queue>
 #if SSTMAC_VTK_ENABLED
 #if SSTMAC_INTEGRATED_SST_CORE
 #include <sst/core/sst_types.h>
@@ -106,9 +105,9 @@ class SculpinSwitch :
 
   LinkHandler* payloadHandler(int port) override;
 
-  void handleCredit(Event* ev, int port);
+  void handleCredit(Event* ev);
 
-  void handlePayload(Event* ev, int port);
+  void handlePayload(Event* ev);
 
   std::string toString() const override;
 
@@ -128,31 +127,17 @@ class SculpinSwitch :
     }
   };
 
-  struct OutPort {
+  struct Port {
     int id;
     int dst_port;
-    uint64_t occupancy;
     Timestamp next_free;
     TimeDelta byte_delay;
     uint32_t seqnum;
-    uint32_t credits;
     std::set<SculpinPacket*, priority_compare> priority_queue;
     EventLink::ptr link;
-    OutPort() : link(nullptr), occupancy(0) {}
+    Port() : link(nullptr){}
   };
-  std::vector<OutPort> outports_;
-
-  struct InPort {
-    int src_outport;
-    EventLink::ptr link;
-  };
-
-  std::vector<InPort> inports_;
-
-  std::vector<SST::Statistics::Statistic<uint64_t>*> xmit_cong_;
-  std::vector<SST::Statistics::Statistic<uint64_t>*> xmit_wait_;
-
-  Timestamp stall_begin_;
+  std::vector<Port> ports_;
 
   Router* router_;
 
@@ -179,7 +164,7 @@ class SculpinSwitch :
   double link_bw_;
 
  private:
-  void send(OutPort& p, SculpinPacket* pkt, Timestamp now);
+  void send(Port& p, SculpinPacket* pkt, Timestamp now);
 
   void tryToSendPacket(SculpinPacket* pkt);
 

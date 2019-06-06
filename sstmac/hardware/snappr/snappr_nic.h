@@ -42,100 +42,105 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef sculpin_packet_h
-#define sculpin_packet_h
+#ifndef SnapprNIC_h
+#define SnapprNIC_h
 
-#include <sstmac/hardware/common/packet.h>
-#include <sstmac/hardware/common/flow.h>
-#include <sprockit/thread_safe_new.h>
-#include <sprockit/factory.h>
-#include <sprockit/debug.h>
+#include <sstmac/hardware/nic/nic.h>
+#include <sstmac/hardware/interconnect/interconnect_fwd.h>
+#include <sstmac/hardware/snappr/snappr_switch.h>
+#include <sstmac/hardware/common/recv_cq.h>
 
-
-DeclareDebugSlot(sculpin)
 
 namespace sstmac {
 namespace hw {
 
 /**
- @class pisces
- Encapsulates a group of machine packets traveling together on the
- same path between endpoints.  This is usually one fraction of
- a larger message.
+ @class SnapprNIC
+ Network interface compatible with snappr network model
  */
-class SculpinPacket :
-  public Packet,
-  public sprockit::thread_safe_new<SculpinPacket>
+class SnapprNIC :
+  public NIC
 {
-  ImplementSerializable(SculpinPacket)
-
  public:
-  SculpinPacket(
-    Flow* msg,
-    uint32_t numBytes,
-    bool isTail,
-    uint64_t flowId,
-    NodeId toaddr,
-    NodeId fromaddr);
+#if SSTMAC_INTEGRATED_SST_CORE
+  SST_ELI_REGISTER_SUBCOMPONENT(
+    SnapprNIC,
+    "macro",
+    "snappr_nic",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "A NIC implementing the snappr model",
+    "nic")
+#else
+  SST_ELI_REGISTER_DERIVED(
+    NIC,
+    SnapprNIC,
+    "macro",
+    "snappr",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "A NIC implementing the snappr model")
+#endif
 
-  SculpinPacket(){} //for serialization
+  SnapprNIC(SST::Component* parent, SST::Params& params);
 
-  std::string toString() const override;
-
-  virtual ~SculpinPacket() {}
-
-  int nextPort() const {
-    return rtrHeader<Header>()->edge_port;
+  std::string toString() const override {
+    return sprockit::printf("snappr nic(%d)", int(addr()));
   }
 
-  Timestamp arrival() const {
-    return arrival_;
-  }
+  void init(unsigned int phase) override;
 
-  void setArrival(Timestamp time) {
-    arrival_ = time;
-  }
+  void setup() override;
 
-  TimeDelta timeToSend() const {
-    return time_to_send_;
-  }
+  virtual ~SnapprNIC() throw ();
 
-  void setTimeToSend(TimeDelta time) {
-    time_to_send_ = time;
-  }
+  void handlePayload(Event* ev);
 
-  int priority() const {
-    return priority_;
-  }
+  void handleCredit(Event* ev);
 
-  void setPriority(int p) {
-    priority_ = p;
-  }
+  void connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
 
-  uint32_t seqnum() const {
-    return seqnum_;
-  }
+  void connectInput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
 
-  void setSeqnum(uint32_t s){
-    seqnum_ = s;
-  }
+  LinkHandler* creditHandler(int Port) override;
 
-  void serialize_order(serializer& ser) override;
+  LinkHandler* payloadHandler(int Port) override;
 
  private:
-  uint32_t seqnum_;
+  void doSend(NetworkMessage* payload) override;
 
-  Timestamp arrival_;
+  void cqHandle(SnapprPacket* pkt);
 
-  TimeDelta time_to_send_;
+  void eject(SnapprPacket* pkt);
 
-  int priority_;
+  /**
+   * @brief inject
+   * @param payload
+   * @param byte_offset
+   * @return The byte_offset that was able to be injected (offset = length when injection is complete)
+   */
+  uint64_t inject(NetworkMessage* payload, uint64_t byte_offset);
 
+ private:
+  Timestamp inj_next_free_;
+  EventLink::ptr inj_link_;
+  EventLink::ptr credit_link_;
 
+  TimeDelta inj_byte_delay_;
+
+  uint32_t packet_size_;
+
+  int switch_inport_;
+  int switch_outport_;
+
+  bool send_credits_;
+  std::vector<uint32_t> credits_;
+  std::vector<std::queue<std::pair<NetworkMessage*,uint64_t>>> inject_queues_;
+
+  Timestamp ej_next_free_;
+  RecvCQ cq_;
 };
 
 }
-}
+} // end of namespace sstmac
 
 
-#endif // PACKETFLOW_H
+#endif // PiscesNIC_H
