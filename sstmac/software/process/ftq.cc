@@ -175,7 +175,7 @@ FTQOutput::FTQOutput(SST::Params& params) :
     num_epochs_ = params.find<long>("num_epochs");
   } else if (params.contains("epoch_length")) {
     SST::UnitAlgebra length = params.find<SST::UnitAlgebra>("epoch_length");
-    sstmac::Timestamp time(length.toDouble());
+    sstmac::TimeDelta time(length.toDouble());
     ticks_per_epoch_ = time.ticks();
   } else {
     spkt_abort_printf("must specify either num_epochs or epoch_length for FTQOutput");
@@ -283,7 +283,7 @@ FTQOutput::stopOutputGroup()
 
   std::stringstream sstr;
   sstr << "\n";
-  Timestamp one_ms(1e-3);
+  TimeDelta one_ms(1e-3);
   int64_t ticks_ms = one_ms.ticks();
   for (uint64_t ep=0; ep < num_epochs_; ++ep) {
     //figure out how many us
@@ -306,7 +306,7 @@ FTQOutput::stopOutputGroup()
   plt_out << matplotlib_histogram_text_header << active_group_ << matplotlib_histogram_text_footer;
   plt_out.close();
 
-  Timestamp stamp_sec(1.0);
+  TimeDelta stamp_sec(1.0);
   uint64_t ticks_s = stamp_sec.ticks();
   std::cout << sprockit::printf("Aggregate time stats for %s: \n", active_group_.c_str());
   for (auto& pair : sorted_keys){

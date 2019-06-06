@@ -46,13 +46,13 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/time.h>
 
 using sstmac::sw::OperatingSystem;
+using sstmac::TimeDelta;
 using sstmac::Timestamp;
-using sstmac::GlobalTimestamp;
 
 extern "C" int SSTMAC_gettimeofday(struct timeval* tv, struct timezone* tz)
 {
   OperatingSystem* os = OperatingSystem::currentOs();
-  GlobalTimestamp t = os->now();
+  Timestamp t = os->now();
   uint64_t usecs = os->now().usecRounded();
   tv->tv_sec =  usecs / 1000000;
   tv->tv_usec = usecs % 1000000;
@@ -61,10 +61,10 @@ extern "C" int SSTMAC_gettimeofday(struct timeval* tv, struct timezone* tz)
 
 extern "C" int sstmac_ts_nanosleep(const struct timespec *req, struct timespec *rem)
 {
-  uint64_t ticks = req->tv_sec * Timestamp::one_second;
-  ticks += req->tv_nsec * Timestamp::one_nanosecond;
+  uint64_t ticks = req->tv_sec * TimeDelta::one_second;
+  ticks += req->tv_nsec * TimeDelta::one_nanosecond;
   OperatingSystem* os = OperatingSystem::currentOs();
-  os->sleep(Timestamp(ticks, Timestamp::exact));
+  os->sleep(TimeDelta(ticks, TimeDelta::exact));
   return 0;
 }
 

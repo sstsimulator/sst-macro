@@ -182,8 +182,8 @@ typedef enum {
 
 struct MPI_Call {
   MPI_function ID;
-  sstmac::Timestamp idle;
-  sstmac::GlobalTimestamp start;
+  sstmac::TimeDelta idle;
+  sstmac::Timestamp start;
 
   const char* ID_str() const {
     return ID_str(ID);

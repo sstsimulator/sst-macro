@@ -58,12 +58,12 @@ sstmac_now(){
 
 extern "C" void
 sstmac_sleep_precise(double secs){
-  sstmac::sw::OperatingSystem::currentOs()->sleep(sstmac::Timestamp(secs));
+  sstmac::sw::OperatingSystem::currentOs()->sleep(sstmac::TimeDelta(secs));
 }
 
 namespace sstmac {
 
-static SST::Params& appParams(){
+SST::Params& appParams(){
   return sstmac::sw::OperatingSystem::currentThread()->parentApp()->params();
 }
 
@@ -94,6 +94,7 @@ void getAppUnitParam(const std::string& name, const std::string& def, double& va
 void getAppArrayParam(const std::string& name, std::vector<int>& vec){
   appParams().find_array(name, vec);
 }
+
 
 }
 
@@ -197,13 +198,13 @@ void sstmac_advance_time(const char* param_name)
 {
   sstmac::sw::Thread* thr = sstmac::sw::OperatingSystem::currentThread();
   sstmac::sw::App* parent = thr->parentApp();
-  using ValueCache = std::unordered_map<void*,sstmac::Timestamp>;
+  using ValueCache = std::unordered_map<void*,sstmac::TimeDelta>;
   static std::map<sstmac::sw::AppId,ValueCache> cache;
   auto& subMap = cache[parent->aid()];
   auto iter = subMap.find((void*)param_name);
   if (iter == subMap.end()){
     subMap[(void*)param_name] =
-        sstmac::Timestamp(parent->params().find<SST::UnitAlgebra>(param_name).getValue().toDouble());
+        sstmac::TimeDelta(parent->params().find<SST::UnitAlgebra>(param_name).getValue().toDouble());
     iter = subMap.find((void*)param_name);
   }
   parent->compute(iter->second);

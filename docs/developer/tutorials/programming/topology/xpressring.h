@@ -47,11 +47,9 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-class xpress_ring :
+class XpressRing :
   public StructuredTopology
 {
-  FactoryRegister("xpress", topology, xpress_ring,
-              "A ring topology with express cables that make large jumps")
  public:
   typedef enum {
     up_port = 0,
@@ -61,28 +59,20 @@ class xpress_ring :
   } port_t;
 
  public:
-  xpress_ring(SST::Params& params);
+   SPKT_REGISTER_DERIVED(
+    Topology,
+    XpressRing,
+    "macro",
+    "xpress",
+    "A ring topology with express cables that make large jumps")
 
-  virtual ~xpress_ring() {}
+  XpressRing(SST::Params& params);
 
-  bool uniformSwitches() const override {
-    return true;
-  }
-
-  bool uniform_network_ports() const override {
-    return true;
-  }
-
-  bool uniform_switches_non_uniform_network_ports() const override {
-    return true;
-  }
+  virtual ~XpressRing() {}
 
   std::string toString() const override {
     return "xpress ring topology";
   }
-
-  void configureIndividualPortParams(SwitchId src,
-              sprockit::SimParameters* switch_params) const override;
 
   void connectedOutports(SwitchId src,
         std::vector<Topology::Connection>& conns) const override;
@@ -107,7 +97,7 @@ class xpress_ring :
   int diameter() const override;
 
  private:
-  int num_hops_for_distance(int distance) const;
+  int numHopsForDistance(int distance) const;
 
   int ring_size_;
 

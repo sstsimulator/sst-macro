@@ -126,19 +126,19 @@ class LogPSwitch : public ConnectableComponent
     send(now(), msg);
   }
 
-  void send(GlobalTimestamp start, NetworkMessage* msg);
+  void send(Timestamp start, NetworkMessage* msg);
 
-  Timestamp out_in_latency() const {
+  TimeDelta out_in_latency() const {
     return out_in_lat_;
   }
 
  private:
-  Timestamp inj_lat_;
-  Timestamp out_in_lat_;
+  TimeDelta inj_lat_;
+  TimeDelta out_in_lat_;
 
-  Timestamp byte_delay_;
+  TimeDelta byte_delay_;
 
-  Timestamp hop_latency_;
+  TimeDelta hop_latency_;
 
   Topology* top_;
 
@@ -148,8 +148,8 @@ class LogPSwitch : public ConnectableComponent
 
   ContentionModel* contention_model_;
 
-  Timestamp random_max_extra_latency_;
-  Timestamp random_max_extra_byte_delay_;
+  TimeDelta random_max_extra_latency_;
+  TimeDelta random_max_extra_byte_delay_;
   uint32_t random_seed_;
 
 };

@@ -109,11 +109,11 @@ class EventManager
     return complete_;
   }
 
-  static const GlobalTimestamp* myClock() {
+  static const Timestamp* myClock() {
     return global->nowPtr();
   }
 
-  static const GlobalTimestamp no_events_left_time;
+  static const Timestamp no_events_left_time;
 
   static EventManager* global;
 
@@ -145,7 +145,7 @@ class EventManager
 
   void finishStats();
 
-  GlobalTimestamp finalTime() const {
+  Timestamp finalTime() const {
     return final_time_;
   }
 
@@ -209,28 +209,28 @@ class EventManager
     return interconn_;
   }
 
-  virtual void scheduleStop(GlobalTimestamp until);
+  virtual void scheduleStop(Timestamp until);
 
   /**
    * @brief run_events
    * @param event_horizon
    * @return Whether no more events or just hit event horizon
    */
-  GlobalTimestamp runEvents(GlobalTimestamp event_horizon);
+  Timestamp runEvents(Timestamp event_horizon);
 
-  GlobalTimestamp now() const {
+  Timestamp now() const {
     return now_;
   }
 
-  const GlobalTimestamp* nowPtr() const {
+  const Timestamp* nowPtr() const {
     return &now_;
   }
 
-  void setMinIpcTime(GlobalTimestamp t){
+  void setMinIpcTime(Timestamp t){
     min_ipc_time_ = std::min(t,min_ipc_time_);
   }
 
-  GlobalTimestamp minEventTime() const {
+  Timestamp minEventTime() const {
     return event_queue_.empty()
           ? no_events_left_time
           : (*event_queue_.begin())->time();
@@ -239,7 +239,7 @@ class EventManager
  protected:
   void registerPending();
 
-  virtual GlobalTimestamp receiveIncomingEvents(GlobalTimestamp vote) {
+  virtual Timestamp receiveIncomingEvents(Timestamp vote) {
     return vote;
   }
 
@@ -250,7 +250,7 @@ class EventManager
 
  protected:
   bool complete_;
-  GlobalTimestamp final_time_;
+  Timestamp final_time_;
   ParallelRuntime* rt_;
   hw::Interconnect* interconn_;
   sw::ThreadContext* des_context_;
@@ -264,15 +264,15 @@ class EventManager
   uint16_t nthread_;
   uint16_t thread_id_;
 
-  Timestamp lookahead_;
-  GlobalTimestamp now_;
+  TimeDelta lookahead_;
+  Timestamp now_;
 
  private:
 #define MAX_EVENT_MGR_THREADS 128
   std::vector<EventScheduler*> pending_registration_[MAX_EVENT_MGR_THREADS];
 
  protected:
-  GlobalTimestamp min_ipc_time_;
+  Timestamp min_ipc_time_;
 
   void finalizeStatsOutput();
 

@@ -84,11 +84,11 @@ class ExecutionEvent : public Event
   {
   }
 
-  GlobalTimestamp time() const {
+  Timestamp time() const {
     return time_;
   }
 
-  void setTime(const GlobalTimestamp& t) {
+  void setTime(const Timestamp& t) {
     time_ = t;
   }
 
@@ -109,7 +109,7 @@ class ExecutionEvent : public Event
   }
 
  protected:
-  GlobalTimestamp time_;
+  Timestamp time_;
   uint32_t linkId_;
   /** A unique sequence number from the source */
   uint32_t seqnum_;

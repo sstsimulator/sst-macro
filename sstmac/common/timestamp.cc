@@ -60,26 +60,26 @@ namespace sstmac {
 //
 // Static variables.
 //
-Timestamp::tick_t Timestamp::ASEC_PER_TICK = 100;
-Timestamp::tick_t Timestamp::one_femtosecond = 1000/Timestamp::ASEC_PER_TICK;
-Timestamp::tick_t Timestamp::one_picosecond = Timestamp::one_femtosecond * 1000;
-Timestamp::tick_t Timestamp::one_nanosecond = Timestamp::one_picosecond * 1000;
-Timestamp::tick_t Timestamp::one_microsecond = 1000 * Timestamp::one_nanosecond;
-Timestamp::tick_t Timestamp::one_millisecond = 1000 * Timestamp::one_microsecond;
-Timestamp::tick_t Timestamp::one_second = 1000 * Timestamp::one_millisecond; //default is 1 tick per ps
-Timestamp::tick_t Timestamp::one_minute = Timestamp::one_second * 60;
-double Timestamp::s_per_tick  = 1.0/Timestamp::one_second;
-double Timestamp::ms_per_tick = 1.0/Timestamp::one_millisecond;
-double Timestamp::us_per_tick = 1.0/Timestamp::one_microsecond;
-double Timestamp::ns_per_tick = 1.0/Timestamp::one_nanosecond;
-double Timestamp::ps_per_tick = 1.0/Timestamp::one_picosecond;
-double Timestamp::fs_per_tick = 1.0/Timestamp::one_femtosecond;
-double Timestamp::max_time_;
+TimeDelta::tick_t TimeDelta::ASEC_PER_TICK = 100;
+TimeDelta::tick_t TimeDelta::one_femtosecond = 1000/TimeDelta::ASEC_PER_TICK;
+TimeDelta::tick_t TimeDelta::one_picosecond = TimeDelta::one_femtosecond * 1000;
+TimeDelta::tick_t TimeDelta::one_nanosecond = TimeDelta::one_picosecond * 1000;
+TimeDelta::tick_t TimeDelta::one_microsecond = 1000 * TimeDelta::one_nanosecond;
+TimeDelta::tick_t TimeDelta::one_millisecond = 1000 * TimeDelta::one_microsecond;
+TimeDelta::tick_t TimeDelta::one_second = 1000 * TimeDelta::one_millisecond; //default is 1 tick per ps
+TimeDelta::tick_t TimeDelta::one_minute = TimeDelta::one_second * 60;
+double TimeDelta::s_per_tick  = 1.0/TimeDelta::one_second;
+double TimeDelta::ms_per_tick = 1.0/TimeDelta::one_millisecond;
+double TimeDelta::us_per_tick = 1.0/TimeDelta::one_microsecond;
+double TimeDelta::ns_per_tick = 1.0/TimeDelta::one_nanosecond;
+double TimeDelta::ps_per_tick = 1.0/TimeDelta::one_picosecond;
+double TimeDelta::fs_per_tick = 1.0/TimeDelta::one_femtosecond;
+double TimeDelta::max_time_;
 
 static std::string _tick_spacing_string_("100as");
 
 
-void Timestamp::initStamps(tick_t tick_spacing)
+void TimeDelta::initStamps(tick_t tick_spacing)
 {
   static bool inited_ = false;
   if (inited_) return;
@@ -108,7 +108,7 @@ void Timestamp::initStamps(tick_t tick_spacing)
 //
 // Return the current time in seconds.
 //
-double Timestamp::sec() const
+double TimeDelta::sec() const
 {
   return ticks_ * s_per_tick;
 }
@@ -116,7 +116,7 @@ double Timestamp::sec() const
 //
 // Return the current time in milliseconds.
 //
-double Timestamp::msec() const
+double TimeDelta::msec() const
 {
   return ticks_ * ms_per_tick;
 }
@@ -124,7 +124,7 @@ double Timestamp::msec() const
 //
 // Return the current time in microseconds.
 //
-double Timestamp::usec() const
+double TimeDelta::usec() const
 {
   return ticks_ * us_per_tick;
 }
@@ -132,7 +132,7 @@ double Timestamp::usec() const
 //
 // Return the current time in nanoseconds.
 //
-double Timestamp::nsec() const
+double TimeDelta::nsec() const
 {
   return ticks_ * ns_per_tick;
 }
@@ -140,16 +140,16 @@ double Timestamp::nsec() const
 //
 // Return the current time in picoseconds.
 //
-double Timestamp::psec() const
+double TimeDelta::psec() const
 {
   return ticks_ * ps_per_tick;
 }
 
-GlobalTimestamp& GlobalTimestamp::operator+=(const Timestamp& t)
+Timestamp& Timestamp::operator+=(const TimeDelta& t)
 {
   uint64_t sum = time.ticks() + t.ticks();
-  uint64_t carry = (sum & GlobalTimestamp::carry_bits_mask) << GlobalTimestamp::carry_bits_shift;
-  uint64_t rem = sum & GlobalTimestamp::remainder_bits_mask;
+  uint64_t carry = (sum & Timestamp::carry_bits_mask) << Timestamp::carry_bits_shift;
+  uint64_t rem = sum & Timestamp::remainder_bits_mask;
   epochs += carry;
   time.ticks_ = rem;
   return *this;
@@ -158,7 +158,7 @@ GlobalTimestamp& GlobalTimestamp::operator+=(const Timestamp& t)
 //
 // static:  Get the tick interval.
 //
-Timestamp::tick_t Timestamp::tickInterval()
+TimeDelta::tick_t TimeDelta::tickInterval()
 {
   return ASEC_PER_TICK;
 }
@@ -166,7 +166,7 @@ Timestamp::tick_t Timestamp::tickInterval()
 //
 // Get the tick interval in std::string form (for example, "1ps").
 //
-const std::string& Timestamp::tickIntervalString()
+const std::string& TimeDelta::tickIntervalString()
 {
   return _tick_spacing_string_;
 }
@@ -174,7 +174,7 @@ const std::string& Timestamp::tickIntervalString()
 //
 // Add.
 //
-Timestamp& Timestamp::operator+=(const Timestamp &other)
+TimeDelta& TimeDelta::operator+=(const TimeDelta &other)
 {
   ticks_ += other.ticks_;
   return *this;
@@ -183,7 +183,7 @@ Timestamp& Timestamp::operator+=(const Timestamp &other)
 //
 // Subtract.
 //
-Timestamp& Timestamp::operator-=(const Timestamp &other)
+TimeDelta& TimeDelta::operator-=(const TimeDelta &other)
 {
   ticks_ -= other.ticks_;
   return *this;
@@ -192,7 +192,7 @@ Timestamp& Timestamp::operator-=(const Timestamp &other)
 //
 // Multiply.
 //
-Timestamp& Timestamp::operator*=(double scale)
+TimeDelta& TimeDelta::operator*=(double scale)
 {
   ticks_ *= scale;
   return *this;
@@ -201,46 +201,46 @@ Timestamp& Timestamp::operator*=(double scale)
 //
 // Divide.
 //
-Timestamp& Timestamp::operator/=(double scale)
+TimeDelta& TimeDelta::operator/=(double scale)
 {
   ticks_ /= scale;
   return *this;
 }
 
-Timestamp operator+(const Timestamp &a, const Timestamp &b)
+TimeDelta operator+(const TimeDelta &a, const TimeDelta &b)
 {
-  Timestamp rv(a);
+  TimeDelta rv(a);
   rv += b;
   return rv;
 }
 
-Timestamp operator-(const Timestamp &a, const Timestamp &b)
+TimeDelta operator-(const TimeDelta &a, const TimeDelta &b)
 {
-  Timestamp rv(a);
+  TimeDelta rv(a);
   rv -= b;
   return rv;
 }
 
-Timestamp operator*(const Timestamp &t, double scaling)
+TimeDelta operator*(const TimeDelta &t, double scaling)
 {
-  Timestamp rv(t);
+  TimeDelta rv(t);
   rv *= scaling;
   return rv;
 }
 
-Timestamp operator*(double scaling, const Timestamp &t)
+TimeDelta operator*(double scaling, const TimeDelta &t)
 {
   return (t * scaling);
 }
 
-Timestamp operator/(const Timestamp &t, double scaling)
+TimeDelta operator/(const TimeDelta &t, double scaling)
 {
-  Timestamp rv(t);
+  TimeDelta rv(t);
   rv /= scaling;
   return rv;
 }
 
-std::ostream& operator<<(std::ostream &os, const Timestamp &t)
+std::ostream& operator<<(std::ostream &os, const TimeDelta &t)
 {
   /*  timestamp::tick_t psec = t.ticks() / t.tick_interval();
     timestamp::tick_t frac = psec % timestamp::tick_t(1e12);
@@ -253,7 +253,7 @@ std::ostream& operator<<(std::ostream &os, const Timestamp &t)
 }
 
 std::string
-to_printf_type(Timestamp t)
+to_printf_type(TimeDelta t)
 {
   return sprockit::printf("%8.4e msec", t.msec());
 }

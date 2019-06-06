@@ -448,7 +448,7 @@ SSTMAC_pthread_cond_timedwait(sstmac_pthread_cond_t * cond,
   if (abstime){
     //schedule a timed wait unblock
     double secs = abstime->tv_sec + 1e-9*abstime->tv_nsec;
-    Timestamp delay(secs);
+    TimeDelta delay(secs);
     //this key may be used to unblock twice
     //if it does, make sure it doesn't get deleted
     myos->blockTimeout(delay);

@@ -88,11 +88,11 @@ class API
 
   virtual void finish(){}
 
-  GlobalTimestamp now() const;
+  Timestamp now() const;
 
-  void schedule(GlobalTimestamp t, ExecutionEvent* ev);
+  void schedule(Timestamp t, ExecutionEvent* ev);
 
-  void scheduleDelay(Timestamp t, ExecutionEvent* ev);
+  void scheduleDelay(TimeDelta t, ExecutionEvent* ev);
 
   /**
    * @brief start_api_call

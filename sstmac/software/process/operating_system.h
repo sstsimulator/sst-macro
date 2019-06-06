@@ -298,7 +298,7 @@ class OperatingSystem : public SubComponent
    */
   void block();
 
-  void blockTimeout(Timestamp delay);
+  void blockTimeout(TimeDelta delay);
 
   /**
    * @brief unblock Unblock the thread context associated with the key
@@ -397,14 +397,14 @@ class OperatingSystem : public SubComponent
    *        core reservation, unlike #compute. Sleeps always begin immediately.
    * @param sleep_delay The length of time to sleep (delta T)
    */
-  void sleep(Timestamp sleep_delay);
+  void sleep(TimeDelta sleep_delay);
 
   /**
    * @brief sleep_until Sleep until a specified time. If that time has already been reached
    *          return immediately. Otherwise block until the time arrives.
    * @param t The time to sleep until
    */
-  void sleepUntil(GlobalTimestamp t);
+  void sleepUntil(Timestamp t);
 
   /**
    * @brief compute Compute for a specified time period. This requires
@@ -412,7 +412,7 @@ class OperatingSystem : public SubComponent
    *        block until a core becomes available.
    * @param t The length of time to compute (delta T)
    */
-  void compute(Timestamp t);
+  void compute(TimeDelta t);
 
   static void initThreads(int nthread);
 

@@ -108,7 +108,7 @@ class DummySwitch : public TestComponent {
     initLinks(params);
     //init params
     num_ping_pongs_ = params.find<int>("num_ping_pongs", 2);
-    latency_ = Timestamp(params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
+    latency_ = TimeDelta(params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
   }
 
   std::string toString() const override { return "dummy";}
@@ -175,7 +175,7 @@ class DummySwitch : public TestComponent {
 
  private:
   EventLink::ptr partner_;
-  Timestamp latency_;
+  TimeDelta latency_;
   int num_ping_pongs_;
   uint32_t id_;
 

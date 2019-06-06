@@ -329,7 +329,7 @@ void ParallelRuntime::sendEvent(IpcEvent* iev)
   //somehow this doesn't return the sum of sizes
   //uint32_t overhead = sizeof(ipc_event_base);
   const uint32_t overhead = sizeof(uint32_t) + sizeof(uint32_t)
-    + sizeof(Timestamp) + sizeof(uint32_t) + sizeof(uint32_t)
+    + sizeof(TimeDelta) + sizeof(uint32_t) + sizeof(uint32_t)
     + sizeof(int) + sizeof(int) + sizeof(bool);
 
   sprockit::serializer ser;

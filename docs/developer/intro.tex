@@ -78,7 +78,7 @@ Most template wizardry is hidden in easy-to-use macros.
 While C++ allows a great deal of flexibility in syntax and code structure, we are striving towards a unified coding style.
 
 Boost is no longer required or even used.
-Some C++11 features like \inlinecode{unordered_map} and \inlinecode{shared_ptr} are used heavily throughout the code.
+Some C++11 features like \inlinecode{unordered_map} and \inlinecode{unique_ptr} are used heavily throughout the code.
 
 \begin{figure}
 \centering
@@ -93,18 +93,18 @@ In general, when module 1 sends a message to module 2, module 1 only sees an abs
 The polymorphic type of module 2 can vary freely to employ different physics or congestions models without affecting the implementation of module 1. 
 Polymorphism, while greatly simplifying modularity and interchangeability, does have some consequences.
 The ``workhorse'' of SST/macro is the base \inlinecode{event}, \inlinecode{Component}, and \inlinecode{EventHandler} classes.
-To increase polymorphism and flexibility, every SST/macro module that receives events does so via the generic function
+To increase polymorphism and flexibility, every SST/macro module that receives events does so via a generic function
 
 \begin{CppCode}
-void handle(event* ev){
+void handle(Event* ev){
 ...
 }
 \end{CppCode}
 The prototype therefore accepts \emph{any} event type. 
 The interaction of these types is illustrated in Figure~\ref{fig:abstractHandlers}).
-Event handlers are created as dispatch wrappers to member functions of an en \inlinecode{Component}.
+Event handlers are created as dispatch wrappers to member functions of a \inlinecode{Component} or \inlinecode{SubComponent}.
 There are special helper functions and template classes in SST/macro designed to simplify this process.
-A \inlinecode{link} is created connecting two components.
+A \inlinecode{Link} is created connecting two components.
 An \inlinecode{EventHandler} is created that dispatches to the \inlinecode{Listener::recv} member function.
 When events are pushed onto the link by \inlinecode{Pinger},
 the simulation core computes the correct link delay.
@@ -114,11 +114,8 @@ the simulation core invokes the event handler, which delivers the event to the \
 Misusing types in SST/macro is \emph{not} a compile-time error.
 The onus of correct event types falls on runtime assertions.
 All event types may not be valid for a given module.
-A module for the memory subsystem should throw an error if the developer accidentally passes it an event intended for the OS or the NIC.
-Efforts are being made to convert runtime errors into compile-time errors.
-In many cases, though, this cannot be avoided.
 The other consequence is that a lot of dynamic casts appear in the code.
-An abstract \inlinecode{event} type is received, but must be converted to the specific message type desired.
+An abstract \inlinecode{Event} type is received, but must be converted to the specific event type desired.
 NOTE: While \emph{some} dynamic casts are sometimes very expensive in C++ (and are implementation-dependent),
 most SST/macro dynamic casts are simple equality tests involving virtual table pointers and relatively low overhead.
 
@@ -127,21 +124,20 @@ in many cases certain physical models are simply not compatible.
 For example, using a fluid flow model for memory reads cannot be easily combined with a packet-based model for the network.
 Again, pairing incompatible modules is not a compile-time error.
 Only when the types are fully defined at runtime can an incompatibility error be detected.
-Again, efforts are being made to convert as many type-usage problems into compiler errors.
-We prefer simulation flexibility to compiler strictness, though. 
 
 \section{Most Important Style and Coding Rules}\label{sec:stylerules}
 Here is a selection of C++ rules we have tended to follow.  
 Detailed more below, example scripts are included to reformat the code style however you may prefer for local editing.
 However, if committing changes to the repository, only use the default formatting in the example scripts.
 \begin{itemize}
-\item snake\_case is used for variable and class names.
+\item CapitalCase is use for class names
+\item camelCase is used for member function names
 \item We use ``one true brace`` style (OTBS) for source files. 
 \item In header files, all functions are inline style with attached brackets.
 \item To keep code compact horizontally, indent is set to two spaces. Namespaces are not indented.
 \item Generally, all if-else and for-loops have brackets even if a single line.
-\item Accessor functions are not prefixed, i.e. a function would be called \inlinecode{name()} not \inlinecode{get_name()}, except
-where conflicts require a prefix. Functions for modifying variables are prefixed with \inlinecode{set_},
+\item Accessor functions are not prefixed, i.e. a function would be called \inlinecode{name()} not \inlinecode{getName()}, except
+where conflicts require a prefix. Functions for modifying variables are prefixed with \inlinecode{setX},
 \item We use .h and .cc instead of .hpp and .cpp
 \item As much implementation as possible should go in .cc files.
 	Header files can end up in long dependency lists in the make system.  
@@ -151,16 +147,14 @@ where conflicts require a prefix. Functions for modifying variables are prefixed
 	 Many short files are better than a few really long ones.
 \item Document, document, document.  If it isn't obvious what a function does, add doxygen-compatible documentation.
 	Examples are better than abstract wording.
-\item Use STL and Boost containers for data structures.  Do not worry about performance until much later.
-	Premature optimization is the root of all evil. If determined that an optimized data structure is needed,
-	please do that after the entire class is complete and debugged.
+\item Use STL containers for data structures.  Do not worry about performance until much later.
 \item Forward declarations.  There are a lot of interrelated classes, often creating circular dependencies. In addition, you can add up with an explosion of include files, often involving classes that are never used in a given \inlineshell{.cc} file.  For cleanliness of compilation, you will find many \inlineshell{*_fwd.h} files throughout the code. If you need a forward declaration, we encourage including this header file rather than ad hoc forward declarations throughout the code.
 \end{itemize}
 
-Since we respect the sensitivity of code-style wars, we include scripts that demonstrate basic usage of the C++ code formatting tool \emph{astyle}.
-This can be downloaded from {http://astyle.sourceforge.net}. 
-A python script called \inlineshell{fix_style} is included in the top-level bin directory.
-It recursively reformats all files in a given directory and its subdirectories.
+%Since we respect the sensitivity of code-style wars, we include scripts that demonstrate basic usage of the C++ code formatting tool \emph{astyle}.
+%This can be downloaded from {http://astyle.sourceforge.net}. 
+%A python script called \inlineshell{fix_style} is included in the top-level bin directory.
+%It recursively reformats all files in a given directory and its subdirectories.
 
 %\section{Memory Allocation}\label{sec:memalloc}
 %To improve performance, custom memory allocation strategies can be employed in C++.

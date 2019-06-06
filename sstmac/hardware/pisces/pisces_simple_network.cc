@@ -74,7 +74,7 @@ PiscesSimpleNetwork::PiscesSimpleNetwork(SST::Params& params, SST::Component *co
 
   LinkHandler* handler = newLinkHandler(this, &PiscesSimpleNetwork::creditArrived);
   SST::Link* selflink = comp->configureSelfLink("simple-inject", timeConverter(), handler);
-  EventLink* sublink = new EventLink("pisces-inject", Timestamp(), selflink);
+  EventLink* sublink = new EventLink("pisces-inject", TimeDelta(), selflink);
   inj_buffer_->setInput(0, 0, EventLink::ptr(sublink));
   arb_ = sprockit::create<PiscesBandwidthArbitrator>("macro", arb, bw);
 }
@@ -100,7 +100,7 @@ PiscesSimpleNetwork::initLinks(SST::Params& params)
       configureLink(pair.first, newLinkHandler(this, &PiscesSimpleNetwork::packetHeadArrived));
       credit_link_ = link;
     } else if (port_type == "output"){
-      auto* ev_link = new EventLink(pair.first, Timestamp(), link);
+      auto* ev_link = new EventLink(pair.first, TimeDelta(), link);
       inj_buffer_->setOutput(src_outport, dst_inport, EventLink::ptr(ev_link), credits);
       configureLink(pair.first, newLinkHandler(inj_buffer_, &PiscesBuffer::handleCredit));
     } else if (port_type == "in-out"){
@@ -177,7 +177,7 @@ void
 PiscesSimpleNetwork::packetHeadArrived(Event* ev)
 {
   SimpleNetworkPacket* pkt = safe_cast(SimpleNetworkPacket, ev);
-  Timestamp delay = arb_->headTailDelay(pkt);
+  TimeDelta delay = arb_->headTailDelay(pkt);
   sendDelayedExecutionEvent(delay, newCallback(this, &PiscesSimpleNetwork::packetTailArrived, pkt));
 }
 

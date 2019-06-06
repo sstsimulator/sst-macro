@@ -78,17 +78,17 @@ PiscesMemoryModel::PiscesMemoryModel(SST::Component* nd, SST::Params& params) :
   }
 
   for (int i=0; i < nchannels_; ++i){
-    channel_requests_.emplace_back(0,Timestamp(),nullptr);
+    channel_requests_.emplace_back(0,TimeDelta(),nullptr);
   }
 
   packet_size_ = params.find<SST::UnitAlgebra>("mtu", "100GB").getRoundedValue();
 
   std::string max_bw_param = params.find<std::string>("total_bandwidth");
   SST::UnitAlgebra max_bw(max_bw_param);
-  min_agg_byte_delay_ = Timestamp(max_bw.getValue().inverse().toDouble());
+  min_agg_byte_delay_ = TimeDelta(max_bw.getValue().inverse().toDouble());
   min_flow_byte_delay_ =
-      Timestamp(params.find<SST::UnitAlgebra>("max_single_bandwidth", max_bw_param).getValue().inverse().toDouble());
-  latency_ = Timestamp(params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
+      TimeDelta(params.find<SST::UnitAlgebra>("max_single_bandwidth", max_bw_param).getValue().inverse().toDouble());
+  latency_ = TimeDelta(params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
   arb_ = sprockit::create<PiscesBandwidthArbitrator>("macro", "cut_through", max_bw.getValue().toDouble());
 
 }
@@ -99,7 +99,7 @@ PiscesMemoryModel::~PiscesMemoryModel()
 }
 
 void
-PiscesMemoryModel::access(uint64_t bytes, Timestamp byte_delay, Callback* cb)
+PiscesMemoryModel::access(uint64_t bytes, TimeDelta byte_delay, Callback* cb)
 {
   if (channels_available_.empty()){
     stalled_requests_.emplace_back(bytes, byte_delay, cb);
@@ -111,13 +111,13 @@ PiscesMemoryModel::access(uint64_t bytes, Timestamp byte_delay, Callback* cb)
 }
 
 void
-PiscesMemoryModel::start(int channel, uint64_t bytes, Timestamp byte_delay, Callback *cb)
+PiscesMemoryModel::start(int channel, uint64_t bytes, TimeDelta byte_delay, Callback *cb)
 {
   debug("Node %d starting access on channnel %d of size %ld with bw %8.4e",
         parent_node_->addr(), channel, bytes, 1.0/byte_delay.sec());
 
   if (bytes <= packet_size_){
-    GlobalTimestamp t = access(channel, bytes, byte_delay, cb);
+    Timestamp t = access(channel, bytes, byte_delay, cb);
     sendExecutionEvent(t, newCallback(this, &PiscesMemoryModel::channelFree, channel));
   } else {
     Request& req = channel_requests_[channel];
@@ -163,7 +163,7 @@ PiscesMemoryModel::dataArrived(int channel, uint32_t bytes)
 }
 
 void
-PiscesMemoryModel::access(PiscesPacket* pkt, Timestamp byte_delay, Callback* cb)
+PiscesMemoryModel::access(PiscesPacket* pkt, TimeDelta byte_delay, Callback* cb)
 {
   if (channels_available_.empty()){
     stalled_requests_.emplace_back(byte_delay, cb, pkt);
@@ -174,8 +174,8 @@ PiscesMemoryModel::access(PiscesPacket* pkt, Timestamp byte_delay, Callback* cb)
   }
 }
 
-GlobalTimestamp
-PiscesMemoryModel::access(int channel, PiscesPacket* pkt, Timestamp byte_delay, Callback* cb)
+Timestamp
+PiscesMemoryModel::access(int channel, PiscesPacket* pkt, TimeDelta byte_delay, Callback* cb)
 {
   pkt->setInport(channel);
 
@@ -196,12 +196,12 @@ PiscesMemoryModel::access(int channel, PiscesPacket* pkt, Timestamp byte_delay, 
   return st.tail_leaves;
 }
 
-GlobalTimestamp
-PiscesMemoryModel::access(int channel, uint32_t bytes, Timestamp byte_delay, Callback* cb)
+Timestamp
+PiscesMemoryModel::access(int channel, uint32_t bytes, TimeDelta byte_delay, Callback* cb)
 {
   PiscesPacket pkt(nullptr, bytes, -1, false, //doesn't matter
                     sstmac::NodeId(), sstmac::NodeId());
-  GlobalTimestamp t = access(channel, &pkt, byte_delay, cb);
+  Timestamp t = access(channel, &pkt, byte_delay, cb);
   return t;
 }
 

@@ -50,7 +50,7 @@ We can dive in deeper to the operations that occur on an individual component, m
 
 \begin{figure}
 \includegraphics[width=0.9\textwidth]{figures/RoutingFlow}
-\caption{Code flow for routing, arbitration, and stats collections of packets traversing the crossbar on the network switch.}
+\caption{Code flow for routing and arbitration of packets traversing the crossbar on the network switch.}
 \label{fig:xbarFlow}
 \end{figure}
 
@@ -78,7 +78,7 @@ In the same way that a router or NIC allocates bits for certain functions, SST/m
 For example, for adaptive routing on a dragonfly, we have the following bitset:
 
 \begin{CppCode}
-struct routing_header  {
+struct RoutingHeader  {
  char is_tail : 1;
  uint16_t edge_port; 
  uint8_t deadlock_vc : 4;
@@ -93,7 +93,7 @@ For flow control on a particular type of switch, e.g. PISCES (see User's manual)
 that inherits from \inlinecode{packet} and adds the following fields:
 
 \begin{CppCode}
-class PiscesPacket : public packet {
+class PiscesPacket : public Packet {
 ....
 uint8_t stage;
 uint8_t outports[3];
@@ -110,7 +110,7 @@ These provide the path and flow control information needed to implement the PISC
 Inside router or switch flow control code, the metadata regions can be accessed as:
 \begin{CppCode}
 template <class T>
-T* rtr_header()  {
+T* rtrHeader()  {
   return (T*) (&rtr_metadata_);
 }
 \end{CppCode}
@@ -233,11 +233,7 @@ The most important functions in the \topcls class are
 \begin{CppCode}
 class topology {
 ...
-virtual bool uniform_network_ports() const = 0;
-
-virtual bool uniform_switches_non_uniform_network_ports() const = 0;
-
-virtual bool uniformSwitches() const = 0;
+virtual double portScaleFactor(uint32_t addr, int port) const;
 
 virtual void connectedOutports(SwitchId src, std::vector<topology::connection>& conns) const = 0;
 
@@ -248,7 +244,7 @@ virtual in numSwitches() const = 0;
 
 virtual int numNodes() const = 0;
 
-virtual int num_endpoints() const = 0;
+virtual int numEndpoints() const = 0;
 
 virtual int maxNumPorts() const = 0;
 
@@ -266,11 +262,13 @@ The first few functions just give the number of switches, number of nodes, and f
 Each compute node will be connected to an injector switch and an ejector switch (often the same switch).
 The most important functions are \inlinecode{endpointsConnectedToInjectionSwitch} - which nodes are connected to which switches and which ports make the links -
 and also \inlinecode{connected_outports} - which switches are connected to which switches and which ports make the links.
+If certain ports have higher bandwidth or larger buffers,
+this is described via the \inlinecode{portScaleFactor} function.
 
 The \inlinecode{connection} struct is:
 
 \begin{CppCode}
-struct connection {
+struct Connection {
     SwitchId src;
     SwitchId dst;
     int src_outport;
@@ -281,7 +279,7 @@ which specifies a source and destination switch for a given link and which ports
 Similarly, the struct \inlinecode{injection_port} is:
 
 \begin{CppCode}
-struct injection_port {
+struct InjectionPort {
   NodeId nid;
   int switch_port;
   int ep_port;
@@ -299,7 +297,7 @@ The router has a simple public interface
 \begin{CppCode}
 class router {
 ...
-  virtual void route(packet* pkt) = 0;
+  virtual void route(Packet* pkt) = 0;
 ...
 };
 \end{CppCode}
@@ -312,7 +310,7 @@ For adaptive routing, a bit more work is done.
 Each router is connect to a switch object which holds all the information about queue lengths, e.g.
 
 \begin{CppCode}
-int test_length = get_switch()->queueLength(paths[i].outport);
+int test_length = switch()->queueLength(paths[i].outport);
 \end{CppCode}
 allowing the router to select an alternate path if the congestion is too high. 
 
@@ -336,13 +334,13 @@ The basic scheme for most switches follows the code below for the \inlinecode{pi
 \begin{CppCode}
 void PiscesSwitch::handleCredit(event *ev)
 {
-  pisces_credit* credit = static_cast<pisces_credit*>(ev);
+  PiscesCredit* credit = static_cast<PiscesCredit*>(ev);
   out_buffers_[credit->port()]->handleCredit(credit);
 }
 
 void PiscesSwitch::handlePayload(event *ev)
 {
-  pisces_payload* payload = static_cast<pisces_payload*>(ev);
+  PiscesPayload* payload = static_cast<PiscesPayload*>(ev);
   router_->route(payload);
   xbar_->handlePayload(payload);
 }
@@ -361,30 +359,24 @@ For example, if you were going to introduce some custom FPGA device that connect
 the interconnect is responsible for creating it.
 
 To illustrate, here is the code for the interconnect that creates the node objects. 
-The interconnect is itself a factory object, configured from a parameter file.
 
 \begin{CppCode}
-interconnect::interconnect(SST::Params& params, EventManager* mgr, 
-	partition* part, parallel_runtime* rt)
+Interconnect::Interconnect(SST::Params& params, EventManager* mgr, 
+	Partition* part, ParallelRuntime* rt)
 {
-  sprockit::sim_parameters* top_params = params.find_scoped_params("topology");
-  topology_ = topology_factory::getParam("name", top_params);
-  num_nodes_ = topology_->numNodes();
-  num_switches_ = topology_->numSwitches();
-  
+  ...
+  SST::Params node_params = params.get_namespace("node");
+  SST::Params nic_params = node_params.get_namespace("nic");
+  SST::Params switch_params = params.get_namespace("switch");
+
   switches_.resize(num_switches_);
   nodes_.resize(num_nodes_);
 
-  sprockit::sim_parameters* node_params = params.find_scoped_params("node");
-  sprockit::sim_parameters* switch_params = params.find_scoped_params("switch");
-  
-  sprockit::sim_parameters* nic_params = node_params.find_scoped_params("nic");
-  sprockit::sim_parameters* inj_params = nic_params.find_scoped_params("injection");
-  
   buildEndpoints(node_params, nic_params, mgr);
   buildSwitches(switch_params, mgr);
-  connectEndpoints(inj_params);
-  connectSwitches(switch_params); 
+  connectSwitches(mgr, switch_params);
+  connectEndpoints(mgr, nic_params, switch_params);
+  configureInterconnectLookahead(params);
 }
 \end{CppCode}
 
@@ -393,7 +385,7 @@ It uses the topology interface to determine which connections are required, e.g.
 
 \begin{CppCode}
 SwitchId src = ...
-std::vector<topology::connection> outports;
+std::vector<Topology::Connection> outports;
 topology_->connectedOutports(src, outports);
 for (auto& conn : outports){
   NetworkSwitch* dst_sw = switches_[conn.dst];
@@ -403,7 +395,7 @@ for (auto& conn : outports){
   				       src_sw->creditHandler(conn.src_outport));
 }
 \end{CppCode}
-The \inlinecode{connected_outports} function takes a given source switch and returns all the connections that the
+The \inlinecode{connectedOutports} function takes a given source switch and returns all the connections that the
 switch is supposed to make.  Each switch must provide \inlinecode{payloadHandler} and \inlinecode{ack_handler} functions to return
 the \inlinecode{EventHandler} that should receive either new packets (payload) or credits (ack) for the connections.
 
@@ -446,19 +438,21 @@ For the bare-bones class \inlinecode{LogPNIC}, the function is
 \begin{CppCode}
 void LogPNIC::doSend(NetworkMessage* msg)
 {
-  long num_bytes = msg->byte_length();
-  timestamp now_ = now();
-  timestamp start_send = now_ > next_free_ ? now_ : next_free_;
-  timestamp time_to_inject = inj_lat_ + timestamp(inj_bw_inverse_ * num_bytes);
-  //leave the injection latency term to the interconnect
-  schedule_now(injection_switch_, msg);
+  uint64_t num_bytes = msg->byteLength();
+  Timestamp now_ = now();
+  Timestamp start_send = now_ > next_out_free_ ? now_ : next_out_free_;
 
-  next_free_ = start_send + time_to_inject;
-  if (msg->needs_ack()) {
-    //do whatever you need to do so that this msg decouples all pointers
-    NetworkMessage* acker = msg->clone_injection_ack();
-    schedule(next_free_, parent_->self_handler(), acker); //send to node
+  TimeDelta time_to_inject = inj_lat_ + inj_byte_delay_ * num_bytes;
+  next_out_free_ = start_send + time_to_inject;
+
+  if (msg->needsAck()){
+    NetworkMessage* acker = msg->cloneInjectionAck();
+    auto ack_ev = newCallback(parent_, &Node::handle, acker);
+    parent_->sendExecutionEvent(next_out_free_, ack_ev);
   }
+
+  TimeDelta extra_delay = start_send - now_;
+  logp_link_->send(extra_delay, new NicEvent(msg));
 }
 \end{CppCode}
 After injecting, the NIC creates an ACK and delivers the notification to the \nodecls.

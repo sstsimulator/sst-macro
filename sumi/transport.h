@@ -198,7 +198,7 @@ class Transport {
 
   virtual double wallTime() const = 0;
 
-  virtual sstmac::GlobalTimestamp now() const = 0;
+  virtual sstmac::Timestamp now() const = 0;
 
   virtual void* allocatePublicBuffer(uint64_t size) = 0;
 
@@ -252,7 +252,7 @@ class Transport {
     return engine_;
   }
 
-  virtual void logMessageDelay(sstmac::GlobalTimestamp wait_start, Message* msg){}
+  virtual void logMessageDelay(sstmac::Timestamp wait_start, Message* msg){}
 
   virtual void startCollectiveMessageLog(){}
 

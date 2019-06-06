@@ -9,7 +9,7 @@ We will discuss distributed services in Section \ref{sec:distService} below, whi
 
 We will be very specific with the use of the terms ``virtual'' and ``real'' or ``physical''.  
 Virtual refers to anything being modeled in the simulator. 
-Real or physical refers to actual processes running on a supercomputer.
+Real or physical refers to actual processes running on a host system.
 When referring to a skeleton application in the simulator, we refer only to virtual MPI \emph{ranks}.
 The term \emph{process} only applies to physical MPI ranks since virtual MPI ranks are not true processes, 
 but rather a user-space thread.  
@@ -104,11 +104,11 @@ Thus all state specific to each MPI rank (virtual thread) must be stashed somewh
 This basically means converting all global variables into user-space thread-local variables.
 When each user-space thread is spawned a \inlinecode{thread} object is allocated and associated with the thread.
 This object acts as a container for holding all state specific to that virtual thread.
-Rather than store MPI state in global variables, MPI state in stored in a class \inlinecode{mpi_api}, 
-with one \inlinecode{mpi_api} object allocated per virtual MPI rank.
-The operating system class provides a static function \inlinecode{current_thread} that makes the leap from
+Rather than store MPI state in global variables, MPI state in stored in a class \inlinecode{MpiApi}, 
+with one \inlinecode{MpiApi} object allocated per virtual MPI rank.
+The operating system class provides a static function \inlinecode{currentThread} that makes the leap from
 global variables to thread-local storage.
-To access a specific API, a special helper template function \inlinecode{get_api} exists on each thread object.
+To access a specific API, a special helper template function \inlinecode{getApi} exists on each thread object.
 Thus, instead of calling a global function \inlinecode{MPI_Send},
 SST/macro redirects to a member function \inlinecode{send} on an \inlinecode{mpi_api} object that is specific to a virtual MPI rank.
 
@@ -155,7 +155,7 @@ allowing the operating system to access specific libraries at specific times.
 \begin{CppCode}
 class OperatingSystem {
   ...
-  map<string,library*> libs_;
+  map<string,Library*> libs_;
   ...
 };
 \end{CppCode}
@@ -163,8 +163,8 @@ class OperatingSystem {
 Each library object has access to the operating system, being allowed to call
 
 \begin{CppCode}
-event* ev = ...
-os_->execute_kernel(ty, ev);
+Event* ev = ...
+os_->executeKernel(ty, ev);
 \end{CppCode}
 where an enum argument \inlinecode{ty} specifies the type of computation or communication and the event object carries all the data needed to model it.
 This allows a library to \emph{call out} to the operating system.
@@ -173,39 +173,23 @@ In executing a computation or communication, the operating system may block insi
 Calls to \inlinecode{execute_kernel} can occur on either a user-space thread or the main event thread.
 Here the operating system acts as a service and \emph{never} blocks.
 
-Conversely, each \inlinecode{library} must provide a \inlinecode{incoming_event} method that allows the operating system to call back to the library
+Conversely, each \inlinecode{library} must provide a \inlinecode{incomingEvent} method that allows the operating system to call back to the library
 
 \begin{CppCode}
-void incoming_event(event* ev){...}
+void incomingEvent(event* ev){...}
 \end{CppCode}
 Generally speaking, event notifications will arrive from the NIC (new messages, ACKs), memory system (data arrived), processor (computation complete), etc.
 These hardware events must be routed to the correct software library for processing.
 
-The operating system provides an abstract interface (independent of the exact implementation of threading library) through \inlinecode{key} objects.
-Each blocking call:
-
-\begin{CppCode}
-key* k = key::construct();
-os->block(k);
-\end{CppCode}
-
-must be matched with a corresponding unblock on the same key object.
-Usually libraries stash keys in some sort of lookup table to track event completions.
-
-\begin{CppCode}
-key* k = blockers[ev->uid()];
-os->unblock(k);
-\end{CppCode}
-
 \begin{CppCode}
 void OperatingSystem::handleEvent(event* ev) {
   library* lib = libs_[ev->libName()];
-  lib->incoming_event(ev);
+  lib->incomingEvent(ev);
 }
 \end{CppCode}
-In order to route events to the correct library, the operating system maintains a string lookup table of \inlinecode{library} objects.
+In order to route events to the correct library, the operating system maintains a string lookup table of \inlinecode{Library} objects.
 All events associated with that library must be constructed with the correct string label, 
-accessible through the event accessor function \inlinecode{lib_name}.
+accessible through the event accessor function \inlinecode{libName}.
 
 \subsection{API}
 \label{subsec:softwareAPI}
@@ -222,17 +206,17 @@ API objects are accessible in skeleton apps through a global template function i
 
 \begin{CppCode}
 template <class T>
-T* get_api();
+T* getApi(const std::string& name);
 \end{CppCode}
 for which the implementation is
 
 \begin{CppCode}
-thread* thr = OperatingSystem::currentThread();
-return thr->get_api<T>();
+Thread* thr = OperatingSystem::currentThread();
+return thr->getApi<T>(const std::string& name);
 \end{CppCode}
 which converts the global template function into a thread-specific accessor.
-The most prominent example of an API is the \inlinecode{mpi_api} object for encapsulating an MPI rank.
-Other prominent examples include the various computation APIs such as \inlinecode{blas_api} that provides bindings for simulation various linear algebra functions.
+The most prominent example of an API is the \inlinecode{MpiApi} object for encapsulating an MPI rank.
+Other prominent examples include the various computation APIs such as \inlinecode{BlasApi} that provides bindings for simulation various linear algebra functions.
 
 
 \subsection{Service}
@@ -248,108 +232,108 @@ Examples of services are MPI or filesystem services that sort messages arriving 
 If a service is ``heavy-weight'' and must model computational delays,
 it must run as a full thread with its own user-space thread stack.
 
-\section{Distributed Service}
-\label{sec:distService}
-In many cases, a service is just local to a node and is part of the operating system or a runtime library, such as a local filesystem or a server receiving incoming network messages.  In cases of something like a distributed file system like LUSTRE or distributed key-value store like Memcached, a service spans multiple nodes.  These services are like skeleton applications in that they require a parallel launch with node allocation and rank indexing.
-
-To create a new distributed service, you have to inherit from \inlinecode{sstmac::distributed_service} in \\
-\inlineshell{sstmac/libraries/sumi/distributed_service.h}.  
-Distributed services require a network transport layer to communicate between service nodes.
-In contrast to other libraries and services that are found in \inlineshell{sstmac/software}, distributed services are linked to SUMI (SST unified message interface).
-A distributed service must implement the \inlinecode{void run()} virtual member function.
-In general, the \inlinecode{run} function will almost always perform something like:
-
-\begin{CppCode}
-void example_service::run()
-{
- //some init
- bool block  = true;
- message* msg = poll_for_message(block);
- while (msg && !terminated()){
-   process(msg);
-   msg = poll_for_message(block);
- }
-}
-\end{CppCode}
-The function \inlinecode{poll_for_message} goes into a network polling loop looking for incoming messages.
-Depending on the boolean parameter, the function will block until a message arrives or returns immediately if no message is available.
-The service may receive a terminate message.
-This gets processed automatically.
-Whether a shutdown message has been received can be queried for by the \inlinecode{terminated} function.
-
-Launching a distributed service is very similar to launching an application with a few subtle differences.
-The services to be launched are listed in the input file as:
-
-\begin{ViFile}
-services = insitu_viz filesystem
-\end{ViFile}
-As a space-separated list.
-This would launch services registered using the standard sprockit registration:
-
-\begin{CppCode}
-SpktRegister("filesystem", distributed_service, test_filesystem);
-\end{CppCode}
-The launch parameters and any service-specific parameters are done exactly as for applications, but go in a namespace corresponding to the service:
-
-\begin{ViFile}
-filesystem.launch_cmd = aprun -n 10 -N 1
-filesystem.allocation = first_available
-filesystem.reed_solomon_k = 5
-filesystem.reed_solomon_n = 7
-...
-\end{ViFile}
-This launches ten filesystem service nodes using a given node allocation strategy.
-Some filesystem-specific parameters are given (in this case dealing with Reed-Solomon protection codes).
-
-\subsection{Coordinating servers and clients}
-\label{subsec:coordinatingServersClients}
-Slightly more complicated is the process of communicating between service and client applications.
-In many HPC simulations, the only thing being simulated is a single MPI application.
-The default \inlinecode{send} function in \inlinecode{sumi_transport} assumes messages are being sent \emph{within} a given application.
-
-\begin{CppCode}
-void sendPayload(int dst, message* msg, bool needs_ack);
-\end{CppCode}
-The only thing that must be specified is a destination \emph{rank}, which is the virtual ID within a given session layer.
-The transport layer itself will map that to the correct physical node address and deliver the message.
-
-An alternative function exists for sending from client to server:
-
-\begin{CppCode}
-void client_server_send(
-  int dest_rank,
-  NodeId dest_node,
-  app_id dest_app,
-  sumi::message* msg);
-\end{CppCode}
-While a session rank must be given, a physical node ID and an application ID must be given.
-These can no longer be filled in automatically.
-
-For a client to get all of the information about a distributed service, a special object is supplied that can be fetched:
-
-\begin{CppCode}
-sstmac::sw::app_launch* srv = sstmac::sw::app_launch::service_info("filesystem");
-\end{CppCode}
-The object \inlinecode{srv} has functions that can be queried to figure out all the \inlinecode{client_server_send} parameters.  
-The parameter to the static \inlinecode{service_info} function is the service name given to \inlinecode{SpktRegister} and given in the input file.
-
-The same \inlinecode{client_server_send} function is used for both clients making requests to servers and servers returning responses to clients.
-In most cases, the clients will use \inlinecode{service_info} to ``discover'' the servers.
-In order to receive responses, the clients should send messages containing all the relevant info with rank, physical node ID, and app ID.
-
-Generally, an application knowns when it is done (e.g. reaches some convergence criterion). 
-A service does not usually have a clean termination condition since it never knows when more client requests may arrive.
-In this case, the function \inlinecode{shutdown_server} can be called by a client application.
-
-\begin{CppCode}
-void shutdown_server(
-  int dest_rank,
-  NodeId dest_node,
-  app_id dest_app);
-\end{CppCode}
-
-A single shutdown message to any server is sufficient to bring down the entire service.
-The shutdown message will be automatically broadcast to all other nodes.
+%\section{Distributed Service}
+%\label{sec:distService}
+%In many cases, a service is just local to a node and is part of the operating system or a runtime library, such as a local filesystem or a server receiving incoming network messages.  In cases of something like a distributed file system like LUSTRE or distributed key-value store like Memcached, a service spans multiple nodes.  These services are like skeleton applications in that they require a parallel launch with node allocation and rank indexing.
+%
+%To create a new distributed service, you have to inherit from \inlinecode{sstmac::distributed_service} in \\
+%\inlineshell{sstmac/libraries/sumi/distributed_service.h}.  
+%Distributed services require a network transport layer to communicate between service nodes.
+%In contrast to other libraries and services that are found in \inlineshell{sstmac/software}, distributed services are linked to SUMI (SST unified message interface).
+%A distributed service must implement the \inlinecode{void run()} virtual member function.
+%In general, the \inlinecode{run} function will almost always perform something like:
+%
+%\begin{CppCode}
+%void example_service::run()
+%{
+% //some init
+% bool block  = true;
+% message* msg = poll_for_message(block);
+% while (msg && !terminated()){
+%   process(msg);
+%   msg = poll_for_message(block);
+% }
+%}
+%\end{CppCode}
+%The function \inlinecode{poll_for_message} goes into a network polling loop looking for incoming messages.
+%Depending on the boolean parameter, the function will block until a message arrives or returns immediately if no message is available.
+%The service may receive a terminate message.
+%This gets processed automatically.
+%Whether a shutdown message has been received can be queried for by the \inlinecode{terminated} function.
+%
+%Launching a distributed service is very similar to launching an application with a few subtle differences.
+%The services to be launched are listed in the input file as:
+%
+%\begin{ViFile}
+%services = insitu_viz filesystem
+%\end{ViFile}
+%As a space-separated list.
+%This would launch services registered using the standard sprockit registration:
+%
+%\begin{CppCode}
+%SpktRegister("filesystem", distributed_service, test_filesystem);
+%\end{CppCode}
+%The launch parameters and any service-specific parameters are done exactly as for applications, but go in a namespace corresponding to the service:
+%
+%\begin{ViFile}
+%filesystem.launch_cmd = aprun -n 10 -N 1
+%filesystem.allocation = first_available
+%filesystem.reed_solomon_k = 5
+%filesystem.reed_solomon_n = 7
+%...
+%\end{ViFile}
+%This launches ten filesystem service nodes using a given node allocation strategy.
+%Some filesystem-specific parameters are given (in this case dealing with Reed-Solomon protection codes).
+%
+%\subsection{Coordinating servers and clients}
+%\label{subsec:coordinatingServersClients}
+%Slightly more complicated is the process of communicating between service and client applications.
+%In many HPC simulations, the only thing being simulated is a single MPI application.
+%The default \inlinecode{send} function in \inlinecode{sumi_transport} assumes messages are being sent \emph{within} a given application.
+%
+%\begin{CppCode}
+%void sendPayload(int dst, message* msg, bool needs_ack);
+%\end{CppCode}
+%The only thing that must be specified is a destination \emph{rank}, which is the virtual ID within a given session layer.
+%The transport layer itself will map that to the correct physical node address and deliver the message.
+%
+%An alternative function exists for sending from client to server:
+%
+%\begin{CppCode}
+%void client_server_send(
+%  int dest_rank,
+%  NodeId dest_node,
+%  app_id dest_app,
+%  sumi::message* msg);
+%\end{CppCode}
+%While a session rank must be given, a physical node ID and an application ID must be given.
+%These can no longer be filled in automatically.
+%
+%For a client to get all of the information about a distributed service, a special object is supplied that can be fetched:
+%
+%\begin{CppCode}
+%sstmac::sw::app_launch* srv = sstmac::sw::app_launch::service_info("filesystem");
+%\end{CppCode}
+%The object \inlinecode{srv} has functions that can be queried to figure out all the \inlinecode{client_server_send} parameters.  
+%The parameter to the static \inlinecode{service_info} function is the service name given to \inlinecode{SpktRegister} and given in the input file.
+%
+%The same \inlinecode{client_server_send} function is used for both clients making requests to servers and servers returning responses to clients.
+%In most cases, the clients will use \inlinecode{service_info} to ``discover'' the servers.
+%In order to receive responses, the clients should send messages containing all the relevant info with rank, physical node ID, and app ID.
+%
+%Generally, an application knowns when it is done (e.g. reaches some convergence criterion). 
+%A service does not usually have a clean termination condition since it never knows when more client requests may arrive.
+%In this case, the function \inlinecode{shutdown_server} can be called by a client application.
+%
+%\begin{CppCode}
+%void shutdown_server(
+%  int dest_rank,
+%  NodeId dest_node,
+%  app_id dest_app);
+%\end{CppCode}
+%
+%A single shutdown message to any server is sufficient to bring down the entire service.
+%The shutdown message will be automatically broadcast to all other nodes.
 
 %\section{Computation}
 

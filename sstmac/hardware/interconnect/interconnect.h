@@ -156,7 +156,7 @@ class Interconnect
     return switches_;
   }
 
-  Timestamp lookahead() const {
+  TimeDelta lookahead() const {
     return lookahead_;
   }
 
@@ -196,7 +196,7 @@ class Interconnect
 
   std::vector<ConnectableComponent*> components_;
 
-  Timestamp lookahead_;
+  TimeDelta lookahead_;
 
   int num_speedy_switches_with_extra_node_;
   int num_nodes_per_speedy_switch_;

@@ -60,8 +60,8 @@ LogPNIC::LogPNIC(SST::Component* parent, SST::Params& params) :
   NIC(parent, params)
 {
   SST::Params inj_params = params.find_scoped_params("injection");
-  inj_byte_delay_ = Timestamp(inj_params.find<SST::UnitAlgebra>("bandwidth").getValue().inverse().toDouble());
-  inj_lat_ = Timestamp(inj_params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
+  inj_byte_delay_ = TimeDelta(inj_params.find<SST::UnitAlgebra>("bandwidth").getValue().inverse().toDouble());
+  inj_lat_ = TimeDelta(inj_params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
 }
 
 LogPNIC::~LogPNIC()
@@ -71,15 +71,15 @@ LogPNIC::~LogPNIC()
 void
 LogPNIC::mtlHandle(Event *ev)
 {
-  GlobalTimestamp now_ = now();
+  Timestamp now_ = now();
   NicEvent* nev = static_cast<NicEvent*>(ev);
   NetworkMessage* msg = nev->msg();
   delete nev;
   if (msg->byteLength() < negligibleSize_){
     recvMessage(msg);
   } else {
-    Timestamp time_to_recv = inj_byte_delay_*msg->byteLength();
-    GlobalTimestamp recv_start = now_ - time_to_recv;
+    TimeDelta time_to_recv = inj_byte_delay_*msg->byteLength();
+    Timestamp recv_start = now_ - time_to_recv;
     if (recv_start > next_in_free_){
       next_in_free_ = now_;
       recvMessage(msg);
@@ -94,12 +94,12 @@ void
 LogPNIC::doSend(NetworkMessage* msg)
 {
   uint64_t num_bytes = msg->byteLength();
-  GlobalTimestamp now_ = now();
-  GlobalTimestamp start_send = now_ > next_out_free_ ? now_ : next_out_free_;
+  Timestamp now_ = now();
+  Timestamp start_send = now_ > next_out_free_ ? now_ : next_out_free_;
   nic_debug("logp injection queued at %8.4e, sending at %8.4e for %s",
             now_.sec(), start_send.sec(), msg->toString().c_str());
 
-  Timestamp time_to_inject = inj_lat_ + inj_byte_delay_ * num_bytes;
+  TimeDelta time_to_inject = inj_lat_ + inj_byte_delay_ * num_bytes;
   next_out_free_ = start_send + time_to_inject;
 
   if (msg->needsAck()){
@@ -108,7 +108,7 @@ LogPNIC::doSend(NetworkMessage* msg)
     parent_->sendExecutionEvent(next_out_free_, ack_ev);
   }
 
-  Timestamp extra_delay = start_send - now_;
+  TimeDelta extra_delay = start_send - now_;
   logp_link_->send(extra_delay, new NicEvent(msg));
 }
 

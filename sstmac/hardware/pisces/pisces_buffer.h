@@ -68,7 +68,7 @@ class PiscesBuffer :
 
   void handlePayload(Event* ev) override;
 
-  GlobalTimestamp sendPayload(PiscesPacket* pkt);
+  Timestamp sendPayload(PiscesPacket* pkt);
 
   void collectIdleTicks();
 
@@ -104,7 +104,7 @@ class PiscesBuffer :
   std::set<int> deadlocked_channels_;
   std::map<int, std::list<PiscesPacket*> > blocked_messages_;
   int packet_size_;
-  GlobalTimestamp last_tail_left_;
+  Timestamp last_tail_left_;
   Statistic<double>* xmit_wait_;
   Statistic<uint64_t>* xmit_bytes_;
 

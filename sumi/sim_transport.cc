@@ -98,7 +98,7 @@ RegisterKeywords(
 #include <sprockit/output.h>
 
 using namespace sprockit::dbg;
-using sstmac::Timestamp;
+using sstmac::TimeDelta;
 
 RegisterDebugSlot(sumi);
 
@@ -224,12 +224,12 @@ SimTransport::SimTransport(SST::Params& params, sstmac::sw::App* parent, SST::Co
     server = safe_cast(SumiServer, server_lib);
   }
 
-  post_rdma_delay_ = Timestamp(params.find<SST::UnitAlgebra>("post_rdma_delay", "0s").getValue().toDouble());
-  post_header_delay_ = Timestamp(params.find<SST::UnitAlgebra>("post_header_delay", "0s").getValue().toDouble());
-  poll_delay_ = Timestamp(params.find<SST::UnitAlgebra>("poll_delay", "0s").getValue().toDouble());
+  post_rdma_delay_ = TimeDelta(params.find<SST::UnitAlgebra>("post_rdma_delay", "0s").getValue().toDouble());
+  post_header_delay_ = TimeDelta(params.find<SST::UnitAlgebra>("post_header_delay", "0s").getValue().toDouble());
+  poll_delay_ = TimeDelta(params.find<SST::UnitAlgebra>("poll_delay", "0s").getValue().toDouble());
 
-  rdma_pin_latency_ = Timestamp(params.find<SST::UnitAlgebra>("rdma_pin_latency", "0s").getValue().toDouble());
-  rdma_page_delay_ = Timestamp(params.find<SST::UnitAlgebra>("rdma_page_delay", "0s").getValue().toDouble());
+  rdma_pin_latency_ = TimeDelta(params.find<SST::UnitAlgebra>("rdma_pin_latency", "0s").getValue().toDouble());
+  rdma_page_delay_ = TimeDelta(params.find<SST::UnitAlgebra>("rdma_page_delay", "0s").getValue().toDouble());
   pin_delay_ = rdma_pin_latency_.ticks() || rdma_page_delay_.ticks();
   page_size_ = params.find<SST::UnitAlgebra>("rdma_page_size", "4096").getRoundedValue();
 
@@ -308,7 +308,7 @@ SimTransport::pinRdma(uint64_t bytes)
 {
   int num_pages = bytes / page_size_;
   if (bytes % page_size_) ++num_pages;
-  sstmac::Timestamp pin_delay = rdma_pin_latency_ + num_pages*rdma_page_delay_;
+  sstmac::TimeDelta pin_delay = rdma_pin_latency_ + num_pages*rdma_page_delay_;
   compute(pin_delay);
 }
 
@@ -334,7 +334,7 @@ SimTransport::nidlist() const
 }
 
 void
-SimTransport::compute(sstmac::Timestamp t)
+SimTransport::compute(sstmac::TimeDelta t)
 {
   parent_->compute(t);
 }
@@ -469,7 +469,7 @@ SimTransport::incomingMessage(Message *msg)
   }
 }
 
-sstmac::GlobalTimestamp
+sstmac::Timestamp
 SimTransport::now() const
 {
   return parent_app_->now();
@@ -1010,7 +1010,7 @@ class NullQoSAnalysis : public QoSAnalysis
     return 0;
   }
 
-  void logDelay(sstmac::Timestamp delay, Message *m) override {
+  void logDelay(sstmac::TimeDelta delay, Message *m) override {
 
   }
 
@@ -1030,10 +1030,10 @@ class PatternQoSAnalysis : public QoSAnalysis
   PatternQoSAnalysis(SST::Params& params) :
     QoSAnalysis(params)
   {
-    rtLatency_ = Timestamp(params.find<SST::UnitAlgebra>("rt_latency").getValue().toDouble());
-    eagerLatency_ = Timestamp(params.find<SST::UnitAlgebra>("eager_latency").getValue().toDouble());
-    rdmaLatency_ = Timestamp(params.find<SST::UnitAlgebra>("rdma_latency").getValue().toDouble());
-    byteDelay_ = Timestamp(params.find<SST::UnitAlgebra>("bandwidth").getValue().inverse().toDouble());
+    rtLatency_ = TimeDelta(params.find<SST::UnitAlgebra>("rt_latency").getValue().toDouble());
+    eagerLatency_ = TimeDelta(params.find<SST::UnitAlgebra>("eager_latency").getValue().toDouble());
+    rdmaLatency_ = TimeDelta(params.find<SST::UnitAlgebra>("rdma_latency").getValue().toDouble());
+    byteDelay_ = TimeDelta(params.find<SST::UnitAlgebra>("bandwidth").getValue().inverse().toDouble());
     rdmaCutoff_ = params.find<SST::UnitAlgebra>("rdma_cutoff").getRoundedValue();
   }
 
@@ -1041,8 +1041,8 @@ class PatternQoSAnalysis : public QoSAnalysis
     return 0;
   }
 
-  void logDelay(sstmac::Timestamp delay, Message *m) override {
-    sstmac::Timestamp acceptable_delay = allowedDelay_ + m->byteLength() * byteDelay_;
+  void logDelay(sstmac::TimeDelta delay, Message *m) override {
+    sstmac::TimeDelta acceptable_delay = allowedDelay_ + m->byteLength() * byteDelay_;
     if (m->byteLength() > rdmaCutoff_){
       acceptable_delay += rdmaLatency_ + 2*eagerLatency_ + 3*rtLatency_;
     } else {
@@ -1057,11 +1057,11 @@ class PatternQoSAnalysis : public QoSAnalysis
 
  private:
   uint32_t rdmaCutoff_;
-  sstmac::Timestamp eagerLatency_;
-  sstmac::Timestamp rdmaLatency_;
-  sstmac::Timestamp byteDelay_;
-  sstmac::Timestamp rtLatency_;
-  sstmac::Timestamp allowedDelay_;
+  sstmac::TimeDelta eagerLatency_;
+  sstmac::TimeDelta rdmaLatency_;
+  sstmac::TimeDelta byteDelay_;
+  sstmac::TimeDelta rtLatency_;
+  sstmac::TimeDelta allowedDelay_;
 };
 
 

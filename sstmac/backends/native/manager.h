@@ -76,7 +76,7 @@ class Manager {
 #if !SSTMAC_INTEGRATED_SST_CORE
   ~Manager() throw ();
 
-  GlobalTimestamp run(GlobalTimestamp until);
+  Timestamp run(Timestamp until);
 
   void stop();
 

@@ -64,7 +64,7 @@ RegisterDebugSlot(EventManager);
 
 namespace sstmac {
 
-const GlobalTimestamp EventManager::no_events_left_time(
+const Timestamp EventManager::no_events_left_time(
   std::numeric_limits<uint64_t>::max(), std::numeric_limits<uint64_t>::max());
 
 class StopEvent : public ExecutionEvent
@@ -156,8 +156,8 @@ EventManager::stop()
   stopped_ = true;
 }
 
-GlobalTimestamp
-EventManager::runEvents(GlobalTimestamp event_horizon)
+Timestamp
+EventManager::runEvents(Timestamp event_horizon)
 {
   registerPending();
   min_ipc_time_ = no_events_left_time;
@@ -170,7 +170,7 @@ EventManager::runEvents(GlobalTimestamp event_horizon)
     }
 
     if (ev->time() >= event_horizon){
-      GlobalTimestamp ret = std::min(min_ipc_time_, ev->time());
+      Timestamp ret = std::min(min_ipc_time_, ev->time());
       return ret;
     } else {
       now_ = ev->time();
@@ -353,7 +353,7 @@ EventManager::ipcSchedule(IpcEvent* iev)
 }
 
 void
-EventManager::scheduleStop(GlobalTimestamp until)
+EventManager::scheduleStop(Timestamp until)
 {
   StopEvent* ev = new StopEvent(this);
   ev->setTime(until);

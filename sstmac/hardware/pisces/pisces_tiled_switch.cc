@@ -173,9 +173,9 @@ PiscesTiledSwitch::initComponents(SST::Params& params)
           xbar->toString().c_str(), xbar, rm,
           muxer->toString().c_str(), muxer, rx);
         //don't put latency on internal links
-        auto out_link = allocateSubLink(Timestamp(), this, muxer->payloadHandler());
+        auto out_link = allocateSubLink(TimeDelta(), this, muxer->payloadHandler());
         xbar->setOutput(xbar_params, rm, rx, out_link);
-        auto in_link = allocateSubLink(Timestamp(), this, xbar->creditHandler());
+        auto in_link = allocateSubLink(TimeDelta(), this, xbar->creditHandler());
         muxer->setInput(muxer_params, rx, rm, in_link);
       }
     }

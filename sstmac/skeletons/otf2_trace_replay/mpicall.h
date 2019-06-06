@@ -85,14 +85,14 @@ class MpiCall {
   ~MpiCall() {}
 
   // Methods
-  sstmac::Timestamp getStart() const {
+  sstmac::TimeDelta getStart() const {
     if (start_time == 0){
       std::cerr << "Warning: start timestamp is not initialized for " << toString() << std::endl;
     }
     return convertTime(start_time);
   }
 
-  sstmac::Timestamp getEnd() const {
+  sstmac::TimeDelta getEnd() const {
     if (end_time == 0){
       std::cerr << "Warning: end timestamp is not initialized for " << toString() << std::endl;
     }
@@ -128,7 +128,7 @@ class MpiCall {
   }
 
  private:
-  sstmac::Timestamp convertTime(const OTF2_TimeStamp) const;
+  sstmac::TimeDelta convertTime(const OTF2_TimeStamp) const;
 
 };
 

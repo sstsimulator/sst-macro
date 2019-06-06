@@ -234,7 +234,7 @@ class MpiRequest :
   }
 
 #if SSTMAC_COMM_DELAY_STATS
-  sstmac::GlobalTimestamp waitStart() const {
+  sstmac::Timestamp waitStart() const {
     return wait_start_;
   }
 
@@ -242,7 +242,7 @@ class MpiRequest :
     return !wait_start_.empty();
   }
 
-  void setWaitStart(sstmac::GlobalTimestamp t) {
+  void setWaitStart(sstmac::Timestamp t) {
     wait_start_ = t;
   }
 #endif
@@ -257,7 +257,7 @@ class MpiRequest :
   CollectiveOpBase::ptr collective_op_;
 
 #if SSTMAC_COMM_DELAY_STATS
-  sstmac::GlobalTimestamp wait_start_;
+  sstmac::Timestamp wait_start_;
 #endif
 
 };

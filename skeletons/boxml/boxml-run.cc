@@ -189,9 +189,9 @@ namespace lblxml
       }
       if (synch_mode_ == full_asynch || ev_epoch == current_epoch()) {
         if (do_compute_) {
-          sstmac::Timestamp start_comp = now();
-          compute( Timestamp( compute_scale_ * comp.time() ));
-          sstmac::Timestamp end_comp = now();
+          sstmac::TimeDelta start_comp = now();
+          compute( TimeDelta( compute_scale_ * comp.time() ));
+          sstmac::TimeDelta end_comp = now();
           double comp_time = (end_comp - start_comp).sec();
           g_total_compute_time += comp_time;
         }
@@ -223,11 +223,11 @@ namespace lblxml
   void boxml::recv_boxes(int& n_events)
   {
       SSTMACBacktrace(RecvBoxes);
-      sstmac::Timestamp start_poll = now();
+      sstmac::TimeDelta start_poll = now();
       if (debug_ > 0)
         printf("rank %d polling for new message\n",rank_);
       sumi::Message* dmess = sumi::comm_poll();
-      sstmac::Timestamp end_poll = now();
+      sstmac::TimeDelta end_poll = now();
       double poll_time = (end_poll - start_poll).sec();
       g_total_idle_time += poll_time;
       if (idle_time_) {

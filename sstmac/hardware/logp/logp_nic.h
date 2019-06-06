@@ -109,13 +109,13 @@ class LogPNIC :
   virtual void doSend(NetworkMessage* msg) override;
 
  protected:
-  Timestamp inj_byte_delay_;
+  TimeDelta inj_byte_delay_;
 
-  Timestamp inj_lat_;
+  TimeDelta inj_lat_;
 
-  GlobalTimestamp next_out_free_;
+  Timestamp next_out_free_;
 
-  GlobalTimestamp next_in_free_;
+  Timestamp next_in_free_;
 
 };
 

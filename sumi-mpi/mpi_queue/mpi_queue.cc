@@ -443,7 +443,7 @@ MpiQueue::nonblockingProgress()
   }
 }
 
-sstmac::GlobalTimestamp
+sstmac::Timestamp
 MpiQueue::progressLoop(MpiRequest* req)
 {
   if (!req || req->isComplete()) {
@@ -452,7 +452,7 @@ MpiQueue::progressLoop(MpiRequest* req)
 
   mpi_queue_debug("entering progress loop");
 
-  sstmac::GlobalTimestamp wait_start = api_->now();
+  sstmac::Timestamp wait_start = api_->now();
   while (!req->isComplete()) {
     mpi_queue_debug("blocking on progress loop");
     sumi::Message* msg = queue_.find_any();
@@ -508,7 +508,7 @@ MpiQueue::forwardProgress(double timeout)
 void
 MpiQueue::startProgressLoop(
   const std::vector<MpiRequest*>& req,
-  sstmac::Timestamp timeout)
+  sstmac::TimeDelta timeout)
 {
   startProgressLoop(req);
 }

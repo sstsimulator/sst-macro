@@ -43,11 +43,12 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include "xpressring.h"
+#include <sprockit/sim_parameters.h>
 
 namespace sstmac {
 namespace hw {
 
-xpress_ring::xpress_ring(SST::Params& params)
+XpressRing::XpressRing(SST::Params& params)
   : StructuredTopology(params)
 {
   ring_size_ = params.find<int>("xpress_ring_size");
@@ -55,7 +56,7 @@ xpress_ring::xpress_ring(SST::Params& params)
 }
 
 void
-xpress_ring::connectedOutports(SwitchId src, std::vector<Connection>& conns) const
+XpressRing::connectedOutports(SwitchId src, std::vector<Connection>& conns) const
 {
   conns.resize(4); //+1/-1 conns, +jump,-jump conns
   conns[0].src = src;
@@ -80,7 +81,7 @@ xpress_ring::connectedOutports(SwitchId src, std::vector<Connection>& conns) con
 }
 
 void
-xpress_ring::endpointsConnectedToInjectionSwitch(SwitchId swid,
+XpressRing::endpointsConnectedToInjectionSwitch(SwitchId swid,
                                                      std::vector<InjectionPort> &nodes) const
 {
   nodes.resize(concentration());
@@ -92,27 +93,21 @@ xpress_ring::endpointsConnectedToInjectionSwitch(SwitchId swid,
   }
 }
 
-void
-xpress_ring::configureIndividualPortParams(SwitchId src, SST::Params& switch_params) const
-{
-  Topology::configureIndividualPortParams(0, 4, switch_params);
-}
-
 int
-xpress_ring::numHopsToNode(NodeId src_node, NodeId dest_node) const
+XpressRing::numHopsToNode(NodeId src_node, NodeId dest_node) const
 {
   SwitchId src = src_node / concentration_;
   SwitchId dest = dest_node / concentration_;
 
-  int up_distance = abs(dest - src);
-  int down_distance = abs(src + ring_size_ - dest);
+  int up_distance = abs(int(dest) - int(src));
+  int down_distance = abs(int(src) + int(ring_size_) - int(dest));
 
   int total_distance = std::max(up_distance, down_distance);
-  return num_hops_for_distance(total_distance);
+  return numHopsForDistance(total_distance);
 }
 
 int
-xpress_ring::num_hops_for_distance(int total_distance) const
+XpressRing::numHopsForDistance(int total_distance) const
 {
   int num_jumps = total_distance / jump_size_;
   int num_steps = total_distance % jump_size_;
@@ -126,11 +121,11 @@ xpress_ring::num_hops_for_distance(int total_distance) const
 }
 
 int
-xpress_ring::diameter() const
+XpressRing::diameter() const
 {
   //half-way around the ring is the biggest
   int halfway = ring_size_ / 2;
-  return num_hops_for_distance(halfway);
+  return numHopsForDistance(halfway);
 }
 
 

@@ -65,7 +65,7 @@ namespace sstmac {
 
 class EventLink {
  public:
-  EventLink(const std::string& name, Timestamp selflat, SST::Link* link) :
+  EventLink(const std::string& name, TimeDelta selflat, SST::Link* link) :
     name_(name), selflat_(selflat), link_(link)
   {
   }
@@ -78,7 +78,7 @@ class EventLink {
     return "self link: " + name_;
   }
 
-  void send(Timestamp delay, Event* ev){
+  void send(TimeDelta delay, Event* ev){
     //the link should have a time converter built-in?
     link_->send(SST::SimTime_t((delay + selflat_).ticks()), ev);
   }
@@ -89,7 +89,7 @@ class EventLink {
 
  private:
   SST::Link* link_;
-  Timestamp selflat_;
+  TimeDelta selflat_;
   std::string name_;
 };
 }
@@ -115,30 +115,30 @@ class EventLink {
 
   virtual std::string toString() const = 0;
 
-  virtual void send(Timestamp delay, Event *ev) = 0;
+  virtual void send(TimeDelta delay, Event *ev) = 0;
 
   void send(Event* ev){
-    send(Timestamp(), ev);
+    send(TimeDelta(), ev);
   }
 
-  static Timestamp minThreadLatency() {
+  static TimeDelta minThreadLatency() {
     return minThreadLatency_;
   }
 
-  static Timestamp minRemoteLatency() {
+  static TimeDelta minRemoteLatency() {
     return minRemoteLatency_;
   }
 
   static uint32_t allocateLinkId();
 
  protected:
-  EventLink(Timestamp latency) :
+  EventLink(TimeDelta latency) :
     latency_(latency), seqnum_(0)
   {
     linkId_ = allocateLinkId();
   }
 
-  static void setMinThreadLatency(Timestamp t){
+  static void setMinThreadLatency(TimeDelta t){
     if (t.ticks() == 0){
       spkt_abort_printf("setting link latency to zero across threads!");
     }
@@ -149,7 +149,7 @@ class EventLink {
     }
   }
 
-  static void setMinRemoteLatency(Timestamp t){
+  static void setMinRemoteLatency(TimeDelta t){
     if (t.ticks() == 0){
       spkt_abort_printf("setting link latency to zero across threads!");
     }
@@ -162,9 +162,9 @@ class EventLink {
 
   uint32_t seqnum_;
   uint32_t linkId_;
-  Timestamp latency_;
-  static Timestamp minThreadLatency_;
-  static Timestamp minRemoteLatency_;
+  TimeDelta latency_;
+  static TimeDelta minThreadLatency_;
+  static TimeDelta minRemoteLatency_;
   static uint32_t linkIdCounter_;
 
 };
@@ -182,7 +182,7 @@ class EventScheduler : public sprockit::printable
     return comp_->getCurrentSimTime(tc);
   }
 
-  void sendDelayedExecutionEvent(Timestamp delay, ExecutionEvent* ev){
+  void sendDelayedExecutionEvent(TimeDelta delay, ExecutionEvent* ev){
     self_link_->send(SST::SimTime_t(delay), time_converter_, ev);
   }
 
@@ -190,7 +190,7 @@ class EventScheduler : public sprockit::printable
     self_link_->send(ev);
   }
 
-  void sendExecutionEvent(GlobalTimestamp arrival, ExecutionEvent* ev){
+  void sendExecutionEvent(Timestamp arrival, ExecutionEvent* ev){
     SST::SimTime_t delay = arrival.time.ticks() - getCurrentSimTime(time_converter_);
     self_link_->send(delay, time_converter_, ev);
   }
@@ -232,7 +232,7 @@ class EventScheduler : public sprockit::printable
     return nullptr;
   }
 
-  void sendDelayedExecutionEvent(Timestamp delay, ExecutionEvent* ev){
+  void sendDelayedExecutionEvent(TimeDelta delay, ExecutionEvent* ev){
     sendExecutionEvent(delay + now(), ev);
   }
 
@@ -240,7 +240,7 @@ class EventScheduler : public sprockit::printable
     sendExecutionEvent(now(), ev);
   }
 
-  void sendExecutionEvent(GlobalTimestamp arrival, ExecutionEvent* ev);
+  void sendExecutionEvent(Timestamp arrival, ExecutionEvent* ev);
 #endif
 
  public:
@@ -260,10 +260,10 @@ class EventScheduler : public sprockit::printable
     return 0;
   }
 
-  GlobalTimestamp now() const {
+  Timestamp now() const {
 #if SSTMAC_INTEGRATED_SST_CORE
     SST::SimTime_t nowTicks = getCurrentSimTime(time_converter_);
-    return GlobalTimestamp(uint64_t(0), uint64_t(nowTicks));
+    return Timestamp(uint64_t(0), uint64_t(nowTicks));
 #else
     return *now_;
 #endif
@@ -279,7 +279,7 @@ class EventScheduler : public sprockit::printable
     return mgr_;
   }
 
-  const GlobalTimestamp* nowPtr() const {
+  const Timestamp* nowPtr() const {
     return now_;
   }
 #endif
@@ -306,7 +306,7 @@ class EventScheduler : public sprockit::printable
   {
 #if SSTMAC_INTEGRATED_SST_CORE
     if (!time_converter_){
-      time_converter_ = base->getTimeConverter(Timestamp::tickIntervalString());
+      time_converter_ = base->getTimeConverter(TimeDelta::tickIntervalString());
     }
     self_link_ = base->configureSelfLink(selfname, time_converter_,
           new SST::Event::Handler<EventScheduler>(this, &EventScheduler::handleExecutionEvent));
@@ -335,7 +335,7 @@ class EventScheduler : public sprockit::printable
   uint32_t selfLinkId_;
   int thread_id_;
   int nthread_;
-  const GlobalTimestamp* now_;
+  const Timestamp* now_;
 
  protected:
   void setManager();
@@ -436,13 +436,13 @@ SST::Event::HandlerBase* newLinkHandler(const T* t, Fxn fxn){
   return new SST::Event::Handler<T>(const_cast<T*>(t), fxn);
 }
 
-static inline EventLinkPtr allocateSubLink(const std::string& name, Timestamp lat,
+static inline EventLinkPtr allocateSubLink(const std::string& name, TimeDelta lat,
                                            sstmac::SubComponent* subcomp, LinkHandler* handler){
   SST::Link* self = subcomp->configureSelfLink(name, subcomp->timeConverter(), handler);
   return EventLink::ptr(new EventLink(name, lat, self));
 }
 
-static inline EventLinkPtr allocateSubLink(const std::string& name, Timestamp lat,
+static inline EventLinkPtr allocateSubLink(const std::string& name, TimeDelta lat,
                                            sstmac::Component* comp, LinkHandler* handler){
   SST::Link* self = comp->configureSelfLink(name, comp->timeConverter(), handler);
   return EventLink::ptr(new EventLink(name, lat, self));
@@ -456,7 +456,7 @@ SST::Event::HandlerBase* newLinkHandler(const T* t, Fxn fxn, Args&&... args){
 
 class LocalLink : public EventLink {
  public:
-  LocalLink(Timestamp latency, EventManager* mgr, EventHandler* hand) :
+  LocalLink(TimeDelta latency, EventManager* mgr, EventHandler* hand) :
     EventLink(latency),
     handler_(hand),
     mgr_(mgr)
@@ -471,7 +471,7 @@ class LocalLink : public EventLink {
     return handler_->toString();
   }
 
-  void send(Timestamp delay, Event* ev) override;
+  void send(TimeDelta delay, Event* ev) override;
 
  protected:
   EventHandler* handler_;
@@ -481,7 +481,7 @@ class LocalLink : public EventLink {
 
 class MultithreadLink : public LocalLink {
  public:
-  MultithreadLink(Timestamp latency,
+  MultithreadLink(TimeDelta latency,
                   EventManager* src_mgr, EventManager* dst_mgr,
                   EventHandler* handler) :
     LocalLink(latency, src_mgr, handler),
@@ -490,7 +490,7 @@ class MultithreadLink : public LocalLink {
     setMinThreadLatency(latency);
   }
 
-  void send(Timestamp delay, Event *ev) override;
+  void send(TimeDelta delay, Event *ev) override;
 
  private:
   EventManager* dst_mgr_;
@@ -499,7 +499,7 @@ class MultithreadLink : public LocalLink {
 
 class IpcLink : public EventLink {
  public:
-  IpcLink(Timestamp latency, int rank,
+  IpcLink(TimeDelta latency, int rank,
            EventManager* mgr,
            uint32_t srcId, uint32_t dstId,
            int port, bool is_credit) :
@@ -518,7 +518,7 @@ class IpcLink : public EventLink {
     return "ipc link";
   }
 
-  void send(Timestamp delay, Event* ev) override;
+  void send(TimeDelta delay, Event* ev) override;
 
  private:
   bool is_credit_;
@@ -533,7 +533,7 @@ class IpcLink : public EventLink {
 class SubLink : public EventLink
 {
  public:
-  SubLink(Timestamp lat, Component* comp, EventHandler* handler) :
+  SubLink(TimeDelta lat, Component* comp, EventHandler* handler) :
     EventLink(lat), //sub links have no latency
     comp_(comp), handler_(handler)
   {
@@ -547,7 +547,7 @@ class SubLink : public EventLink
     return "sub link";
   }
 
-  void send(Timestamp delay, Event *ev) override {
+  void send(TimeDelta delay, Event *ev) override {
     comp_->sendDelayedExecutionEvent(delay, new HandlerExecutionEvent(ev, handler_));
   }
 
@@ -557,7 +557,7 @@ class SubLink : public EventLink
   EventHandler* handler_;
 };
 
-static inline EventLink::ptr allocateSubLink(const std::string& name, Timestamp lat,
+static inline EventLink::ptr allocateSubLink(const std::string& name, TimeDelta lat,
                                              SST::Component* comp, LinkHandler* handler)
 {
   return EventLink::ptr(new SubLink(lat, comp, handler));

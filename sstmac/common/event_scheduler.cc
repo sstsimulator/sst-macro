@@ -79,7 +79,7 @@ EventLink::allocateLinkId()
 }
 
 void
-EventScheduler::sendExecutionEvent(GlobalTimestamp arrival, ExecutionEvent *ev)
+EventScheduler::sendExecutionEvent(Timestamp arrival, ExecutionEvent *ev)
 {
   ev->setTime(arrival);
   ev->setSeqnum(seqnum_++);
@@ -114,8 +114,8 @@ EventScheduler::setManager()
   now_ = mgr_->nowPtr();
 }
 
-Timestamp EventLink::minRemoteLatency_;
-Timestamp EventLink::minThreadLatency_;
+TimeDelta EventLink::minRemoteLatency_;
+TimeDelta EventLink::minThreadLatency_;
 uint32_t EventLink::linkIdCounter_{0};
 #endif
 
@@ -151,9 +151,9 @@ SubComponent::setup()
 #if SSTMAC_INTEGRATED_SST_CORE
 #else
 void
-LocalLink::send(Timestamp delay, Event *ev)
+LocalLink::send(TimeDelta delay, Event *ev)
 {
-  GlobalTimestamp arrival = mgr_->now() + delay + latency_;
+  Timestamp arrival = mgr_->now() + delay + latency_;
   ExecutionEvent* qev = new HandlerExecutionEvent(ev, handler_);
   qev->setSeqnum(seqnum_++);
   qev->setTime(arrival);
@@ -162,9 +162,9 @@ LocalLink::send(Timestamp delay, Event *ev)
 }
 
 void
-IpcLink::send(Timestamp delay, Event *ev)
+IpcLink::send(TimeDelta delay, Event *ev)
 {
-  GlobalTimestamp arrival = mgr_->now() + delay + latency_;
+  Timestamp arrival = mgr_->now() + delay + latency_;
   mgr_->setMinIpcTime(arrival);
   IpcEvent iev;
   iev.src = srcId_;
@@ -182,10 +182,10 @@ IpcLink::send(Timestamp delay, Event *ev)
 }
 
 void
-MultithreadLink::send(Timestamp delay, Event* ev)
+MultithreadLink::send(TimeDelta delay, Event* ev)
 {
   ExecutionEvent* qev = new HandlerExecutionEvent(ev, handler_);
-  GlobalTimestamp arrival = mgr_->now() + delay + latency_;
+  Timestamp arrival = mgr_->now() + delay + latency_;
   mgr_->setMinIpcTime(arrival);
   qev->setTime(arrival);
   qev->setSeqnum(seqnum_++);
