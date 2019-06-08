@@ -1,5 +1,5 @@
-Rank 0 on MPI_Comm 0 passed test: 1.94e-04
-Rank 0 on MPI_Comm 0 passed test: 1.10e-02
+Rank 0 on MPI_Comm 0 passed test: 1.88e-04
+Rank 0 on MPI_Comm 0 passed test: 1.09e-02
 Rank 0 on MPI_Comm 0 passed test: 1.16e-02
 Rank 0 on MPI_Comm 0 passed test: 1.18e-02
 Rank 0 on MPI_Comm 0 passed test: 1.21e-02
@@ -93,4 +93,4 @@ Rank 0 on MPI_Comm 3 passed test: 1.30e-02
 Rank 0 on MPI_Comm 3 passed test: 1.30e-02
 Rank 0 on MPI_Comm 3 passed test: 1.30e-02
 Rank 0 on MPI_Comm 3 passed test: 1.30e-02
-Estimated total runtime of           0.01299891 seconds
+Estimated total runtime of           0.01298336 seconds

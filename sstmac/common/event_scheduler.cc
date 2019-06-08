@@ -54,6 +54,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
 #include <unistd.h>
+#include <sstmac/hardware/nic/nic.h>
+#include <sstmac/hardware/network/network_message.h>
 
 #if SSTMAC_INTEGRATED_SST_CORE
 #include <sstmac/sst_core/connectable_wrapper.h>
@@ -71,11 +73,12 @@ EventLink::~EventLink()
 #if SSTMAC_INTEGRATED_SST_CORE
 SST::TimeConverter* EventScheduler::time_converter_ = nullptr;
 #else
-uint32_t
-EventLink::allocateLinkId()
+uint64_t
+EventLink::allocateSelfLinkId()
 {
-  auto ret =  linkIdCounter_++;
-  return ret;
+  uint64_t max = std::numeric_limits<uint64_t>::max();
+  uint32_t offset = selfLinkIdCounter_++;
+  return max - offset;
 }
 
 void
@@ -116,7 +119,7 @@ EventScheduler::setManager()
 
 TimeDelta EventLink::minRemoteLatency_;
 TimeDelta EventLink::minThreadLatency_;
-uint32_t EventLink::linkIdCounter_{0};
+uint32_t EventLink::selfLinkIdCounter_{0};
 #endif
 
 void
@@ -167,15 +170,12 @@ IpcLink::send(TimeDelta delay, Event *ev)
   Timestamp arrival = mgr_->now() + delay + latency_;
   mgr_->setMinIpcTime(arrival);
   IpcEvent iev;
-  iev.src = srcId_;
-  iev.dst = dstId_;
   iev.seqnum = seqnum_++;
   iev.ev = ev;
   iev.t = arrival;
   iev.rank = rank_;
+  iev.thread = thread_;
   iev.link = linkId_;
-  iev.credit = is_credit_;
-  iev.port = port_;
   mgr_->ipcSchedule(&iev);
   //this guy is gone
   delete ev;

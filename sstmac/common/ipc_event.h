@@ -9,14 +9,11 @@ namespace sstmac {
 
 struct IpcEventBase {
   uint32_t ser_size;
-  uint32_t dst;
   Timestamp t;
-  uint32_t src;
-  uint32_t link;
+  uint64_t link;
   uint32_t seqnum;
-  int port;
-  int rank;
-  bool credit;
+  uint32_t rank;
+  uint32_t thread;
 };
 
 struct IpcEvent : public IpcEventBase {

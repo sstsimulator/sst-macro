@@ -119,7 +119,7 @@ class CollectiveDoneMessage :
  * @class collective_work_message
  * Main message type used by collectives
  */
-class CollectiveWorkMessage :
+class CollectiveWorkMessage final :
   public ProtocolMessage
 {
   ImplementSerializable(CollectiveWorkMessage)
@@ -157,7 +157,11 @@ class CollectiveWorkMessage :
 
   static const char* tostr(int p);
 
-  virtual void serialize_order(sstmac::serializer& ser) override;
+  void serialize_order(sstmac::serializer& ser) override;
+
+#if !SSTMAC_INTEGRATED_SST_CORE
+  void validate_serialization(serializable *ser) override;
+#endif
 
   int tag() const {
     return tag_;

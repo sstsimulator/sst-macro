@@ -182,7 +182,7 @@ class Transport {
 
   template <class T, class... Args>
   T* smsgSend(int remote_proc, uint64_t byte_length, void* buffer,
-                     int local_cq, int remote_cq, Message::class_t cls, Args&&... args){
+              int local_cq, int remote_cq, Message::class_t cls, Args&&... args){
     uint64_t flow_id = allocateFlowId();
     bool needs_ack = local_cq != Message::no_ack;
     T* t = new T(std::forward<Args>(args)...,

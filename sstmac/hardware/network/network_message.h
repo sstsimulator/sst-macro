@@ -94,7 +94,7 @@ class NetworkMessage : public Flow
    void* buf,
    header ctor_tag) :
     NetworkMessage(flow_id, libname, aid, to, from,
-                    size, 0, needs_ack, nullptr, nullptr, buf,
+                    size, size, needs_ack, nullptr, nullptr, buf,
                     payload)
   {
   }
@@ -225,6 +225,10 @@ class NetworkMessage : public Flow
 
   virtual void serialize_order(serializer& ser) override;
 
+#if !SSTMAC_INTEGRATED_SST_CORE
+  void validate_serialization(serializable *ser) override;
+#endif
+
   sw::AppId aid() const {
     return aid_;
   }
@@ -295,8 +299,6 @@ class NetworkMessage : public Flow
    * @brief wire_buffer Represents a payload injected on the wire
  */
   void* wire_buffer_;
-
-  uint64_t flow_id_;
 
   sw::AppId aid_;
 

@@ -247,12 +247,11 @@ void
 NetworkMessage::serialize_order(serializer& ser)
 {
   Flow::serialize_order(ser);
+  ser & aid_;
   ser & needs_ack_;
   ser & toaddr_;
   ser & fromaddr_;
-  ser & payload_bytes_;
   ser & type_;
-  ser & aid_;
   ser & qos_;
   if (type_ == null_netmsg_type){
     spkt_abort_printf("failed serializing network message - got null type");
@@ -260,11 +259,30 @@ NetworkMessage::serialize_order(serializer& ser)
   ser.primitive(remote_buffer_);
   ser.primitive(local_buffer_);
   ser.primitive(smsg_buffer_);
-  //then there will be a wire buffer
-  if (remote_buffer_ || local_buffer_ || smsg_buffer_){
-    ser & sstmac::array(wire_buffer_, payload_bytes_);
-  }
+  ser & sstmac::array(wire_buffer_, payload_bytes_);
+  //this has to go here, weirdness with sstmac::array
+  ser & payload_bytes_;
 }
+
+#if !SSTMAC_INTEGRATED_SST_CORE
+void
+NetworkMessage::validate_serialization(serializable *ser)
+{
+  auto* msg = spkt_assert_ser_type(ser,NetworkMessage);
+  spkt_assert_ser_equal(msg,aid_);
+  spkt_assert_ser_equal(msg,needs_ack_);
+  spkt_assert_ser_equal(msg,qos_);
+  spkt_assert_ser_equal(msg,fromaddr_);
+  spkt_assert_ser_equal(msg,toaddr_);
+  spkt_assert_ser_equal(msg,remote_buffer_);
+  spkt_assert_ser_equal(msg,local_buffer_);
+  spkt_assert_ser_equal(msg,smsg_buffer_);
+  if (msg->payload_bytes_ != payload_bytes_){
+    spkt_abort_printf("Bad bytes %d != %d", msg->payload_bytes_, payload_bytes_);
+  }
+  spkt_assert_ser_equal(msg,payload_bytes_);
+}
+#endif
 
 bool
 NetworkMessage::isMetadata() const

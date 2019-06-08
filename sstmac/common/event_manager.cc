@@ -57,6 +57,12 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/thread_safe_new.h>
 #include <limits>
 
+#define __STDC_FORMAT_MACROS
+#include <cinttypes>
+
+#include <sstmac/hardware/nic/nic.h>
+#include <sstmac/hardware/network/network_message.h>
+
 RegisterDebugSlot(EventManager);
 
 #define prll_debug(...) \
@@ -64,8 +70,7 @@ RegisterDebugSlot(EventManager);
 
 namespace sstmac {
 
-const Timestamp EventManager::no_events_left_time(
-  std::numeric_limits<uint64_t>::max(), std::numeric_limits<uint64_t>::max());
+const Timestamp EventManager::no_events_left_time(0, std::numeric_limits<uint64_t>::max());
 
 class StopEvent : public ExecutionEvent
 {
@@ -143,6 +148,15 @@ EventManager::~EventManager()
     delete grp->output;
     delete grp;
   }
+}
+
+void
+EventManager::addLinkHandler(uint64_t linkId, EventHandler *handler)
+{
+  if (linkId >= link_handlers_.size()){
+    link_handlers_.resize(linkId + 1);
+  }
+  link_handlers_[linkId] = handler;
 }
 
 void
@@ -259,16 +273,31 @@ EventManager::finalizeStatsOutput()
 void
 EventManager::scheduleIncoming(IpcEvent* iev)
 {
-  auto comp = interconn_->component(iev->dst);
-  EventHandler* dst_handler = iev->credit ? comp->creditHandler(iev->port) : comp->payloadHandler(iev->port);
-  prll_debug("thread %d scheduling incoming event at %12.8e to device %d:%s, %s",
-    thread_id_, iev->t.sec(), iev->dst, dst_handler->toString().c_str(),
-    sprockit::toString(iev->ev).c_str());
+#if SSTMAC_SANITY_CHECK
+  if (iev->link >= link_handlers_.size()){
+    spkt_abort_printf("Rank %d received event for bad link %" PRIu64,
+                      me(), iev->link);
+  }
+#endif
+
+  EventHandler* dst_handler = link_handlers_[iev->link];
+  prll_debug("thread %d scheduling incoming event on link %" PRIu64 " at %12.8e",
+             thread_id_, iev->link, iev->t.sec())
+#if SSTMAC_SANITY_CHECK
+  if (!dst_handler){
+    spkt_abort_printf("Rank %d received event for null link %" PRIu64,
+                      me(), iev->link);
+  }
+#endif
   auto qev = new HandlerExecutionEvent(iev->ev, dst_handler);
   qev->setSeqnum(iev->seqnum);
   qev->setTime(iev->t);
   qev->setLink(iev->link);
+  size_t prev_size = event_queue_.size();
   schedule(qev);
+  if (event_queue_.size() == prev_size){
+    spkt_abort_printf("event queue lost event while scheduling! identical events added on link %" PRIu64, iev->link);
+  }
 }
 
 void

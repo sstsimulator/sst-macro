@@ -98,6 +98,10 @@ class MpiMessage final :
 
   void serialize_order(sstmac::serializer& ser) override;
 
+#if !SSTMAC_INTEGRATED_SST_CORE
+  void validate_serialization(serializable* ser) override;
+#endif
+
   MPI_Datatype type() const {
     return type_;
   }

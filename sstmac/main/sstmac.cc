@@ -179,15 +179,7 @@ initParams(ParallelRuntime* rt, opts& oo, sprockit::SimParameters::ptr params, b
   }
 
   if (oo.got_config_file){
-    if (parallel){
-      RuntimeParamBcaster bcaster(rt);
-      sprockit::SimParameters::ptr tmp_params;
-      sprockit::SimParameters::parallelBuildParams(tmp_params, rt->me(), rt->nproc(),
-                                                      oo.configfile, &bcaster, true);
-      params = tmp_params;
-    } else {
-      if (oo.got_config_file) params->parseFile(oo.configfile, false, true);
-    }
+    params->parseFile(oo.configfile, false, true);
   }
 
 

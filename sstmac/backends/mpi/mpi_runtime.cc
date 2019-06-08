@@ -314,7 +314,7 @@ MpiRuntime::sendRecvMessages(Timestamp vote)
 
   std::swap(payload_tag, next_payload_tag);
   ++epoch_;
-  return Timestamp(incoming.time_vote, TimeDelta::exact);
+  return Timestamp(0, incoming.time_vote);
 }
 
 void

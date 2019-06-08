@@ -100,6 +100,31 @@ Message::serialize_order(sstmac::serializer &ser)
   NetworkMessage::serialize_order(ser);
 }
 
+#if !SSTMAC_INTEGRATED_SST_CORE
+void
+Message::validate_serialization(serializable *ser)
+{
+  auto* msg = spkt_assert_ser_type(ser,Message);
+  spkt_assert_ser_equal(msg,sender_);
+  spkt_assert_ser_equal(msg,recver_);
+  spkt_assert_ser_equal(msg,class_);
+  spkt_assert_ser_equal(msg,send_cq_);
+  spkt_assert_ser_equal(msg,recv_cq_);
+  NetworkMessage::validate_serialization(ser);
+}
+
+void
+ProtocolMessage::validate_serialization(serializable *ser)
+{
+  auto* msg = spkt_assert_ser_type(ser,ProtocolMessage);
+  spkt_assert_ser_equal(msg,count_);
+  spkt_assert_ser_equal(msg,type_size_);
+  spkt_assert_ser_equal(msg,partner_buffer_);
+  spkt_assert_ser_equal(msg,stage_);
+  spkt_assert_ser_equal(msg,protocol_);
+}
+#endif
+
 static uint32_t crc32_for_byte(uint32_t r) {
   for(int j = 0; j < 8; ++j)
     r = (r & 1? 0: (uint32_t)0xEDB88320L) ^ r >> 1;

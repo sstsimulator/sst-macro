@@ -236,6 +236,8 @@ class EventManager
           : (*event_queue_.begin())->time();
   }
 
+  void addLinkHandler(uint64_t linkId, EventHandler* handler);
+
  protected:
   void registerPending();
 
@@ -301,6 +303,8 @@ class EventManager
   StatisticOutput* dflt_stat_output_;
 
   std::map<std::string, StatisticGroup*> stat_groups_;
+
+  std::vector<EventHandler*> link_handlers_;
 
 };
 

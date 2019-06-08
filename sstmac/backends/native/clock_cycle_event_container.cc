@@ -100,13 +100,13 @@ ClockCycleEventMap::handleIncoming(char* buf)
   serializer ser;
   ser.start_unpacking(buf, 1<<31); //just pass in a huge number
   uint32_t sz; //these are guaranteed to be first
-  uint32_t dst;
+  uint32_t thread;
   ser & sz;
-  ser & dst;
+  ser & thread;
   if (sz == 0){
     sprockit::abort("got zero size for incoming buffer");
   }
-  EventManager* mgr = interconn_->component(dst)->mgr();
+  EventManager* mgr = threadManager(thread);
   mgr->schedulePendingSerialization(buf);
   return sz;
 #else
@@ -121,12 +121,10 @@ ClockCycleEventMap::receiveIncomingEvents(Timestamp vote)
 
   Timestamp min_time = no_events_left_time;
   if (!stopped_){
-    event_debug("voting for minimum time %lu:%lu on epoch %d",
-                vote.epochs, vote.time.ticks(), epoch_);
+    event_debug("voting for minimum time %10.6e on epoch %d", vote.sec(), epoch_);
     min_time = rt_->sendRecvMessages(vote);
 
-    event_debug("got back minimum time %lu:%lu",
-                min_time.epochs, min_time.time.ticks());
+    event_debug("got back minimum time %10.6e", min_time.sec());
 
     int num_recvs = rt_->numRecvsDone();
     for (int i=0; i < num_recvs; ++i){
@@ -152,6 +150,10 @@ ClockCycleEventMap::run()
   interconn_->setup();
 
   Timestamp lower_bound;
+  /** If we want to just execute the synchronization without any actual events
+   *  we can force a certain number of loops to execue for timing purposes
+   *  This allows measuring only the overhead of parallel execution
+   */
   int num_loops_left = num_profile_loops_;
   if (num_loops_left && rt_->me() == 0){
     printf("Running %d profile loops\n", num_loops_left);
@@ -164,8 +166,11 @@ ClockCycleEventMap::run()
     printf("Running parallel simulation with lookahead %10.6fus\n", lookahead_.usec());
   }
   uint64_t epoch = 0;
+
   while (lower_bound != no_events_left_time || num_loops_left > 0){
     Timestamp horizon = lower_bound + lookahead_;
+    event_debug("running from %10.6e->%10.6e for lookahead %10.6e",
+                lower_bound.sec(), horizon.sec(), lookahead_.sec());
     auto t_start = rdtsc();
     Timestamp min_time = runEvents(horizon);
     auto t_run = rdtsc();
