@@ -54,8 +54,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
 #include <unistd.h>
-#include <sstmac/hardware/nic/nic.h>
-#include <sstmac/hardware/network/network_message.h>
+#include <limits>
 
 #if SSTMAC_INTEGRATED_SST_CORE
 #include <sstmac/sst_core/connectable_wrapper.h>

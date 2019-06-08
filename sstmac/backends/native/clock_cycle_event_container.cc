@@ -49,7 +49,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #if !SSTMAC_INTEGRATED_SST_CORE
 #include <sstmac/backends/native/clock_cycle_event_container.h>
 #include <sstmac/hardware/switch/network_switch.h>
-#include <sstmac/hardware/network/network_message.h>
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/hardware/interconnect/interconnect.h>

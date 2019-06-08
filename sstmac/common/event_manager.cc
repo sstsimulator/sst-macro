@@ -60,9 +60,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #define __STDC_FORMAT_MACROS
 #include <cinttypes>
 
-#include <sstmac/hardware/nic/nic.h>
-#include <sstmac/hardware/network/network_message.h>
-
 RegisterDebugSlot(EventManager);
 
 #define prll_debug(...) \

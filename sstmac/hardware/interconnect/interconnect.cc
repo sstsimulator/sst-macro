@@ -48,7 +48,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/topology/structured_topology.h>
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/hardware/nic/nic.h>
-#include <sstmac/hardware/network/network_message.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/hardware/pisces/pisces.h>
 #include <sstmac/hardware/switch/network_switch.h>
