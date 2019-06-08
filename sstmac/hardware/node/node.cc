@@ -166,8 +166,9 @@ Node::setup()
   mem_model_->setup();
   os_->setup();
   nic_->setup();
-  if (job_launcher_)
+  if (job_launcher_){
     job_launcher_->scheduleLaunchRequests();
+  }
 }
 
 void

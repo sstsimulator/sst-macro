@@ -343,11 +343,6 @@ SimTransport::compute(sstmac::TimeDelta t)
 void
 SimTransport::send(Message* m)
 {
-  if (m->flowId() == 133143986181){
-    std::cerr << "Go go " << m->toString()
-              << " buf=" << m->smsgBuffer()
-              << std::endl;
-  }
   int qos = qos_analysis_->selectQoS(m);
   m->setQoS(qos);
   m->setTimeSent(parent_app_->now());

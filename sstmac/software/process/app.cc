@@ -590,6 +590,8 @@ UserAppCxxFullMain::UserAppCxxFullMain(SST::Params& params, SoftwareId sid,
 void
 UserAppCxxFullMain::aliasMains()
 {
+  static thread_lock lock;
+  lock.lock();
   if (!main_fxns_){
     main_fxns_ = std::unique_ptr<std::map<std::string, App::main_fxn>>(main_fxns_init_);
     main_fxns_init_ = nullptr;
@@ -606,6 +608,7 @@ UserAppCxxFullMain::aliasMains()
 #endif
     }
   }
+  lock.unlock();
 }
 
 void
@@ -624,6 +627,8 @@ UserAppCxxFullMain::registerMainFxn(const char *name, App::main_fxn fxn)
 void
 UserAppCxxEmptyMain::aliasMains()
 {
+  static thread_lock lock;
+  lock.lock();
   if (!empty_main_fxns_){
     empty_main_fxns_ = std::unique_ptr<std::map<std::string, App::empty_main_fxn>>(empty_main_fxns_init_);
     empty_main_fxns_init_ = nullptr;
@@ -640,6 +645,7 @@ UserAppCxxEmptyMain::aliasMains()
 #endif
     }
   }
+  lock.unlock();
 }
 
 void

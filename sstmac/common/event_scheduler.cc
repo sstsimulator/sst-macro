@@ -112,7 +112,9 @@ EventScheduler::registerStatisticCore(StatisticBase *base, SST::Params& params)
 void
 EventScheduler::setManager()
 {
-  mgr_ = EventManager::global;
+  mgr_ = EventManager::global->componentManager(id_);
+  thread_id_ = mgr_->thread();
+  nthread_ = EventManager::global->nthread();
   now_ = mgr_->nowPtr();
 }
 

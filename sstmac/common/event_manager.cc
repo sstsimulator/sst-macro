@@ -42,6 +42,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
+#define __STDC_FORMAT_MACROS
 #include <sstmac/common/event_manager.h>
 #include <sstmac/common/sst_event.h>
 #include <sstmac/common/stats/stat_collector.h>
@@ -57,10 +58,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/thread_safe_new.h>
 #include <limits>
 
-#define __STDC_FORMAT_MACROS
 #include <cinttypes>
 
-RegisterDebugSlot(EventManager);
+RegisterDebugSlot(event_manager);
 
 #define prll_debug(...) \
   debug_printf(sprockit::dbg::parallel, "LP %d: %s", rt_->me(), sprockit::printf(__VA_ARGS__).c_str())
@@ -172,6 +172,8 @@ EventManager::runEvents(Timestamp event_horizon)
 {
   registerPending();
   min_ipc_time_ = no_events_left_time;
+  prll_debug("manager %d:%d running to horizon %10.5e with %llu events in queue",
+             me_, thread_id_, event_horizon.sec(), event_queue_.size());
   while (!event_queue_.empty()){
     auto iter = event_queue_.begin();
     ExecutionEvent* ev = *iter;
@@ -179,6 +181,9 @@ EventManager::runEvents(Timestamp event_horizon)
     if (ev->time() < now_){
       spkt_abort_printf("Time went backwards on thread %d", thread_id_);
     }
+
+    prll_debug("manager %d:%d has minimum time event t=%" PRIu64,
+               me_, thread_id_, ev->time().time.ticks());
 
     if (ev->time() >= event_horizon){
       Timestamp ret = std::min(min_ipc_time_, ev->time());
@@ -308,9 +313,13 @@ EventManager::registerPending()
   int idx = 0;
   for (auto& pendingVec : pending_events_[pendingSlot_]){
     for (ExecutionEvent* ev : pendingVec){
+#if SSTMAC_SANITY_CHECK
       if (ev->time() < now_){
-        spkt_abort_printf("Thread %d scheduling event on thread %d", idx, thread_id_);
+        spkt_abort_printf("Thread %d scheduling event in the past on thread %d", idx, thread_id_);
       }
+#endif
+      prll_debug("manager %d:%d scheduling event %" PRIu32 " from link %" PRIu64,
+                 me_, thread_id_, ev->seqnum(), ev->linkId());
       schedule(ev);
     }
     pendingVec.clear();

@@ -256,11 +256,11 @@ class EventScheduler : public sprockit::printable
   }
 
   int nthread() const {
-    return 1;
+    return nthread_;
   }
 
   int threadId() const {
-    return 0;
+    return thread_id_;
   }
 
   Timestamp now() const {
@@ -305,7 +305,7 @@ class EventScheduler : public sprockit::printable
 #if !SSTMAC_INTEGRATED_SST_CORE
    seqnum_(0), mgr_(nullptr), now_(nullptr), selfLinkId_(EventLink::allocateSelfLinkId()),
 #endif
-   comp_(base), id_(id)
+   comp_(base), id_(id), nthread_(1), thread_id_(0)
   {
 #if SSTMAC_INTEGRATED_SST_CORE
     if (!time_converter_){
