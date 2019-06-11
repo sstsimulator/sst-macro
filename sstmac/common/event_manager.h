@@ -201,7 +201,8 @@ class EventManager
   void schedule(ExecutionEvent* ev){
 #if SSTMAC_SANITY_CHECK
     if (ev->time() < now_){
-      spkt_abort_printf("Time went backwards on thread %d", thread_id_);
+      spkt_abort_printf("Time went backwards on manager %d:%d to t=%10.6e for link=%" PRIu64 " seq=%" PRIu32,
+                        me_, thread_id_, ev->time().sec(), ev->linkId(), ev->seqnum());
     }
     size_t prev_size = event_queue_.size();
     debug_printf(sprockit::dbg::event_manager,
@@ -239,6 +240,8 @@ class EventManager
   const Timestamp* nowPtr() const {
     return &now_;
   }
+
+  int epoch() const;
 
   void setMinIpcTime(Timestamp t){
     min_ipc_time_ = std::min(t,min_ipc_time_);

@@ -288,7 +288,8 @@ ParallelRuntime::ParallelRuntime(SST::Params& params,
   : part_(nullptr),
     me_(me),
     nproc_(nproc),
-    nthread_(1)
+    nthread_(1),
+    epoch_(0)
 {
   if (me_ == 0){
     sprockit::output::init_out0(&std::cout);
@@ -341,9 +342,10 @@ void ParallelRuntime::sendEvent(IpcEvent* iev)
   CommBuffer& buff = send_buffers_[iev->rank];
   char* ptr = buff.allocateSpace(iev->ser_size, iev);
   ser.start_packing(ptr, iev->ser_size);
-  debug_printf(sprockit::dbg::parallel, "sending event of size %lu to LP %d at t=%10.6e: %s",
-               iev->ser_size, iev->rank, iev->t.sec(),
-               sprockit::toString(iev->ev).c_str());
+  debug_printf(sprockit::dbg::parallel,
+     "sending event of size %lu to LP %d at t=%10.6e on link=%" PRIu64 " on epoch %d: %s",
+     iev->ser_size, iev->rank, iev->t.sec(), iev->link, epoch_,
+     sprockit::toString(iev->ev).c_str());
   runSerialize(ser, iev);
 
 #if SSTMAC_SANITY_CHECK && !SSTMAC_INTEGRATED_SST_CORE

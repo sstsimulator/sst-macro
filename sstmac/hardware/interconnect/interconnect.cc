@@ -375,7 +375,7 @@ Interconnect::connectLogP(
             interconn_debug("making NIC %d payload handler available on link %" PRIu64,
                             nd->addr(), linkId);
             auto* handler = nd->payloadHandler(NIC::LogP);
-            mgr->addLinkHandler(linkId++, handler);
+            mgr->threadManager(target_thread)->addLinkHandler(linkId++, handler);
           } else {
             //increment to keep numbering consistent
             linkId++;
@@ -401,7 +401,8 @@ Interconnect::connectLogP(
         } else {
           interconn_debug("connecting LogP %d:%d:%d to NIC %d:%d on IPC link %" PRIu64,
                           rt_->me(), logp, conn.nid, conn.nid, NIC::LogP, linkId);
-          auto* out_link = new IpcLink(linkId++, logp_link_latency, target_rank, target_thread, mgr);
+          auto* out_link = new IpcLink(linkId++, logp_link_latency, target_rank, target_thread,
+                                       mgr->threadManager(logp), mgr);
           logp_switches_[logp]->connectOutput(conn.nid, EventLink::ptr(out_link));
         }
       }
@@ -412,7 +413,7 @@ Interconnect::connectLogP(
             interconn_debug("making NIC %d payload handler available on link %" PRIu64,
                             nd->addr(), linkId);
             auto* handler = nd->payloadHandler(NIC::LogP);
-            mgr->addLinkHandler(linkId++, handler);
+            mgr->threadManager(target_thread)->addLinkHandler(linkId++, handler);
           } else {
             //increment to keep numbering consistent
             linkId++;
@@ -567,7 +568,8 @@ Interconnect::connectSwitches(uint64_t linkIdOffset, EventManager* mgr, SST::Par
         } else {
           interconn_debug("connecting switches %d:%d->%d:%d on IPC link %" PRIu64,
                           conn.src, conn.src_outport, conn.dst, conn.dst_inport, linkId);
-          payload_link = new IpcLink(linkId++, linkLatency, dst_rank, dst_thread, mgr);
+          payload_link = new IpcLink(linkId++, linkLatency, dst_rank, dst_thread,
+                                     mgr->threadManager(src_thread), mgr);
         }
         switches_[src]->connectOutput(conn.src_outport, conn.dst_inport, EventLink::ptr(payload_link));
       } else {
@@ -599,7 +601,8 @@ Interconnect::connectSwitches(uint64_t linkIdOffset, EventManager* mgr, SST::Par
           interconn_debug("connecting switches %d:%d<-%d:%d on IPC link %" PRIu64,
                           conn.src, conn.src_outport, conn.dst, conn.dst_inport, linkId);
           //we need to make the payload handler available on this end - its link is this one
-          credit_link = new IpcLink(linkId++, linkLatency, src_rank, src_thread, mgr);
+          credit_link = new IpcLink(linkId++, linkLatency, src_rank, src_thread,
+                                    mgr->threadManager(dst_thread), mgr);
         }
         switches_[conn.dst]->connectInput(conn.src_outport, conn.dst_inport, EventLink::ptr(credit_link));
       } else {

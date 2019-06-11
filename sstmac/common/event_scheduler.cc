@@ -168,8 +168,11 @@ LocalLink::send(TimeDelta delay, Event *ev)
 void
 IpcLink::send(TimeDelta delay, Event *ev)
 {
-  Timestamp arrival = mgr_->now() + delay + latency_;
-  mgr_->setMinIpcTime(arrival);
+  Timestamp arrival = ev_mgr_->now() + delay + latency_;
+  debug_printf(sprockit::dbg::parallel,
+      "manager %d:%d sending IPC event at t=%10.7e on link=%" PRIu64 " seq=%" PRIu32 " to arrive at t=%10.7e on epoch %d",
+       ev_mgr_->me(), ev_mgr_->thread(), ev_mgr_->now().sec(), linkId_, seqnum_, arrival.sec(), ev_mgr_->epoch());
+  ev_mgr_->setMinIpcTime(arrival);
   IpcEvent iev;
   iev.seqnum = seqnum_++;
   iev.ev = ev;
@@ -177,7 +180,7 @@ IpcLink::send(TimeDelta delay, Event *ev)
   iev.rank = rank_;
   iev.thread = thread_;
   iev.link = linkId_;
-  mgr_->ipcSchedule(&iev);
+  ipc_mgr_->ipcSchedule(&iev);
   //this guy is gone
   delete ev;
 }
