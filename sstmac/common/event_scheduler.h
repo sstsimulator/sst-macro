@@ -325,6 +325,8 @@ class EventScheduler : public sprockit::printable
 
  private:
   uint32_t id_;
+  int thread_id_;
+  int nthread_;
 
 #if SSTMAC_INTEGRATED_SST_CORE
   SST::Link* self_link_;
@@ -336,8 +338,6 @@ class EventScheduler : public sprockit::printable
   EventManager* mgr_;
   uint32_t seqnum_;
   uint32_t selfLinkId_;
-  int thread_id_;
-  int nthread_;
   const Timestamp* now_;
 
  protected:
