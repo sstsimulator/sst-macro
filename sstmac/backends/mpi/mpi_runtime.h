@@ -122,8 +122,6 @@ class MpiRuntime :
   MPI_Datatype vote_type_;
   MPI_Op vote_op_;
 
-  int epoch_;
-
   static void voteReduceFunction(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype);
 };
 

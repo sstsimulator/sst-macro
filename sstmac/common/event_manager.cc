@@ -167,23 +167,29 @@ EventManager::stop()
   stopped_ = true;
 }
 
+int
+EventManager::epoch() const
+{
+  return rt_->epoch();
+}
+
 Timestamp
 EventManager::runEvents(Timestamp event_horizon)
 {
   registerPending();
   min_ipc_time_ = no_events_left_time;
-  prll_debug("manager %d:%d running to horizon %10.5e with %llu events in queue",
-             me_, thread_id_, event_horizon.sec(), event_queue_.size());
+  prll_debug("manager %d:%d running to horizon %10.5e with %llu events in queue on epoch %d",
+             me_, thread_id_, event_horizon.sec(), event_queue_.size(), epoch());
   while (!event_queue_.empty()){
     auto iter = event_queue_.begin();
     ExecutionEvent* ev = *iter;
 
+#if SSTMAC_SANITY_CHECK
     if (ev->time() < now_){
-      spkt_abort_printf("Time went backwards on thread %d", thread_id_);
+      spkt_abort_printf("Time went backwards on manager %d:%d to t=%10.6e for link=%" PRIu64 " for seqnum=%" PRIu32,
+                        me_, thread_id_, ev->time().sec(), ev->linkId(), ev->seqnum());
     }
-
-    prll_debug("manager %d:%d has minimum time event t=%" PRIu64,
-               me_, thread_id_, ev->time().time.ticks());
+#endif
 
     if (ev->time() >= event_horizon){
       Timestamp ret = std::min(min_ipc_time_, ev->time());
@@ -283,9 +289,13 @@ EventManager::scheduleIncoming(IpcEvent* iev)
 #endif
 
   EventHandler* dst_handler = link_handlers_[iev->link];
-  prll_debug("thread %d scheduling incoming event on link %" PRIu64 " at %12.8e",
-             thread_id_, iev->link, iev->t.sec())
+  prll_debug("manager %d:%d scheduling incoming event on link=%" PRIu64 " seq=%" PRIu32 " at %12.8e on epoch %d",
+             me_, thread_id_, iev->link, iev->seqnum, iev->t.sec(), epoch());
 #if SSTMAC_SANITY_CHECK
+  if (iev->t < now_){
+    spkt_abort_printf("manager %d:%d got incoming event on link=%" PRIu64 " seq=%" PRIu32 " at t=%12.8e < now=%12.8e",
+                      me_, thread_id_, iev->link, iev->seqnum, iev->t.sec(), now_.sec());
+  }
   if (!dst_handler){
     spkt_abort_printf("Rank %d received event for null link %" PRIu64,
                       me(), iev->link);
@@ -297,9 +307,11 @@ EventManager::scheduleIncoming(IpcEvent* iev)
   qev->setLink(iev->link);
   size_t prev_size = event_queue_.size();
   schedule(qev);
+#if SSTMAC_SANITY_CHECK
   if (event_queue_.size() == prev_size){
     spkt_abort_printf("event queue lost event while scheduling! identical events added on link %" PRIu64, iev->link);
   }
+#endif
 }
 
 void
@@ -318,8 +330,8 @@ EventManager::registerPending()
         spkt_abort_printf("Thread %d scheduling event in the past on thread %d", idx, thread_id_);
       }
 #endif
-      prll_debug("manager %d:%d scheduling event %" PRIu32 " from link %" PRIu64,
-                 me_, thread_id_, ev->seqnum(), ev->linkId());
+      prll_debug("manager %d:%d scheduling event %" PRIu32 " from link %" PRIu64 " at t=%10.7e on epoch %d",
+                 me_, thread_id_, ev->seqnum(), ev->linkId(), ev->time().sec(), epoch());
       schedule(ev);
     }
     pendingVec.clear();
@@ -403,106 +415,10 @@ EventManager::topologyPartition() const
   return rt_->topologyPartition();
 }
 
-/**
-void
-EventManager::registerStat(
-  StatCollector* stat,
-  stat_descr_t* descr)
-{
-  if (stat->registered())
-    return;
-
-  if (!descr) descr = &default_descr;
-
-  stats_entry& entry = stats_[stat->fileroot()];
-  entry.collectors.push_back(stat);
-  entry.reduce_all = descr->reduce_all;
-  entry.dump_all = descr->dump_all;
-  entry.dump_main = descr->dump_main;
-  entry.need_delete = descr->need_delete;
-  stat->set_registered(true);
-}
-
-void
-EventManager::finishStats(StatCollector* main, const std::string& name)
-{
-  stats_entry& entry = stats_[name];
-  for (StatCollector* next : entry.collectors){
-    next->finalize(now_);
-    if (entry.dump_all)
-      next->dumpLocalData();
-
-    if (entry.reduce_all)
-      main->reduce(next);
-
-    next->clear();
-  }
-}
-
-void
-EventManager::finishUniqueStat(int unique_tag, stats_entry& entry)
-{
-  entry.main_collector->globalReduce(rt_);
-  if (rt_->me() == 0) entry.main_collector->dumpGlobalData();
-  delete entry.main_collector;
-}
-*/
-
 
 void
 EventManager::finishStats()
 {
-/**
-  std::map<std::string, stats_entry>::iterator it, end = stats_.end();
-  for (it = stats_.begin(); it != end; ++it){
-    std::string name = it->first;
-    stats_entry& entry = it->second;
-    bool main_allocated = false;
-    if (entry.collectors.empty()){
-      spkt_throw_printf(sprockit::value_error,
-        "there is a stats slot named %s, but there are no collectors",
-        name.c_str());
-    }
-
-    if (!entry.main_collector){
-      if (entry.collectors.size() == 1){
-        entry.main_collector = entry.collectors.front();
-        entry.collectors.clear();
-      } else {
-        //see if any of the existing ones should be the main
-        for (StatCollector* stat : entry.collectors){
-          if (stat->isMain()){
-            entry.main_collector = stat;
-            break;
-          }
-        }
-        if (!entry.main_collector){
-          StatCollector* first = entry.collectors.front();
-          entry.main_collector = first->clone();
-          main_allocated = true;
-        }
-      }
-    }
-
-    finishStats(entry.main_collector, name);
-
-    if (entry.reduce_all){
-      entry.main_collector->globalReduce(rt_);
-      if (rt_->me() == 0){
-        entry.main_collector->dumpGlobalData();
-      }
-    }
-
-    if (main_allocated) delete entry.main_collector;
-    for (StatCollector* coll : entry.collectors){
-      delete coll;
-    }
-  }
-
-  for (auto& pair : unique_stats_){
-    finishUniqueStat(pair.first, pair.second);
-  }
-*/
 }
 
 }

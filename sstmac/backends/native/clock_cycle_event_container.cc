@@ -58,7 +58,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <cinttypes>
 
 #define event_debug(...) \
-  debug_printf(sprockit::dbg::parallel, "LP %d: %s", rt_->me(), sprockit::printf(__VA_ARGS__).c_str())
+  debug_printf(sprockit::dbg::parallel, "manager %d:%d %s", \
+    rt_->me(), thread_id_, sprockit::printf(__VA_ARGS__).c_str())
 
 RegisterDebugSlot(EventManager_time_vote);
 
@@ -85,8 +86,7 @@ namespace native {
 
 ClockCycleEventMap::ClockCycleEventMap(
   SST::Params& params, ParallelRuntime* rt) :
-  EventManager(params, rt),
-  epoch_(0)
+  EventManager(params, rt)
 {
   num_profile_loops_ = params.find<int>("num_profile_loops", 0);
   epoch_print_interval = params.find<int>("epoch_print_interval", epoch_print_interval);
@@ -120,7 +120,7 @@ ClockCycleEventMap::receiveIncomingEvents(Timestamp vote)
 
   Timestamp min_time = no_events_left_time;
   if (!stopped_){
-    event_debug("voting for minimum time %10.6e on epoch %d", vote.sec(), epoch_);
+    event_debug("voting for minimum time %10.6e on epoch %d", vote.sec(), epoch());
     min_time = rt_->sendRecvMessages(vote);
 
     event_debug("got back minimum time %10.6e", min_time.sec());
@@ -138,7 +138,6 @@ ClockCycleEventMap::receiveIncomingEvents(Timestamp vote)
     }
   }
   rt_->resetSendRecv();
-  ++epoch_;
   return min_time;
 }
 

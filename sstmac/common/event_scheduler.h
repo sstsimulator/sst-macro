@@ -53,6 +53,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/stats/stat_collector.h>
 #include <sstmac/common/event_manager_fwd.h>
 #include <sstmac/common/event_scheduler_fwd.h>
+#include <sstmac/backends/common/parallel_runtime.h>
 #include <sstmac/sst_core/integrated_component.h>
 #include <sprockit/sim_parameters_fwd.h>
 
@@ -325,6 +326,8 @@ class EventScheduler : public sprockit::printable
 
  private:
   uint32_t id_;
+  int thread_id_;
+  int nthread_;
 
 #if SSTMAC_INTEGRATED_SST_CORE
   SST::Link* self_link_;
@@ -336,8 +339,6 @@ class EventScheduler : public sprockit::printable
   EventManager* mgr_;
   uint32_t seqnum_;
   uint32_t selfLinkId_;
-  int thread_id_;
-  int nthread_;
   const Timestamp* now_;
 
  protected:
@@ -505,11 +506,13 @@ class IpcLink : public EventLink {
   IpcLink(uint64_t linkId,
          TimeDelta latency,
          int rank, int thread,
-         EventManager* mgr) :
+         EventManager* src_mgr,
+         EventManager* ipc_mgr) :
     EventLink(linkId, latency),
     rank_(rank),
     thread_(thread),
-    mgr_(mgr)
+    ev_mgr_(src_mgr),
+    ipc_mgr_(ipc_mgr)
   {
     setMinRemoteLatency(latency);
   }
@@ -523,7 +526,8 @@ class IpcLink : public EventLink {
  private:
   int rank_;
   int thread_;
-  EventManager* mgr_;
+  EventManager* ev_mgr_;
+  EventManager* ipc_mgr_;
 
 };
 

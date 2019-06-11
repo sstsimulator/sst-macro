@@ -115,6 +115,8 @@ pthread_run_worker_thread(void* args)
       } else if (delta_t != 0) {
         horizon += TimeDelta(delta_t, TimeDelta::exact);
         Timestamp new_min_time = q->mgr->runEvents(horizon);
+       debug_printf(sprockit::dbg::parallel, "manager %d:%d voting for minimum time %10.7e on epoch %d",
+                    q->mgr->me(), q->mgr->thread(), new_min_time.sec(), q->mgr->epoch());
         q->min_time = new_min_time;
       }
       if (q->child1) wait_on_child_completion(q->child1, q->min_time);
@@ -211,7 +213,7 @@ MultithreadedEventContainer::scheduleStop(Timestamp until)
 }
 
 void
-MultithreadedEventContainer::run_work()
+MultithreadedEventContainer::runWork()
 {
   //make the binary spanning tree for the thread barrier
   threadQueue* child1 = nullptr;
@@ -375,7 +377,7 @@ MultithreadedEventContainer::run()
     }
   }
 
-  run_work();
+  runWork();
 
   Timestamp final_time = now_;
 
