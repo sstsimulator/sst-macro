@@ -66,7 +66,7 @@ static thread_lock globals_lock;
 
 void
 ThreadInfo::registerUserSpaceVirtualThread(int phys_thread_id, void *stack,
-                                                void* globalsMap, void* tlsMap)
+                                           void* globalsMap, void* tlsMap)
 {
   size_t stack_mod = ((size_t)stack) % sstmac_global_stacksize;
   if (stack_mod != 0){

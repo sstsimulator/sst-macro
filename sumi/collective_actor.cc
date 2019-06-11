@@ -783,6 +783,11 @@ DagCollectiveActor::incomingHeader(CollectiveWorkMessage* msg)
         pending_recv_headers_.insert(std::make_pair(mid, msg));
       } else {
         //data recved will clear the actions
+#if SSTMAC_SANITY_CHECK
+        if (recv_buffer_ && !msg->smsgBuffer() && msg->byteLength()){
+          spkt_abort_printf("Flow %llu: no SMSG buffer: %s", msg->flowId(), msg->toString().c_str());
+        }
+#endif
         dataRecved(msg, msg->smsgBuffer());
         delete msg;
       }

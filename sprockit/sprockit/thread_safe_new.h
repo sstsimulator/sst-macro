@@ -17,7 +17,7 @@ T& thread_stack_size(){
   return stacksize;
 }
 
-static int inline currentThreadid() {
+static int inline currentThreadId() {
   int stacksize = thread_stack_size<int>();
   if (stacksize == 0){
     return 0;
@@ -85,7 +85,7 @@ class thread_safe_new {
       spkt_abort_printf("allocating mismatched sizes: %d != %d",
                         sz, sizeof(T));
     }
-    int thread = currentThreadid();
+    int thread = currentThreadId();
     return allocate(thread);
   }
 
@@ -94,7 +94,7 @@ class thread_safe_new {
   }
 
   static void operator delete(void* ptr){
-    int thread = currentThreadid();
+    int thread = currentThreadId();
     alloc_.available[thread].push_back(ptr);
 #if SSTMAC_ENABLE_SANITY_CHECK
     (uint32_t*) casted = (uint32_t*) ptr;

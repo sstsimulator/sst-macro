@@ -83,6 +83,15 @@ NicEvent::serialize_order(serializer &ser)
   ser & msg_;
 }
 
+#if !SSTMAC_INTEGRATED_SST_CORE
+void
+NicEvent::validate_serialization(serializable *ser)
+{
+  auto* nev = spkt_assert_ser_type(ser,NicEvent);
+  msg_->validate_serialization(nev->msg());
+}
+#endif
+
 NIC::NIC(SST::Component* parent, SST::Params& params) :
   spy_bytes_(nullptr),
   xmit_flows_(nullptr),
@@ -289,6 +298,11 @@ NIC::internodeSend(NetworkMessage* netmsg)
 void 
 NIC::sendManagerMsg(NetworkMessage* msg)
 {
+#if SSTMAC_SANITY_CHECK
+  if (!logp_link_){
+    spkt_abort_printf("NIC %d does not have LogP link", addr());
+  }
+#endif
   logp_link_->send(new NicEvent(msg));
   ackSend(msg);
 }

@@ -86,6 +86,10 @@ class NicEvent :
     return msg_;
   }
 
+#if !SSTMAC_INTEGRATED_SST_CORE
+  void validate_serialization(serializable* ser) override;
+#endif
+
   void serialize_order(serializer& ser) override;
 
  private:

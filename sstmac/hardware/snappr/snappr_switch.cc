@@ -403,10 +403,22 @@ SnapprSwitch::InPort::handle(Event *ev)
   parent->handlePayload(static_cast<SnapprPacket*>(ev), number);
 }
 
+std::string
+SnapprSwitch::InPort::toString() const
+{
+  return sprockit::printf("SNAPPR InPort %d", number);
+}
+
 void
 SnapprSwitch::OutPort::handle(Event *ev)
 {
   parent->handleCredit(static_cast<SnapprCredit*>(ev), number);
+}
+
+std::string
+SnapprSwitch::OutPort::toString() const
+{
+  return sprockit::printf("SNAPPR OutPort %d", number);
 }
 
 }

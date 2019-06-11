@@ -362,7 +362,7 @@ class DragonflyUGALRouter : public DragonflyValiantRouter {
     "router implementing UGAL dragonfly")
 
   DragonflyUGALRouter(SST::Params& params, Topology *top,
-                                 NetworkSwitch *netsw)
+                      NetworkSwitch *netsw)
     : DragonflyValiantRouter(params, top, netsw)
   {
     val_threshold_ = params.find<int>("val_threshold", 0);
@@ -381,33 +381,37 @@ class DragonflyUGALRouter : public DragonflyValiantRouter {
     uint32_t seed = netsw_->now().time.ticks();
     uint32_t attempt = 0;
     int new_g = dst_g;
-    while (new_g == my_g_ || new_g == dst_g){
-      new_g = randomNumber(dfly_->g(), attempt++, seed);
-    }
-    int min_dist = 3;
-    int val_dist = 5;
-
-    auto val_dest = group_gateways_[new_g][gateway_rotater_[new_g]];
-    int min_port = group_ports_[dst_g][group_port_rotaters_[dst_g]];
-
+    bool go_valiant = false;
     auto hdr = pkt->rtrHeader<header>();
-    bool go_valiant = switchPaths(min_dist, val_dist, min_port, val_dest.first);
-    if (go_valiant){
-      hdr->edge_port = val_dest.first;
-      hdr->dest_switch = val_dest.second;
-      gateway_rotater_[new_g] = (gateway_rotater_[new_g] + 1) % group_gateways_[new_g].size();
-      hdr->stage_number = valiant_stage;
-      rter_debug("chose inter-grp ugal port %d to intermediate %d : pkt=%p:%s",
-                 val_dest.first, val_dest.second, pkt, pkt->toString().c_str());
-    } else { //minimal
-      hdr->edge_port = min_port;
-      hdr->dest_switch = dfly_->getUid(dst_a,dst_g);
-      gateway_rotater_[dst_g] = (gateway_rotater_[dst_g] + 1) % group_gateways_[dst_g].size();
-      hdr->stage_number = minimal_stage;
-      rter_debug("chose inter-grp minimal port %d: pkt=%p:%s",
-                 min_port, pkt, pkt->toString().c_str());
-      group_port_rotaters_[dst_g] = (group_port_rotaters_[dst_g] + 1) % group_ports_[dst_g].size();
-    }
+    int min_port = group_ports_[dst_g][group_port_rotaters_[dst_g]];
+    if (dfly_->g() > 2){ //can't do this unless I have an intermediate group!
+      while (new_g == my_g_ || new_g == dst_g){
+        new_g = randomNumber(dfly_->g(), attempt++, seed);
+      }
+      int min_dist = 3;
+      int val_dist = 5;
+
+      auto val_dest = group_gateways_[new_g][gateway_rotater_[new_g]];
+
+      bool go_valiant = switchPaths(min_dist, val_dist, min_port, val_dest.first);
+      if (go_valiant){
+        hdr->edge_port = val_dest.first;
+        hdr->dest_switch = val_dest.second;
+        gateway_rotater_[new_g] = (gateway_rotater_[new_g] + 1) % group_gateways_[new_g].size();
+        hdr->stage_number = valiant_stage;
+        rter_debug("chose inter-grp ugal port %d to intermediate %d : pkt=%p:%s",
+                   val_dest.first, val_dest.second, pkt, pkt->toString().c_str());
+        return;
+      }
+    } 
+    //if reached here, did not go valiant
+    hdr->edge_port = min_port;
+    hdr->dest_switch = dfly_->getUid(dst_a,dst_g);
+    gateway_rotater_[dst_g] = (gateway_rotater_[dst_g] + 1) % group_gateways_[dst_g].size();
+    hdr->stage_number = minimal_stage;
+    rter_debug("chose inter-grp minimal port %d: pkt=%p:%s",
+               min_port, pkt, pkt->toString().c_str());
+    group_port_rotaters_[dst_g] = (group_port_rotaters_[dst_g] + 1) % group_ports_[dst_g].size();
   }
 
   void checkUGALIntraGroup(Packet* pkt, int dst_a, char minimal_stage){

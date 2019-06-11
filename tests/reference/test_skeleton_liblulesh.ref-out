@@ -1,3 +1,14 @@
+I'm here
+I'm here
+I'm here
+App 1 loaded from exe skeletons/lulesh2.0.3/liblulesh.so. User-specified name 'lulesh' overriding default name
+App 1 loaded from exe skeletons/lulesh2.0.3/liblulesh.so. User-specified name 'lulesh' overriding default name
+App 1 loaded from exe skeletons/lulesh2.0.3/liblulesh.so. User-specified name 'lulesh' overriding default name
+App 1 loaded from exe skeletons/lulesh2.0.3/liblulesh.so. User-specified name 'lulesh' overriding default name
+App 1 loaded from exe skeletons/lulesh2.0.3/liblulesh.so. User-specified name 'lulesh' overriding default name
+App 1 loaded from exe skeletons/lulesh2.0.3/liblulesh.so. User-specified name 'lulesh' overriding default name
+App 1 loaded from exe skeletons/lulesh2.0.3/liblulesh.so. User-specified name 'lulesh' overriding default name
+App 1 loaded from exe skeletons/lulesh2.0.3/liblulesh.so. User-specified name 'lulesh' overriding default name
 Running problem size 20^3 per domain until completion
 Num processors: 8
 Total number of elements: 64000
@@ -18,7 +29,7 @@ CalcLagrangeElements                =   0.00835200s
 CalcQForElems                       =   0.00241600s
 UpdateVolumesForElems               =   0.00002800s
 ApplyMaterialPropertiesForElems     =   0.00496600s
-CalcTimeConstraintsForElems         =   0.00007400s
+CalcTimeConstraintsForElems         =   0.00007500s
 CalcAccelerationForNodes            =   0.00005400s
 InitStressTermsForElems             =   0.00005400s
 IntegrateStressForElems             =   0.00702400s

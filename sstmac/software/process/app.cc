@@ -145,11 +145,13 @@ App::dlopenCheck(int aid, SST::Params& params, bool check_name)
         const char* str_name = (const char*) name;
         if (params.contains("name")){
           std::string given_name = params.find<std::string>("name");
+          /**
           if (given_name != std::string(str_name)){
             std::cout << sprockit::printf("App %d loaded from exe %s. "
                "User-specified name '%s' overriding default name",
                aid, libname.c_str(), given_name.c_str()) << std::endl;
           }
+          */
           params.insert("label", given_name);
         }
         params.insert("name", str_name);
@@ -174,7 +176,7 @@ App::dlcloseCheck(int aid)
     dlopen_entry& entry = iter->second;
     --entry.refcount;
     if (entry.refcount == 0){
-      std::cerr << "Unloading library " << entry.name << std::endl;
+      //std::cerr << "Unloading library " << entry.name << std::endl;
       unloadExternLibrary(entry.handle);
       dlopens_.erase(iter);
     }
@@ -588,6 +590,8 @@ UserAppCxxFullMain::UserAppCxxFullMain(SST::Params& params, SoftwareId sid,
 void
 UserAppCxxFullMain::aliasMains()
 {
+  static thread_lock lock;
+  lock.lock();
   if (!main_fxns_){
     main_fxns_ = std::unique_ptr<std::map<std::string, App::main_fxn>>(main_fxns_init_);
     main_fxns_init_ = nullptr;
@@ -604,6 +608,7 @@ UserAppCxxFullMain::aliasMains()
 #endif
     }
   }
+  lock.unlock();
 }
 
 void
@@ -622,6 +627,8 @@ UserAppCxxFullMain::registerMainFxn(const char *name, App::main_fxn fxn)
 void
 UserAppCxxEmptyMain::aliasMains()
 {
+  static thread_lock lock;
+  lock.lock();
   if (!empty_main_fxns_){
     empty_main_fxns_ = std::unique_ptr<std::map<std::string, App::empty_main_fxn>>(empty_main_fxns_init_);
     empty_main_fxns_init_ = nullptr;
@@ -638,6 +645,7 @@ UserAppCxxEmptyMain::aliasMains()
 #endif
     }
   }
+  lock.unlock();
 }
 
 void

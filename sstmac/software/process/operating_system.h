@@ -235,7 +235,7 @@ class OperatingSystem : public SubComponent
 
   inline OperatingSystem*& activeOs() {
 #if SSTMAC_USE_MULTITHREAD
-  return active_os_[thread_id_];
+  return active_os_[threadId()];
 #else
   return active_os_;
 #endif
@@ -243,14 +243,6 @@ class OperatingSystem : public SubComponent
 
   Thread* activeThread() const {
     return active_thread_;
-  }
-
-  int threadId() const {
-    return thread_id_;
-  }
-
-  int nthread() const {
-    return nthread_;
   }
 
   void reassignCores(Thread* thr);
@@ -473,8 +465,6 @@ class OperatingSystem : public SubComponent
   void deallocateCore(Thread* thr);
 
 
-  int thread_id_;
-  int nthread_;
   hw::Node* node_;
   std::unordered_map<std::string, Library*> libs_;
   std::unordered_map<Library*, int> lib_refcounts_;

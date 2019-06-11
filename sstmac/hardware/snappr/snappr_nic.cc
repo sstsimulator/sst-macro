@@ -54,6 +54,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
 
+#include <limits>
+
 #include <stddef.h>
 
 #define pkt_debug(...) \
@@ -174,8 +176,8 @@ SnapprNIC::inject(NetworkMessage* payload, uint64_t byte_offset)
     TimeDelta extra_delay = inj_next_free_ - now_;
     TimeDelta time_to_send = pkt_size * inj_byte_delay_;
     inj_next_free_ += time_to_send;
-    pkt_debug("packet injecting at t=%8.4e: %s",
-              inj_next_free_.sec(), pkt->toString().c_str());
+    pkt_debug("packet injecting at offset=%" PRIu64 ",left=%" PRIu64 " t=%8.4e: %s",
+              byte_offset, bytes_left, inj_next_free_.sec(), pkt->toString().c_str());
     pkt->setTimeToSend(time_to_send);
     inj_link_->send(extra_delay, pkt);
   }
@@ -258,6 +260,8 @@ SnapprNIC::handleCredit(Event *ev)
     byte_offset = inject(msg, byte_offset);
     if (pair.first->byteLength() == byte_offset){
       inject_queues_[vl].pop();
+    } else {
+      pair.second = byte_offset;
     }
   }
   delete credit;

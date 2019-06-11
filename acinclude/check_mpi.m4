@@ -12,7 +12,7 @@ fi
 
 
 AC_MSG_CHECKING([Checking for MPI])
-if test "X$found_mpi" = "Xyes" -a "X$with_mpi_driver" = "Xno"; then
+if test "X$found_mpi" = "Xyes"; then
   AC_MSG_RESULT([yes])
   AC_DEFINE_UNQUOTED([HAVE_VALID_MPI], 1, "working MPI found")
   AC_DEFINE_UNQUOTED([DISTRIBUTED_MEMORY], 1, "Shared-memory optimizations off")

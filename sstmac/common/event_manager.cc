@@ -42,6 +42,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
+#define __STDC_FORMAT_MACROS
 #include <sstmac/common/event_manager.h>
 #include <sstmac/common/sst_event.h>
 #include <sstmac/common/stats/stat_collector.h>
@@ -57,15 +58,16 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/thread_safe_new.h>
 #include <limits>
 
-RegisterDebugSlot(EventManager);
+#include <cinttypes>
+
+RegisterDebugSlot(event_manager);
 
 #define prll_debug(...) \
   debug_printf(sprockit::dbg::parallel, "LP %d: %s", rt_->me(), sprockit::printf(__VA_ARGS__).c_str())
 
 namespace sstmac {
 
-const Timestamp EventManager::no_events_left_time(
-  std::numeric_limits<uint64_t>::max(), std::numeric_limits<uint64_t>::max());
+const Timestamp EventManager::no_events_left_time(0, std::numeric_limits<uint64_t>::max());
 
 class StopEvent : public ExecutionEvent
 {
@@ -146,6 +148,15 @@ EventManager::~EventManager()
 }
 
 void
+EventManager::addLinkHandler(uint64_t linkId, EventHandler *handler)
+{
+  if (linkId >= link_handlers_.size()){
+    link_handlers_.resize(linkId + 1);
+  }
+  link_handlers_[linkId] = handler;
+}
+
+void
 EventManager::stop()
 {
   for (ExecutionEvent* ev : event_queue_){
@@ -161,6 +172,8 @@ EventManager::runEvents(Timestamp event_horizon)
 {
   registerPending();
   min_ipc_time_ = no_events_left_time;
+  prll_debug("manager %d:%d running to horizon %10.5e with %llu events in queue",
+             me_, thread_id_, event_horizon.sec(), event_queue_.size());
   while (!event_queue_.empty()){
     auto iter = event_queue_.begin();
     ExecutionEvent* ev = *iter;
@@ -168,6 +181,9 @@ EventManager::runEvents(Timestamp event_horizon)
     if (ev->time() < now_){
       spkt_abort_printf("Time went backwards on thread %d", thread_id_);
     }
+
+    prll_debug("manager %d:%d has minimum time event t=%" PRIu64,
+               me_, thread_id_, ev->time().time.ticks());
 
     if (ev->time() >= event_horizon){
       Timestamp ret = std::min(min_ipc_time_, ev->time());
@@ -259,16 +275,31 @@ EventManager::finalizeStatsOutput()
 void
 EventManager::scheduleIncoming(IpcEvent* iev)
 {
-  auto comp = interconn_->component(iev->dst);
-  EventHandler* dst_handler = iev->credit ? comp->creditHandler(iev->port) : comp->payloadHandler(iev->port);
-  prll_debug("thread %d scheduling incoming event at %12.8e to device %d:%s, %s",
-    thread_id_, iev->t.sec(), iev->dst, dst_handler->toString().c_str(),
-    sprockit::toString(iev->ev).c_str());
+#if SSTMAC_SANITY_CHECK
+  if (iev->link >= link_handlers_.size()){
+    spkt_abort_printf("Rank %d received event for bad link %" PRIu64,
+                      me(), iev->link);
+  }
+#endif
+
+  EventHandler* dst_handler = link_handlers_[iev->link];
+  prll_debug("thread %d scheduling incoming event on link %" PRIu64 " at %12.8e",
+             thread_id_, iev->link, iev->t.sec())
+#if SSTMAC_SANITY_CHECK
+  if (!dst_handler){
+    spkt_abort_printf("Rank %d received event for null link %" PRIu64,
+                      me(), iev->link);
+  }
+#endif
   auto qev = new HandlerExecutionEvent(iev->ev, dst_handler);
   qev->setSeqnum(iev->seqnum);
   qev->setTime(iev->t);
   qev->setLink(iev->link);
+  size_t prev_size = event_queue_.size();
   schedule(qev);
+  if (event_queue_.size() == prev_size){
+    spkt_abort_printf("event queue lost event while scheduling! identical events added on link %" PRIu64, iev->link);
+  }
 }
 
 void
@@ -282,9 +313,13 @@ EventManager::registerPending()
   int idx = 0;
   for (auto& pendingVec : pending_events_[pendingSlot_]){
     for (ExecutionEvent* ev : pendingVec){
+#if SSTMAC_SANITY_CHECK
       if (ev->time() < now_){
-        spkt_abort_printf("Thread %d scheduling event on thread %d", idx, thread_id_);
+        spkt_abort_printf("Thread %d scheduling event in the past on thread %d", idx, thread_id_);
       }
+#endif
+      prll_debug("manager %d:%d scheduling event %" PRIu32 " from link %" PRIu64,
+                 me_, thread_id_, ev->seqnum(), ev->linkId());
       schedule(ev);
     }
     pendingVec.clear();

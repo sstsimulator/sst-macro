@@ -319,14 +319,6 @@ OperatingSystem::OperatingSystem(SST::Component* parent, SST::Params& params) :
   SubComponent("os", parent),
   params_(params)
 {
-#if SSTMAC_INTEGRATED_SST_CORE
-  nthread_ = 1;
-  thread_id_ = 0;
-#else
-  nthread_ = node_->nthread();
-  thread_id_ = node_->threadId();
-#endif
-
   my_addr_ = node_ ? node_->addr() : 0;
 
   //assume macro for now
@@ -343,6 +335,8 @@ OperatingSystem::OperatingSystem(SST::Component* parent, SST::Params& params) :
   for (auto& key : keys){
     env_[key] = env_params.find<std::string>(key);
   }
+
+  //sprockit::thread_stack_size<int>() = sw::StackAlloc::stacksize();
 }
 
 std::string
@@ -443,7 +437,6 @@ OperatingSystem::initThreading(SST::Params& params)
 
 #if SSTMAC_USE_MULTITHREAD
   static thread_lock lock;
-  sprockit::thread_stack_size<int>() = sw::StackAlloc::stacksize();
   lock.lock();
   if (active_os_.size() == 0){
     active_os_.resize(nthread());
@@ -590,9 +583,12 @@ OperatingSystem::switchToThread(Thread* tothread)
     return;
   }
 
+  os_debug("switching to thread %d", tothread->threadId());
   active_thread_ = tothread;
   activeOs() = this;
   tothread->context()->resumeContext(des_context_);
+
+  os_debug("switched back from thread %d to main thread", tothread->threadId());
 
   /** back to main thread */
   active_thread_ = nullptr;
@@ -683,6 +679,7 @@ OperatingSystem::block()
   Thread* old_thread = active_thread_;
   //reset the time flag
   active_thread_->setTimedOut(false);
+  os_debug("pausing context on thread %d", active_thread_->threadId());
   active_thread_ = nullptr;
   old_context->pauseContext(des_context_);
 
@@ -692,6 +689,7 @@ OperatingSystem::block()
 
   //restore state to indicate this thread and this OS are active again
   activeOs() = this;
+  os_debug("resuming context on thread %d", active_thread_->threadId());
   active_thread_ = old_thread;
   active_thread_->incrementBlockCounter();
 

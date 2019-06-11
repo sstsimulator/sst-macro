@@ -109,5 +109,8 @@ using SST::Core::Serialization::array;
 using SST::Core::Serialization::raw_ptr;
 }
 
+#define SPKT_CHECK_PACK(ser) \
+  std::cout << this << ": " << __FILE__ << ":" << __LINE__ \
+            << " size=" << ser.sizer().size() << " packed=" << ser.packer().size() << std::endl
 
 #endif

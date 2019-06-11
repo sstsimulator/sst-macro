@@ -127,6 +127,7 @@ JobLauncher::addLaunchRequests(SST::Params& params)
       app_params.insert(all_app_params);
       AppLaunchRequest* mgr = new AppLaunchRequest(app_params, AppId(aid), name);
       initial_requests_.push_back(mgr);
+      node_debug("adding app launch request %d", aid);
       keep_going = true;
       last_used_aid = aid;
 
@@ -136,6 +137,7 @@ JobLauncher::addLaunchRequests(SST::Params& params)
     }
     ++aid;
   }
+
 
   aid = last_used_aid+1;
 

@@ -293,7 +293,7 @@ static inline bool operator!=(const Timestamp& a, const Timestamp& b){
   if (a.epochs == b.epochs){
     return a.time != b.time;
   } else {
-    return false;
+    return true;
   }
 }
 

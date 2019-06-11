@@ -67,6 +67,18 @@ MpiMessage::serialize_order(sstmac::serializer& ser)
   ser & (seqnum_);
 }
 
+#if !SSTMAC_INTEGRATED_SST_CORE
+void
+MpiMessage::validate_serialization(serializable *ser)
+{
+  auto* msg = spkt_assert_ser_type(ser, MpiMessage);
+  spkt_assert_ser_equal(msg,src_rank_);
+  spkt_assert_ser_equal(msg,dst_rank_);
+  spkt_assert_ser_equal(msg,type_);
+  ProtocolMessage::validate_serialization(ser);
+}
+#endif
+
 
 MpiMessage::~MpiMessage() throw ()
 {
@@ -88,6 +100,7 @@ MpiMessage::toString() const
   ss << "mpimessage("
      << (void*) localBuffer()
      << "," << (void*) remoteBuffer()
+     << ", flow=" << flowId()
      << ", count=" << count()
      << ", type=" << type_
      << ", src=" << src_rank_
