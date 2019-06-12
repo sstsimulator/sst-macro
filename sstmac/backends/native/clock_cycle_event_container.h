@@ -104,8 +104,6 @@ class ClockCycleEventMap :
 
   int handleIncoming(char* buf);
 
- private:
-  int epoch_;
 
   
 

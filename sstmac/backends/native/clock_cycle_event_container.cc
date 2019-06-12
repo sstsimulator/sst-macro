@@ -49,7 +49,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #if !SSTMAC_INTEGRATED_SST_CORE
 #include <sstmac/backends/native/clock_cycle_event_container.h>
 #include <sstmac/hardware/switch/network_switch.h>
-#include <sstmac/hardware/network/network_message.h>
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
@@ -59,7 +58,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <cinttypes>
 
 #define event_debug(...) \
-  debug_printf(sprockit::dbg::parallel, "LP %d: %s", rt_->me(), sprockit::printf(__VA_ARGS__).c_str())
+  debug_printf(sprockit::dbg::parallel, "manager %d:%d %s", \
+    rt_->me(), thread_id_, sprockit::printf(__VA_ARGS__).c_str())
 
 RegisterDebugSlot(EventManager_time_vote);
 
@@ -86,8 +86,7 @@ namespace native {
 
 ClockCycleEventMap::ClockCycleEventMap(
   SST::Params& params, ParallelRuntime* rt) :
-  EventManager(params, rt),
-  epoch_(0)
+  EventManager(params, rt)
 {
   num_profile_loops_ = params.find<int>("num_profile_loops", 0);
   epoch_print_interval = params.find<int>("epoch_print_interval", epoch_print_interval);
@@ -100,13 +99,13 @@ ClockCycleEventMap::handleIncoming(char* buf)
   serializer ser;
   ser.start_unpacking(buf, 1<<31); //just pass in a huge number
   uint32_t sz; //these are guaranteed to be first
-  uint32_t dst;
+  uint32_t thread;
   ser & sz;
-  ser & dst;
+  ser & thread;
   if (sz == 0){
     sprockit::abort("got zero size for incoming buffer");
   }
-  EventManager* mgr = interconn_->component(dst)->mgr();
+  EventManager* mgr = threadManager(thread);
   mgr->schedulePendingSerialization(buf);
   return sz;
 #else
@@ -121,12 +120,10 @@ ClockCycleEventMap::receiveIncomingEvents(Timestamp vote)
 
   Timestamp min_time = no_events_left_time;
   if (!stopped_){
-    event_debug("voting for minimum time %lu:%lu on epoch %d",
-                vote.epochs, vote.time.ticks(), epoch_);
+    event_debug("voting for minimum time %10.6e on epoch %d", vote.sec(), epoch());
     min_time = rt_->sendRecvMessages(vote);
 
-    event_debug("got back minimum time %lu:%lu",
-                min_time.epochs, min_time.time.ticks());
+    event_debug("got back minimum time %10.6e", min_time.sec());
 
     int num_recvs = rt_->numRecvsDone();
     for (int i=0; i < num_recvs; ++i){
@@ -141,7 +138,6 @@ ClockCycleEventMap::receiveIncomingEvents(Timestamp vote)
     }
   }
   rt_->resetSendRecv();
-  ++epoch_;
   return min_time;
 }
 
@@ -152,6 +148,10 @@ ClockCycleEventMap::run()
   interconn_->setup();
 
   Timestamp lower_bound;
+  /** If we want to just execute the synchronization without any actual events
+   *  we can force a certain number of loops to execue for timing purposes
+   *  This allows measuring only the overhead of parallel execution
+   */
   int num_loops_left = num_profile_loops_;
   if (num_loops_left && rt_->me() == 0){
     printf("Running %d profile loops\n", num_loops_left);
@@ -164,8 +164,11 @@ ClockCycleEventMap::run()
     printf("Running parallel simulation with lookahead %10.6fus\n", lookahead_.usec());
   }
   uint64_t epoch = 0;
+
   while (lower_bound != no_events_left_time || num_loops_left > 0){
     Timestamp horizon = lower_bound + lookahead_;
+    event_debug("running from %10.6e->%10.6e for lookahead %10.6e",
+                lower_bound.sec(), horizon.sec(), lookahead_.sec());
     auto t_start = rdtsc();
     Timestamp min_time = runEvents(horizon);
     auto t_run = rdtsc();

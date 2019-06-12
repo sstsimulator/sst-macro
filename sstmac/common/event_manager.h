@@ -45,6 +45,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef SSTMAC_COMMON_EVENTMANAGER_H_INCLUDED
 #define SSTMAC_COMMON_EVENTMANAGER_H_INCLUDED
 
+#define __STDC_FORMAT_MACROS
 #include <sstmac/common/timestamp.h>
 #include <sstmac/common/event_location.h>
 
@@ -71,8 +72,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <cstdint>
 #include <cstddef>
 
+#include <cinttypes>
 
-DeclareDebugSlot(EventManager);
+DeclareDebugSlot(event_manager);
 
 namespace sstmac {
 
@@ -197,10 +199,23 @@ class EventManager
   }
 
   void schedule(ExecutionEvent* ev){
+#if SSTMAC_SANITY_CHECK
     if (ev->time() < now_){
-      spkt_abort_printf("Time went backwards on thread %d", thread_id_);
+      spkt_abort_printf("Time went backwards on manager %d:%d to t=%10.6e for link=%" PRIu64 " seq=%" PRIu32,
+                        me_, thread_id_, ev->time().sec(), ev->linkId(), ev->seqnum());
     }
+    size_t prev_size = event_queue_.size();
+    debug_printf(sprockit::dbg::event_manager,
+                 "manager %d:%d adding event to run at t=%" PRIu64 " seqnum=%" PRIu32 " on link=%" PRIu64,
+                 me_, thread_id_, ev->time().time.ticks(), ev->seqnum(), ev->linkId());
+#endif
     event_queue_.insert(ev);
+#if SSTMAC_SANITY_CHECK
+    if (prev_size == event_queue_.size()){
+      spkt_abort_printf("dropped event seqnum=%" PRIu32 " on link %" PRIu64,
+                        ev->seqnum(), ev->linkId());
+    }
+#endif
   }
 
   void setInterconnect(hw::Interconnect* ic);
@@ -226,6 +241,8 @@ class EventManager
     return &now_;
   }
 
+  int epoch() const;
+
   void setMinIpcTime(Timestamp t){
     min_ipc_time_ = std::min(t,min_ipc_time_);
   }
@@ -235,6 +252,17 @@ class EventManager
           ? no_events_left_time
           : (*event_queue_.begin())->time();
   }
+
+  void setComponentManager(uint32_t comp_id, int thread){
+    component_to_thread_[comp_id] = thread;
+  }
+
+  EventManager* componentManager(uint32_t comp_id) const {
+    int thread = component_to_thread_.at(comp_id);
+    return threadManager(thread);
+  }
+
+  void addLinkHandler(uint64_t linkId, EventHandler* handler);
 
  protected:
   void registerPending();
@@ -301,6 +329,10 @@ class EventManager
   StatisticOutput* dflt_stat_output_;
 
   std::map<std::string, StatisticGroup*> stat_groups_;
+
+  std::vector<EventHandler*> link_handlers_;
+
+  std::unordered_map<uint32_t,int> component_to_thread_;
 
 };
 

@@ -58,7 +58,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/thread_safe.h>
 #include <cinttypes>
 
-RegisterDebugSlot(multithread_EventManager);
+RegisterDebugSlot(multithread_event_manager);
 RegisterDebugSlot(cpu_affinity);
 
 RegisterKeywords(
@@ -103,6 +103,7 @@ pthread_run_worker_thread(void* args)
   threadQueue* q = (threadQueue*) args;
   Timestamp horizon;
   uint64_t epoch = 0;
+  debug_printf(sprockit::dbg::parallel, "spun up subthread");
   while(1){
     bool stillZero = atomic_is_zero(q->delta_t);
     if (!stillZero){
@@ -114,6 +115,8 @@ pthread_run_worker_thread(void* args)
       } else if (delta_t != 0) {
         horizon += TimeDelta(delta_t, TimeDelta::exact);
         Timestamp new_min_time = q->mgr->runEvents(horizon);
+       debug_printf(sprockit::dbg::parallel, "manager %d:%d voting for minimum time %10.7e on epoch %d",
+                    q->mgr->me(), q->mgr->thread(), new_min_time.sec(), q->mgr->epoch());
         q->min_time = new_min_time;
       }
       if (q->child1) wait_on_child_completion(q->child1, q->min_time);
@@ -210,7 +213,7 @@ MultithreadedEventContainer::scheduleStop(Timestamp until)
 }
 
 void
-MultithreadedEventContainer::run_work()
+MultithreadedEventContainer::runWork()
 {
   //make the binary spanning tree for the thread barrier
   threadQueue* child1 = nullptr;
@@ -276,6 +279,7 @@ MultithreadedEventContainer::run_work()
 
     auto t_start = rdtsc();
     Timestamp min_time = runEvents(horizon);
+
     auto t_run = rdtsc();
 
     if (child1) wait_on_child_completion(child1, min_time);
@@ -291,9 +295,11 @@ MultithreadedEventContainer::run_work()
     event_cycles += event;
     barrier_cycles += barrier;
     if (epoch % epoch_print_interval == 0 && rt_->me() == 0){
-      printf("Epoch %13" PRIu64 " ran %13" PRIu64 ", %13" PRIu64 " cumulative %13" PRIu64 ", %13" PRIu64
-             " until horizon %13" PRIu64 ":%13" PRIu64 "\n",
-             epoch, event, barrier, event_cycles, barrier_cycles, horizon.epochs, horizon.time.ticks());
+      //printf("Epoch %-10" PRIu64 " ran %13" PRIu64 ", %13" PRIu64 " cumulative %13" PRIu64 ", %13" PRIu64
+      //       " until horizon %" PRIu64 ":%" PRIu64 "\n",
+      //       epoch, event, barrier, event_cycles, barrier_cycles, horizon.epochs, horizon.time.ticks());
+      printf("Epoch %-10" PRIu64 " ran until horizion %" PRIu64 ":%" PRIu64 " - new bound = %" PRIu64 ":%" PRIu64 "\n",
+             epoch, horizon.epochs, horizon.time.ticks(), lower_bound.epochs, lower_bound.time.ticks());
       fflush(stdout);
     }
     ++epoch;
@@ -316,7 +322,7 @@ MultithreadedEventContainer::run()
   }
 
   int nthread_ = nthread();
-  debug_printf(sprockit::dbg::EventManager,
+  debug_printf(sprockit::dbg::event_manager,
     "starting %d event manager threads",
     nthread_);
  
@@ -331,6 +337,7 @@ MultithreadedEventContainer::run()
                "PDES rank %i: setting user-specified task affinity %i",
                me_, task_affinity);
 
+  /** set the main thread's affinity here */
   cpu_set_t cpuset;
   CPU_ZERO(&cpuset);
   CPU_SET(task_affinity, &cpuset);
@@ -352,6 +359,7 @@ MultithreadedEventContainer::run()
                  "PDES rank %i: setting thread %i affinity %i",
                  me_, i, thread_affinity);
 
+    /** set each subthread affinity here */
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
     CPU_SET(thread_affinity, &cpuset);
@@ -361,15 +369,15 @@ MultithreadedEventContainer::run()
       sprockit::abort("multithreaded_event_container::run: failed setting pthread affinity");
     }
 #endif
-    status = pthread_create(&pthreads_[i], &pthread_attrs_[i],
-        spin_up_pthread_work, &queues_[i]);
+    debug_printf(sprockit::dbg::parallel, "PDES rank %i: spinning up subthread %i", me_, i);
+    status = pthread_create(&pthreads_[i], &pthread_attrs_[i], spin_up_pthread_work, &queues_[i]);
     if (status != 0){
         spkt_abort_printf("multithreaded_event_container::run: failed creating pthread=%d:\n%s",
                         errno, ::strerror(errno));
     }
   }
 
-  run_work();
+  runWork();
 
   Timestamp final_time = now_;
 

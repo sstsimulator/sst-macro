@@ -58,6 +58,8 @@ class serializable
 
   virtual void serialize_order(sprockit::serializer& ser) = 0;
 
+  virtual void validate_serialization(serializable* ser){}
+
   virtual uint32_t cls_id() const = 0;
 
   virtual ~serializable() { }
@@ -72,5 +74,11 @@ class serializable_type
 };
 
 }
+
+#define spkt_assert_ser_type(item,T) \
+ dynamic_cast<T*>(item); if (!dynamic_cast<T*>(item)) spkt_abort_printf("serializable is not of type " #T)
+
+#define spkt_assert_ser_equal(x,member) \
+  if (member != x->member) spkt_abort_printf("serializable got wrong " #member)
 
 #endif // SERIALIZABLE_TYPE_H

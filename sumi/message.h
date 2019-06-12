@@ -107,6 +107,10 @@ class Message : public sstmac::hw::NetworkMessage
 
   virtual void serialize_order(sstmac::serializer &ser) override;
 
+#if !SSTMAC_INTEGRATED_SST_CORE
+  void validate_serialization(serializable *ser) override;
+#endif
+
   void serializeBuffers(sstmac::serializer& ser);
 
   static bool needsAck(sstmac::hw::NetworkMessage::type_t ty,
@@ -316,7 +320,7 @@ class ProtocolMessage : public Message {
   {
   }
 
-  virtual void serialize_order(sstmac::serializer& ser){
+  virtual void serialize_order(sstmac::serializer& ser) override {
     ser & stage_;
     ser & protocol_;
     ser & count_;
@@ -324,6 +328,10 @@ class ProtocolMessage : public Message {
     ser.primitive(partner_buffer_);
     Message::serialize_order(ser);
   }
+
+#if !SSTMAC_INTEGRATED_SST_CORE
+  void validate_serialization(serializable *ser) override;
+#endif
 
  protected:
   ProtocolMessage(){}
