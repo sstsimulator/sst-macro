@@ -66,12 +66,25 @@ void
 CollectiveWorkMessage::serialize_order(sstmac::serializer &ser)
 {
   ProtocolMessage::serialize_order(ser);
-  //ser & action_;
   ser & tag_;
   ser & type_;
   ser & round_;
-  //ser & failed_procs_;
+  ser & dom_recver_;
+  ser & dom_sender_;
 }
+
+#if !SSTMAC_INTEGRATED_SST_CORE
+void
+CollectiveWorkMessage::validate_serialization(serializable *ser)
+{
+  auto* msg = spkt_assert_ser_type(ser,CollectiveWorkMessage);
+  spkt_assert_ser_equal(msg,tag_);
+  spkt_assert_ser_equal(msg,type_);
+  spkt_assert_ser_equal(msg,round_);
+  spkt_assert_ser_equal(msg,dom_recver_);
+  spkt_assert_ser_equal(msg,dom_sender_);
+}
+#endif
 
 std::string
 CollectiveWorkMessage::toString() const
@@ -81,19 +94,6 @@ CollectiveWorkMessage::toString() const
      Collective::tostr(type_), recver(), sender(), payloadBytes(), round_, tag_,
      sstmac::hw::NetworkMessage::typeStr(), toaddr(), fromaddr());
 }
-
-/**
-void
-collective_work_message::clone_into(collective_work_message* cln) const
-{
-  message::clone_into(cln);
-  cln->tag_ = tag_;
-  cln->type_ = type_;
-  cln->round_ = round_;
-  cln->dense_sender_ = dense_sender_;
-  cln->dense_recver_ = dense_recver_;
-}
-*/
 
 
 }

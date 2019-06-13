@@ -216,6 +216,10 @@ class ParallelRuntime :
 
   virtual void finalize() = 0;
 
+  int epoch() const {
+    return epoch_;
+  }
+
   virtual void initRuntimeParams(SST::Params& params);
 
   virtual void initPartitionParams(SST::Params& params);
@@ -269,6 +273,7 @@ class ParallelRuntime :
    int nproc_;
    int nthread_;
    int me_;
+   int epoch_;
    std::vector<CommBuffer> send_buffers_;
    std::vector<CommBuffer> recv_buffers_;
    std::vector<int> sends_done_;

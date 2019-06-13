@@ -265,8 +265,6 @@ ParallelRuntime::initRuntimeParams(SST::Params& params)
   //turn the number of procs and my rank into keywords
   nthread_ = params.find<int>("sst_nthread", 1);
 
-
-
   buf_size_ = params.find<SST::UnitAlgebra>("serialization_buffer_size", "16KB").getRoundedValue();
 
   backupSize = params.find<SST::UnitAlgebra>("backup_buffer_size", "1MB").getRoundedValue();
@@ -290,7 +288,8 @@ ParallelRuntime::ParallelRuntime(SST::Params& params,
   : part_(nullptr),
     me_(me),
     nproc_(nproc),
-    nthread_(1)
+    nthread_(1),
+    epoch_(0)
 {
   if (me_ == 0){
     sprockit::output::init_out0(&std::cout);
@@ -314,13 +313,11 @@ void
 ParallelRuntime::runSerialize(serializer& ser, IpcEvent* iev)
 {
   ser & iev->ser_size; //this must be first!!!
-  ser & iev->dst;  //this must be first!!!
+  ser & iev->thread; //this must be first!!!
   ser & iev->t;
-  ser & iev->src;
   ser & iev->seqnum;
-  ser & iev->port;
+  ser & iev->link;
   ser & iev->rank;
-  ser & iev->credit;
   ser & iev->ev;
 }
 
@@ -328,9 +325,14 @@ void ParallelRuntime::sendEvent(IpcEvent* iev)
 {
   //somehow this doesn't return the sum of sizes
   //uint32_t overhead = sizeof(ipc_event_base);
-  const uint32_t overhead = sizeof(uint32_t) + sizeof(uint32_t)
-    + sizeof(TimeDelta) + sizeof(uint32_t) + sizeof(uint32_t)
-    + sizeof(int) + sizeof(int) + sizeof(bool);
+  constexpr uint32_t overhead =
+      sizeof(uint32_t) //ser_size
+    + sizeof(Timestamp) //t
+    + sizeof(uint32_t) //seqnum
+    + sizeof(uint64_t) //link
+    + sizeof(uint32_t) //rank
+    + sizeof(uint32_t) //thread
+  ;
 
   sprockit::serializer ser;
   ser.start_sizing();
@@ -340,10 +342,20 @@ void ParallelRuntime::sendEvent(IpcEvent* iev)
   CommBuffer& buff = send_buffers_[iev->rank];
   char* ptr = buff.allocateSpace(iev->ser_size, iev);
   ser.start_packing(ptr, iev->ser_size);
-  debug_printf(sprockit::dbg::parallel, "sending event of size %lu to LP %d at t=%10.6e: %s",
-               iev->ser_size, iev->rank, iev->t.sec(),
-               sprockit::toString(iev->ev).c_str());
+  debug_printf(sprockit::dbg::parallel,
+     "sending event of size %lu to LP %d at t=%10.6e on link=%" PRIu64 " on epoch %d: %s",
+     iev->ser_size, iev->rank, iev->t.sec(), iev->link, epoch_,
+     sprockit::toString(iev->ev).c_str());
   runSerialize(ser, iev);
+
+#if SSTMAC_SANITY_CHECK && !SSTMAC_INTEGRATED_SST_CORE
+  IpcEvent test_ev;
+  sprockit::serializer test_ser;
+  test_ser.start_unpacking(ptr, iev->ser_size);
+  runSerialize(test_ser, &test_ev);
+  iev->ev->validate_serialization(test_ev.ev);
+#endif
+
 }
 #endif
 

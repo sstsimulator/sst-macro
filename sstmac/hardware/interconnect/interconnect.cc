@@ -42,11 +42,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
+#define __STDC_FORMAT_MACROS
+
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/hardware/topology/structured_topology.h>
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/hardware/nic/nic.h>
-#include <sstmac/hardware/network/network_message.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/hardware/pisces/pisces.h>
 #include <sstmac/hardware/switch/network_switch.h>
@@ -60,13 +61,21 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/output.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
+#include <cinttypes>
+
 
 RegisterDebugSlot(interconnect);
+
+
+#define interconn_debug(str, ...) \
+  debug_printf(sprockit::dbg::interconnect, "Rank %d: " str, EventManager::global->me(), __VA_ARGS__)
 
 namespace sstmac {
 namespace hw {
 
 Interconnect* Interconnect::static_interconnect_ = nullptr;
+
+
 
 Interconnect*
 Interconnect::staticInterconnect(SST::Params& params, EventManager* mgr)
@@ -138,21 +147,17 @@ Interconnect::Interconnect(SST::Params& params, EventManager *mgr,
   uint32_t my_offset = rt_->me() * rt_->nthread() + top->numNodes() + top->numSwitches();
   for (int i=0; i < rt_->nthread(); ++i){
     uint32_t id = my_offset + i;
+    mgr->setComponentManager(id, i);
     logp_switches_[i] = new LogPSwitch(id, logp_params);
   }
 
-  interconn_debug("Interconnect building endpoints");
-
   buildEndpoints(node_params, nic_params, mgr);
 
-  connectLogP(mgr, node_params, nic_params);
+  uint64_t linkId = connectLogP(0/*number from zero*/, mgr, node_params, nic_params);
   if (!logp_model){
-    interconn_debug("Interconnect building switches");
     buildSwitches(switch_params, mgr);
-    interconn_debug("Interconnect connecting switches");
-    connectSwitches(mgr, switch_params);
-    interconn_debug("Interconnect connecting endpoints");
-    connectEndpoints(mgr, nic_params, switch_params);
+    linkId = connectSwitches(linkId, mgr, switch_params);
+    linkId = connectEndpoints(linkId, mgr, nic_params, switch_params);
     configureInterconnectLookahead(params);
   } else {
     //lookahead is actually higher
@@ -224,11 +229,13 @@ Interconnect::allocateIntraProcLink(TimeDelta latency, EventManager* mgr, EventH
 }
 #endif
 
-void
-Interconnect::connectEndpoints(EventManager* mgr,
+uint64_t
+Interconnect::connectEndpoints(uint64_t linkIdOffset,
+                               EventManager* mgr,
                                SST::Params& ep_params,
                                SST::Params& sw_params)
 {
+  uint64_t linkId = linkIdOffset;
   int num_nodes = topology_->numNodes();
   int num_switches = topology_->numSwitches();
   int me = rt_->me();
@@ -250,9 +257,6 @@ Interconnect::connectEndpoints(EventManager* mgr,
     //parallel - I don't own this
     int target_rank = partition_->lpidForSwitch(i);
     int target_thread = partition_->threadForSwitch(i);
-    if (target_rank != me && target_thread != mgr->thread()){
-      continue;
-    }
 
     NetworkSwitch* injsw = switches_[i];
     NetworkSwitch* ejsw = switches_[i];
@@ -261,30 +265,41 @@ Interconnect::connectEndpoints(EventManager* mgr,
     for (Topology::InjectionPort& p : ports){
       Node* ep = nodes_[p.nid];
 
-      interconn_debug("connecting switch %d:%p to injector %d:%p on ports %d:%d",
-          i, injsw, p.nid, ep, p.switch_port, p.ep_port);
 
-      auto credit_link = new LocalLink(inj_latency, mgr, ep->creditHandler(p.ep_port));
-      injsw->connectInput(p.ep_port, p.switch_port, EventLink::ptr(credit_link));
-      auto payload_link = new LocalLink(inj_latency, mgr, injsw->payloadHandler(p.switch_port));
-      ep->connectOutput(p.ep_port, p.switch_port, EventLink::ptr(payload_link));
+      if (target_rank == me){
+        interconn_debug("connecting switch %d:%p to injector %d:%p on ports %d:%d",
+            i, injsw, p.nid, ep, p.switch_port, p.ep_port);
+
+        auto credit_link = new LocalLink(linkId++, inj_latency, mgr, ep->creditHandler(p.ep_port));
+        injsw->connectInput(p.ep_port, p.switch_port, EventLink::ptr(credit_link));
+
+        auto payload_link = new LocalLink(linkId++, inj_latency, mgr, injsw->payloadHandler(p.switch_port));
+        ep->connectOutput(p.ep_port, p.switch_port, EventLink::ptr(payload_link));
+      } else {
+        //increment the counter for consistent numbering
+        linkId += 2;
+      }
     }
 
     topology_->endpointsConnectedToEjectionSwitch(i, ports);
     for (Topology::InjectionPort& p : ports){
       Node* ep = nodes_[p.nid];
+      if (target_rank == me){
+        interconn_debug("connecting switch %d:%p to ejector %d:%p on ports %d:%d",
+            int(i), ejsw, p.nid, ep, p.switch_port, p.ep_port);
 
-      interconn_debug("connecting switch %d:%p to ejector %d:%p on ports %d:%d",
-          int(i), ejsw, p.nid, ep, p.switch_port, p.ep_port);
+        auto payload_link = new LocalLink(linkId++, ej_latency, mgr, ep->payloadHandler(p.ep_port));
+        ejsw->connectOutput(p.switch_port, p.ep_port, EventLink::ptr(payload_link));
 
-      auto payload_link = new LocalLink(ej_latency, mgr, ep->payloadHandler(p.ep_port));
-      ejsw->connectOutput(p.switch_port, p.ep_port, EventLink::ptr(payload_link));
-
-      auto credit_link = new LocalLink(ej_latency, mgr, ejsw->creditHandler(p.switch_port));
-      ep->connectInput(p.switch_port, p.ep_port, EventLink::ptr(credit_link));
+        auto credit_link = new LocalLink(linkId++, ej_latency, mgr, ejsw->creditHandler(p.switch_port));
+        ep->connectInput(p.switch_port, p.ep_port, EventLink::ptr(credit_link));
+      } else {
+        //increment the counter for consistent numbering
+        linkId += 2;
+      }
     }
   }
-
+  return linkId;
 }
 
 void
@@ -312,8 +327,10 @@ Interconnect::setup()
   }
 }
 
-void
-Interconnect::connectLogP(EventManager* mgr,
+uint64_t
+Interconnect::connectLogP(
+  uint64_t linkIdOffset,
+  EventManager* mgr,
   SST::Params& node_params,
   SST::Params& nic_params)
 {
@@ -323,8 +340,8 @@ Interconnect::connectLogP(EventManager* mgr,
   int my_rank = rt_->me();
   int my_thread = mgr->thread();
 
-  LogPSwitch* local_logp_switch = logp_switches_[my_thread];
-  TimeDelta logp_link_latency = local_logp_switch->out_in_latency();
+  uint64_t linkId = linkIdOffset;
+
   for (int i=0; i < num_switches_; ++i){
     SwitchId sid(i);
     std::vector<Topology::InjectionPort> nodes;
@@ -332,30 +349,80 @@ Interconnect::connectLogP(EventManager* mgr,
     if (nodes.empty())
       continue;
 
-    int target_thread = partition_->threadForSwitch(i);
+    int target_thread = partition_->threadForSwitch(sid);
     int target_rank = partition_->lpidForSwitch(sid);
+    LogPSwitch* local_logp_switch = logp_switches_[target_thread];
+    TimeDelta logp_link_latency = local_logp_switch->out_in_latency();
 
     for (Topology::InjectionPort& conn : nodes){
       Node* nd = nodes_[conn.nid];
-      if (my_rank == target_rank && my_thread == target_thread){
-        //nic sends to only its specific logp switch
-        auto* logp_link = new LocalLink(TimeDelta(0), mgr,
-            local_logp_switch->payloadHandler(conn.switch_port));
+      interconn_debug("Node %d links start at %" PRIu64, conn.nid, linkId);
+      if (target_rank == my_rank){
+        //connect the node output link to its local logp switch
+        interconn_debug("connecting NIC %d to its local LogP switch on link %" PRIu64,
+                        nd->addr(), linkId);
+        auto* logp_link = new LocalLink(linkId++, TimeDelta(0), mgr->threadManager(target_thread),
+                                        local_logp_switch->payloadHandler(conn.switch_port));
         nd->nic()->connectOutput(NIC::LogP, conn.switch_port, EventLink::ptr(logp_link));
-
-        auto* out_link = new LocalLink(logp_link_latency, mgr, nd->payloadHandler(NIC::LogP));
-        local_logp_switch->connectOutput(conn.nid, EventLink::ptr(out_link));
-      } else if (my_rank == target_rank){
-        auto* out_link = new MultithreadLink(logp_link_latency,
-            mgr, EventManager::global->threadManager(target_thread), nd->payloadHandler(NIC::LogP));
-        local_logp_switch->connectOutput(conn.nid, EventLink::ptr(out_link));
       } else {
-        auto* out_link = new IpcLink(logp_link_latency, target_rank, mgr,
-                                          local_logp_switch->componentId(), nodeComponentId(conn.nid), NIC::LogP, false);
-        local_logp_switch->connectOutput(conn.nid, EventLink::ptr(out_link));
+        linkId++; //keep consistent
+      }
+
+      //make the IPC handlers available on the ports/links expected
+      for (int rank=0; rank < rt_->me(); ++rank){
+        for (int logp=0; logp < mgr->nthread(); ++logp){
+          if (target_rank == my_rank){
+            interconn_debug("making NIC %d payload handler available on link %" PRIu64,
+                            nd->addr(), linkId);
+            auto* handler = nd->payloadHandler(NIC::LogP);
+            mgr->threadManager(target_thread)->addLinkHandler(linkId++, handler);
+          } else {
+            //increment to keep numbering consistent
+            linkId++;
+          }
+        }
+      }
+
+      //connect the logp output to this node using local/multi-thread links
+      for (int logp=0; logp < mgr->nthread(); ++logp){
+        if (my_rank == target_rank && logp == target_thread){
+          interconn_debug("connecting LogP %d:%d:%d to NIC %d:%d on local link %" PRIu64,
+                          rt_->me(), logp, conn.nid, conn.nid, NIC::LogP, linkId);
+          auto* out_link = new LocalLink(linkId++, logp_link_latency, mgr->threadManager(target_thread),
+                                         nd->payloadHandler(NIC::LogP));
+          logp_switches_[logp]->connectOutput(conn.nid, EventLink::ptr(out_link));
+        } else if (my_rank == target_rank) {
+          interconn_debug("connecting LogP %d:%d:%d to NIC %d:%d on MT link %" PRIu64,
+                          rt_->me(), logp, conn.nid, conn.nid, NIC::LogP, linkId);
+          auto* out_link = new MultithreadLink(linkId++, logp_link_latency, mgr->threadManager(logp),
+                                               mgr->threadManager(target_thread),
+                                               nd->payloadHandler(NIC::LogP));
+          logp_switches_[logp]->connectOutput(conn.nid, EventLink::ptr(out_link));
+        } else {
+          interconn_debug("connecting LogP %d:%d:%d to NIC %d:%d on IPC link %" PRIu64,
+                          rt_->me(), logp, conn.nid, conn.nid, NIC::LogP, linkId);
+          auto* out_link = new IpcLink(linkId++, logp_link_latency, target_rank, target_thread,
+                                       mgr->threadManager(logp), mgr);
+          logp_switches_[logp]->connectOutput(conn.nid, EventLink::ptr(out_link));
+        }
+      }
+
+      for (int rank=rt_->me()+1; rank < rt_->nproc(); ++rank){
+        for (int logp=0; logp < mgr->nthread(); ++logp){
+          if (target_rank == my_rank){
+            interconn_debug("making NIC %d payload handler available on link %" PRIu64,
+                            nd->addr(), linkId);
+            auto* handler = nd->payloadHandler(NIC::LogP);
+            mgr->threadManager(target_thread)->addLinkHandler(linkId++, handler);
+          } else {
+            //increment to keep numbering consistent
+            linkId++;
+          }
+        }
       }
     }
   }
+  return linkId;
 }
 
 void
@@ -372,17 +439,14 @@ Interconnect::buildEndpoints(SST::Params& node_params,
     topology_->endpointsConnectedToInjectionSwitch(sid, nodes);
     if (nodes.empty())
       continue;
-    int target_thread = partition_->threadForSwitch(i);
     int target_rank = partition_->lpidForSwitch(sid);
-    interconn_debug("switch %d maps to target rank %d", i, target_rank);
+    int target_thread = partition_->threadForSwitch(sid);
+    interconn_debug("switch %d maps to target rank %d, target thread %d",
+                    i, target_rank, target_thread);
 
     for (int n=0; n < nodes.size(); ++n){
       NodeId nid = nodes[n].nid;
-      int ep_port = nodes[n].ep_port;
-      int sw_port = nodes[n].switch_port;
-      interconn_debug("building node %d on leaf switch %d", nid, i);
-
-      if (my_rank == target_rank || my_thread == target_thread){
+      if (my_rank == target_rank){
         //local node - actually build it
         node_params->addParamOverride("id", int(nid));
         uint32_t comp_id = nid;
@@ -391,8 +455,9 @@ Interconnect::buildEndpoints(SST::Params& node_params,
         if (pos == std::string::npos){
           nodeType = nodeType + "_node";
         }
-        Node* nd = sprockit::create<Node>(
-             "macro", nodeType, comp_id, node_params);
+        interconn_debug("building node %d on leaf switch %d", nid, i);
+        mgr->setComponentManager(comp_id, target_thread);
+        Node* nd = sprockit::create<Node>("macro", nodeType, comp_id, node_params);
         node_params->removeParam("id"); //you don't have to let it linger
         nodes_[nid] = nd;
         components_[nid] = nd;
@@ -420,8 +485,8 @@ Interconnect::buildSwitches(SST::Params& switch_params,
       if (pos == std::string::npos){
         swType = swType + "_switch";
       }
-      switches_[i] = sprockit::create<NetworkSwitch>(
-         "macro", swType, comp_id, switch_params);
+      mgr->setComponentManager(comp_id, thread);
+      switches_[i] = sprockit::create<NetworkSwitch>("macro", swType, comp_id, switch_params);
     } else {
       switches_[i] = nullptr;
     }
@@ -442,16 +507,24 @@ Interconnect::nodeComponentId(NodeId nid) const
   return nid;
 }
 
-void
-Interconnect::connectSwitches(EventManager* mgr, SST::Params& switch_params)
+uint32_t
+Interconnect::logpComponentId(SwitchId sid) const
+{
+  uint32_t my_offset = rt_->me() * rt_->nthread() + topology_->numNodes() + topology_->numSwitches();
+  return my_offset + sid;
+}
+
+uint64_t
+Interconnect::connectSwitches(uint64_t linkIdOffset, EventManager* mgr, SST::Params& switch_params)
 {
   bool simple_model = switch_params.find<std::string>("name") == "simple";
-  if (simple_model) return; //nothing to do
+  if (simple_model) return linkIdOffset; //nothing to do
 
   std::vector<Topology::Connection> outports(64); //allocate 64 spaces optimistically
 
   int my_rank = rt_->me();
   int my_thread = mgr->thread();
+  uint64_t linkId = linkIdOffset;
 
   SST::Params port_params = switch_params.get_namespace("link");
   TimeDelta linkLatency(port_params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
@@ -471,38 +544,73 @@ Interconnect::connectSwitches(EventManager* mgr, SST::Params& switch_params)
                 topology_->switchLabel(conn.dst).c_str(),
                 conn.src_outport, conn.dst_inport);
 
-      if (src_rank == my_rank && src_thread == my_thread){
-        EventLink* payload_link = nullptr;
-        if (dst_rank == my_rank && dst_thread == my_thread){
-          payload_link = new LocalLink(linkLatency, mgr, switches_[conn.dst]->payloadHandler(conn.dst_inport));
-        } else if (dst_rank == my_rank){
-          payload_link = new MultithreadLink(linkLatency, mgr, EventManager::global->threadManager(dst_thread),
-               switches_[conn.dst]->payloadHandler(conn.dst_inport));
-        } else {
-          payload_link = new IpcLink(linkLatency, dst_rank, mgr,
-                                     switchComponentId(src), switchComponentId(conn.dst),
-                                     conn.dst_inport, false);
-        }
-        switches_[src]->connectOutput(conn.src_outport, conn.dst_inport, EventLink::ptr(payload_link));
-
+      if (dst_rank == my_rank && src_rank != my_rank){
+        //we need to make the credit handler available on this end - its link is the next one
+        auto* payload_handler = switches_[conn.dst]->payloadHandler(conn.dst_inport);
+        interconn_debug("switch %d:%d making payload handler available on IPC link %" PRIu64,
+                         conn.dst, conn.dst_inport, linkId);
+        mgr->threadManager(dst_thread)->addLinkHandler(linkId, payload_handler);
       }
 
-      if (dst_rank == my_rank && dst_thread == my_thread){
+      if (src_rank == my_rank){
+        EventLink* payload_link = nullptr;
+        if (dst_rank == my_rank && dst_thread == my_thread){
+          interconn_debug("connecting switches %d:%d->%d:%d on local link %" PRIu64,
+                          conn.src, conn.src_outport, conn.dst, conn.dst_inport,linkId);
+          payload_link = new LocalLink(linkId++, linkLatency, mgr->threadManager(src_thread),
+                                       switches_[conn.dst]->payloadHandler(conn.dst_inport));
+        } else if (dst_rank == my_rank){
+          interconn_debug("connecting switches %d:%d->%d:%d on MT link %" PRIu64,
+                          conn.src, conn.src_outport, conn.dst, conn.dst_inport, linkId);
+          payload_link = new MultithreadLink(linkId++, linkLatency, mgr->threadManager(src_thread),
+                                             EventManager::global->threadManager(dst_thread),
+                                             switches_[conn.dst]->payloadHandler(conn.dst_inport));
+        } else {
+          interconn_debug("connecting switches %d:%d->%d:%d on IPC link %" PRIu64,
+                          conn.src, conn.src_outport, conn.dst, conn.dst_inport, linkId);
+          payload_link = new IpcLink(linkId++, linkLatency, dst_rank, dst_thread,
+                                     mgr->threadManager(src_thread), mgr);
+        }
+        switches_[src]->connectOutput(conn.src_outport, conn.dst_inport, EventLink::ptr(payload_link));
+      } else {
+        linkId++; //increment for consistency with other ranks
+      }
+
+      if (dst_rank != my_rank && src_rank == my_rank){
+        //we need to make the credit handler available on this end - its link is the next one
+        auto* credit_handler = switches_[conn.src]->creditHandler(conn.src_outport);
+        interconn_debug("switch %d:%d making payload handler available on IPC link %" PRIu64,
+                         conn.src, conn.src_outport, linkId);
+        mgr->threadManager(src_thread)->addLinkHandler(linkId, credit_handler);
+      }
+
+      if (dst_rank == my_rank){
         EventLink* credit_link = nullptr;
         if (src_rank == my_rank && src_thread == my_thread){
-          credit_link = new LocalLink(linkLatency, mgr, switches_[src]->creditHandler(conn.src_outport));
+          interconn_debug("connecting switches %d:%d<-%d:%d on local link %" PRIu64,
+                          conn.src, conn.src_outport, conn.dst, conn.dst_inport, linkId);
+          credit_link = new LocalLink(linkId++, linkLatency, mgr->threadManager(dst_thread),
+                                      switches_[src]->creditHandler(conn.src_outport));
         } else if (src_rank == my_rank) {
-          credit_link = new MultithreadLink(linkLatency, mgr, EventManager::global->threadManager(src_thread),
-               switches_[src]->creditHandler(conn.src_outport));
+          interconn_debug("connecting switches %d:%d<-%d:%d on MT link %" PRIu64,
+                          conn.src, conn.src_outport, conn.dst, conn.dst_inport, linkId);
+          credit_link = new MultithreadLink(linkId++, linkLatency, mgr->threadManager(dst_thread),
+                                            EventManager::global->threadManager(src_thread),
+                                            switches_[src]->creditHandler(conn.src_outport));
         } else {
-          credit_link = new IpcLink(linkLatency, src_rank, mgr,
-                                    switchComponentId(conn.dst), switchComponentId(src),
-                                    conn.src_outport, true);
+          interconn_debug("connecting switches %d:%d<-%d:%d on IPC link %" PRIu64,
+                          conn.src, conn.src_outport, conn.dst, conn.dst_inport, linkId);
+          //we need to make the payload handler available on this end - its link is this one
+          credit_link = new IpcLink(linkId++, linkLatency, src_rank, src_thread,
+                                    mgr->threadManager(dst_thread), mgr);
         }
         switches_[conn.dst]->connectInput(conn.src_outport, conn.dst_inport, EventLink::ptr(credit_link));
+      } else {
+        linkId++; //increment for consistency with other ranks
       }
     }
   }
+  return linkId;
 }
 #endif
 

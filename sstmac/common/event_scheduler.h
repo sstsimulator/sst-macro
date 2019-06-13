@@ -53,6 +53,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/stats/stat_collector.h>
 #include <sstmac/common/event_manager_fwd.h>
 #include <sstmac/common/event_scheduler_fwd.h>
+#include <sstmac/backends/common/parallel_runtime.h>
 #include <sstmac/sst_core/integrated_component.h>
 #include <sprockit/sim_parameters_fwd.h>
 
@@ -117,6 +118,10 @@ class EventLink {
 
   virtual void send(TimeDelta delay, Event *ev) = 0;
 
+  uint64_t id() const {
+    return linkId_;
+  }
+
   void send(Event* ev){
     send(TimeDelta(), ev);
   }
@@ -129,13 +134,12 @@ class EventLink {
     return minRemoteLatency_;
   }
 
-  static uint32_t allocateLinkId();
+  static uint64_t allocateSelfLinkId();
 
  protected:
-  EventLink(TimeDelta latency) :
-    latency_(latency), seqnum_(0)
+  EventLink(uint64_t linkId, TimeDelta latency) :
+    linkId_(linkId), latency_(latency), seqnum_(0)
   {
-    linkId_ = allocateLinkId();
   }
 
   static void setMinThreadLatency(TimeDelta t){
@@ -161,11 +165,11 @@ class EventLink {
   }
 
   uint32_t seqnum_;
-  uint32_t linkId_;
+  uint64_t linkId_;
   TimeDelta latency_;
   static TimeDelta minThreadLatency_;
   static TimeDelta minRemoteLatency_;
-  static uint32_t linkIdCounter_;
+  static uint32_t selfLinkIdCounter_;
 
 };
 
@@ -253,11 +257,11 @@ class EventScheduler : public sprockit::printable
   }
 
   int nthread() const {
-    return 1;
+    return nthread_;
   }
 
   int threadId() const {
-    return 0;
+    return thread_id_;
   }
 
   Timestamp now() const {
@@ -300,9 +304,9 @@ class EventScheduler : public sprockit::printable
 
   EventScheduler(const std::string& selfname, uint32_t id, SST::Component* base) :
 #if !SSTMAC_INTEGRATED_SST_CORE
-   seqnum_(0), mgr_(nullptr), now_(nullptr), selfLinkId_(EventLink::allocateLinkId()),
+   seqnum_(0), mgr_(nullptr), now_(nullptr), selfLinkId_(EventLink::allocateSelfLinkId()),
 #endif
-   comp_(base), id_(id)
+   comp_(base), id_(id), nthread_(1), thread_id_(0)
   {
 #if SSTMAC_INTEGRATED_SST_CORE
     if (!time_converter_){
@@ -322,6 +326,8 @@ class EventScheduler : public sprockit::printable
 
  private:
   uint32_t id_;
+  int thread_id_;
+  int nthread_;
 
 #if SSTMAC_INTEGRATED_SST_CORE
   SST::Link* self_link_;
@@ -333,8 +339,6 @@ class EventScheduler : public sprockit::printable
   EventManager* mgr_;
   uint32_t seqnum_;
   uint32_t selfLinkId_;
-  int thread_id_;
-  int nthread_;
   const Timestamp* now_;
 
  protected:
@@ -456,8 +460,8 @@ SST::Event::HandlerBase* newLinkHandler(const T* t, Fxn fxn, Args&&... args){
 
 class LocalLink : public EventLink {
  public:
-  LocalLink(TimeDelta latency, EventManager* mgr, EventHandler* hand) :
-    EventLink(latency),
+  LocalLink(uint64_t linkId, TimeDelta latency, EventManager* mgr, EventHandler* hand) :
+    EventLink(linkId, latency),
     handler_(hand),
     mgr_(mgr)
   {
@@ -481,10 +485,10 @@ class LocalLink : public EventLink {
 
 class MultithreadLink : public LocalLink {
  public:
-  MultithreadLink(TimeDelta latency,
+  MultithreadLink(uint64_t linkId, TimeDelta latency,
                   EventManager* src_mgr, EventManager* dst_mgr,
                   EventHandler* handler) :
-    LocalLink(latency, src_mgr, handler),
+    LocalLink(linkId, latency, src_mgr, handler),
     dst_mgr_(dst_mgr)
   {
     setMinThreadLatency(latency);
@@ -499,17 +503,16 @@ class MultithreadLink : public LocalLink {
 
 class IpcLink : public EventLink {
  public:
-  IpcLink(TimeDelta latency, int rank,
-           EventManager* mgr,
-           uint32_t srcId, uint32_t dstId,
-           int port, bool is_credit) :
-    EventLink(latency),
-    is_credit_(is_credit),
+  IpcLink(uint64_t linkId,
+         TimeDelta latency,
+         int rank, int thread,
+         EventManager* src_mgr,
+         EventManager* ipc_mgr) :
+    EventLink(linkId, latency),
     rank_(rank),
-    srcId_(srcId),
-    dstId_(dstId),
-    port_(port)
-
+    thread_(thread),
+    ev_mgr_(src_mgr),
+    ipc_mgr_(ipc_mgr)
   {
     setMinRemoteLatency(latency);
   }
@@ -521,12 +524,10 @@ class IpcLink : public EventLink {
   void send(TimeDelta delay, Event* ev) override;
 
  private:
-  bool is_credit_;
   int rank_;
-  uint32_t srcId_;
-  uint32_t dstId_;
-  int port_;
-  EventManager* mgr_;
+  int thread_;
+  EventManager* ev_mgr_;
+  EventManager* ipc_mgr_;
 
 };
 
@@ -534,7 +535,7 @@ class SubLink : public EventLink
 {
  public:
   SubLink(TimeDelta lat, Component* comp, EventHandler* handler) :
-    EventLink(lat), //sub links have no latency
+    EventLink(allocateSelfLinkId(), lat), //sub links have no latency
     comp_(comp), handler_(handler)
   {
   }

@@ -118,7 +118,7 @@ class MultithreadedEventContainer :
 
   std::vector<EventManager*> thread_managers_;
 
-  void run_work();
+  void runWork();
 
   std::vector<threadQueue> queues_;
   std::vector<int> cpu_affinity_;

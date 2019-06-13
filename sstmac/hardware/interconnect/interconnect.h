@@ -66,9 +66,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 DeclareDebugSlot(interconnect)
 
-#define interconn_debug(...) \
-  debug_printf(sprockit::dbg::interconnect, __VA_ARGS__)
-
 namespace sstmac {
 namespace hw {
 
@@ -171,11 +168,35 @@ class Interconnect
 
   uint32_t logpComponentId(SwitchId sid) const;
 
-  void connectLogP(EventManager* mgr,
-        SST::Params& node_params,
-        SST::Params& nic_params);
+  /**
+   * @brief connectLogP
+   * @param idOffset The offset to use for starting to number links
+   * @param mgr
+   * @param node_params
+   * @param nic_params
+   * @return The next available link ID offset after connections
+   */
+  uint64_t connectLogP(uint64_t idOffset, EventManager* mgr,
+        SST::Params& node_params, SST::Params& nic_params);
 
-  void connectSwitches(EventManager* mgr, SST::Params& switch_params);
+  /**
+   * @brief connectSwitches
+   * @param idOffset The offset to use for starting to number links
+   * @param mgr
+   * @param switch_params
+   * @return The next available link ID offset after connections
+   */
+  uint64_t connectSwitches(uint64_t idOffset, EventManager* mgr, SST::Params& switch_params);
+
+  /**
+   * @brief connectEndpoints
+   * @param idOffset The offset to use for starting to number links
+   * @param mgr
+   * @param ep_params
+   * @param sw_params
+   * @return The next available link ID offset after connections
+   */
+  uint64_t connectEndpoints(uint64_t idOffset, EventManager* mgr, SST::Params& ep_params, SST::Params& sw_params);
 
   void configureInterconnectLookahead(SST::Params& params);
 
@@ -185,11 +206,6 @@ class Interconnect
 
   void buildSwitches(SST::Params& switch_params,
                       EventManager* mgr);
-
-  void connectEndpoints(EventManager* mgr,
-                  SST::Params& ep_params,
-                  SST::Params& sw_params);
-
 
   switch_map switches_;
   node_map nodes_;

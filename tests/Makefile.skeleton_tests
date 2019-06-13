@@ -33,10 +33,10 @@ endif
 
 #SKELETONCASES += \
 #  boxml 
+#  traffic 
 
 SKELETONCASES += \
   sst_component_example \
-  traffic \
   multiapp \
   sendrecv
 
