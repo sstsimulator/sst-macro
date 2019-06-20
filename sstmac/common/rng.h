@@ -56,6 +56,9 @@ namespace RNG {
 namespace detail {
 // This is a deterministic shuffle taken from
 // https://en.cppreference.com/w/cpp/algorithm/random_shuffle on 06/20/2019
+// 
+// The following function is under the following license:
+// https://en.cppreference.com/w/Cppreference:Copyright/CC-BY-SA
 //
 // Although the previous use of std::random_shuffle in SST was not portable
 // (Note that the implementation is not dictated by the standard, so even if
