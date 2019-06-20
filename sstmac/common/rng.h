@@ -53,6 +53,37 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace RNG {
 
+namespace detail {
+// This is a deterministic shuffle taken from
+// https://en.cppreference.com/w/cpp/algorithm/random_shuffle on 06/20/2019
+//
+// Although the previous use of std::random_shuffle in SST was not portable
+// (Note that the implementation is not dictated by the standard, so even if
+// you use exactly the same RandomFunc or URBG you may get different results
+// with different standard library implementations), I suspect that in practice
+// it worked and that someone somewhere relies on that portablity. This one
+// should always give the same shuffle with the same random function though,
+// but honestly we should switch to std::shuffle since SST was never portable
+// to begin with.
+template <typename IT, typename RandomFunc>
+void deterministic_shuffle(IT begin, IT end, RandomFunc&& r) {
+  using diff_t = typename std::iterator_traits<IT>::difference_type;
+  diff_t i, n;
+  n = end - begin;
+  for (i = n - 1; i > 0; --i) {
+    using std::swap;
+    swap(begin[i], end[r(i + 1)]);
+  }
+}
+}  // namespace detail
+
+// Should match the SST Distributions
+class UniformInteger_functor;
+template <typename IT>
+void random_shuffle(IT begin, IT end, UniformInteger_functor& r) {
+  detail::deterministic_shuffle(begin, end, r);
+}
+
 typedef uint32_t rngint_t;
 
 /** This is a base class for random number generators that return
