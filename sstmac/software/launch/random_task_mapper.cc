@@ -86,7 +86,7 @@ RandomTaskMapper::mapRanks(
   }
 
   RNG::UniformInteger_functor rngf(rng_);
-  std::random_shuffle(result.begin(), result.end(), rngf);
+  RNG::random_shuffle(result.begin(), result.end(), rngf);
 
   result.resize(nproc);
 }
