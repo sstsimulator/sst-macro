@@ -43,7 +43,6 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sstmac/common/stats/stat_spyplot.h>
-#include <sstmac/common/lodepng.h>
 #include <sstmac/backends/common/parallel_runtime.h>
 #include <sprockit/output.h>
 #include <sprockit/errors.h>

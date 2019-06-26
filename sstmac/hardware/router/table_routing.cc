@@ -81,11 +81,11 @@ class TableRouter : public Router {
 
     nlohmann::json routes =
         jsn.at("switches").at( top->switchIdToName(my_addr_) ).at("routes");
-    int size = table_.size();
     for (auto it = routes.begin(); it != routes.end(); ++it)
       table_[top->nodeNameToId(it.key())] = it.value();
 
-    for (int i=0; i < table_.size(); ++i){
+    int size = table_.size();
+    for (int i=0; i < size; ++i){
       if (table_[i] == -1){
         spkt_abort_printf("No port specified on switch %d to destination %d",
                           my_addr_, i);

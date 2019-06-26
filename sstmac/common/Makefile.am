@@ -25,7 +25,6 @@ libsstmac_common_la_SOURCES = \
   timestamp.cc \
   c_params.cc \
   sst_event.cc \
-  lodepng.cc \
   sstmac_env.cc \
   thread_lock.cc \
   stats/ftq.cc \
@@ -61,7 +60,6 @@ nobase_library_include_HEADERS = \
   request_fwd.h \
   sst_event.h \
   sst_event_fwd.h \
-  lodepng.h \
   sstmac_env.h \
   thread_safe_int.h \
   thread_lock.h \
