@@ -249,6 +249,7 @@ AC_CONFIG_FILES([
  sprockit/sprockit/Makefile
  sprockit/test/Makefile
  bin/Makefile
+ include/Makefile
  python/Makefile
  configurations/Makefile
  tests/Makefile

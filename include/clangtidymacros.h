@@ -42,75 +42,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sstmac/backends/common/parallel_runtime.h>
-#include <sstmac/software/launch/hostname_allocation.h>
-#include <sstmac/software/launch/node_allocator.h>
-#include <sstmac/common/sstmac_config.h>
-#include <sstmac/hardware/interconnect/interconnect.h>
-#include <sstmac/hardware/topology/cartesian_topology.h>
-#include <sprockit/keyword_registration.h>
-#include <sprockit/util.h>
-#include <sprockit/fileio.h>
-#include <sprockit/sim_parameters.h>
-#include <sstream>
-
-RegisterKeywords(
-{ "hostfile", "a file containing a line-by-line list of hostnames for each node in system" },
-);
-
-namespace sstmac {
-namespace sw {
-
-class StrideAllocation : public NodeAllocator {
- public:
-  SST_ELI_REGISTER_DERIVED(
-    NodeAllocator,
-    StrideAllocation,
-    "macro",
-    "stride",
-    SST_ELI_ELEMENT_VERSION(1,0,0),
-    "Return nodes at regular strided intervals")
-
-  StrideAllocation(SST::Params& params) :
-    NodeAllocator(params)
-  {
-    stride_ = params.find<int>("stride");
-  }
-
-  std::string toString() const override {
-    return "stride allocation";
-  }
-
-  bool allocate(
-    int nnode_requested,
-    const ordered_node_set& available,
-    ordered_node_set& allocation) const override
-  {
-    auto iter = available.begin();
-    int idx = 0;
-    while (iter != available.end() && allocation.size() < nnode_requested){
-      if (idx % stride_ == 0){
-        debug_printf(sprockit::dbg::allocation,
-            "stride_allocation: node[%d]=%d",
-            int(allocation.size()), *iter);
-        allocation.insert(*iter);
-
-      }
-      ++idx;
-      ++iter;
-    }
-
-    if  (allocation.size() != nnode_requested){
-      allocation.clear();
-      return false;
-    } else {
-      return true;
-    }
-  }
-
- private:
-  int stride_;
-};
-
-}
-}
+#ifndef include_clangtidymacros_h
+#define include_clangtidymacros_h
+#ifdef __clang_analyzer__
+#define CLANG_ANALYZER_NO_RETURN __attribute__((analyzer_noreturn))
+#else
+#define CLANG_ANALYZER_NO_RETURN
+#endif
+#endif // include_clangtidymacros_h

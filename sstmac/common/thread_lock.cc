@@ -82,7 +82,7 @@ MutexThreadLock::~MutexThreadLock()
   /** Ignore the signal for now since whatever person wrote
     some of the pthread implementations doesn't know how turn off
     all of the locks. This often erroneously returns signal 16 EBUSY */
-  int signal = pthread_mutex_destroy(&mutex_);
+  /*int signal = */ pthread_mutex_destroy(&mutex_);
 }
 
 void

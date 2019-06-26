@@ -24,7 +24,7 @@ static std::string
 getFxnTypedef(clang::SourceLocation loc, const Type* ty, const std::string& name, clang::CompilerInstance* ci){
   std::string typeName = GetAsString(ty);
   //this is horrible... but the only way I know
-  auto pos = typeName.find(")");
+  auto pos = typeName.find(')');
   if (pos == std::string::npos){
     internalError(loc, *ci, "failed typedef on " + typeName);
   }
@@ -256,7 +256,6 @@ SkeletonASTVisitor::setupClassStaticVarDecl(VarDecl* D)
 
     registerGlobalReplacement(D, &repl);
   } else {
-    CXXRecordDecl* outerCls = classContexts_.front();
     std::stringstream varname_scope_sstr; varname_scope_sstr << "_";
     std::stringstream cls_scope_sstr;
     for (CXXRecordDecl* decl : classContexts_){

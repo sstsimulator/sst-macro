@@ -46,6 +46,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #define bin_clang_util_h
 
 #include "clangHeaders.h"
+#include <clangtidymacros.h>
+
 #include <iostream>
 
 struct PrettyPrinter
@@ -95,19 +97,27 @@ struct PrettyPrinter
 bool isCxx(const std::string& filename);
 bool isValidSrc(const std::string& filename);
 
+CLANG_ANALYZER_NO_RETURN
 void internalError(const std::string& error);
 
+CLANG_ANALYZER_NO_RETURN
 void internalError(clang::SourceLocation loc, clang::CompilerInstance& CI, const std::string& error);
+CLANG_ANALYZER_NO_RETURN
 void errorAbort(clang::SourceLocation loc, clang::CompilerInstance& CI, const std::string& error);
+
 void warn(clang::SourceLocation loc, clang::CompilerInstance& CI, const std::string& warning);
 
 void warn(const clang::Stmt* s, clang::CompilerInstance& CI, const std::string& error);
 void warn(const clang::Decl* decl, clang::CompilerInstance& CI, const std::string& error);
 
+CLANG_ANALYZER_NO_RETURN
 void errorAbort(const clang::Stmt* s, clang::CompilerInstance& CI, const std::string& error);
+CLANG_ANALYZER_NO_RETURN
 void errorAbort(const clang::Decl* decl, clang::CompilerInstance& CI, const std::string& error);
 
+CLANG_ANALYZER_NO_RETURN
 void internalError(const clang::Stmt* s, clang::CompilerInstance& CI, const std::string& error);
+CLANG_ANALYZER_NO_RETURN
 void internalError(const clang::Decl* decl, clang::CompilerInstance& CI, const std::string& error);
 
 void insertBefore(const clang::Stmt* s, clang::Rewriter& r, const std::string& text);
