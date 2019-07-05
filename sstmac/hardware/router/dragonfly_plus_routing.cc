@@ -237,41 +237,48 @@ class DragonflyPlusParRouter : public DragonflyPlusAlltoallMinimalRouter {
         hdr->edge_port = port;
         hdr->deadlock_vc = 1; //yep - here now
         rter_debug("continuing non-minimal path on %d", port);
-      } else {
-        //we must make a ugal decision here
-        int interG = my_g_;
-        int valiantPort;
-        uint32_t attempt = 0;
-        uint32_t seed = netsw_->now().time.ticks();
-        int numTestPorts = covering_ * dfly_->g();
-        while (interG == my_g_ || interG == dstG){
-          valiantPort = randomNumber(numTestPorts, attempt, seed);
-          ++attempt;
-          interG = valiantPort / covering_;
-          //a little weird - we skip ports to ourselves
-          if (interG > my_g_) valiantPort -= covering_;
-        }
-        valiantPort += dfly_->a(); //global ports offset by a
+      } else { 
         int minimalPort = grp_rotaters_[dstG] + dfly_->a()
             + ((my_g_ < dstG ? (dstG - 1) : dstG)*covering_);
+        if (dfly_->g() > 2){
+          //we must have an intermediate group - otherwise we just have minimal
+          //we must make a ugal decision here
+          int interG = my_g_;
+          int valiantPort;
+          uint32_t attempt = 0;
+          uint32_t seed = netsw_->now().time.ticks();
+          int numTestPorts = covering_ * dfly_->g();
+          while (interG == my_g_ || interG == dstG){
+            valiantPort = randomNumber(numTestPorts, attempt, seed);
+            ++attempt;
+            interG = valiantPort / covering_;
+            //a little weird - we skip ports to ourselves
+            if (interG > my_g_) valiantPort -= covering_;
+          }
+          valiantPort += dfly_->a(); //global ports offset by a
 
 
-        int valiantMetric = 2*netsw_->queueLength(valiantPort, all_vcs);
-        int minimalMetric = netsw_->queueLength(minimalPort, all_vcs);
+          int valiantMetric = 2*netsw_->queueLength(valiantPort, all_vcs);
+          int minimalMetric = netsw_->queueLength(minimalPort, all_vcs);
 
-        rter_debug("comparing minimal(%d) %d against non-minimal(%d) %d",
-                   minimalPort, minimalMetric, valiantPort, valiantMetric);
+          rter_debug("comparing minimal(%d) %d against non-minimal(%d) %d",
+                     minimalPort, minimalMetric, valiantPort, valiantMetric);
 
-        if (minimalMetric <= valiantMetric){
+          if (minimalMetric <= valiantMetric){
+            hdr->edge_port = minimalPort;
+            hdr->stage_number = final_stage;
+            grp_rotaters_[dstG] = (grp_rotaters_[dstG] + 1) % covering_;
+          } else {
+            hdr->edge_port = valiantPort;
+            hdr->stage_number = valiant_stage;
+          }
+        } else { //no intermediate group - must go minimal
           hdr->edge_port = minimalPort;
           hdr->stage_number = final_stage;
           grp_rotaters_[dstG] = (grp_rotaters_[dstG] + 1) % covering_;
-        } else {
-          hdr->edge_port = valiantPort;
-          hdr->stage_number = valiant_stage;
         }
         hdr->deadlock_vc = 0;
-      }
+      } 
     }
   }
 

@@ -273,7 +273,7 @@ class DragonflyValiantRouter : public DragonflyMinimalRouter {
     return 6;
   }
 
-  void check_valiant_inter_group(Packet* pkt, int dst_g)
+  void checkValiantInterGroup(Packet* pkt, int dst_g)
   {
     uint32_t seed = netsw_->now().time.ticks();
     uint32_t attempt = 0;
@@ -319,7 +319,7 @@ class DragonflyValiantRouter : public DragonflyMinimalRouter {
         if (dst_g == my_g_){
           checkValiantIntraGroup(pkt, dst_a);
         } else {
-          check_valiant_inter_group(pkt, dst_g);
+          checkValiantInterGroup(pkt, dst_g);
         }
         hdr->stage_number = valiant_stage;
         break;
