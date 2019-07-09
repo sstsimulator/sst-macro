@@ -143,7 +143,6 @@ SnapprSwitch::~SnapprSwitch()
 void
 SnapprSwitch::connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link)
 {
-  switch_debug("connecting output port %d to input port %d", src_outport, dst_inport);
   double scale_factor = top_->portScaleFactor(my_addr_, src_outport);
   double port_bw = scale_factor * link_bw_;
   OutPort& p = outports_[src_outport];
@@ -152,6 +151,8 @@ SnapprSwitch::connectOutput(int src_outport, int dst_inport, EventLink::ptr&& li
   p.dst_port = dst_inport;
   p.scaleBuffers(scale_factor);
   p.parent = this;
+  switch_debug("connecting output port %d to input port %d with scale=%10.4f byte_delay=%10.5e",
+               src_outport, dst_inport, scale_factor, p.byte_delay.sec());
 }
 
 void

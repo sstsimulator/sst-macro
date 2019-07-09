@@ -70,6 +70,8 @@ class Hypercube :
 
   virtual ~Hypercube() {}
 
+  double portScaleFactor(uint32_t addr, int port) const override;
+
   void minimalRouteToSwitch(
     SwitchId src,
     SwitchId dst,

@@ -59,6 +59,8 @@ RegisterKeywords(
 
 namespace sstmac {
 
+static sstmac::FTQTag inactive("Inactive", 1);
+
 static const char* matplotlib_text_header =
     "#!/usr/bin/env python3\n"
     "\n"
@@ -168,6 +170,24 @@ FTQCalendar::FTQCalendar(SST::BaseComponent *comp, const std::string &name,
 }
 
 void
+FTQCalendar::padToMaxTick(uint64_t max_tick)
+{
+  uint64_t stop = 0;
+  uint64_t inactive_length = max_tick;
+  if (!events_.empty()){
+    auto& last = events_.back();
+    stop = last.start + last.length;
+    inactive_length = max_tick - stop;
+  }
+#if SSTMAC_SANITY_CHECK
+  if (max_tick < stop){
+    spkt_abort_printf("Bad FTQ collection: max tick is less than stop time");
+  }
+#endif
+  addData_impl(inactive.id(), stop, inactive_length);
+}
+
+void
 FTQCalendar::addData_impl(int event_typeid, uint64_t ticks_begin, uint64_t num_ticks)
 {
   if (num_ticks){
@@ -226,16 +246,21 @@ FTQOutput::output(StatisticBase *statistic, bool endOfSimFlag)
   if (!calendar){
     spkt_abort_printf("FTQOutput can only be used with FTQCalendar statistic");
   }
-  if (!calendar->empty()){
-    events_used_ = events_used_ | calendar->eventsUsed();
-    max_tick_ = std::max(max_tick_, calendar->maxTick());
-    calendars_.push_back(calendar);
-  }
+  //if (!calendar->empty()){
+  //  //no such thing as an empty calendar anymore
+  //    //calendars should at least declare themselves as "inactive"
+  max_tick_ = std::max(max_tick_, calendar->maxTick());
+  calendars_.push_back(calendar);
 }
 
 void
 FTQOutput::stopOutputGroup()
 {
+  for (FTQCalendar* calendar : calendars_){
+    calendar->padToMaxTick(max_tick_);
+    events_used_ = events_used_ | calendar->eventsUsed();
+  }
+
   if (num_epochs_){
     //specified as fixed number of epochs
     ticks_per_epoch_ = max_tick_ / num_epochs_;

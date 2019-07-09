@@ -135,6 +135,12 @@ class FTQCalendar : public SST::Statistics::MultiStatistic<int,uint64_t,uint64_t
 
   void outputStatisticData(StatisticFieldsOutput *output, bool endOfSimFlag);
 
+  /**
+  * The calendar may not have collected events until the very end. 
+  * Pad with the "inactive" tag until the end
+  */
+  void padToMaxTick(uint64_t max_tick);
+
   uint64_t maxTick() const {
     if (events_.empty()){
       return 0;

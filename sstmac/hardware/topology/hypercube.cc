@@ -119,6 +119,25 @@ Hypercube::minimalDistance(
   return dist;
 }
 
+double
+Hypercube::portScaleFactor(uint32_t addr, int port) const
+{
+  int port_cutoff = 0;
+  int dim=0; 
+  for (int size : dimensions_){
+    port_cutoff += size;
+    if (port < port_cutoff){
+      break;
+    }
+    ++dim;
+  }
+  if (dim == dimensions_.size()){
+    return 1;//injection_redundancy_;
+  } else {
+    return red_[dim];
+  }
+}
+
 void
 Hypercube::connectedOutports(SwitchId src, std::vector<Connection>& conns) const
 {
