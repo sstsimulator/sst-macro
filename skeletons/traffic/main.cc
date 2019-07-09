@@ -65,9 +65,47 @@ const std::vector<int> total_num_sends =
   { 64, 64, 64,  64,  64,  64,  16,  16,  16,   16,   16,   16,   16,   16,   16,    16,    16,    16};
 const std::vector<int> window_num_sends =
   { 16, 16, 16,  16,  16,  16,  4,   4,   4,    4,    4,    4,    4,    4,    4,     4,     4,     4};
+const std::vector<int> primes = { 17, 19, 103, 107, 59, 41, 37 };
 
 void usage(std::ostream& os){
   os << "usage: ./run <num_senders> <num_recvers> <send_seed> <recv_seed>" << std::endl;
+}
+
+static uint32_t crc32_for_byte(uint32_t r) {
+  for(int j = 0; j < 8; ++j)
+    r = (r & 1? 0: (uint32_t)0xEDB88320L) ^ r >> 1;
+  return r ^ (uint32_t)0xFF000000L;
+}
+
+uint32_t crc32(const void *data, size_t n_bytes)
+{
+  uint32_t crc;
+  static uint32_t table[0x100];
+  if(*table == 0){
+    for(size_t i = 0; i < 0x100; ++i)
+      table[i] = crc32_for_byte(i);
+  }
+  for(size_t i = 0; i < n_bytes; ++i)
+    crc = table[(uint8_t)crc ^ ((uint8_t*)data)[i]] ^ crc >> 8;
+  return crc;
+}
+
+std::vector<int> pseudo_random_shuffle(int seed, const std::vector<int>& vec)
+{
+  int idx = seed % primes.size();
+  int prime = primes[idx];
+  std::vector<int> clone(vec.size());
+  std::vector<std::pair<uint32_t,int>> sorter;
+  for (int i=0; i < vec.size(); ++i){
+    uint32_t tmp = (vec[i]+prime) * prime;
+    uint32_t hash = crc32(&tmp, sizeof(uint32_t));
+    sorter.emplace_back(hash,vec[i]);
+  }
+  std::sort(sorter.begin(), sorter.end());
+  for (int i=0; i < vec.size(); ++i){
+    clone[i] = sorter[i].second;
+  }
+  return clone;
 }
 
 void crash(const std::string& err){
@@ -77,43 +115,36 @@ void crash(const std::string& err){
 }
 
 std::vector<int>
-shuffled_recvers(int numSenders, const std::vector<int>& senderRanks, int seed, int numPossibleRecvers, int numRecvers)
+shuffled_recvers(int numSenders, const std::vector<int>& senderRanks,
+                 int seed, int numPossibleRecvers, int numRecvers)
 {
-  std::mt19937 mt(seed);
-
-  int sendersPerRecver = numSenders / numRecvers;
-
-  std::vector<int> vec(numRecvers);
-  std::set<int> alreadyUsed;
-
-  int idx = 0;
-  while(idx < numRecvers){
-    std::set<int> currentSenderNodes;
-    int start = idx*sendersPerRecver;
-    int stop = start + sendersPerRecver;
-    for (int i=start; i < stop; ++i){
-      int node = senderRanks[i]/2;
-      currentSenderNodes.insert(node);
-    }
-    bool matchedSender = true;
-    int recverNode = 0;
-    int numTries = 0;
-    while (matchedSender || alreadyUsed.find(recverNode) != alreadyUsed.end()){
-      recverNode = mt() % numPossibleRecvers;
-      matchedSender = currentSenderNodes.find(recverNode) != currentSenderNodes.end();
-      if (numTries == 1000){
-        std::cerr << "Too many tries to generate valid config - quitting" << std::endl;
-        abort();
-      }
-      ++numTries;
-    }
-
-    //recver ranks are 2*n+1
-    vec[idx] = 2*recverNode + 1;
-    alreadyUsed.insert(recverNode);
-    ++idx;
+  std::vector<int> recvers(numPossibleRecvers);
+  for (int i=0; i < numPossibleRecvers; ++i){
+    recvers[i] = 2*i + 1;
   }
-  return vec;
+  bool invalid = true;
+  int loops = 0;
+  int sendersPerRecver = numSenders / numRecvers;
+  while (invalid){
+    recvers = pseudo_random_shuffle(loops, recvers);
+    invalid = false;
+    for (int sender=0; sender < numSenders; ++sender){
+      int senderNode = senderRanks[sender] / 2;
+      int recverRank = recvers[sender / sendersPerRecver];
+      int recverNode = recverRank / 2;
+      if (senderNode == recverNode){
+        invalid = true;
+        break;
+      }
+    }
+    ++loops;
+    if (loops == 10000){
+      std::cerr << "Failed to find a valid matching for the seed" << std::endl;
+      abort();
+    }
+  }
+  recvers.resize(numRecvers);
+  return recvers;
 }
 
 void check_argument(int arg, const char* descr){
@@ -225,8 +256,7 @@ int main(int argc, char** argv)
   }
 
   if (send_seed > 0){ //don't shuffle if negative
-    std::mt19937 mt(send_seed);
-    std::shuffle(senders.begin(), senders.end(), mt);
+    senders = pseudo_random_shuffle(send_seed, senders);
   }
 
   if (recv_seed > 0){
