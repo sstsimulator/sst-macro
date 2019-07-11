@@ -1,17 +1,14 @@
 
-char *y, *z = 0;void* __ptr_y = &y; int __sizeof_y = sizeof(y); extern int __offset_y; void* __ptr_z = &z; int __sizeof_z = sizeof(z); extern int __offset_z; 
+char *y, *z = 0;extern int __offset_y; int __sizeof_y = sizeof(char *);sstmac::CppGlobalRegisterGuard y_sstmac_ctor(__offset_y, __sizeof_y, false, "y", [](void* ptr){  new (ptr) char *; });extern int __offset_z; int __sizeof_z = sizeof(char *);sstmac::CppGlobalRegisterGuard z_sstmac_ctor(__offset_z, __sizeof_z, false, "z", [](void* ptr){  new (ptr) char *{0}; });
 
 void fxn()
 { char* sstmac_global_data = get_sstmac_global_data();char ** sstmac_y=(char **)(sstmac_global_data + __offset_y); char ** sstmac_z=(char **)(sstmac_global_data + __offset_z); {
   *(*sstmac_y) = 'a';
   *(*sstmac_z) = 'b';
  }}
-#include <sstmac/software/process/global.h>
+#include <sstmac/software/process/cppglobal.h>
 #include <sstmac/software/process/memoize.h>
 
 extern int __sizeof_y;
-extern void* __ptr_y;
-int __offset_y = sstmac::GlobalVariable::init(__sizeof_y,"y",__ptr_y,false);
-extern int __sizeof_z;
-extern void* __ptr_z;
-int __offset_z = sstmac::GlobalVariable::init(__sizeof_z,"z",__ptr_z,false);
+int __offset_y = 0;extern int __sizeof_z;
+int __offset_z = 0;

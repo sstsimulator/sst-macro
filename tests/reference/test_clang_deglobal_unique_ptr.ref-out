@@ -14,10 +14,9 @@ struct A {
 };
 
 
-static unique_ptr<A> myA = make_unique<A>(1,2,3,4,"I declare a thumb war");void* __ptr_xyzmyA = &myA; int __sizeof_xyzmyA = sizeof(myA); extern int __offset_xyzmyA; static sstmac::CppGlobalHolder myA_sstmac_ctor(sstmac::new_cpp_global<unique_ptr<  A>,false>(__offset_xyzmyA,std::function<void(void*)>([](void* ptr){  new (ptr) (unique_ptr<  A>)(make_unique<  A>(1, 2, 3, 4, "I declare a thumb war"));})),false);
-#include <sstmac/software/process/global.h>
+static unique_ptr<A> myA = make_unique<A>(1,2,3,4,"I declare a thumb war");extern int __offset_xyzmyA; int __sizeof_xyzmyA = sizeof(unique_ptr<struct A>);static sstmac::CppGlobalRegisterGuard myA_sstmac_ctor(__offset_xyzmyA, __sizeof_xyzmyA, false, "myA", [](void* ptr){  new (ptr) unique_ptr<  A>{make_unique<A>(1, 2, 3, 4, "I declare a thumb war")}; });
+#include <sstmac/software/process/cppglobal.h>
 #include <sstmac/software/process/memoize.h>
 
 extern int __sizeof_xyzmyA;
-extern void* __ptr_xyzmyA;
-int __offset_xyzmyA = sstmac::GlobalVariable::init(__sizeof_xyzmyA,"xyzmyA",__ptr_xyzmyA,false);
+int __offset_xyzmyA = 0;

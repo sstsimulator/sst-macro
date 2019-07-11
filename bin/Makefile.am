@@ -81,6 +81,7 @@ bin_PROGRAMS += sstmac_clang
 sstmac_clang_SOURCES = \
   clang/util.cc \
   clang/main.cc \
+  clang/astVisitorGlobalVars.cc \
   clang/pragmas.cc \
   clang/computePragma.cc \
   clang/computeVisitor.cc \

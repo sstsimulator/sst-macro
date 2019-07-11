@@ -30,7 +30,7 @@ int fxn()
   memoFxn(i+12);
   return 0;
 }
-#include <sstmac/software/process/global.h>
+#include <sstmac/software/process/cppglobal.h>
 #include <sstmac/software/process/memoize.h>
 
 static sstmac::Memoization memoize_forloop("forloop","linear");

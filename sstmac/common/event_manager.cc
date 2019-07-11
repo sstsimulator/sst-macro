@@ -351,7 +351,7 @@ EventManager::spinUp(void(*fxn)(void*), void* args)
   active_lock.unlock();
   
   void* stack = sw::StackAlloc::alloc();
-  sstmac::ThreadInfo::registerUserSpaceVirtualThread(thread_id_, stack, nullptr, nullptr);
+  sstmac::ThreadInfo::registerUserSpaceVirtualThread(thread_id_, stack, nullptr, nullptr, true);
   main_thread_ = des_context_->copy();
   main_thread_->initContext();
   spin_up_config cfg;

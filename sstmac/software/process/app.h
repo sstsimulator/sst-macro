@@ -106,6 +106,10 @@ class App : public Thread
     return const_cast<App*>(this);
   }
 
+  bool isMainThread() const override {
+    return true;
+  }
+
   static void deleteStatics();
 
   void sleep(TimeDelta time);

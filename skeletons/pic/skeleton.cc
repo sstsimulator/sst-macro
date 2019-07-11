@@ -20,12 +20,12 @@ RegisterKeywords(
 
 static const double skelMaxMoveFraction=0.5;
 
+static const int primes[] = {
+ 1571, 2459, 2801, 3559, 3079, 3019, 6269
+};
+static const int numPrimes = 7;//sizeof(primes) / sizeof(int);
 static inline double getSkeletonFraction(int step, Patch& p, int dim)
 {
-  static const int primes[] = {
-   1571, 2459, 2801, 3559, 3079, 3019, 6269
-  };
-  static const int numPrimes = sizeof(primes) / sizeof(int);
 
   int myIdx = p.od[dim]*p.gridPosition[dim] / p.uniformityFactory[dim];
   if (p.scrambleMigration){

@@ -1,8 +1,8 @@
 
 struct A {
  static int x; public: static int __offset_x;
- void fxn(){ char* sstmac_global_data = get_sstmac_global_data();int* sstmac_A__x=(int*)(sstmac_global_data + A::__offset_x); {
-  (*sstmac_A__x) -= 1;
+ void fxn(){ char* sstmac_global_data = get_sstmac_global_data();int* sstmac_x=(int*)(sstmac_global_data + A::__offset_x); {
+  (*sstmac_x) -= 1;
   }}
 };
 
@@ -24,28 +24,28 @@ namespace ns2 {
 }
 }
 
-int ns::B::x = 42;namespace ns {int B::__offset_x = sstmac::inplace_cpp_global<B,int,false>(42);}
-Caller ns::B::caller = initFxn();namespace ns {int B::__offset_caller = sstmac::inplace_cpp_global<B, Caller,false>(initFxn());}
-int A::x = 5;int A::__offset_x = sstmac::inplace_cpp_global<A,int,false>(5);
+int ns::B::x = 42;namespace ns {struct UniqueTagBx{}; int B::__offset_x = sstmac::inplaceCppGlobal<UniqueTagBx,int,false>("x",[](void* ptr){     new (ptr) int{42}; });}
+Caller ns::B::caller = initFxn();namespace ns {struct UniqueTagBcaller{}; int B::__offset_caller = sstmac::inplaceCppGlobal<UniqueTagBcaller,Caller,false>("caller",[](void* ptr){     new (ptr) Caller{initFxn()}; });}
+int A::x = 5;struct UniqueTagAx{}; int A::__offset_x = sstmac::inplaceCppGlobal<UniqueTagAx,int,false>("x",[](void* ptr){     new (ptr) int{5}; });
 namespace ns {
  namespace ns2 {
-  int C::xx = 10;int C::__offset_xx = sstmac::inplace_cpp_global<C,int,false>(10);
+  int C::xx = 10;struct UniqueTagCxx{}; int C::__offset_xx = sstmac::inplaceCppGlobal<UniqueTagCxx,int,false>("xx",[](void* ptr){     new (ptr) int{10}; });
  }
 }
 
-decltype(ns::B::caller) dtGlbl(0);void* __ptr_dtGlbl = &dtGlbl; int __sizeof_dtGlbl = sizeof(dtGlbl); extern int __offset_dtGlbl; sstmac::CppGlobalHolder dtGlbl_sstmac_ctor(sstmac::new_cpp_global<decltype(ns::  B::caller),false>(__offset_dtGlbl,0),false);
+decltype(ns::B::caller) dtGlbl(0);extern int __offset_dtGlbl; int __sizeof_dtGlbl = sizeof(Caller);sstmac::CppGlobalRegisterGuard dtGlbl_sstmac_ctor(__offset_dtGlbl, __sizeof_dtGlbl, false, "dtGlbl", [](void* ptr){  new (ptr) Caller{0}; });
 
 void fxn()
-{ char* sstmac_global_data = get_sstmac_global_data();int* sstmac_A__x=(int*)(sstmac_global_data + A::__offset_x); int* sstmac___ns__B__x=(int*)(sstmac_global_data + ::ns::B::__offset_x); int* sstmac___ns__ns2__C__xx=(int*)(sstmac_global_data + ::ns::ns2::C::__offset_xx); {
-  (*sstmac___ns__B__x) += 1;
-  (*sstmac___ns__ns2__C__xx) -= 3;
-  (*sstmac_A__x) = 10;
+{ char* sstmac_global_data = get_sstmac_global_data();int* sstmac_x=(int*)(sstmac_global_data + A::__offset_x); int* __ns__sstmac_x=(int*)(sstmac_global_data + ::ns::B::__offset_x); int* __ns__ns2__sstmac_xx=(int*)(sstmac_global_data + ::ns::ns2::C::__offset_xx); {
+  (*__ns__sstmac_x) += 1;
+  (*__ns__ns2__sstmac_xx) -= 3;
+  (*sstmac_x) = 10;
  }};
 
 struct DeclTyper {
   static int get(){ return 0; }
 };
-DeclTyper d;void* __ptr_d = &d; int __sizeof_d = sizeof(d); extern int __offset_d; sstmac::CppGlobalHolder d_sstmac_ctor(sstmac::new_cpp_global<  DeclTyper,false>(__offset_d),false);
+DeclTyper d;extern int __offset_d; int __sizeof_d = sizeof(DeclTyper);sstmac::CppGlobalRegisterGuard d_sstmac_ctor(__offset_d, __sizeof_d, false, "d", [](void* ptr){  new (ptr) DeclTyper{}; });
 
 int goReturn(){
   return decltype(d)::get();
@@ -53,15 +53,20 @@ int goReturn(){
 
 
 struct D {
-  static int arr[4]; public: static int __offset_arr;typedef int array_type_arr[4];
+  static int arr[4];typedef int array_type_arr[4]; public: static int __offset_arr;
 };
-int D::arr[4] = {1,2,3,4};int D::__offset_arr = sstmac::inplace_cpp_global<D,int [4],false>(1,2,3,4);
-#include <sstmac/software/process/global.h>
+int D::arr[4] = {1,2,3,4};typedef int array_type_arr[4];struct UniqueTagDarr{}; int D::__offset_arr = sstmac::inplaceCppGlobal<UniqueTagDarr,array_type_arr,false>("arr",[](void* ptr){     new (ptr) array_type_arr{1, 2, 3, 4}; });
+#include <sstmac/software/process/cppglobal.h>
 #include <sstmac/software/process/memoize.h>
 
-extern int __sizeof_d;
-extern void* __ptr_d;
-int __offset_d = sstmac::GlobalVariable::init(__sizeof_d,"d",__ptr_d,false);
-extern int __sizeof_dtGlbl;
-extern void* __ptr_dtGlbl;
-int __offset_dtGlbl = sstmac::GlobalVariable::init(__sizeof_dtGlbl,"dtGlbl",__ptr_dtGlbl,false);
+extern int __sizeof_arr;
+int __offset_arr = 0;extern int __sizeof_d;
+int __offset_d = 0;extern int __sizeof_dtGlbl;
+int __offset_dtGlbl = 0;extern int __sizeof_x;
+int __offset_x = 0;namespace ns {
+ extern int __sizeof_caller;
+ int __offset_caller = 0; extern int __sizeof_x;
+ int __offset_x = 0; namespace ns2 {
+  extern int __sizeof_xx;
+  int __offset_xx = 0; }
+}

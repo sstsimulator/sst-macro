@@ -97,15 +97,21 @@ struct Printing
 };
 
 static inline std::string GetAsString(const clang::Type* ty){
-  return GetTypeString(ty, clang::Qualifiers());
-}
-
-static inline std::string GetAsString(clang::SplitQualType sty){
-  return GetTypeString(sty);
+  if (clang::isa<clang::DecltypeType>(ty)){
+    const clang::DecltypeType* dt = clang::cast<clang::DecltypeType>(ty);
+    return GetTypeString(dt, clang::Qualifiers());
+  } else {
+    return GetTypeString(ty, clang::Qualifiers());
+  }
 }
 
 static inline std::string GetAsString(clang::QualType qty){
-  return GetTypeString(qty.split());
+  if (clang::isa<clang::DecltypeType>(qty.getTypePtr())){
+    const clang::DecltypeType* dt = clang::cast<clang::DecltypeType>(qty.getTypePtr());
+    return GetTypeString(dt->getUnderlyingType().split());
+  } else {
+    return GetTypeString(qty.split());
+  }
 }
 
 static inline clang::SourceLocation getStart(const clang::Stmt* s){

@@ -6,6 +6,7 @@ if HAVE_CLANG
 SSTMAC_DEGLOBAL=$(top_builddir)/bin/sstmac_clang
 
 CLANGTESTS = \
+  deglobal_init_fxn \
   deglobal_regular \
   deglobal_multi \
   deglobal_ctor \

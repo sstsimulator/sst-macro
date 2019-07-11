@@ -15,7 +15,7 @@ void
 A<T>::fxn(){
 #pragma sst global x
   this->x.fxn();
-  decltype(A<T>::x) var;
+  B var;
 }
 
 decltype(A<int>::x) var;

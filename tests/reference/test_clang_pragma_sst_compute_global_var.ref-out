@@ -1,6 +1,6 @@
 
-int bound_i = 5;void* __ptr_bound_i = &bound_i; int __sizeof_bound_i = sizeof(bound_i); extern int __offset_bound_i; 
-int bound_j = 10;void* __ptr_bound_j = &bound_j; int __sizeof_bound_j = sizeof(bound_j); extern int __offset_bound_j; 
+int bound_i = 5;extern int __offset_bound_i; int __sizeof_bound_i = sizeof(int);sstmac::CppGlobalRegisterGuard bound_i_sstmac_ctor(__offset_bound_i, __sizeof_bound_i, false, "bound_i", [](void* ptr){  new (ptr) int{5}; });
+int bound_j = 10;extern int __offset_bound_j; int __sizeof_bound_j = sizeof(int);sstmac::CppGlobalRegisterGuard bound_j_sstmac_ctor(__offset_bound_j, __sizeof_bound_j, false, "bound_j", [](void* ptr){  new (ptr) int{10}; });
 
 int fxn()
 { char* sstmac_global_data = get_sstmac_global_data();int* sstmac_bound_i=(int*)(sstmac_global_data + __offset_bound_i); int* sstmac_bound_j=(int*)(sstmac_global_data + __offset_bound_j); {
@@ -24,12 +24,9 @@ int fxn()
 
   return 0;
  }}
-#include <sstmac/software/process/global.h>
+#include <sstmac/software/process/cppglobal.h>
 #include <sstmac/software/process/memoize.h>
 
 extern int __sizeof_bound_i;
-extern void* __ptr_bound_i;
-int __offset_bound_i = sstmac::GlobalVariable::init(__sizeof_bound_i,"bound_i",__ptr_bound_i,false);
-extern int __sizeof_bound_j;
-extern void* __ptr_bound_j;
-int __offset_bound_j = sstmac::GlobalVariable::init(__sizeof_bound_j,"bound_j",__ptr_bound_j,false);
+int __offset_bound_i = 0;extern int __sizeof_bound_j;
+int __offset_bound_j = 0;

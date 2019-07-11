@@ -43,6 +43,7 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 #include "replacePragma.h"
 #include "recurseAll.h"
+#include "astVisitor.h"
 #include <sstream>
 
 using namespace clang;
@@ -268,12 +269,14 @@ void
 SSTInitPragma::activateBinaryOperator(BinaryOperator* op, Rewriter& r)
 {
   replace(op->getRHS(), r, init_, *CI);
+  throw StmtDeleteException(op);
 }
 
 void
 SSTInsteadPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
 {
   replace(s, r, repl_, *CI);
+  throw StmtDeleteException(s);
 }
 
 void
@@ -294,6 +297,7 @@ SSTInitPragma::activateDeclStmt(DeclStmt* s, Rewriter& r)
                "pragma init applied to variable without initializer");
   }
   replace(vd->getInit(), r, init_, *CI);
+  throw StmtDeleteException(s);
 }
 
 std::string

@@ -237,7 +237,7 @@ ReplaceAction::EndSourceFileAction()
   std::ofstream ofs(sstGlobalFile.c_str());
   if (ofs.good()){
     //add the header files needed
-    ofs << "#include <sstmac/software/process/global.h>\n"
+    ofs << "#include <sstmac/software/process/cppglobal.h>\n"
         << "#include <sstmac/software/process/memoize.h>\n\n";
     globalNs_.genSSTCode(ofs,"");
     visitor_.registerNewKeywords(ofs);

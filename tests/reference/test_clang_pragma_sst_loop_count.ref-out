@@ -3,7 +3,7 @@ struct loop {
  int end;
 };
 
-extern loop bounds[]; extern int __offset_bounds; typedef struct loop type_bounds[];
+extern loop bounds[];typedef struct loop type_bounds[];extern int __offset_bounds; 
 
 int fxn()
 {
@@ -28,6 +28,6 @@ int fxn()
 
   return 0;
 }
-#include <sstmac/software/process/global.h>
+#include <sstmac/software/process/cppglobal.h>
 #include <sstmac/software/process/memoize.h>
 

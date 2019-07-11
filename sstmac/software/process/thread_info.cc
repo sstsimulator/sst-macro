@@ -66,7 +66,8 @@ static thread_lock globals_lock;
 
 void
 ThreadInfo::registerUserSpaceVirtualThread(int phys_thread_id, void *stack,
-                                           void* globalsMap, void* tlsMap)
+                                           void* globalsMap, void* tlsMap,
+                                           bool is_main_thread)
 {
   size_t stack_mod = ((size_t)stack) % sstmac_global_stacksize;
   if (stack_mod != 0){
@@ -94,16 +95,14 @@ ThreadInfo::registerUserSpaceVirtualThread(int phys_thread_id, void *stack,
   *statePtr = nullptr;
 
   globals_lock.lock();
-  if (globalsMap){
+  if (globalsMap && is_main_thread){
     GlobalVariable::glblCtx.addActiveSegment(globalsMap);
-    GlobalVariable::glblCtx.callCtors(globalsMap);
-    GlobalVariable::glblCtx.relocatePointers(globalsMap);
+    GlobalVariable::glblCtx.callInitFxns(globalsMap);
   }
 
   if (tlsMap){
     GlobalVariable::tlsCtx.addActiveSegment(tlsMap);
-    GlobalVariable::tlsCtx.callCtors(tlsMap);
-    GlobalVariable::tlsCtx.relocatePointers(tlsMap);
+    GlobalVariable::tlsCtx.callInitFxns(tlsMap);
   }
   globals_lock.unlock();
 }

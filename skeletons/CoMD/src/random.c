@@ -38,10 +38,9 @@ real_t gasdev(uint64_t* seed)
 ///  \param [in,out] seed  Seed for generator.
 ///
 ///  \return A pseudo-random number in the interval [0, 1].
+static const double convertToDouble = 1.0/UINT64_C(2305843009213693951);
 double lcg61(uint64_t* seed)
 {
-   static const double convertToDouble = 1.0/UINT64_C(2305843009213693951);
-
    *seed *= UINT64_C(437799614237992725);
    *seed %= UINT64_C(2305843009213693951);
 

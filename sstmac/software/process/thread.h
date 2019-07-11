@@ -215,6 +215,9 @@ class Thread
   }
 #endif
 
+  virtual bool isMainThread() const {
+    return false;
+  }
 
   int lastBacktraceNumFxn() const {
     return last_bt_collect_nfxn_;

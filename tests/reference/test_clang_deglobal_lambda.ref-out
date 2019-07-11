@@ -1,12 +1,12 @@
 
-int x = 0;void* __ptr_x = &x; int __sizeof_x = sizeof(x); extern int __offset_x; 
+int x = 0;extern int __offset_x; int __sizeof_x = sizeof(int);sstmac::CppGlobalRegisterGuard x_sstmac_ctor(__offset_x, __sizeof_x, false, "x", [](void* ptr){  new (ptr) int{0}; });
 
 struct A {
   int x;
-} aInst{};void* __ptr_aInst = &aInst; int __sizeof_aInst = sizeof(aInst); extern int __offset_aInst; sstmac::CppGlobalHolder aInst_sstmac_ctor(sstmac::new_cpp_global<  A,false>(__offset_aInst),false);
+} aInst{};extern int __offset_aInst; int __sizeof_aInst = sizeof(A);sstmac::CppGlobalRegisterGuard aInst_sstmac_ctor(__offset_aInst, __sizeof_aInst, false, "aInst", [](void* ptr){  new (ptr) A; });
 
 void fxn()
-{ char* sstmac_global_data = get_sstmac_global_data();int* sstmac_x=(int*)(sstmac_global_data + __offset_x); decltype(aInst)* sstmac_aInst=(decltype(aInst)*)(sstmac_global_data + __offset_aInst); {
+{ char* sstmac_global_data = get_sstmac_global_data();int* sstmac_x=(int*)(sstmac_global_data + __offset_x); A* sstmac_aInst=(A*)(sstmac_global_data + __offset_aInst); {
   auto l1 = [&]{
     (*sstmac_aInst).x = 0;
     (*sstmac_x) += 5;
@@ -17,7 +17,7 @@ void fxn()
     (*sstmac_x) += 5;
   };
 
-  auto l3 = []{ char* sstmac_global_data = get_sstmac_global_data();int* sstmac_x=(int*)(sstmac_global_data + __offset_x); decltype(aInst)* sstmac_aInst=(decltype(aInst)*)(sstmac_global_data + __offset_aInst); {
+  auto l3 = []{ char* sstmac_global_data = get_sstmac_global_data();int* sstmac_x=(int*)(sstmac_global_data + __offset_x); A* sstmac_aInst=(A*)(sstmac_global_data + __offset_aInst); {
     (*sstmac_aInst).x = 0;
     (*sstmac_x) += 5;
    }};
@@ -27,7 +27,7 @@ void fxn()
     (*sstmac_x) += 5;
    }};
 
-  auto l5 = [x=(*sstmac_x)]{ char* sstmac_global_data = get_sstmac_global_data();decltype(aInst)* sstmac_aInst=(decltype(aInst)*)(sstmac_global_data + __offset_aInst); {
+  auto l5 = [x=(*sstmac_x)]{ char* sstmac_global_data = get_sstmac_global_data();A* sstmac_aInst=(A*)(sstmac_global_data + __offset_aInst); {
     (*sstmac_aInst).x = 0;
     int y = x;
    }};
@@ -37,12 +37,9 @@ void fxn()
     int y = x;
   };
  }}
-#include <sstmac/software/process/global.h>
+#include <sstmac/software/process/cppglobal.h>
 #include <sstmac/software/process/memoize.h>
 
 extern int __sizeof_aInst;
-extern void* __ptr_aInst;
-int __offset_aInst = sstmac::GlobalVariable::init(__sizeof_aInst,"aInst",__ptr_aInst,false);
-extern int __sizeof_x;
-extern void* __ptr_x;
-int __offset_x = sstmac::GlobalVariable::init(__sizeof_x,"x",__ptr_x,false);
+int __offset_aInst = 0;extern int __sizeof_x;
+int __offset_x = 0;
