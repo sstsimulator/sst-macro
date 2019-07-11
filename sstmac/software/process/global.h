@@ -94,9 +94,7 @@ class GlobalVariableContext {
     initFxns.erase(offset);
   }
 
-  void registerInitFxn(int offset, std::function<void(void*)>&& fxn){
-    initFxns[offset] = std::move(fxn);
-  }
+  void registerInitFxn(int offset, std::function<void(void*)>&& fxn);
 
  private:
   int stackOffset;

@@ -59,6 +59,11 @@ llvm::cl::opt<std::string> ASTVisitorCmdLine::memoizeOpt("memoize",
   llvm::cl::value_desc("[optional] list,of,names"),
   llvm::cl::ValueOptional,
   llvm::cl::cat(sstmacCategoryOpt));
+llvm::cl::opt<std::string> ASTVisitorCmdLine::configModeOpt("confg-mode",
+  llvm::cl::desc("Compile for standalone config mode for use with CMake and autotools"),
+  llvm::cl::value_desc("[optional] list,of,names"),
+  llvm::cl::ValueOptional,
+  llvm::cl::cat(sstmacCategoryOpt));
 llvm::cl::opt<std::string> ASTVisitorCmdLine::skeletonizeOpt("skeletonize",
   llvm::cl::desc("Run skeletonization source-to-source, optional extra LLVM skeletonization passes"),
   llvm::cl::value_desc("[optional] list,of,names"),
@@ -82,6 +87,7 @@ bool ASTVisitorCmdLine::extraSkeletonizePasses = false;
 bool ASTVisitorCmdLine::runMemoize = false;
 bool ASTVisitorCmdLine::runSkeletonize = false;
 bool ASTVisitorCmdLine::refactorMain = true;
+bool ASTVisitorCmdLine::runConfigMode = false;
 
 using namespace clang;
 using namespace clang::driver;
@@ -101,6 +107,11 @@ ASTVisitorCmdLine::setup()
   const char* skelStr = getenv("SSTMAC_SKELETONIZE");
   if (skelStr){
     runSkeletonize = atoi(skelStr);
+  }
+
+  const char* configStr = getenv("SSTMAC_CONFIG");
+  if (configStr){
+    runConfigMode = atoi(configStr);
   }
 
   if (skeletonizeOpt.getNumOccurrences()){
@@ -262,6 +273,7 @@ SkeletonASTVisitor::shouldVisitDecl(VarDecl* D)
     return false;
   }
 
+
   SourceLocation startLoc = getStart(D);
   PresumedLoc ploc = ci_->getSourceManager().getPresumedLoc(startLoc);
   SourceLocation headerLoc = ploc.getIncludeLoc();
@@ -307,6 +319,27 @@ SkeletonASTVisitor::shouldVisitDecl(VarDecl* D)
       return false;
     }
   }
+
+  bool isConst = D->getType().isConstQualified();
+  bool isConstPtr = false;
+  if (D->getType()->isPointerType()){
+    isConstPtr = D->getType()->getPointeeType().isConstQualified();
+  }
+  if (isConst || isConstPtr){
+    if (D->hasInit()){
+      GlobalVariableVisitor visitor(D,this);
+      visitor.TraverseDecl(D);
+      if (!visitor.visitedGlobals()){
+        //this is const and not inited from any other global variables
+        return false;
+      }
+    } else {
+      //this is const and touches no globals in initialization
+      //this does not actually need to be a special global variable
+      return false;
+    }
+  }
+
 
   /**
   if (headerLoc.isValid()){
@@ -707,6 +740,24 @@ SkeletonASTVisitor::visitNullVariable(Expr* expr, NamedDecl* nd)
     }
     replaceNullVariableConnectedContext(expr, "");
   }
+}
+
+bool
+GlobalVariableVisitor::VisitDeclRefExpr(DeclRefExpr *expr)
+{
+  if (parent_->isGlobal(expr)){
+    visitedGlobals_ = true;
+    return false;
+  }
+  return true;
+}
+
+bool
+GlobalVariableVisitor::VisitCallExpr(CallExpr* expr)
+{
+  //we have to assume this touches globals
+  visitedGlobals_ = true;
+  return false;
 }
 
 bool
@@ -2001,7 +2052,9 @@ SkeletonASTVisitor::replaceMain(clang::FunctionDecl* mainFxn)
 
   foundCMain_ = true;
 
-  if (mainName_.empty()){
+  if (opts_.runConfigMode){
+    mainName_ = "sstmac_standalone_app";
+  } else if (mainName_.empty()){
     //we need to select a unique name for the application
     //lets just do this as the source file and the date
 
@@ -2040,8 +2093,13 @@ SkeletonASTVisitor::addInContextGlobalDeclarations(clang::Stmt* body)
 
     std::stringstream sstr;
     sstr << "{ ";
-    if (needGlobalData) sstr << "char* sstmac_global_data = get_sstmac_global_data();";
-    if (needTlsData) sstr << "char* sstmac_tls_data = get_sstmac_tls_data();";
+    if (needGlobalData){
+      sstr << "char* sstmac_global_data = get_sstmac_global_data();";
+      //sstr << "printf(\"Globals=%p\\n\", sstmac_global_data);";
+    }
+    if (needTlsData){
+      sstr << "char* sstmac_tls_data = get_sstmac_tls_data();";
+    }
     for (auto d : currentGlobals){
       GlobalStandin& gs = globalStandins_[d];
       if (!gs.fxnStatic){

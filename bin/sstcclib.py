@@ -159,9 +159,9 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     flag = int(os.environ["SSTMAC_CONFIG"])
     keepExe = flag
 
-  parentProc = getProcName()
-  if (parentProc == "configure") and not keepExe:
-    sys.exit("using configure, please set SSTMAC_CONFIG=1")
+  parentProc = os.path.split(getProcName())[-1].strip()
+  if (parentProc == "configure" or parentProc == "cmake"):
+    makeBashExe = True
 
   haveClangSrcToSrc = bool(clangCppFlagsStr)
   clangDeglobal = None
@@ -255,6 +255,8 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       pass
     elif "-std=" in sarg:
       givenStdFlag=sarg
+      if "98" in givenStdFlag: #this is probably cmake being a jack-donkey
+        givenStdFlag="-std=c++1y"
     elif sarg.endswith('.cpp') or sarg.endswith('.cc') or sarg.endswith('.c') \
                                or sarg.endswith(".cxx") or sarg.endswith(".C"):
       sourceFiles.append(sarg)

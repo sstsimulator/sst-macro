@@ -74,6 +74,7 @@ struct ASTVisitorCmdLine {
   static llvm::cl::OptionCategory sstmacCategoryOpt;
   static llvm::cl::opt<std::string> memoizeOpt;
   static llvm::cl::opt<std::string> skeletonizeOpt;
+  static llvm::cl::opt<std::string> configModeOpt;
   static llvm::cl::opt<bool> verboseOpt;
   static llvm::cl::opt<bool> refactorMainOpt;
   static llvm::cl::opt<bool> noRefactorMainOpt;
@@ -90,6 +91,8 @@ struct ASTVisitorCmdLine {
    *  to support LLVM analysis/transformation passes
    *  after running source to source */
   static bool extraSkeletonizePasses;
+
+  static bool runConfigMode;
 
   static bool refactorMain;
 
@@ -134,6 +137,7 @@ class FirstPassASTVistor : public clang::RecursiveASTVisitor<FirstPassASTVistor>
  * after visiting all child nodes. A traversal also gives the option
  * to cancel all visits to child nodes.
  */
+
 class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor> {
   friend class SkeletonASTConsumer;
 
@@ -1168,6 +1172,27 @@ struct PragmaActivateGuard {
   clang::Rewriter& rewriter_;
   SSTPragmaList& pragmas_;
 
+};
+
+class GlobalVariableVisitor : public clang::RecursiveASTVisitor<GlobalVariableVisitor> {
+ public:
+  GlobalVariableVisitor(clang::VarDecl* D, SkeletonASTVisitor* parent) :
+    decl_(D), parent_(parent), visitedGlobals_(false)
+  {
+  }
+
+  bool visitedGlobals() const {
+    return visitedGlobals_;
+  }
+
+  bool VisitDeclRefExpr(clang::DeclRefExpr* expr);
+
+  bool VisitCallExpr(clang::CallExpr* expr);
+
+ private:
+  bool visitedGlobals_;
+  SkeletonASTVisitor* parent_;
+  clang::VarDecl* decl_;
 };
 
 

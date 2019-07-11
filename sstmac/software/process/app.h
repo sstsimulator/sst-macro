@@ -231,6 +231,10 @@ class App : public Thread
 
   static void dlcloseCheck(int aid);
 
+  static void lockDlopen(int aid);
+
+  static void unlockDlopen(int aid);
+
  protected:
   friend class Thread;
 
@@ -277,8 +281,9 @@ class App : public Thread
   struct dlopen_entry {
     void* handle;
     int refcount;
+    bool loaded;
     std::string name;
-    dlopen_entry() : handle(nullptr), refcount(0){}
+    dlopen_entry() : handle(nullptr), refcount(0), loaded(false) {}
   };
 
   static std::map<int, dlopen_entry> dlopens_;

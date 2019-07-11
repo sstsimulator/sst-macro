@@ -312,7 +312,7 @@ runStandalone(int argc, char** argv)
   proc_params.insert("ncores", "1");
   //put this on Node 1 to avoid a Job Launcher being built
   null_params.insert("id", "1");
-  null_params.insert("name", "sstmac_app_name");
+  null_params.insert("name", "sstmac_standalone_app");
 
   sstmac::sw::SoftwareId id(1,0);
 
@@ -320,11 +320,14 @@ runStandalone(int argc, char** argv)
 #if !SSTMAC_INTEGRATED_SST_CORE
     sstmac::EventManager mgr(null_params, &rt);
     sstmac::EventManager::global = &mgr;
+    mgr.setComponentManager(0, 0);
 #else
 #endif
 
   sstmac::hw::SimpleNode node(0, null_params);
   sstmac::sw::OperatingSystem os(&node, null_params);
+
+
 
   node.init(0);
   node.setup();

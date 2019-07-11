@@ -128,6 +128,19 @@ static char* get_data_segment(SST::Params& params,
 static thread_lock dlopen_lock;
 
 void
+App::lockDlopen(int aid)
+{
+  dlopen_entry& entry = dlopens_[aid];
+  entry.refcount++;
+}
+
+void
+App::unlockDlopen(int aid)
+{
+  dlcloseCheck(aid);
+}
+
+void
 App::dlopenCheck(int aid, SST::Params& params, bool check_name)
 {
   if (params.contains("exe")){
@@ -135,8 +148,9 @@ App::dlopenCheck(int aid, SST::Params& params, bool check_name)
     std::string libname = params.find<std::string>("exe");
     dlopen_entry& entry = dlopens_[aid];
     entry.name = libname;
-    if (entry.refcount == 0){
+    if (entry.refcount == 0 || !entry.loaded){
       entry.handle = loadExternLibrary(libname, loadExternPathStr());
+      entry.loaded = true;
     }
 
     if (check_name){
@@ -166,7 +180,6 @@ App::dlopenCheck(int aid, SST::Params& params, bool check_name)
   UserAppCxxFullMain::aliasMains();
 }
 
-
 void
 App::dlcloseCheck(int aid)
 {
@@ -175,8 +188,7 @@ App::dlcloseCheck(int aid)
   if (iter != dlopens_.end()){
     dlopen_entry& entry = iter->second;
     --entry.refcount;
-    if (entry.refcount == 0){
-      //std::cerr << "Unloading library " << entry.name << std::endl;
+    if (entry.refcount == 0 && entry.loaded){
       unloadExternLibrary(entry.handle);
       dlopens_.erase(iter);
     }
@@ -685,7 +697,8 @@ UserAppCxxFullMain::skeletonMain()
     initArgv(entry);
   }
   argv_lock.unlock();
-  return (*fxn_)(entry.argc, entry.argv);
+  int rc = (*fxn_)(entry.argc, entry.argv);
+  return rc;
 }
 
 UserAppCxxEmptyMain::UserAppCxxEmptyMain(SST::Params& params, SoftwareId sid,

@@ -94,6 +94,26 @@ ThreadInfo::registerUserSpaceVirtualThread(int phys_thread_id, void *stack,
   void** statePtr = (void**) &tls[SSTMAC_TLS_IMPLICIT_STATE];
   *statePtr = nullptr;
 
+
+  void* currentGlobals;
+  void *currentTls;
+  void **currentGlobalsPtr;
+  void **currentTlsPtr;
+  if (sstmac_global_stacksize){ //only do this if the stack config has been set
+    int activeStack; int* activeStackPtr = &activeStack;
+    intptr_t stackTopInt = ((intptr_t)activeStackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;
+
+    currentGlobalsPtr = (void**)(stackTopInt + SSTMAC_TLS_GLOBAL_MAP);
+    currentTlsPtr = (void**)(stackTopInt + SSTMAC_TLS_TLS_MAP);
+    currentGlobals = *currentGlobalsPtr;
+    currentTls = *currentTlsPtr;
+
+    //for the init functions we need the new globals map to be active on this thread
+    *currentGlobalsPtr = globalsMap;
+    *currentTlsPtr = tlsMap;
+  }
+
+
   globals_lock.lock();
   if (globalsMap && is_main_thread){
     GlobalVariable::glblCtx.addActiveSegment(globalsMap);
@@ -105,6 +125,12 @@ ThreadInfo::registerUserSpaceVirtualThread(int phys_thread_id, void *stack,
     GlobalVariable::tlsCtx.callInitFxns(tlsMap);
   }
   globals_lock.unlock();
+
+  if (sstmac_global_stacksize){
+    //only do this if the stack config is set
+    *currentGlobalsPtr = currentGlobals;
+    *currentTlsPtr = currentTls;
+  }
 }
 
 void

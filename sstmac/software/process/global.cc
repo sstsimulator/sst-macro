@@ -87,6 +87,12 @@ GlobalVariableContext::init()
   globalInits = nullptr;
 }
 
+void
+GlobalVariableContext::registerInitFxn(int offset, std::function<void (void *)> &&fxn)
+{
+  initFxns[offset] = std::move(fxn);
+}
+
 int
 GlobalVariableContext::append(const int size, const char* name)
 {
