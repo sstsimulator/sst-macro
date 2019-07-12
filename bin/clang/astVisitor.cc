@@ -302,6 +302,36 @@ SkeletonASTVisitor::shouldVisitDecl(VarDecl* D)
     }
   }
 
+  if (D->getType()->isUnionType()){
+    if (D->getType()->getAsUnionType()->getDecl()->isAnonymousStructOrUnion()){
+      return false;
+    }
+  } else if (D->getType()->isStructureType()){
+    if (D->getType()->getAsStructureType()->getDecl()->isAnonymousStructOrUnion()){
+      return false;
+    }
+  }
+
+  bool isConst = D->getType().isConstQualified();
+  bool isConstPtr = false;
+  if (D->getType()->isPointerType()){
+    isConstPtr = D->getType()->getPointeeType().isConstQualified();
+  }
+  if (isConst || isConstPtr){
+    if (D->hasInit()){
+      GlobalVariableVisitor visitor(D,this);
+      visitor.TraverseDecl(D);
+      if (!visitor.visitedGlobals()){
+        //this is const and not inited from any other global variables
+        return false;
+      }
+    } else {
+      //this is const and touches no globals in initialization
+      //this does not actually need to be a special global variable
+      return false;
+    }
+  }
+
   bool useAllHeaders = false;
   if (headerLoc.isValid() && !useAllHeaders){
     //we are inside a header
