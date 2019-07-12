@@ -356,7 +356,7 @@ EventManager::spinUp(void(*fxn)(void*), void* args)
   std::vector<char> dummyTls(1e6);
 
   sstmac::ThreadInfo::registerUserSpaceVirtualThread(thread_id_, stack,
-                                                     dummyGlobals.data(), dummyTls.data(), true);
+                            dummyGlobals.data(), dummyTls.data(), false, false);
   main_thread_ = des_context_->copy();
   main_thread_->initContext();
   spin_up_config cfg;

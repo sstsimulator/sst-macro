@@ -75,6 +75,7 @@ struct ASTVisitorCmdLine {
   static llvm::cl::opt<std::string> memoizeOpt;
   static llvm::cl::opt<std::string> skeletonizeOpt;
   static llvm::cl::opt<std::string> configModeOpt;
+  static llvm::cl::opt<std::string> includeListOpt;
   static llvm::cl::opt<bool> verboseOpt;
   static llvm::cl::opt<bool> refactorMainOpt;
   static llvm::cl::opt<bool> noRefactorMainOpt;
@@ -91,6 +92,8 @@ struct ASTVisitorCmdLine {
    *  to support LLVM analysis/transformation passes
    *  after running source to source */
   static bool extraSkeletonizePasses;
+
+  static std::list<std::string> includePaths;
 
   static bool runConfigMode;
 
@@ -205,7 +208,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    * @param repl
    */
   void delayedInsertAfter(clang::VarDecl* vd, const std::string& repl){
-    unsigned pos = vd->getLocStart().getRawEncoding();
+    unsigned pos = getStart(vd).getRawEncoding();
     auto iter = declsToInsertAfter_.find(pos);
     if (iter == declsToInsertAfter_.end()){
       declsToInsertAfter_[pos] = {vd,repl};

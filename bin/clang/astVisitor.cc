@@ -64,6 +64,11 @@ llvm::cl::opt<std::string> ASTVisitorCmdLine::configModeOpt("confg-mode",
   llvm::cl::value_desc("[optional] list,of,names"),
   llvm::cl::ValueOptional,
   llvm::cl::cat(sstmacCategoryOpt));
+llvm::cl::opt<std::string> ASTVisitorCmdLine::includeListOpt("system-includes",
+  llvm::cl::desc("Give the list of default system include paths for the pre-processing compiler"),
+  llvm::cl::value_desc("list:of:paths"),
+  llvm::cl::cat(sstmacCategoryOpt),
+  llvm::cl::ValueRequired);
 llvm::cl::opt<std::string> ASTVisitorCmdLine::skeletonizeOpt("skeletonize",
   llvm::cl::desc("Run skeletonization source-to-source, optional extra LLVM skeletonization passes"),
   llvm::cl::value_desc("[optional] list,of,names"),
@@ -88,6 +93,7 @@ bool ASTVisitorCmdLine::runMemoize = false;
 bool ASTVisitorCmdLine::runSkeletonize = false;
 bool ASTVisitorCmdLine::refactorMain = true;
 bool ASTVisitorCmdLine::runConfigMode = false;
+std::list<std::string> ASTVisitorCmdLine::includePaths;
 
 using namespace clang;
 using namespace clang::driver;
@@ -131,6 +137,16 @@ ASTVisitorCmdLine::setup()
     runMemoize = true;
     StringRef sref(memoizeOpt);
     extraMemoizePasses = !sref.empty();
+  }
+
+  if (includeListOpt.getNumOccurrences()){
+    StringRef sref(includeListOpt);
+    std::istringstream sstr(sref.str());
+    std::string path;
+    while (std::getline(sstr, path, ':'))
+    {
+      includePaths.push_back(path);
+    }
   }
 
   const char* mainStr = getenv("SSTMAC_REFACTOR_MAIN");
@@ -273,16 +289,6 @@ SkeletonASTVisitor::shouldVisitDecl(VarDecl* D)
     return false;
   }
 
-  if (D->getType()->isUnionType()){
-    if (D->getType()->getAsUnionType()->getDecl()->isAnonymousStructOrUnion()){
-      return false;
-    }
-  } else if (D->getType()->isStructureType()){
-    if (D->getType()->getAsStructureType()->getDecl()->isAnonymousStructOrUnion()){
-      return false;
-    }
-  }
-
   SourceLocation startLoc = getStart(D);
   PresumedLoc ploc = ci_->getSourceManager().getPresumedLoc(startLoc);
   SourceLocation headerLoc = ploc.getIncludeLoc();
@@ -300,98 +306,35 @@ SkeletonASTVisitor::shouldVisitDecl(VarDecl* D)
   if (headerLoc.isValid() && !useAllHeaders){
     //we are inside a header
     char fullpathBuffer[1024];
-    const char* fullpath = realpath(ploc.getFilename(), fullpathBuffer);
-    if (fullpath){
-      //is this in the list of valid headers
-      bool valid = validHeaders_.find(fullpath) != validHeaders_.end();
-      if (!valid){
-        std::string path(fullpath);
-        auto slashPos = path.find_last_of('/');
-        if (slashPos != std::string::npos){
-          path = path.substr(slashPos);
-        }
-        auto dotPos = path.find_last_of('.');
-        if (dotPos == std::string::npos){
-          return valid; //no suffix - assume valid c++ header with no suffix, e.g. <cstdlib>
-        }
-        std::string suffix = path.substr(dotPos+1);
-        if (suffix != "h" && suffix != "hpp" && suffix != "tcc"){
-          std::string error = std::string("got included global variable ") + D->getNameAsString()
-              + "in unknown file " + fullpath + " with suffix ." + suffix;
-          errorAbort(D, *ci_, error);
+    const char* fullpath_cstr = realpath(ploc.getFilename(), fullpathBuffer);
+    if (fullpath_cstr){
+      std::string fullpath(fullpath_cstr);
+      bool match = false;
+      for (auto&& path : opts_.includePaths){
+        if (path.size() < fullpath.size()){
+          bool substr_match = true;
+          for (int i=0; i < path.size(); ++i){
+            if (path[i] != fullpath[i]){
+              substr_match = false;
+              break;
+            }
+          }
+          if (substr_match){
+            match = true;
+            break;
+          }
         }
       }
-      return valid;
+      //this is a system header - skip it
+      if (match){
+        return false;
+      }
     } else {
       warn(startLoc, *ci_,
            "bad header path location, you probably abused and misused #line in your file");
       return false;
     }
   }
-
-  bool isConst = D->getType().isConstQualified();
-  bool isConstPtr = false;
-  if (D->getType()->isPointerType()){
-    isConstPtr = D->getType()->getPointeeType().isConstQualified();
-  }
-  if (isConst || isConstPtr){
-    if (D->hasInit()){
-      GlobalVariableVisitor visitor(D,this);
-      visitor.TraverseDecl(D);
-      if (!visitor.visitedGlobals()){
-        //this is const and not inited from any other global variables
-        return false;
-      }
-    } else {
-      //this is const and touches no globals in initialization
-      //this does not actually need to be a special global variable
-      return false;
-    }
-  }
-
-
-  /**
-  if (headerLoc.isValid()){
-    char fullpathBuffer[1024];
-    const char* fullpath = realpath(ploc.getFilename(), fullpathBuffer);
-    if (fullpath){
-      std::string includeName(fullpath);
-      auto checkSst = includeName.find("sstmac");
-      if (checkSst != std::string::npos){
-        return false; //never do this on sstmac headers
-      }
-
-      auto checkSumi = includeName.find("sumi");
-      if (checkSumi != std::string::npos){
-        return false; //never do this on sumi headers
-      }
-
-      auto checkSpkt = includeName.find("sprockit");
-      if (checkSpkt != std::string::npos){
-        return false; //never do this on sprockit headers
-      }
-
-      auto slashPos = includeName.find_last_of('/');
-      if (slashPos != std::string::npos){
-        includeName = includeName.substr(slashPos+1);
-      }
-
-      auto iter = ignoredHeaders_.find(includeName);
-      if (iter != ignoredHeaders_.end()){
-        //this is in a header that we know to ignore
-        return false;
-      }
-    }
-
-    auto iter = globalVarWhitelist_.find(D->getNameAsString());
-    if (iter != globalVarWhitelist_.end()){
-      //this variable is whitelisted from de-globalization
-      return false;
-    }
-
-  }
-  */
-
 
   //not a header - good to go
   return true;

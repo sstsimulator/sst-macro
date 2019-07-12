@@ -67,7 +67,8 @@ static thread_lock globals_lock;
 void
 ThreadInfo::registerUserSpaceVirtualThread(int phys_thread_id, void *stack,
                                            void* globalsMap, void* tlsMap,
-                                           bool is_main_thread)
+                                           bool isAppStartup,
+                                           bool isThreadStartup)
 {
   size_t stack_mod = ((size_t)stack) % sstmac_global_stacksize;
   if (stack_mod != 0){
@@ -95,42 +96,31 @@ ThreadInfo::registerUserSpaceVirtualThread(int phys_thread_id, void *stack,
   *statePtr = nullptr;
 
 
-  void* currentGlobals;
-  void *currentTls;
-  void **currentGlobalsPtr;
-  void **currentTlsPtr;
-  if (sstmac_global_stacksize){ //only do this if the stack config has been set
-    int activeStack; int* activeStackPtr = &activeStack;
-    intptr_t stackTopInt = ((intptr_t)activeStackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;
+  int activeStack; int* activeStackPtr = &activeStack;
+  intptr_t stackTopInt = sstmac_global_stacksize //avoid errors if this is zero
+        ? ((intptr_t)activeStackPtr/sstmac_global_stacksize)*sstmac_global_stacksize
+        : 0;
 
-    currentGlobalsPtr = (void**)(stackTopInt + SSTMAC_TLS_GLOBAL_MAP);
-    currentTlsPtr = (void**)(stackTopInt + SSTMAC_TLS_TLS_MAP);
-    currentGlobals = *currentGlobalsPtr;
-    currentTls = *currentTlsPtr;
-
-    //for the init functions we need the new globals map to be active on this thread
-    *currentGlobalsPtr = globalsMap;
-    *currentTlsPtr = tlsMap;
-  }
-
+  void** currentGlobalsPtr = (void**)(stackTopInt + SSTMAC_TLS_GLOBAL_MAP);
+  void** currentTlsPtr = (void**)(stackTopInt + SSTMAC_TLS_TLS_MAP);
 
   globals_lock.lock();
-  if (globalsMap && is_main_thread){
+  if (globalsMap && isAppStartup){
+    void* currentGlobals = *currentGlobalsPtr;
+    *currentGlobalsPtr = globalsMap;
     GlobalVariable::glblCtx.addActiveSegment(globalsMap);
     GlobalVariable::glblCtx.callInitFxns(globalsMap);
+    *currentGlobalsPtr = currentGlobals;
   }
 
-  if (tlsMap){
+  if (tlsMap && isThreadStartup){
+    void* currentTls = *currentTlsPtr;
+    *currentTlsPtr = tlsMap;
     GlobalVariable::tlsCtx.addActiveSegment(tlsMap);
     GlobalVariable::tlsCtx.callInitFxns(tlsMap);
-  }
-  globals_lock.unlock();
-
-  if (sstmac_global_stacksize){
-    //only do this if the stack config is set
-    *currentGlobalsPtr = currentGlobals;
     *currentTlsPtr = currentTls;
   }
+  globals_lock.unlock();
 }
 
 void

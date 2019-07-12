@@ -81,7 +81,7 @@ Thread::initThread(const SST::Params& params,
 {
   ThreadInfo::registerUserSpaceVirtualThread(physical_thread_id, stack,
                                              globals_storage, tls_storage,
-                                             isMainThread());
+                                             isMainThread(), true);
   stack_ = stack;
 
   initId();

@@ -8,6 +8,7 @@ clangCppFlagsStr="@CLANG_CPPFLAGS@"
 clangLdFlagsStr="@CLANG_LDFLAGS@"
 clangLibtoolingCxxFlagsStr="@CLANG_LIBTOOLING_CXX_FLAGS@"
 clangLibtoolingCFlagsStr="@CLANG_LIBTOOLING_C_FLAGS@"
+defaultIncludePaths="@DEFAULT_INCLUDE_PATHS@"
 
 sstCppFlags = [
 "@SST_CPPFLAGS@",

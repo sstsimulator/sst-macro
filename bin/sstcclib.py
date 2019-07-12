@@ -107,6 +107,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   from sstccvars import clangCppFlagsStr, clangLdFlagsStr
   from sstccvars import clangLibtoolingCxxFlagsStr, clangLibtoolingCFlagsStr
   from sstccvars import haveFloat128
+  from sstccvars import defaultIncludePaths
 
   if not os.environ.has_key("SSTMAC_HEADERS"):
     topdir = os.getcwd()
@@ -141,6 +142,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       '-lundumpi',
     ]
 
+  defaultIncludePaths += ":" + cleanFlag(includeDir)
 
   clangCppArgs = [
     cleanFlag("-I${includedir}/sstmac/clang_replacements"),
@@ -629,6 +631,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       #don't use the clang --extra-arg anymore - put them after the '--'
       clangCmdArr.append(ppTmpFile)
       clangCmdArr.extend(forwardedClangArgs)
+      clangCmdArr.append("--system-includes=%s" % defaultIncludePaths)
       clangCmdArr.append("--")
       #all of the compiler options go after the -- separator
       #fix intrinsics which might not be known to clang if using a different compiler

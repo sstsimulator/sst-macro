@@ -135,6 +135,8 @@ CHECK_CLANG()
 
 CHECK_GCC()
 
+CHECK_DEFAULT_INCLUDES()
+
 AC_CHECK_HEADERS([mpi.h],
   have_mpi_header=yes,
   have_mpi_header=no

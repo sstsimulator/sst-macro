@@ -60,7 +60,7 @@ class ThreadInfo {
  public:
   static void registerUserSpaceVirtualThread(int phys_thread_id, void* stack,
                                              void* globalsMap, void* tlsMap,
-                                             bool is_main_thread);
+                                             bool isAppStartup, bool isThreadStartup);
 
   static void deregisterUserSpaceVirtualThread(void* stack);
 
