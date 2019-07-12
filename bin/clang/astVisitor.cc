@@ -273,6 +273,15 @@ SkeletonASTVisitor::shouldVisitDecl(VarDecl* D)
     return false;
   }
 
+  if (D->getType()->isUnionType()){
+    if (D->getType()->getAsUnionType()->getDecl()->isAnonymousStructOrUnion()){
+      return false;
+    }
+  } else if (D->getType()->isStructureType()){
+    if (D->getType()->getAsStructureType()->getDecl()->isAnonymousStructOrUnion()){
+      return false;
+    }
+  }
 
   SourceLocation startLoc = getStart(D);
   PresumedLoc ploc = ci_->getSourceManager().getPresumedLoc(startLoc);
@@ -962,11 +971,11 @@ SkeletonASTVisitor::TraverseMemberExpr(MemberExpr *expr, DataRecursionQueue* que
       GlobalReplacement& gr = iter->second;
       if (globalsTouched_.empty() || !ctorContexts_.empty()){
         //one-off access
-        replace(expr, gr.cachedText);
+        replace(expr, gr.inlineUseText);
       } else {
         //I hate that clang makes me do this
         //source locations are all messed up and I can't just append
-        std::string replText = gr.append ? appendText(expr, gr.cachedText) : gr.reusableText;
+        std::string replText = gr.append ? appendText(expr, gr.inlineUseText) : gr.reusableText;
         replace(expr, replText);
       }
     }
@@ -1409,7 +1418,7 @@ SkeletonASTVisitor::checkAnonStruct(VarDecl* D)
   bool typedefd = typedefStructs_.find(recDecl) != typedefStructs_.end();
   if (!typedefd && !(recDecl->getKind() == Decl::CXXRecord)){
     //if this is a combined struct and variable declaration
-    if (recDecl->getNameAsString() == "" || getStart(recDecl) == getStart(D)){
+    if (recDecl->getNameAsString() == ""){// && getStart(recDecl) == getStart(D)){
       //actually anonymous - no name given to it
       AnonRecord* rec = new AnonRecord;
       rec->decl = recDecl;
@@ -2835,12 +2844,12 @@ SkeletonASTVisitor::maybeReplaceGlobalUse(DeclRefExpr* expr, SourceRange replRng
     if (iter != globals_.end()){
       GlobalReplacement& repl = iter->second;
       if (globalsTouched_.empty() || !ctorContexts_.empty()){
-        replace(replRng, repl.cachedText);
+        replace(replRng, repl.inlineUseText);
         return;
       }
 
       globalsTouched_.back().insert(md);
-      std::string replText = repl.append ? appendText(expr, repl.cachedText) : repl.reusableText;
+      std::string replText = repl.append ? appendText(expr, repl.inlineUseText) : repl.reusableText;
       //there is a bug in Clang I can't quite track down
       //it is erroneously causing DeclRefExpr to get visited twice
       //when they occur inside a struct decl
@@ -2908,7 +2917,7 @@ SkeletonASTVisitor::maybePrintGlobalReplacement(VarDecl* vd, llvm::raw_ostream& 
   auto iter = globals_.find(md);
   if (iter != globals_.end()){
     GlobalReplacement& repl = iter->second;
-    OS << repl.cachedText;
+    OS << repl.inlineUseText;
     return true;
   } else {
     return false;

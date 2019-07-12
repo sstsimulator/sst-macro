@@ -563,14 +563,14 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     std::string reusableText;
     //used in ctors and other contexts when variable must be directly
     //accessed inline and cannot use a cached version
-    std::string cachedText;
+    std::string inlineUseText;
     //whether the replacement text should be appended to the variable name
     //or replace the variable name entirely
     bool append;
     GlobalReplacement(const std::string& reusable,
                       const std::string& oneOff,
                       bool app) :
-      append(app), reusableText(reusable), cachedText(oneOff) {}
+      append(app), reusableText(reusable), inlineUseText(oneOff) {}
   };
 
   std::map<const clang::Decl*,GlobalReplacement> globals_;

@@ -1,0 +1,29 @@
+
+int x = 10;extern int __offset_x; void init_x(void* ptr){int initer = 10; memcpy(ptr, &initer, sizeof(initer)); } int __sizeof_x = sizeof(int); 
+
+
+struct a {
+  int x;
+  int y;
+} aa;extern int __offset_aa; void init_aa(void* ptr){ } int __sizeof_aa = sizeof(struct a); 
+
+struct   b_anonymous_type{
+  int z;
+} b;extern int __offset_b; void init_b(void* ptr){ } int __sizeof_b = sizeof(struct b_anonymous_type); 
+
+typedef struct {
+  int x;
+} c;
+c cc;extern int __offset_cc; void init_cc(void* ptr){ } int __sizeof_cc = sizeof(c); 
+
+void fxn()
+{ char* sstmac_global_data = get_sstmac_global_data();struct a* sstmac_aa=(struct a*)(sstmac_global_data + __offset_aa); struct b_anonymous_type* sstmac_b=(struct b_anonymous_type*)(sstmac_global_data + __offset_b); c* sstmac_cc=(c*)(sstmac_global_data + __offset_cc); {
+  (*sstmac_aa).x = (*sstmac_aa).y + (*sstmac_b).z + (*sstmac_cc).x;
+ }}
+
+static struct {
+  int a;
+};
+
+static struct   a_anonymous_type{
+} a;extern int __offset_xyza; void init_xyza(void* ptr){ } int __sizeof_xyza = sizeof(struct a_anonymous_type); 

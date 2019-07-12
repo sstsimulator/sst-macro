@@ -73,7 +73,7 @@ SkeletonASTVisitor::setupGlobalReplacement(VarDecl *D, const std::string& namePr
     var.retType = var.anonRecord->retType;
     SourceLocation openBrace = var.anonRecord->decl->getBraceRange().getBegin();
     rewriter_.InsertText(openBrace, "  " + var.anonRecord->typeName, false, false);
-    var.typeStr = var.anonRecord->typeName;
+    var.typeStr = var.anonRecord->structType + " " + var.anonRecord->typeName;
   } else if (D->getType()->isBooleanType()) {
     var.retType = "bool*";
     var.typeStr = "bool";
@@ -203,6 +203,7 @@ SkeletonASTVisitor::registerGlobalReplacement(VarDecl* D, GlobalVariableReplacem
     GlobalStandin& newStandin = globalStandins_[md];
     newStandin.replText = cachedUseSstr.str();
     newStandin.threadLocal = repl->threadLocal;
+    newStandin.fxnStatic = repl->isFxnStatic;
 
     std::stringstream replSstr;
     replSstr << "(*" << standinName << ")";
@@ -272,23 +273,14 @@ SkeletonASTVisitor::setupCGlobalVar(VarDecl* D, const std::string& scopePrefix)
     //add an init function for it
     newVarSstr << "void " << initFxnName << "(void* ptr){";
 
-    //hacky... but, oh well
-    //auto constPos = var.typeStr.find("const ");
-    //std::string tmpTypeStr = var.typeStr;
-    //if (constPos != std::string::npos && constPos == 0){
-    //  tmpTypeStr = tmpTypeStr.substr(constPos + 6);
-    //}
-
     //recreate the global variable temporarily in this function,
     //but with globals refs correctly replaced
     if (init){
       newVarSstr << var.typeStr << " initer = "
           << printWithGlobalsReplaced(init) << "; ";
       newVarSstr << "memcpy(ptr, &initer, sizeof(initer));";
-      //newVarSstr << tmpTypeStr << "* tmpPtr = " << "(" << tmpTypeStr << "*)ptr; "
-      //            << "*tmpPtr = " << printWithGlobalsReplaced(init) << ";";
     }
-    newVarSstr << " }";
+    newVarSstr << " } ";
     newVarSstr << "int __sizeof_" << var.scopeUniqueVarName << " = sizeof(" << var.typeStr << "); ";
   }
   registerGlobalReplacement(D, &var);
@@ -336,12 +328,13 @@ SkeletonASTVisitor::setupCppGlobalVar(VarDecl* D, const std::string& scopePrefix
                << " new (ptr) " << repl.typeStr;
 
     if (cppCtorArgs){
-      if (cppCtorArgs->getStmtClass() != Stmt::InitListExprClass){
-        newVarSstr << "{";
-      }
-      newVarSstr << printWithGlobalsReplaced(cppCtorArgs);
-      if (cppCtorArgs->getStmtClass() != Stmt::InitListExprClass){
-        newVarSstr << "}";
+      switch (cppCtorArgs->getStmtClass()){
+      case Stmt::InitListExprClass:
+        newVarSstr << printWithGlobalsReplaced(cppCtorArgs);
+        break;
+      default:
+        newVarSstr << "{" << printWithGlobalsReplaced(cppCtorArgs) << "}";
+        break;
       }
     }
     newVarSstr << "; });";
@@ -360,75 +353,87 @@ SkeletonASTVisitor::setupCppGlobalVar(VarDecl* D, const std::string& scopePrefix
 bool
 SkeletonASTVisitor::setupFunctionStaticCpp(VarDecl* D, const std::string& scopePrefix)
 {
-  internalError(D, *ci_, "cannot currently handle static function variables in C++");
-  return true;
-  /**
   if (insideTemplateFxn()){
-    //okay, this is a little bit weird
-    //we have a template parameter
-    needExternalDecls = false;
-    checkCxxCtor = false;
-    needClsScope = false;
-    //the offset declaration actually goes here
-    //if (innerStructTagsDeclared_.find(D->getDeclContext()) == innerStructTagsDeclared_.end()){
-      //keep from declaring this more than once per decl context
-    os << "struct inner_" << scopeUniqueVarName << "{};";
-    //  innerStructTagsDeclared_.insert(D->getDeclContext());
-    internalError(D, *ci_, "cannot currently handle static function variables in a template function");
-    os << "static int __offset_" << scopeUniqueVarName
-       << " = sstmac::inplaceCppGlobal<"
-       << "inner_" << scopeUniqueVarName
-       << "," << getCleanTypeName(D->getType())
-       << "," << std::boolalpha << threadLocal
-       << ">(";
-    addInitializers(D, os, false); //no leading comma
-    os << ");";
+    internalError(D, *ci_, "static function variables in template functions not yet supported");
   }
-  */
+
+  FunctionDecl* outerFxn = fxnContexts_.front();
+  SourceLocation fxnStart = getStart(outerFxn);
+
+  GlobalVariableReplacement var = setupGlobalReplacement(D, scopePrefix, false, true, false);
+  std::string replText = "int __sizeof_" + var.scopeUniqueVarName + " = sizeof(void*); "
+      " extern int __offset_" + var.scopeUniqueVarName + "; "
+      " void init_" + var.scopeUniqueVarName + "(void* ptr){ "
+      "   void** ptrptr = (void**) ptr; "
+      "   *ptrptr = nullptr; "
+      "}";
+  rewriter_.InsertText(fxnStart, replText, false);
+
+  std::string initializer;
+  if (D->hasInit()){
+    initializer = printWithGlobalsReplaced(D->getInit());
+    switch(D->getInit()->getStmtClass()){
+     case Stmt::InitListExprClass:
+     case Stmt::CXXConstructExprClass:
+       break;
+     default:
+      initializer = "{ " + initializer + " }";
+      break;
+    }
+    initializer = "sstmac_" + var.scopeUniqueVarName + "= new " + var.typeStr + initializer + ";";
+  }
+
+  std::string initText =
+   "void** ptrsstmac_" + var.scopeUniqueVarName
+    + " = ((void**)(sstmac_global_data + __offset_" + var.scopeUniqueVarName + "));"
+    + var.typeStr + "* sstmac_" + var.scopeUniqueVarName + " = (" + var.typeStr
+    + "*)(*ptrsstmac_" + var.scopeUniqueVarName + "); "
+   "if (sstmac_" + var.scopeUniqueVarName + " == nullptr){ "
+    + initializer +
+   "  *ptrsstmac_" + var.scopeUniqueVarName + " = sstmac_" + var.scopeUniqueVarName + "; "
+   "}";
+  delayedInsertAfter(D, initText);
+  registerGlobalReplacement(D, &var);
+  //make sure this is included for the function
+  globalsTouched_.back().insert(mainDecl(D));
+  return true;
 }
 
 bool
 SkeletonASTVisitor::setupFunctionStaticC(VarDecl* D, const std::string& scopePrefix)
 {
-  internalError(D, *ci_, "cannot currently handle static function variables in C");
-  return true;
-  /**
-    if (global_var_ty == FxnStatic){
-      newStandin.fxnStatic = true;
-      //we need to put the global standin text here!
-      std::string newText = newStandin.replText + "; ";
-      rewriter_.InsertText(declEnd, newText);
-      //it's possible this never gets referenced because of silly code
-      //make sure this gets added to globals touched lists
-      //regardless of whether it shows up in a DeclRefExpr
-      globalsTouched_.back().insert(md);
-    }
+  FunctionDecl* outerFxn = fxnContexts_.front();
+  SourceLocation fxnStart = getStart(outerFxn);
 
-  os << "static int sstmac_inited_" << D->getNameAsString() << " = 0;"
-    << "if (!sstmac_inited_" << D->getNameAsString() << "){"
-    << "  sstmac_init_global_space(&" << D->getNameAsString()
-       << "," << "__sizeof_" << scopeUniqueVarName
-       << "," << "__offset_" << scopeUniqueVarName
-       << "," << (threadLocal ? "1" : "0") //because of C, can't guarantee bools defined
-       << ");"
-    << "  sstmac_inited_" << D->getNameAsString() << " = 1; "
-    << "}";
-  std::stringstream size_os;
-  std::map<const RecordDecl*, ReconstructedType> newTypes;
-  std::string typeNameToSize = getTypeNameForSizing(getStart(fxnContexts_.front()),
-                                                    D->getType(), newTypes);
-  if (typeNameToSize.empty()){
-    errorAbort(D, *ci_,
-               "internal error: empty type name for variable");
+  GlobalVariableReplacement var = setupGlobalReplacement(D, scopePrefix, false, true, false);
+  std::string replText = "int __sizeof_" + var.scopeUniqueVarName + " = sizeof(void*); "
+      " extern int __offset_" + var.scopeUniqueVarName + "; "
+      " void init_" + var.scopeUniqueVarName + "(void* ptr){ "
+      "   void** ptrptr = (void**) ptr; "
+      "   *ptrptr = 0; "
+      "}";
+  rewriter_.InsertText(fxnStart, replText, false);
+
+  std::string initializer;
+  if (D->hasInit()){
+    initializer = "*sstmac_" + var.scopeUniqueVarName + " = ("
+        + var.typeStr + ") " + printWithGlobalsReplaced(D->getInit()) + ";";
   }
-  std::set<const RecordDecl*> alreadyDone;
-  for (auto& pair : newTypes){
-    addTypeReconstructionText(pair.first, pair.second, newTypes, alreadyDone, size_os);
-  }
-  size_os << "int __sizeof_" << scopeUniqueVarName << " = "
-          << "sizeof(" << typeNameToSize << "); ";
-  rewriter_.InsertText(varSizeOfInsertLoc, size_os.str());
-  */
+
+  std::string initText =
+   "void** ptrsstmac_" + var.scopeUniqueVarName
+    + " = ((void**)(sstmac_global_data + __offset_" + var.scopeUniqueVarName + "));"
+    + var.typeStr + "* sstmac_" + var.scopeUniqueVarName + " = (" + var.typeStr
+    + "*)(*ptrsstmac_" + var.scopeUniqueVarName + "); "
+   "if (sstmac_" + var.scopeUniqueVarName + " == 0){ "
+   "  sstmac_" + var.scopeUniqueVarName + " = (" + var.typeStr + "*) malloc(sizeof(" + var.typeStr + "));"
+   "  *ptrsstmac_" + var.scopeUniqueVarName + " = sstmac_" + var.scopeUniqueVarName + "; "
+   + initializer + "}";
+  delayedInsertAfter(D, initText);
+  registerGlobalReplacement(D, &var);
+  //make sure this is included for the function
+  globalsTouched_.back().insert(mainDecl(D));
+  return true;
 }
 
 bool
@@ -437,7 +442,6 @@ SkeletonASTVisitor::checkDeclStaticClassVar(VarDecl *D)
   if (classContexts_.size() > 1){
     errorAbort(D, *ci_, "cannot handle static variables in inner classes");
   }
-
 
   if (!D->hasInit()){
     setupClassStaticVarDecl(D);
@@ -561,12 +565,13 @@ SkeletonASTVisitor::checkInstanceStaticClassVar(VarDecl *D)
      << "    new (ptr) " << repl.typeStr;
 
   if (D->hasInit()){
-    if (D->getInit()->getStmtClass() != Stmt::InitListExprClass){
-      os << "{";
-    }
-    os << printWithGlobalsReplaced(D->getInit());
-    if (D->getInit()->getStmtClass() != Stmt::InitListExprClass){
-      os << "}";
+    switch (D->getInit()->getStmtClass()){
+    case Stmt::InitListExprClass:
+      os << printWithGlobalsReplaced(D->getInit());
+      break;
+    default:
+      os << "{" << printWithGlobalsReplaced(D->getInit()) << "}";
+      break;
     }
   } else {
     os << "{}; ";

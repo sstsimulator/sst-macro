@@ -1,0 +1,17 @@
+
+int x = 10;extern int __offset_x; void init_x(void* ptr){int initer = 10; memcpy(ptr, &initer, sizeof(initer)); } int __sizeof_x = sizeof(int); 
+
+void fxn()
+{ char* sstmac_global_data = get_sstmac_global_data();int* sstmac_x=(int*)(sstmac_global_data + __offset_x); {
+  (*sstmac_x) += 5;
+ }}
+
+struct a {
+  int x;
+  int y;
+} aa;extern int __offset_aa; void init_aa(void* ptr){ } int __sizeof_aa = sizeof(struct a); 
+
+void fxn2()
+{ char* sstmac_global_data = get_sstmac_global_data();struct a* sstmac_aa=(struct a*)(sstmac_global_data + __offset_aa); {
+  (*sstmac_aa).x -= (*sstmac_aa).y;
+ }}
