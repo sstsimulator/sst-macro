@@ -278,7 +278,7 @@ SkeletonASTVisitor::setupCGlobalVar(VarDecl* D, const std::string& scopePrefix)
     if (init){
       newVarSstr << var.typeStr << " initer = "
           << printWithGlobalsReplaced(init) << "; ";
-      newVarSstr << "memcpy(ptr, &initer, sizeof(initer));";
+      newVarSstr << "memcpy(ptr, (void*) &initer, sizeof(initer));";
     }
     newVarSstr << " } ";
     newVarSstr << "int __sizeof_" << var.scopeUniqueVarName << " = sizeof(" << var.typeStr << "); ";

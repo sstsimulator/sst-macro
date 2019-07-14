@@ -261,24 +261,18 @@ void
 SkeletonASTVisitor::initHeaders()
 {
   const char* headerListFile = getenv("SSTMAC_HEADERS");
-  if (headerListFile == nullptr){
-    const char* allHeaders = getenv("SSTMAC_ALL_HEADERS");
-    if (allHeaders == nullptr){
-      std::cerr << "WARNING: No header list specified through environment variable SSTMAC_HEADERS" << std::endl;
+  if (headerListFile){
+    std::ifstream ifs(headerListFile);
+    if (!ifs.good()){
+      std::cerr << "Bad header list from environment SSTMAC_HEADERS=" << headerListFile << std::endl;
+      exit(EXIT_FAILURE);
     }
-    return;
-  }
 
-  std::ifstream ifs(headerListFile);
-  if (!ifs.good()){
-    std::cerr << "Bad header list from environment SSTMAC_HEADERS=" << headerListFile << std::endl;
-    exit(EXIT_FAILURE);
-  }
-
-  std::string line;
-  while (ifs.good()){
-    std::getline(ifs, line);
-    validHeaders_.insert(line);
+    std::string line;
+    while (ifs.good()){
+      std::getline(ifs, line);
+      validHeaders_.insert(line);
+    }
   }
 }
 
@@ -334,35 +328,42 @@ SkeletonASTVisitor::shouldVisitDecl(VarDecl* D)
 
   bool useAllHeaders = false;
   if (headerLoc.isValid() && !useAllHeaders){
-    //we are inside a header
     char fullpathBuffer[1024];
     const char* fullpath_cstr = realpath(ploc.getFilename(), fullpathBuffer);
     if (fullpath_cstr){
       std::string fullpath(fullpath_cstr);
-      bool match = false;
-      for (auto&& path : opts_.includePaths){
-        if (path.size() < fullpath.size()){
-          bool substr_match = true;
-          for (int i=0; i < path.size(); ++i){
-            if (path[i] != fullpath[i]){
-              substr_match = false;
+      if (validHeaders_.empty()){
+        //we have not been explicitly given a list of valid headers
+        //just ignore all headers in default system paths
+        //we are inside a header
+        bool match = false;
+        for (auto&& path : opts_.includePaths){
+          if (path.size() < fullpath.size()){
+            bool substr_match = true;
+            for (int i=0; i < path.size(); ++i){
+              if (path[i] != fullpath[i]){
+                substr_match = false;
+                break;
+              }
+            }
+            if (substr_match){
+              match = true;
               break;
             }
           }
-          if (substr_match){
-            match = true;
-            break;
-          }
         }
-      }
-      //this is a system header - skip it
-      if (match){
-        return false;
+        //this is a system header - skip it
+        if (match){
+          return false;
+        }
+      } else {
+        //we have an explicit list of valid headers
+        return validHeaders_.find(fullpath) != validHeaders_.end();
       }
     } else {
-      warn(startLoc, *ci_,
-           "bad header path location, you probably abused and misused #line in your file");
-      return false;
+      //we have been given explicitly a list of valid headers
+      warn(startLoc, *ci_, "bad header path location, you probably abused and misused #line in your file");
+        return false;
     }
   }
 

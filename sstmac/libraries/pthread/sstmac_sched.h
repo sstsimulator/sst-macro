@@ -83,6 +83,7 @@ static inline int SSTMAC_sched_get_priority_min (int algorithm){
 }
 
 /* Get the SCHED_RR interval for the named process.  */
+struct timespec;
 extern int SSTMAC_sched_rr_get_interval (pid_t pid, struct timespec *t);
 
 # define SSTMAC_CPU_SETSIZE 64
