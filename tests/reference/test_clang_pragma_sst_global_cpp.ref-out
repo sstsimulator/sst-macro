@@ -14,11 +14,11 @@ template <class T>
 void
 A<T>::fxn(){
 
- this->x_getter().fxn();
+  this->x_getter().fxn();
   B var;
 }
 
-decltype(A<int>::x) var;extern int __offset_var; int __sizeof_var = sizeof(B);sstmac::CppGlobalRegisterGuard var_sstmac_ctor(__offset_var, __sizeof_var, false, "var", [](void* ptr){  new (ptr) B{}; });
+decltype(A<int>::x) var;extern int __offset_var; int __sizeof_var = sizeof(B);static std::function<void(void*)> init_var = [](void* ptr){ new (ptr) B{}; };sstmac::CppGlobalRegisterGuard var_sstmac_ctor(__offset_var, __sizeof_var, false, "var", std::move(init_var));
 #include <sstmac/software/process/cppglobal.h>
 #include <sstmac/software/process/memoize.h>
 

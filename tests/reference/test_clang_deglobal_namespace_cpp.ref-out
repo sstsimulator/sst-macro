@@ -1,12 +1,12 @@
 
 namespace ns {
  namespace ns2 {
-  int x = 10;extern int __offset_x; int __sizeof_x = sizeof(int);sstmac::CppGlobalRegisterGuard x_sstmac_ctor(__offset_x, __sizeof_x, false, "x", [](void* ptr){  new (ptr) int{10}; });
+  int x = 10;extern int __offset_x; int __sizeof_x = sizeof(int);static std::function<void(void*)> init_x = [](void* ptr){ new (ptr) int{10}; };sstmac::CppGlobalRegisterGuard x_sstmac_ctor(__offset_x, __sizeof_x, false, "x", std::move(init_x));
  }
 }
 
 namespace ns {
-int x = 10;extern int __offset_x; int __sizeof_x = sizeof(int);sstmac::CppGlobalRegisterGuard x_sstmac_ctor(__offset_x, __sizeof_x, false, "x", [](void* ptr){  new (ptr) int{10}; });
+int x = 10;extern int __offset_x; int __sizeof_x = sizeof(int);static std::function<void(void*)> init_x = [](void* ptr){ new (ptr) int{10}; };sstmac::CppGlobalRegisterGuard x_sstmac_ctor(__offset_x, __sizeof_x, false, "x", std::move(init_x));
 }
 
 void fxn()

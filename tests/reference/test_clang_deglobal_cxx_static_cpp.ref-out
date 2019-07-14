@@ -33,7 +33,7 @@ namespace ns {
  }
 }
 
-decltype(ns::B::caller) dtGlbl(0);extern int __offset_dtGlbl; int __sizeof_dtGlbl = sizeof(Caller);sstmac::CppGlobalRegisterGuard dtGlbl_sstmac_ctor(__offset_dtGlbl, __sizeof_dtGlbl, false, "dtGlbl", [](void* ptr){  new (ptr) Caller{0}; });
+decltype(ns::B::caller) dtGlbl(0);extern int __offset_dtGlbl; int __sizeof_dtGlbl = sizeof(Caller);static std::function<void(void*)> init_dtGlbl = [](void* ptr){ new (ptr) Caller{0}; };sstmac::CppGlobalRegisterGuard dtGlbl_sstmac_ctor(__offset_dtGlbl, __sizeof_dtGlbl, false, "dtGlbl", std::move(init_dtGlbl));
 
 void fxn()
 { char* sstmac_global_data = get_sstmac_global_data();int* sstmac_x=(int*)(sstmac_global_data + A::__offset_x); int* __ns__sstmac_x=(int*)(sstmac_global_data + ::ns::B::__offset_x); int* __ns__ns2__sstmac_xx=(int*)(sstmac_global_data + ::ns::ns2::C::__offset_xx); {
@@ -45,7 +45,7 @@ void fxn()
 struct DeclTyper {
   static int get(){ return 0; }
 };
-DeclTyper d;extern int __offset_d; int __sizeof_d = sizeof(DeclTyper);sstmac::CppGlobalRegisterGuard d_sstmac_ctor(__offset_d, __sizeof_d, false, "d", [](void* ptr){  new (ptr) DeclTyper{}; });
+DeclTyper d;extern int __offset_d; int __sizeof_d = sizeof(DeclTyper);static std::function<void(void*)> init_d = [](void* ptr){ new (ptr) DeclTyper{}; };sstmac::CppGlobalRegisterGuard d_sstmac_ctor(__offset_d, __sizeof_d, false, "d", std::move(init_d));
 
 int goReturn(){
   return decltype(d)::get();

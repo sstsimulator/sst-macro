@@ -82,7 +82,7 @@ double sstmac_sim_time();
 
 #ifdef __cplusplus
 
-//hate that I have to do this for cmake
+/* hate that I have to do this for cmake */
 #if __cplusplus < 201103L
 #define char16_t char16type
 #define char32_t char32type
@@ -193,9 +193,9 @@ template <class T, class U> T getParam(const std::string& name, U&& u){
 
 #include <sstmac/software/process/global.h>
 #include <sstmac/software/api/api_fwd.h>
-//end C++
+/* end C++ */
 #else
-//need for C
+/* need for C */
 static void* nullptr = 0;
 #endif
 
@@ -272,6 +272,11 @@ static SSTMAC_INLINE char* get_sstmac_tls_data(){
     char** globalMapPtr = (char**)(get_sstmac_tls() + SSTMAC_TLS_TLS_MAP);
     return *globalMapPtr;
   }
+}
+
+static SSTMAC_INLINE int get_sstmac_tls_thread_id(){
+  int* idPtr = (int*)(get_sstmac_tls() + SSTMAC_TLS_THREAD_ID);
+  return *idPtr;
 }
 
 #undef SSTMAC_INLINE

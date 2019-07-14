@@ -315,18 +315,9 @@ SkeletonASTVisitor::setupCppGlobalVar(VarDecl* D, const std::string& scopePrefix
       repl.typeStr = eraseAllStructQualifiers(repl.typeStr);
     }
 
-    if (D->getStorageClass() == SC_Static){
-      newVarSstr << "static ";
-    }
-    newVarSstr << "sstmac::CppGlobalRegisterGuard "
-               << D->getNameAsString() << "_sstmac_ctor("
-               << "__offset_" << repl.scopeUniqueVarName
-               << ", __sizeof_" << repl.scopeUniqueVarName
-               << ", " << std::boolalpha << repl.threadLocal
-               << ", \"" << D->getNameAsString() << "\""
-               << ", [](void* ptr){ "
-               << " new (ptr) " << repl.typeStr;
-
+    newVarSstr << "static std::function<void(void*)> init_" << repl.scopeUniqueVarName
+               << " = [](void* ptr){"
+                  " new (ptr) " << repl.typeStr;
     if (cppCtorArgs){
       switch (cppCtorArgs->getStmtClass()){
       case Stmt::InitListExprClass:
@@ -337,13 +328,18 @@ SkeletonASTVisitor::setupCppGlobalVar(VarDecl* D, const std::string& scopePrefix
         break;
       }
     }
-    newVarSstr << "; });";
-    //the original variable is gone... but for subtle reasons
-    //we need the variable to be reference-able for decltype and sizeof operators later
+    newVarSstr << "; };";
 
-    //this is a super annoying way to have to do this
-    //if we have multi-declarations int x,y, e.g.
-    //the var decls overlap and we need to avoid deleting the same code region twice
+    if (D->getStorageClass() == SC_Static){
+      newVarSstr << "static ";
+    }
+    newVarSstr << "sstmac::CppGlobalRegisterGuard "
+               << D->getNameAsString() << "_sstmac_ctor("
+               << "__offset_" << repl.scopeUniqueVarName
+               << ", __sizeof_" << repl.scopeUniqueVarName
+               << ", " << std::boolalpha << repl.threadLocal
+               << ", \"" << D->getNameAsString() << "\""
+               << ", std::move(init_" << repl.scopeUniqueVarName << "));";
   }
   registerGlobalReplacement(D, &repl);
   delayedInsertAfter(D, newVarSstr.str());

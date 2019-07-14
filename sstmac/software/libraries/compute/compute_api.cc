@@ -265,31 +265,6 @@ extern "C" void sstmac_compute_memoize5(const char *token, double param1, double
   sstmac::sw::OperatingSystem::computeMemoize(token, 5, params);
 }
 
-extern "C" void* sstmac_alloc_stack(int sz, int md_sz)
-{
-  if (md_sz >= SSTMAC_TLS_OFFSET){
-    spkt_abort_printf("Cannot have stack metadata larger than %d - requested %d",
-                      SSTMAC_TLS_OFFSET, md_sz);
-  }
-  if (sz > sstmac::sw::OperatingSystem::stacksize()){
-    spkt_abort_printf("Cannot allocate stack larger than %d - requested %d",
-                      sstmac::sw::OperatingSystem::stacksize(), sz);
-  }
-  void* stack = sstmac::sw::StackAlloc::alloc();
-  uintptr_t localStorage = get_sstmac_tls();
-
-  void* new_mdata = (char*)stack + SSTMAC_TLS_OFFSET;
-  void* old_mdata = (char*)localStorage + SSTMAC_TLS_OFFSET;
-  ::memcpy(new_mdata, old_mdata, SSTMAC_TLS_SIZE);
-
-  return stack;
-}
-
-extern "C" void sstmac_free_stack(void* ptr)
-{
-  sstmac::sw::StackAlloc::free(ptr);
-}
-
 static inline sstmac::sw::OperatingSystem::ImplicitState*
 get_implicit_compute_state(){
   uintptr_t localStorage = get_sstmac_tls();

@@ -44,6 +44,8 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/time.h>
+#include <time.h>
+#include <sys/time.h>
 
 using sstmac::sw::OperatingSystem;
 using sstmac::TimeDelta;
@@ -56,6 +58,16 @@ extern "C" int SSTMAC_gettimeofday(struct timeval* tv, struct timezone* tz)
   uint64_t usecs = os->now().usecRounded();
   tv->tv_sec =  usecs / 1000000;
   tv->tv_usec = usecs % 1000000;
+  return 0;
+}
+
+extern "C" int SSTMAC_clock_gettime(clockid_t id, struct timespec *ts)
+{
+  OperatingSystem* os = OperatingSystem::currentOs();
+  Timestamp t = os->now();
+  uint64_t nsecs = os->now().nsecRounded();
+  ts->tv_sec =  nsecs / 1000000000;
+  ts->tv_nsec = nsecs % 1000000000;
   return 0;
 }
 

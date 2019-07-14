@@ -109,6 +109,14 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   from sstccvars import haveFloat128
   from sstccvars import defaultIncludePaths
 
+  needfPIC = "fPIC" in sstCxxFlagsStr
+
+  rawPaths = defaultIncludePaths.split(":")
+  cleanPaths = []
+  for path in rawPaths:
+    cleanPaths.append(os.path.abspath(path))
+  defaultIncludePaths = ":".join(cleanPaths)
+
   if not os.environ.has_key("SSTMAC_HEADERS"):
     topdir = os.getcwd()
     #unwind to look for a file named sstmac_headers
@@ -278,6 +286,10 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
 
     if not eatArg:
       validGccArgs.append(sarg)
+
+  if not "-fPIC" in givenFlags and needfPIC:
+    #assume fPIC was given
+    givenFlags.append("-fPIC")
 
   if keepExe and sstCore:
     sys.exit("Running with sst-core does not allow --keep-exe - must create libX.so")

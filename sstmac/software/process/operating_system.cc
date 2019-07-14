@@ -445,7 +445,7 @@ OperatingSystem::initThreading(SST::Params& params)
 #endif
 
   des_context_ = sprockit::create<ThreadContext>(
-     "macro", params.find<std::string>("content", ThreadContext::defaultThreading()));
+     "macro", params.find<std::string>("context", ThreadContext::defaultThreading()));
 
   des_context_->initContext();
 

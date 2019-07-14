@@ -48,6 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/tls.h>
 #include <list>
 #include <map>
+#include <functional>
 #include <unordered_set>
 
 extern "C" int sstmac_global_stacksize;
