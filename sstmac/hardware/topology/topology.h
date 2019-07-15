@@ -53,6 +53,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/backends/common/sim_partition_fwd.h>
 #include <sstmac/hardware/topology/topology_fwd.h>
 #include <sstmac/common/sstmac_config.h>
+#include <sstmac/common/stats/ftq_tag.h>
 #include <sprockit/sim_parameters_fwd.h>
 #include <sprockit/debug.h>
 #include <sprockit/factory.h>
@@ -80,6 +81,15 @@ class Topology : public sprockit::printable
     int src_outport;
     int dst_inport;
   };
+
+  typedef enum {
+    Ejection,
+    IntraL1,
+    IntraL2,
+    IntraL3,
+    InterL1L2,
+    InterL2L3
+  } port_type_t;
 
   typedef enum {
     plusXface = 0,
@@ -489,6 +499,10 @@ class Topology : public sprockit::printable
 
   virtual std::string switchIdToName(SwitchId id) const {
     return std::string("switch") + std::to_string(id);
+  }
+
+  virtual std::string portTypeName(SwitchId sid, int port) const {
+    return "network";
   }
 
   void dumpPorts();

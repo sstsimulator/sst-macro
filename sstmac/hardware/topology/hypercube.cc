@@ -138,6 +138,21 @@ Hypercube::portScaleFactor(uint32_t addr, int port) const
   }
 }
 
+std::string
+Hypercube::portTypeName(SwitchId sid, int port) const
+{
+  static const char* dimNames[] = {"X","Y","Z","A","B"};
+
+  int portOffset = 0;
+  for (int dim=0; dim < dimensions_.size(); ++dim){
+    portOffset += dimensions_[dim];
+    if (port < portOffset){
+      return dimNames[dim];
+    }
+  }
+  return "injection";
+}
+
 void
 Hypercube::connectedOutports(SwitchId src, std::vector<Connection>& conns) const
 {

@@ -92,6 +92,8 @@ class Hypercube :
     return dim_to_outport_[dim] + dir;
   }
 
+  std::string portTypeName(SwitchId sid, int port) const override;
+
   int minimalDistance(SwitchId src, SwitchId dst) const;
 
   int numHopsToNode(NodeId src, NodeId dst) const override {

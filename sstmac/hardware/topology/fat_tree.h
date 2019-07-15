@@ -136,6 +136,8 @@ class FatTree :
 
   virtual ~FatTree() {}
 
+  std::string portTypeName(SwitchId sid, int port) const override;
+
   SwitchId numSwitches() const override {
     return num_leaf_switches_ + num_agg_switches_ + num_core_switches_;
   }

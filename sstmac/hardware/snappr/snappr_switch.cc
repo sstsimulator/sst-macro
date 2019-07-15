@@ -117,6 +117,11 @@ SnapprSwitch::SnapprSwitch(uint32_t id, SST::Params& params) :
   num_vl_ = num_vc_;
   switch_debug("initializing with %d VCs and %" PRIu32 " total credits",
                num_vc_, credits);
+
+  ftq_idle_states_.resize(top_->maxNumPorts());
+  ftq_active_states_.resize(top_->maxNumPorts());
+  ftq_stalled_states_.resize(top_->maxNumPorts());
+
   for (int i=0; i < outports_.size(); ++i){
     std::string subId = sprockit::printf("Switch:%d.Port:%d", addr(), i);
     OutPort& p = outports_[i];
@@ -128,6 +133,11 @@ SnapprSwitch::SnapprSwitch(uint32_t id, SST::Params& params) :
     p.bytes_sent = registerStatistic<uint64_t>(link_params, "bytes_sent", subId);
     p.state_ftq = dynamic_cast<FTQCalendar*>(registerMultiStatistic<int,uint64_t,uint64_t>(link_params, "state", subId));
     p.queue_depth_ftq = dynamic_cast<FTQCalendar*>(registerMultiStatistic<int,uint64_t,uint64_t>(link_params, "queue_depth", subId));
+
+    std::string portName = top_->portTypeName(addr(), i);
+    ftq_idle_states_[i] = FTQTag::allocateCategoryId("idle:" + portName);
+    ftq_active_states_[i] = FTQTag::allocateCategoryId("active:" + portName);
+    ftq_stalled_states_[i] = FTQTag::allocateCategoryId("stalled:" + portName);
   }
   for (int i=0; i < inports_.size(); ++i){
     inports_[i].number = i;
@@ -206,14 +216,14 @@ SnapprSwitch::send(OutPort& p, SnapprPacket* pkt, Timestamp now)
     TimeDelta stall_time = now - p.stall_start;
     p.xmit_stall->addData(stall_time.ticks());
     if (p.state_ftq){
-      p.state_ftq->addData(stalled.id(), p.stall_start.time.ticks(), stall_time.ticks());
+      p.state_ftq->addData(ftq_stalled_states_[p.dst_port], p.stall_start.time.ticks(), stall_time.ticks());
     }
     if (p.stall_start > p.next_free){
       //we also have idle time
       TimeDelta idle_time = p.stall_start - p.next_free;
       p.xmit_idle->addData(idle_time.ticks());
       if (p.state_ftq){
-        p.state_ftq->addData(idle.id(), p.next_free.time.ticks(), idle_time.ticks());
+        p.state_ftq->addData(ftq_idle_states_[p.dst_port], p.next_free.time.ticks(), idle_time.ticks());
       }
     }
     p.stall_start = Timestamp();
@@ -221,7 +231,7 @@ SnapprSwitch::send(OutPort& p, SnapprPacket* pkt, Timestamp now)
     TimeDelta idle_time = now - p.next_free;
     p.xmit_idle->addData(idle_time.ticks());
     if (p.state_ftq){
-      p.state_ftq->addData(idle.id(), p.next_free.time.ticks(), idle_time.ticks());
+      p.state_ftq->addData(ftq_idle_states_[p.dst_port], p.next_free.time.ticks(), idle_time.ticks());
     }
   }
 
@@ -229,7 +239,7 @@ SnapprSwitch::send(OutPort& p, SnapprPacket* pkt, Timestamp now)
   p.bytes_sent->addData(pkt->numBytes());
   p.xmit_active->addData(time_to_send.ticks());
   if (p.state_ftq){
-    p.state_ftq->addData(active.id(), now.time.ticks(), time_to_send.ticks());
+    p.state_ftq->addData(ftq_active_states_[p.dst_port], now.time.ticks(), time_to_send.ticks());
   }
   p.next_free = now + time_to_send;
   pkt->setTimeToSend(time_to_send);

@@ -69,13 +69,23 @@ FTQTag::FTQTag(const char *name, int level) :
 int
 FTQTag::allocateCategoryId(const std::string &name)
 {
+  static thread_lock lock;
+  lock.lock();
   if (!category_name_to_id_) {
     category_name_to_id_ = std::unique_ptr<std::unordered_map<std::string,int>>(new std::unordered_map<std::string,int>);
     category_id_to_name_ = std::unique_ptr<std::unordered_map<int,std::string>>(new std::unordered_map<int,std::string>);
   }
+
+  auto iter = category_name_to_id_->find(name);
+  if (iter != category_name_to_id_->end()){
+    lock.unlock();
+    return iter->second;
+  }
+
   int id = category_name_to_id_->size();
   (*category_name_to_id_)[name] = id;
   (*category_id_to_name_)[id] = name;
+  lock.unlock();
   return id;
 }
 

@@ -142,6 +142,8 @@ class Dragonfly : public CartesianTopology
     return a_ + h_ + concentration();
   }
 
+  std::string portTypeName(SwitchId sid, int port) const override;
+
   VTKSwitchGeometry getVtkGeometry(SwitchId sid) const override;
 
   bool isCurvedVtkLink(SwitchId sid, int port) const override;

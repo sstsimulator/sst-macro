@@ -272,6 +272,10 @@ class SnapprSwitch :
   int num_vc_;
   int num_vl_;
 
+  std::vector<int> ftq_idle_states_;
+  std::vector<int> ftq_active_states_;
+  std::vector<int> ftq_stalled_states_;
+
  private:
   void send(OutPort& p, SnapprPacket* pkt, Timestamp now);
 

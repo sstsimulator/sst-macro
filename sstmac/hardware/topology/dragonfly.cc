@@ -141,6 +141,18 @@ Dragonfly::minimalDistance(SwitchId src, SwitchId dst) const
   }
 }
 
+std::string
+Dragonfly::portTypeName(SwitchId sid, int port) const
+{
+  if (port < a_){
+    return "intra";
+  } else if (port < (a_ + h_)){
+    return "global";
+  } else {
+    return "injection";
+  }
+}
+
 void
 Dragonfly::connectedOutports(SwitchId src, std::vector<Connection>& conns) const
 {

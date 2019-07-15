@@ -80,7 +80,10 @@ Rank 62 = 5000.2425ms
 Rank 63 = 5000.2485ms
 Aggregate time stats for state: 
         Inactive:          0.02110 s
-     active_port:          0.01507 s
-       idle_port:          0.00724 s
-    stalled_port:          0.00172 s
+   active:global:          0.00410 s
+    active:intra:          0.01098 s
+     idle:global:          0.00279 s
+      idle:intra:          0.00445 s
+  stalled:global:          0.00145 s
+   stalled:intra:          0.00027 s
 Estimated total runtime of           5.00025602 seconds
