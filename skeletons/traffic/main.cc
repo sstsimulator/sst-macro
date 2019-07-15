@@ -81,12 +81,16 @@ uint32_t crc32(const void *data, size_t n_bytes)
 {
   uint32_t crc = 11;
   static uint32_t table[0x100];
-  if(*table == 0){
-    for(size_t i = 0; i < 0x100; ++i)
+  static bool inited = false;
+  if(!inited){
+    for(size_t i = 0; i < 0x100; ++i){
       table[i] = crc32_for_byte(i);
+    }
+    inited = true;
   }
-  for(size_t i = 0; i < n_bytes; ++i)
+  for(size_t i = 0; i < n_bytes; ++i){
     crc = table[(uint8_t)crc ^ ((uint8_t*)data)[i]] ^ crc >> 8;
+  }
   return crc;
 }
 
