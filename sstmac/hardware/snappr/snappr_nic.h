@@ -137,6 +137,23 @@ class SnapprNIC :
 
   Timestamp ej_next_free_;
   RecvCQ cq_;
+
+  enum state_t {
+    STALLED = 0,
+    IDLE = 1
+  };
+  int state_;
+  Timestamp state_start_;
+
+  int ftq_idle_state_;
+  int ftq_active_state_;
+  int ftq_stalled_state_;
+  sstmac::FTQCalendar* state_ftq_;
+  SST::Statistics::Statistic<uint64_t>* xmit_stall_;
+  SST::Statistics::Statistic<uint64_t>* xmit_active_;
+  SST::Statistics::Statistic<uint64_t>* xmit_idle_;
+  SST::Statistics::Statistic<uint64_t>* bytes_sent_;
+
 };
 
 }

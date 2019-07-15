@@ -199,6 +199,10 @@ struct Timestamp
   {
   }
 
+  static Timestamp max(){
+    return Timestamp(0, std::numeric_limits<uint64_t>::max());
+  }
+
   bool empty() const {
     return time.ticks() == 0;
   }

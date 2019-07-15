@@ -49,6 +49,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/common/event_manager.h>
 #include <sstmac/common/event_callback.h>
+#include <sstmac/common/stats/ftq.h>
 #include <sprockit/errors.h>
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
@@ -66,7 +67,7 @@ namespace sstmac {
 namespace hw {
 
 SnapprNIC::SnapprNIC(SST::Component* parent, SST::Params& params) :
-  NIC(parent, params)
+  NIC(parent, params), state_(IDLE)
 {
   SST::Params inj_params = params.find_scoped_params("injection");
 
@@ -89,6 +90,17 @@ SnapprNIC::SnapprNIC(SST::Component* parent, SST::Params& params) :
       credits_[q] = std::numeric_limits<uint32_t>::max();
     }
   }
+
+  ftq_active_state_ = FTQTag::allocateCategoryId("active:NIC");
+  ftq_idle_state_ = FTQTag::allocateCategoryId("idle:NIC");
+  ftq_stalled_state_ = FTQTag::allocateCategoryId("stalled:NIC");
+
+
+  std::string subId = sprockit::printf("NIC:%d", addr());
+  state_ftq_ = dynamic_cast<FTQCalendar*>(registerMultiStatistic<int,uint64_t,uint64_t>(inj_params, "state", subId));
+  xmit_active_ = registerStatistic<uint64_t>(inj_params, "xmit_active", subId);
+  xmit_idle_ = registerStatistic<uint64_t>(inj_params, "xmit_idle", subId);
+  xmit_stall_ = registerStatistic<uint64_t>(inj_params, "xmit_stall", subId);
 }
 
 void
@@ -154,17 +166,36 @@ SnapprNIC::inject(NetworkMessage* payload, uint64_t byte_offset)
   NodeId from = payload->fromaddr();
   uint64_t fid = payload->flowId();
 
+  if (now_ > state_start_){
+    TimeDelta incr = now_ - state_start_;
+    if (state_ == STALLED){
+      state_ftq_->addData(ftq_stalled_state_, state_start_.time.ticks(), incr.ticks());
+      xmit_stall_->addData(incr.ticks());
+    } else {
+      state_ftq_->addData(ftq_idle_state_, state_start_.time.ticks(), incr.ticks());
+      xmit_idle_->addData(incr.ticks());
+    }
+  }
+
   uint64_t bytes_left = payload->byteLength() - byte_offset;
   int vl = 0; //only zero for now
+
+  if (bytes_left == 0){
+    abort();
+  }
+
   while (bytes_left > 0){
     uint32_t pkt_size = std::min(uint32_t(bytes_left), packet_size_);
     if (send_credits_){
       if (pkt_size > credits_[vl]){
+        state_ = STALLED;
+        state_start_ = inj_next_free_;
         return byte_offset;
       } else {
         credits_[vl] -= pkt_size;
       }
     }
+
     bytes_left -= pkt_size;
     bool is_tail = bytes_left == 0;
     byte_offset += pkt_size;
@@ -175,7 +206,10 @@ SnapprNIC::inject(NetworkMessage* payload, uint64_t byte_offset)
     pkt->setInport(switch_inport_);
     TimeDelta extra_delay = inj_next_free_ - now_;
     TimeDelta time_to_send = pkt_size * inj_byte_delay_;
+    state_ftq_->addData(ftq_active_state_, inj_next_free_.time.ticks(), time_to_send.ticks());
+    xmit_active_->addData(time_to_send.ticks());
     inj_next_free_ += time_to_send;
+
     pkt_debug("packet injecting at offset=%" PRIu64 ",left=%" PRIu64 " t=%8.4e: %s",
               byte_offset, bytes_left, inj_next_free_.sec(), pkt->toString().c_str());
     pkt->setTimeToSend(time_to_send);
@@ -188,6 +222,8 @@ SnapprNIC::inject(NetworkMessage* payload, uint64_t byte_offset)
     sendExecutionEvent(inj_next_free_, ev);
   }
 
+  state_ = IDLE;
+  state_start_ = inj_next_free_;
   return byte_offset;
 }
 
