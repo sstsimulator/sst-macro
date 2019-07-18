@@ -9,6 +9,7 @@ endif
 
 CORETESTS+= \
   test_core_apps_ping_all_dfly_snappr \
+  test_core_apps_ping_all_dfly_snappr_rr \
   test_core_apps_ping_all_dfly_plus_snappr \
   test_core_apps_ping_all_fat_tree_snappr \
   test_core_apps_ping_all_hypercube_snappr \

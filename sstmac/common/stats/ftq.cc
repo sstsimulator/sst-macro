@@ -210,23 +210,18 @@ FTQCalendar::outputStatisticData(StatisticFieldsOutput *output, bool endOfSimFla
 
 FTQOutput::FTQOutput(SST::Params& params) :
   sstmac::StatisticOutput(params),
-  events_used_(0),
-  max_tick_(0),
-  num_epochs_(0),
   ticks_per_epoch_(0)
 {
-  if (params.contains("num_epochs")){
-    num_epochs_ = params.find<long>("num_epochs");
-  } else if (params.contains("epoch_length")) {
+  if (params.contains("epoch_length")) {
     SST::UnitAlgebra length = params.find<SST::UnitAlgebra>("epoch_length");
     sstmac::TimeDelta time(length.toDouble());
     ticks_per_epoch_ = time.ticks();
   } else {
-    spkt_abort_printf("must specify either num_epochs or epoch_length for FTQOutput");
+    spkt_abort_printf("must specify epoch_length for FTQOutput");
   }
   compute_mean_ = params.find<bool>("compute_mean", false);
   use_ftq_tags_ = params.find<bool>("use_ftq_tags", !compute_mean_);
-
+  aggregate_ = params.find<bool>("aggregate", true);
 
   if (use_ftq_tags_ && compute_mean_){
     spkt_abort_printf("FTQOutput: cannot use FTQ tags with mean computation");
@@ -237,6 +232,10 @@ void
 FTQOutput::startOutputGroup(StatisticGroup *grp)
 {
   active_group_ = grp->name;
+
+  std::string dat_fname = sprockit::printf("%s.csv", active_group_.c_str());
+  out_ = std::ofstream(dat_fname.c_str());
+  includeHeaders_ = true;
 }
 
 void
@@ -246,36 +245,32 @@ FTQOutput::output(StatisticBase *statistic, bool endOfSimFlag)
   if (!calendar){
     spkt_abort_printf("FTQOutput can only be used with FTQCalendar statistic");
   }
-  //if (!calendar->empty()){
-  //  //no such thing as an empty calendar anymore
-  //    //calendars should at least declare themselves as "inactive"
-  max_tick_ = std::max(max_tick_, calendar->maxTick());
-  calendars_.push_back(calendar);
+
+  if (aggregate_){
+    aggregateCalendars_.push_back(calendar);
+  } else {
+    individualCalendars_[calendar->getStatSubId()].push_back(calendar);
+  }
+
 }
 
 void
-FTQOutput::stopOutputGroup()
+FTQOutput::dump(const std::vector<FTQCalendar*>& calendars, std::ostream& os,
+                bool includeHeaders, const std::string& name)
 {
-  for (FTQCalendar* calendar : calendars_){
-    calendar->padToMaxTick(max_tick_);
-    events_used_ = events_used_ | calendar->eventsUsed();
+  uint64_t events_used = 0;
+  uint64_t max_tick = 0;
+  for (FTQCalendar* calendar : calendars){
+    max_tick = std::max(max_tick, calendar->maxTick());
   }
-
-  if (num_epochs_){
-    //specified as fixed number of epochs
-    ticks_per_epoch_ = max_tick_ / num_epochs_;
-    if (max_tick_ % num_epochs_){
-      //if there's a remainer, add another epoch
-      num_epochs_++;
-    }
-  } else if (ticks_per_epoch_){
-    //specified not as fixed number of epochs
-    //but as a specific length for the epoch
-    num_epochs_ = max_tick_ / ticks_per_epoch_;
-    if (max_tick_ % ticks_per_epoch_){
-      //if remainder, add another epoch
-      num_epochs_++;
-    }
+  for (FTQCalendar* calendar : calendars){
+    calendar->padToMaxTick(max_tick);
+    events_used = events_used | calendar->eventsUsed();
+  }
+  uint64_t num_epochs = max_tick / ticks_per_epoch_;
+  if (max_tick % ticks_per_epoch_){
+    //if remainder, add another epoch
+    num_epochs++;
   }
 
   //not all events are used - map them into a dense mapping
@@ -284,21 +279,19 @@ FTQOutput::stopOutputGroup()
   int sparse_index[64];
   uint64_t event_totals[64];
   int num_event_types = 0;
-
   for (int i=0; i < 64; ++i){
     uint64_t mask = uint64_t(1)<<i;
-    if (mask & events_used_){
+    if (mask & events_used){
       dense_index[i] = num_event_types;
       sparse_index[num_event_types] = i;
       num_event_types++;
     }
     event_totals[i] = 0;
   }
-
   int num_epoch_columns = compute_mean_ ? 1 : num_event_types;
 
-  EpochList epochs(num_epoch_columns, num_epochs_);
-  for (FTQCalendar* calendar : calendars_){
+  EpochList epochs(num_epoch_columns, num_epochs);
+  for (FTQCalendar* calendar : calendars){
     for (auto& ev : calendar->events()){
       int event_id_remapped = compute_mean_ ? 0 : dense_index[ev.type];
       int scale = compute_mean_ ? ev.type : 1;
@@ -321,90 +314,86 @@ FTQOutput::stopOutputGroup()
       }
     }
   }
-
-  std::string dat_fname = sprockit::printf("%s.dat", active_group_.c_str());
-  std::ofstream dat_out(dat_fname.c_str());
-  //print the first line header
-  dat_out << sprockit::printf("%12s", "Epoch(us)");
-
   //sort the categories
-  std::map<std::string, int> sorted_keys;
+  std::vector<std::string> keys(num_event_types);
   if (use_ftq_tags_){
     for (int i=0; i < num_event_types; ++i){
       int index = sparse_index[i];
-      sorted_keys[FTQTag::name(index)] = i;
+      keys[i] = FTQTag::name(index);
     }
   } else {
     for (int i=0; i < num_event_types; ++i){
       int index = sparse_index[i];
-      sorted_keys[sprockit::printf("%d", index)] = i;
+      keys[i] = sprockit::printf("%d", index);
     }
   }
 
-  if (compute_mean_){
-    dat_out << sprockit::printf(" %12s", "Mean");
-  } else {
-    for (auto& pair : sorted_keys){
-      dat_out << sprockit::printf(" %12s", pair.first.c_str());
+  if (includeHeaders){
+    //print the first line header
+    os << "Epoch,Time";
+    if (compute_mean_){
+      os << ",Mean";
+    } else {
+      for (auto& key : keys){
+        os << "," << key;
+      }
     }
-    dat_out << sprockit::printf(" %12s", "Total");
+    if (!name.empty()){
+      os << ",Name";
+    }
+    os << "\n";
   }
-
-
-  std::stringstream sstr;
-  sstr << "\n";
   TimeDelta one_ms(1e-3);
   uint64_t ticks_ms = one_ms.ticks();
-  double mean_denominator = calendars_.size() * ticks_per_epoch_;
-  for (uint64_t ep=0; ep < num_epochs_; ++ep) {
+  double mean_denominator = calendars.size() * ticks_per_epoch_;
+  for (uint64_t ep=0; ep < num_epochs; ++ep) {
     //figure out how many us
     double num_ms = double(ep * ticks_per_epoch_) / (double) ticks_ms;
-    sstr << sprockit::printf("%12.4f", num_ms);
-    uint64_t total_ticks = 0;
+    os << ep << "," << sprockit::printf("%12.4f", num_ms);
     for (int i=0; i < num_epoch_columns; ++i) {
       uint64_t total_ev_ticks = epochs(i,ep);
       if (compute_mean_){
         double mean = total_ev_ticks / mean_denominator;
-        sstr << sprockit::printf(" %12.8f", mean);
+        os << "," << mean;
       } else {
-        sstr << sprockit::printf(" %12llu", total_ev_ticks);
+        os << "," << total_ev_ticks;
       }
-      total_ticks += total_ev_ticks;
     }
-    if (!compute_mean_){
-      sstr << sprockit::printf(" %12llu", total_ticks);
+    if (!name.empty()){
+      os << "," << name;
     }
-    sstr << "\n";
+    os << "\n";
   }
-  dat_out << sstr.str();
-  dat_out.close();
-
-  std::string plt_fname = sprockit::printf("%s.py", active_group_.c_str());
-  std::ofstream plt_out(plt_fname.c_str());
-  plt_out << matplotlib_text_header;
-  plt_out << active_group_;
-  if (compute_mean_){
-    plt_out << matplotlib_mean_text_footer;
-  } else {
-    plt_out << matplotlib_histogram_text_footer;
-  }
-  plt_out.close();
-
-  if (!compute_mean_){
+  if (!compute_mean_ && name.empty()){
     TimeDelta stamp_sec(1.0);
     uint64_t ticks_s = stamp_sec.ticks();
-    std::cout << sprockit::printf("Aggregate time stats for %s: \n", active_group_.c_str());
-    for (auto& pair : sorted_keys){
-      int idx = pair.second;
+    std::cout << sprockit::printf("Aggregate time stats: %s\n", active_group_.c_str());
+    for (int idx=0; idx < num_epoch_columns; ++idx){
       double num_s = event_totals[idx] / ticks_s;
       uint64_t remainder = event_totals[idx] - ticks_s*num_s;
       double rem_s = double(remainder) / double(ticks_s);
       double t_sec = num_s + rem_s;
-      std::cout << sprockit::printf("%16s: %16.5f s\n", pair.first.c_str(), t_sec);
+      std::cout << sprockit::printf("%16s: %16.5f s\n", keys[idx].c_str(), t_sec);
     }
   }
-
 }
+
+void
+FTQOutput::stopOutputGroup()
+{
+  if (aggregate_){
+    dump(aggregateCalendars_, out_, true, "");
+  } else {
+    bool includeHeaders = true;
+    for (auto& pair : individualCalendars_){
+      dump(pair.second, out_, includeHeaders, pair.first);
+      includeHeaders = false;
+    }
+  }
+  out_.close();
+}
+
+
 #endif
 
 }

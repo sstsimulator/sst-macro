@@ -90,6 +90,8 @@ class SnapprNIC :
 
   void setup() override;
 
+  void arbitrate(int vl);
+
   virtual ~SnapprNIC() throw ();
 
   void handlePayload(Event* ev);
@@ -103,6 +105,22 @@ class SnapprNIC :
   LinkHandler* creditHandler(int Port) override;
 
   LinkHandler* payloadHandler(int Port) override;
+
+  struct InjectionQueue {
+    SPKT_DECLARE_BASE(InjectionQueue)
+    SPKT_DECLARE_CTOR(SST::Params&)
+
+    virtual std::pair<uint64_t, NetworkMessage*> top() = 0;
+
+    virtual void insert(uint64_t byte_offset, NetworkMessage* msg) = 0;
+
+    virtual void pop() = 0;
+
+    virtual void adjustTop(uint64_t byte_offset) = 0;
+
+    virtual bool empty() const = 0;
+  };
+
 
  private:
   void doSend(NetworkMessage* payload) override;
@@ -120,6 +138,8 @@ class SnapprNIC :
   uint64_t inject(NetworkMessage* payload, uint64_t byte_offset);
 
  private:
+  void scheduleArbitration(int vl);
+
   Timestamp inj_next_free_;
   EventLink::ptr inj_link_;
   EventLink::ptr credit_link_;
@@ -133,22 +153,30 @@ class SnapprNIC :
 
   bool send_credits_;
   std::vector<uint32_t> credits_;
-  std::vector<std::queue<std::pair<NetworkMessage*,uint64_t>>> inject_queues_;
+
+  //std::queue<std::pair<NetworkMessage*,uint64_t>>
+
+  std::vector<InjectionQueue*> inject_queues_;
 
   Timestamp ej_next_free_;
   RecvCQ cq_;
 
+  bool arbitrate_scheduled_;
+
   enum state_t {
     STALLED = 0,
-    IDLE = 1
+    ACTIVE = 1
   };
-  int state_;
-  Timestamp state_start_;
+  int send_state_;
 
-  int ftq_idle_state_;
-  int ftq_active_state_;
-  int ftq_stalled_state_;
-  sstmac::FTQCalendar* state_ftq_;
+  int ftq_idle_send_state_;
+  int ftq_active_send_state_;
+  int ftq_stalled_send_state_;
+  int ftq_idle_recv_state_;
+  int ftq_active_recv_state_;
+
+  sstmac::FTQCalendar* send_state_ftq_;
+  sstmac::FTQCalendar* recv_state_ftq_;
   SST::Statistics::Statistic<uint64_t>* xmit_stall_;
   SST::Statistics::Statistic<uint64_t>* xmit_active_;
   SST::Statistics::Statistic<uint64_t>* xmit_idle_;

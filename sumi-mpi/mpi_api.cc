@@ -138,8 +138,7 @@ MpiApi::MpiApi(SST::Params& params, sstmac::sw::App* app,
 {
   if (!engine_) engine_ = new CollectiveEngine(params, this);
 
-  SST::Params queue_params = params.find_scoped_params("queue");
-  queue_ = new MpiQueue(queue_params, app->sid().task_, this, engine_);
+  queue_ = new MpiQueue(params, app->sid().task_, this, engine_);
 
   double probe_delay_s = params.find<SST::UnitAlgebra>("iprobe_delay", "0s").getValue().toDouble();
   iprobe_delay_us_ = probe_delay_s * 1e6;

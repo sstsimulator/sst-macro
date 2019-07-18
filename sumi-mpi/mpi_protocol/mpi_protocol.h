@@ -65,6 +65,7 @@ class MpiProtocol : public sprockit::printable {
     EAGER0=0,
     EAGER1=1,
     RENDEZVOUS_GET=2,
+    DIRECT_PUT=3,
     NUM_PROTOCOLS
   };
 
@@ -217,6 +218,40 @@ class RendezvousGet final : public RendezvousProtocol
   std::map<uint64_t,MpiQueueRecvRequest*> recv_flows_;
 
   std::map<uint64_t,send> send_flows_;
+};
+
+/**
+ * @brief The rendezvous_get class
+ * Encapsulates a rendezvous protocol. On MPI_Send, the source sends an RDMA header
+ * to the destination. On MPI_Recv, the destination then posts an RDMA get.
+ * Hardware acks arrive at both dest/source signaling done.
+ */
+class DirectPut final : public MpiProtocol
+{
+ public:
+  DirectPut(SST::Params& params, MpiQueue* queue) :
+    MpiProtocol(queue)
+  {
+  }
+
+  ~DirectPut();
+
+  void start(void* buffer, int src_rank, int dst_rank, sstmac::sw::TaskId tid, int count, MpiType* type,
+             int tag, MPI_Comm comm, int seq_id, MpiRequest* req) override;
+
+  void incoming(MpiMessage *msg) override;
+
+  void incoming(MpiMessage *msg, MpiQueueRecvRequest* req) override;
+
+  std::string toString() const override {
+    return "direct rdma PUT";
+  }
+
+ private:
+  void incomingAck(MpiMessage* msg);
+  void incomingPayload(MpiMessage* msg);
+
+  std::map<uint64_t,MpiRequest*> send_flows_;
 };
 
 }

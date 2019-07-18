@@ -102,6 +102,10 @@ SnapprSwitch::SnapprSwitch(uint32_t id, SST::Params& params) :
     } else {
       spkt_abort_printf("must specify credits for Sculpin link when flow_control=true");
     }
+
+    if (!congestion_){
+      spkt_abort_printf("must specify flow_control=false when congestion=false");
+    }
   }
 
 
@@ -348,7 +352,6 @@ SnapprSwitch::tryToSendPacket(SnapprPacket* pkt)
 
   if (!congestion_){
     TimeDelta time_to_send = pkt->numBytes() * p.byte_delay;
-    p.next_free += time_to_send;
     pkt->setTimeToSend(time_to_send);
     p.link->send(pkt);
   } else {

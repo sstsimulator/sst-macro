@@ -90,11 +90,13 @@ MpiQueue::MpiQueue(SST::Params& params, int task_id,
 {
   max_vshort_msg_size_ = params.find<SST::UnitAlgebra>("max_vshort_msg_size", "512B").getRoundedValue();
   max_eager_msg_size_ = params.find<SST::UnitAlgebra>("max_eager_msg_size", "8192B").getRoundedValue();
+  use_put_window_ = params.find<bool>("use_put_window", false);
 
   protocols_.resize(MpiProtocol::NUM_PROTOCOLS);
   protocols_[MpiProtocol::EAGER0] = new Eager0(params, this);
   protocols_[MpiProtocol::EAGER1] = new Eager1(params, this);
   protocols_[MpiProtocol::RENDEZVOUS_GET] = new RendezvousGet(params, this);
+  protocols_[MpiProtocol::DIRECT_PUT] = new DirectPut(params, this);
 
   pt2pt_cq_ = api_->allocateCqId();
   coll_cq_ = api_->allocateCqId();
@@ -173,7 +175,9 @@ MpiQueue::send(MpiRequest *key, int count, MPI_Datatype type,
   uint64_t bytes = count * uint64_t(typeobj->packed_size());
 
   int prot_id = MpiProtocol::RENDEZVOUS_GET;
-  if (bytes <= max_vshort_msg_size_) {
+  if (use_put_window_) {
+    prot_id = MpiProtocol::DIRECT_PUT;
+  } else if (bytes <= max_vshort_msg_size_) {
     prot_id = MpiProtocol::EAGER0;
   } else if (bytes <= max_eager_msg_size_) {
     prot_id = MpiProtocol::EAGER1;

@@ -186,6 +186,8 @@ class FTQOutput : public sstmac::StatisticOutput
   void startOfSimulation() override {}
   void endOfSimulation() override {}
   void printUsage() override {}
+  void dump(const std::vector<FTQCalendar*>& calendars, std::ostream& os,
+            bool includeHeaders, const std::string& outname);
 
  private:
   struct EpochList {
@@ -204,15 +206,15 @@ class FTQOutput : public sstmac::StatisticOutput
     int num_events_;
   };
 
-  /** A bitmask of all the events used */
-  uint64_t events_used_;
-  uint64_t max_tick_;
   uint64_t ticks_per_epoch_;
-  uint64_t num_epochs_;
-  std::vector<FTQCalendar*> calendars_;
+  std::vector<FTQCalendar*> aggregateCalendars_;
+  std::map<std::string,std::vector<FTQCalendar*>> individualCalendars_;
   std::string active_group_;
   bool use_ftq_tags_;
   bool compute_mean_;
+  bool aggregate_;
+  std::ofstream out_;
+  bool includeHeaders_;
 
 };
 
