@@ -42,86 +42,22 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef SIMPLE_MEMORYMODEL_H_
-#define SIMPLE_MEMORYMODEL_H_
+#define sstmac_app_name mem_bandwidth
 
-#include <sstmac/hardware/memory/memory_model.h>
+#include <sstmac/skeleton.h>
+#include <sstmac/compute.h>
+#include <sstmac/util.h>
 
-namespace sstmac {
-namespace hw {
-
-/**
- * @brief The LogPMemoryModel class implements memory operations using
- *        a very basic LogGP model for simulating delays.
- */
-class LogPMemoryModel : public MemoryModel
+int USER_MAIN(int argc, char** argv)
 {
- public:
-#if SSTMAC_INTEGRATED_SST_CORE
-  SST_ELI_REGISTER_SUBCOMPONENT(
-    LogPMemoryModel,
-    "macro",
-    "logp_memory",
-    SST_ELI_ELEMENT_VERSION(1,0,0),
-    "Implements a simple memory model that is just a single link",
-    "memory")
-#else
-  SST_ELI_REGISTER_DERIVED(
-    MemoryModel,
-    LogPMemoryModel,
-    "macro",
-    "logp",
-    SST_ELI_ELEMENT_VERSION(1,0,0),
-    "Implements a simple memory model that is just a single link")
-#endif
-
-  LogPMemoryModel(SST::Component* comp, SST::Params& params);
-
-  virtual ~LogPMemoryModel();
-
-  std::string toString() const override {
-    return "logGP memory model";
+  std::vector<int> sizes = {4096, 16000, 64000, 1000000};
+  for (auto sz : sizes){
+    double start = sstmac_now();
+    sstmac_memread(sz);
+    double stop = sstmac_now();
+    double bw = sz/(stop-start);
+    printf("T=%10.7f   SIZE=%10d BW=%12.8fGB/s\n", stop, sz, bw/1e9);
   }
-
-  void accessFlow(uint64_t bytes, TimeDelta byte_delay, Callback* cb) override;
-
-  void accessRequest(int linkId, Request* req) override;
-
-
- protected:
-  class Link  {
-   public:
-    Link(TimeDelta byte_delay, TimeDelta lat) :
-      byte_delay_(byte_delay), lat_(lat), last_access_() {
-    }
-
-    ~Link() { }
-
-    /**
-     * @brief newAccess
-     * @param now
-     * @param size
-     * @param max_bw
-     * @return The deltaT from now the access will finish
-     */
-    TimeDelta newAccess(Timestamp now, uint64_t size, TimeDelta min_byte_delay);
-
-   protected:
-    TimeDelta byte_delay_;
-    TimeDelta lat_;
-    Timestamp last_access_;
-
-  };
-
- protected:
-  Link* link_;
-
-  TimeDelta min_byte_delay_;
-
-  TimeDelta lat_;
-
-};
-
+  return 0;
 }
-} /* namespace sstmac */
-#endif /* SIMPLE_MEMORYMODEL_H_ */
+

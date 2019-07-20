@@ -3424,7 +3424,7 @@ To understand the memoization pragmas, we first introduce how models get constru
 Source-to-source transformations based on the pragmas causes the following hooks to get inserted:
 
 ````
-int sstmac_startMemoize(const char* token, const char* model);
+int sstmac_start_memoize(const char* token, const char* model);
 void sstmac_finish_memoize0(int tag, const char* token);
 void sstmac_finish_memoize1(int tag, const char* token, double p1);
 void sstmac_finish_memoize2(int tag, const char* token, double p1, double p2);
@@ -3485,7 +3485,7 @@ void dgemm(int ncol, int nlink, int nrow, double* left, double* right);
 When running the memoization pass, the memoization hooks get invoked as:
 
 ````
-int tag = sstmac_startMemoize("dgemm", "least_squares");
+int tag = sstmac_start_memoize("dgemm", "least_squares");
 dgemm(....);
 sstmac_finish_memoize3(tag, "dgemm", ncol, nlink, nrow);
 ````

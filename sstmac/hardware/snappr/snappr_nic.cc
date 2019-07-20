@@ -44,6 +44,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/hardware/topology/structured_topology.h>
 #include <sstmac/hardware/network/network_message.h>
+#include <sstmac/hardware/memory/memory_model.h>
 #include <sstmac/hardware/snappr/snappr_nic.h>
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/software/process/operating_system.h>
@@ -66,6 +67,11 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
+struct SnapprRequest : public MemoryModel::Request {
+  SnapprPacket* pkt;
+  NetworkMessage* payload;
+};
+
 SnapprNIC::SnapprNIC(SST::Component* parent, SST::Params& params) :
   NIC(parent, params), send_state_(ACTIVE), //basically, not stalled
   arbitrate_scheduled_(false)
@@ -84,6 +90,8 @@ SnapprNIC::SnapprNIC(SST::Component* parent, SST::Params& params) :
   for (int i=0; i < qosLevels; ++i){
     inject_queues_[i] = sprockit::create<InjectionQueue>("macro", arb, params);
   }
+
+  pending_.resize(qosLevels);
 
   send_credits_ = inj_params.find<bool>("flow_control", true);
 
@@ -112,6 +120,15 @@ SnapprNIC::SnapprNIC(SST::Component* parent, SST::Params& params) :
   xmit_idle_ = registerStatistic<uint64_t>(inj_params, "xmit_idle", subId);
   xmit_stall_ = registerStatistic<uint64_t>(inj_params, "xmit_stall", subId);
   bytes_sent_ = registerStatistic<uint64_t>(inj_params, "bytes_sent", subId);
+
+  Node* nd = safe_cast(Node,parent);
+  mem_model_ = nd->mem();
+  auto* handler = mem_model_->makeHandler(this, &SnapprNIC::handleMemoryResponse);
+  mem_req_id_ = mem_model_->initialize(handler);
+
+
+  buffer_remaining_ = params.find<SST::UnitAlgebra>("buffer", "4MB").getRoundedValue();
+  ignore_memory_ = params.find<bool>("ignore_memory", true);
 }
 
 void
@@ -165,8 +182,45 @@ SnapprNIC::connectInput(int src_outport, int dst_inport, EventLink::ptr&& link)
   credit_link_ = std::move(link);
 }
 
-uint64_t
-SnapprNIC::inject(NetworkMessage* payload, uint64_t byte_offset)
+uint32_t
+SnapprNIC::startRequest(uint64_t byte_offset, NetworkMessage* payload)
+{
+  pkt_debug("starting request at offset %" PRIu64 " for flow %" PRIu64 ": %s",
+            byte_offset, payload->flowId(), payload->toString().c_str());
+
+  uint64_t bytes_left = payload->byteLength() - byte_offset;
+  uint32_t pkt_size = std::min(bytes_left, uint64_t(packet_size_));
+  if (pkt_size > buffer_remaining_){
+    int vl = 0;
+    return 0;
+  } else {
+    bool is_tail = bytes_left == pkt_size;
+    NodeId to = payload->toaddr();
+    NodeId from = payload->fromaddr();
+    uint64_t fid = payload->flowId();
+    SnapprPacket* pkt = new SnapprPacket(is_tail ? payload : nullptr, pkt_size, is_tail,
+                                         fid, to, from);
+    buffer_remaining_ -= pkt_size;
+    if (ignore_memory_){
+      //this is like having an infinite buffer on the NIC
+      //the packet may or may not have actually sent
+      //but this function reports whether it was successfull buffered on the NIC
+      inject(pkt);
+      return pkt->numBytes();
+    } else {
+      SnapprRequest* req = new SnapprRequest;
+      req->bytes = pkt_size;
+      req->pkt = pkt;
+      req->payload = payload;
+      mem_model_->accessRequest(mem_req_id_, req);
+      return pkt_size;
+    }
+  }
+
+}
+
+uint32_t
+SnapprNIC::inject(SnapprPacket* pkt)
 {
   int vl = 0; //for now
 
@@ -185,34 +239,26 @@ SnapprNIC::inject(NetworkMessage* payload, uint64_t byte_offset)
     inj_next_free_ = now_;
   }
 
-  uint64_t bytes_left = payload->byteLength() - byte_offset;
-  uint32_t pkt_size = std::min(uint32_t(bytes_left), packet_size_);
+  pkt->setVirtualLane(vl);
+  pkt->setInport(switch_inport_);
   if (send_credits_){
-    if (pkt_size > credits_[vl]){
+    if (pkt->numBytes() > credits_[vl]){
+      pkt_debug("packet stalling at t=%8.4e: %s",
+                inj_next_free_.sec(), pkt->toString().c_str());
       send_state_ = STALLED;
-      return byte_offset;
+      pending_[vl].push(pkt);
+      return 0;
     } else {
-      credits_[vl] -= pkt_size;
+      credits_[vl] -= pkt->numBytes();
     }
   }
 
-  bytes_left -= pkt_size;
-  pkt_debug("packet injecting at offset=%" PRIu64 ",left=%" PRIu64 " t=%8.4e: %s",
-            byte_offset, bytes_left, inj_next_free_.sec(), payload->toString().c_str());
+  pkt_debug("packet injecting at t=%8.4e: %s",
+            inj_next_free_.sec(), pkt->toString().c_str());
 
-  byte_offset += pkt_size;
 
-  bool is_tail = bytes_left == 0;
-  NodeId to = payload->toaddr();
-  NodeId from = payload->fromaddr();
-  uint64_t fid = payload->flowId();
-  SnapprPacket* pkt = new SnapprPacket(is_tail ? payload : nullptr, pkt_size, is_tail,
-                                       fid, to, from);
-
-  pkt->setVirtualLane(0);
-  pkt->setInport(switch_inport_);
   TimeDelta extra_delay = inj_next_free_ - now_;
-  TimeDelta time_to_send = pkt_size * inj_byte_delay_;
+  TimeDelta time_to_send = pkt->numBytes() * inj_byte_delay_;
   if (send_state_ftq_){
     send_state_ftq_->addData(ftq_active_send_state_, inj_next_free_.time.ticks(), time_to_send.ticks());
   }
@@ -225,14 +271,16 @@ SnapprNIC::inject(NetworkMessage* payload, uint64_t byte_offset)
 
   send_state_ = ACTIVE;
 
-
-  if (bytes_left == 0 && payload->needsAck()){
-    NetworkMessage* ack = payload->cloneInjectionAck();
-    auto* ev = newCallback(this, &NIC::sendToNode, ack);
-    sendExecutionEvent(inj_next_free_, ev);
+  if (pkt->isTail()){
+    NetworkMessage* payload = static_cast<NetworkMessage*>(pkt->orig());
+    if (payload->needsAck()){
+      NetworkMessage* ack = payload->cloneInjectionAck();
+      auto* ev = newCallback(this, &NIC::sendToNode, ack);
+      sendExecutionEvent(inj_next_free_, ev);
+    }
   }
 
-  return byte_offset;
+  return pkt->numBytes();
 }
 
 void
@@ -243,10 +291,10 @@ SnapprNIC::doSend(NetworkMessage* payload)
   bytes_sent_->addData(payload->byteLength());
 
   int vl = 0;
-  if (!arbitrate_scheduled_ && inj_next_free_ <= now()){
-    uint64_t byte_offset = inject(payload, 0);
-    if (byte_offset < payload->byteLength()){
-      inject_queues_[vl]->insert(byte_offset, payload);
+  if (!arbitrate_scheduled_){
+    uint32_t bytes_sent = startRequest(0, payload);
+    if (bytes_sent < payload->byteLength()){
+      inject_queues_[vl]->insert(bytes_sent, payload);
       scheduleArbitration(vl);
     }
   } else {
@@ -268,6 +316,8 @@ SnapprNIC::cqHandle(SnapprPacket* pkt)
 void
 SnapprNIC::eject(SnapprPacket* pkt)
 {
+  //on the eject side, assume cache injection for now
+  //so we don't want to create memory traffic right now
   Timestamp now_ = now();
   if (now_ > ej_next_free_){
     if (recv_state_ftq_){
@@ -323,24 +373,30 @@ SnapprNIC::arbitrate(int vl)
   auto pair = inject_queues_[vl]->top();
   uint64_t byte_offset = pair.first;
   NetworkMessage* msg = pair.second;
-  byte_offset = inject(msg, byte_offset);
-  if (send_state_ == ACTIVE){
-    if (msg->byteLength() == byte_offset){
+  uint32_t bytes_sent = startRequest(byte_offset, msg);
+  if (bytes_sent != 0){
+    //something happened
+    uint64_t new_byte_offset = bytes_sent + byte_offset;
+    if (msg->byteLength() == new_byte_offset){
       inject_queues_[vl]->pop();
       if (!inject_queues_[vl]->empty()){
         scheduleArbitration(vl);
       }
     } else {
-      inject_queues_[vl]->adjustTop(byte_offset);
+      inject_queues_[vl]->adjustTop(new_byte_offset);
       scheduleArbitration(vl);
     }
   }
-  //else stalled - can't schedule another arbitration
 }
 
 void
 SnapprNIC::scheduleArbitration(int vl)
 {
+  if (!ignore_memory_){
+    //arbitration will be triggered by each memory request
+    return;
+  }
+
   nic_debug("snappr: scheduling arbitration on VL=%d for %10.6e", vl, inj_next_free_.sec());
   if (arbitrate_scheduled_){
     spkt_abort_printf("cannot reschedule arbitration on Snappr NIC");
@@ -357,10 +413,33 @@ SnapprNIC::handleCredit(Event *ev)
   SnapprCredit* credit = static_cast<SnapprCredit*>(ev);
   int vl = credit->virtualLane();
   credits_[vl] += credit->numBytes();
+
+  uint32_t bytes_sent = -1;
+  while (bytes_sent != 0 && !pending_[vl].empty()){
+    SnapprPacket* pkt = pending_[vl].front();
+    pending_[vl].pop();
+    bytes_sent = inject(pkt);
+  }
+
+  buffer_remaining_ += credit->numBytes();
   if (!arbitrate_scheduled_ && !inject_queues_[vl]->empty()){
     arbitrate(vl);
   }
+
   delete credit;
+}
+
+void
+SnapprNIC::handleMemoryResponse(MemoryModel::Request* req)
+{
+  SnapprRequest* nreq = static_cast<SnapprRequest*>(req);
+  nic_debug("received memory response for packet %s", nreq->pkt->toString().c_str());
+  int vl = nreq->pkt->virtualLane();
+  inject(nreq->pkt);
+  delete nreq;
+  if (!inject_queues_[vl]->empty()){
+    arbitrate(vl);
+  }
 }
 
 struct FIFOQueue : public SnapprNIC::InjectionQueue {

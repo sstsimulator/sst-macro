@@ -1,18 +1,18 @@
 /**
-Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
-LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia,
+LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government
 retains certain rights in this software.
 
 Sandia National Laboratories is a multimission laboratory managed and operated
-by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
-owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
+by National Technology and Engineering Solutions of Sandia, LLC., a wholly
+owned subsidiary of Honeywell International, Inc., for the U.S. Department of
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
 Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
-Redistribution and use in source and binary forms, with or without modification, 
+Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
 
     * Redistributions of source code must retain the above copyright
@@ -42,86 +42,85 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef SIMPLE_MEMORYMODEL_H_
-#define SIMPLE_MEMORYMODEL_H_
+#ifndef SNAPPR_MEM_H
+#define SNAPPR_MEM_H
 
 #include <sstmac/hardware/memory/memory_model.h>
+#include <sstmac/software/libraries/compute/compute_event_fwd.h>
+#include <sstmac/hardware/snappr/snappr.h>
+#include <sprockit/thread_safe_new.h>
+#include <sprockit/allocator.h>
 
 namespace sstmac {
 namespace hw {
 
-/**
- * @brief The LogPMemoryModel class implements memory operations using
- *        a very basic LogGP model for simulating delays.
- */
-class LogPMemoryModel : public MemoryModel
+class SnapprMemoryModel : public MemoryModel
 {
  public:
 #if SSTMAC_INTEGRATED_SST_CORE
   SST_ELI_REGISTER_SUBCOMPONENT(
-    LogPMemoryModel,
+    SnapprMemoryModel,
     "macro",
-    "logp_memory",
+    "snappr_memory",
     SST_ELI_ELEMENT_VERSION(1,0,0),
-    "Implements a simple memory model that is just a single link",
+    "a memory model using pisces packet flow for contention",
     "memory")
 #else
   SST_ELI_REGISTER_DERIVED(
     MemoryModel,
-    LogPMemoryModel,
+    SnapprMemoryModel,
     "macro",
-    "logp",
+    "snappr",
     SST_ELI_ELEMENT_VERSION(1,0,0),
-    "Implements a simple memory model that is just a single link")
+    "a memory model using Snappr model for contention")
 #endif
 
-  LogPMemoryModel(SST::Component* comp, SST::Params& params);
 
-  virtual ~LogPMemoryModel();
+  SnapprMemoryModel(SST::Component* nd, SST::Params& params);
+
+  virtual ~SnapprMemoryModel(){}
 
   std::string toString() const override {
-    return "logGP memory model";
+    return "packet flow memory model";
   }
 
-  void accessFlow(uint64_t bytes, TimeDelta byte_delay, Callback* cb) override;
+  void accessFlow(uint64_t bytes, TimeDelta min_byte_delay, Callback* cb) override;
 
   void accessRequest(int linkId, Request* req) override;
 
+  void flowRequestResponse(Request* req);
 
- protected:
-  class Link  {
-   public:
-    Link(TimeDelta byte_delay, TimeDelta lat) :
-      byte_delay_(byte_delay), lat_(lat), last_access_() {
-    }
-
-    ~Link() { }
-
-    /**
-     * @brief newAccess
-     * @param now
-     * @param size
-     * @param max_bw
-     * @return The deltaT from now the access will finish
-     */
-    TimeDelta newAccess(Timestamp now, uint64_t size, TimeDelta min_byte_delay);
-
-   protected:
-    TimeDelta byte_delay_;
-    TimeDelta lat_;
-    Timestamp last_access_;
-
+ private:
+  struct FlowRequest : public Request {
+    uint32_t flowId;
   };
 
- protected:
-  Link* link_;
+  struct Flow {
+    ExecutionEvent* callback;
+    uint64_t bytesLeft;
+    TimeDelta byteRequestDelay;
+  };
 
-  TimeDelta min_byte_delay_;
+  struct ChannelQueue {
+    TimeDelta byte_delay;
+    std::vector<Request*> reqs;
+    Timestamp next_free;
+  };
 
-  TimeDelta lat_;
+  TimeDelta channel_byte_delay_;
+  std::unordered_map<uint32_t, Flow> flows_;
+  std::vector<ChannelQueue> channels_;
+  uint32_t flowId_;
+  uint32_t channelInterleaver_;
+  uint32_t mtu_;
+  uint32_t flow_mtu_;
+  int flow_rsp_id_;
+
 
 };
 
 }
 } /* namespace sstmac */
-#endif /* SIMPLE_MEMORYMODEL_H_ */
+
+
+#endif // SNAPPR_MEM_H

@@ -104,7 +104,7 @@ extern "C" void sstmac_memcopy(uint64_t bytes){
     ->computeBlockMemcpy(bytes);
 }
 
-extern "C" void sstmac_computeDetailed(uint64_t nflops, uint64_t nintops, uint64_t bytes){
+extern "C" void sstmac_compute_detailed(uint64_t nflops, uint64_t nintops, uint64_t bytes){
   sstmac::sw::OperatingSystem::currentThread()
     ->computeDetailed(nflops, nintops, bytes);
 }
@@ -149,7 +149,7 @@ sstmac_compute_loop4(uint64_t isize, uint64_t jsize, uint64_t ksize, uint64_t ls
     ->computeLoop(num_loops, nflops_per_loop, nintops_per_loop, bytes_per_loop);
 }
 
-extern "C" int sstmac_startMemoize(const char *token, const char* model)
+extern "C" int sstmac_start_memoize(const char *token, const char* model)
 {
   return sstmac::sw::OperatingSystem::startMemoize(token, model);
 }

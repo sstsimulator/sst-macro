@@ -810,7 +810,7 @@ ComputeVisitor::replaceStmt(Stmt* stmt, Rewriter& r, Loop& loop, PragmaConfig& c
     sstr << "readBytes=" << cfg.computeMemorySpec << ";";
   }
   if (nthread.empty()){
-    sstr << "sstmac_computeDetailed(flops,intops,readBytes); }";
+    sstr << "sstmac_compute_detailed(flops,intops,readBytes); }";
   } else {
     sstr << "sstmac_compute_detailed_nthr(flops,intops,readBytes,"
          << nthread << "); }";

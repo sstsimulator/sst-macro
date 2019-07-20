@@ -68,6 +68,14 @@ MemoryModel::addr() const {
   return parent_node_->addr();
 }
 
+int
+MemoryModel::initialize(RequestHandlerBase* handler)
+{
+  int idx = rsp_handlers_.size();
+  rsp_handlers_.push_back(handler);
+  return idx;
+}
+
 void
 MemoryModel::deleteStatics()
 {
@@ -75,6 +83,12 @@ MemoryModel::deleteStatics()
 
 MemoryModel::~MemoryModel()
 {
+}
+
+void
+NullMemoryModel::accessRequest(int linkId, Request *req)
+{
+  rsp_handlers_[linkId]->handle(req);
 }
 
 }

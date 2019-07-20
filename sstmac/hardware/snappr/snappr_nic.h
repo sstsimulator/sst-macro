@@ -46,6 +46,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #define SnapprNIC_h
 
 #include <sstmac/hardware/nic/nic.h>
+#include <sstmac/hardware/memory/memory_model_fwd.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
 #include <sstmac/hardware/snappr/snappr_switch.h>
 #include <sstmac/hardware/common/recv_cq.h>
@@ -131,14 +132,24 @@ class SnapprNIC :
 
   /**
    * @brief inject
+   * @param pkt
    * @param payload
-   * @param byte_offset
-   * @return The byte_offset that was able to be injected (offset = length when injection is complete)
+   * @return The number of bytes injected (can be zero if no progress)
    */
-  uint64_t inject(NetworkMessage* payload, uint64_t byte_offset);
+  uint32_t inject(SnapprPacket* pkt);
 
  private:
   void scheduleArbitration(int vl);
+
+  /**
+   * @brief startRequest
+   * @param byte_offset
+   * @param payload
+   * @return The number of bytes injected (can be zero if no progress)
+   */
+  uint32_t startRequest(uint64_t byte_offset, NetworkMessage* payload);
+
+  void handleMemoryResponse(MemoryModel::Request* req);
 
   Timestamp inj_next_free_;
   EventLink::ptr inj_link_;
@@ -153,8 +164,6 @@ class SnapprNIC :
 
   bool send_credits_;
   std::vector<uint32_t> credits_;
-
-  //std::queue<std::pair<NetworkMessage*,uint64_t>>
 
   std::vector<InjectionQueue*> inject_queues_;
 
@@ -175,12 +184,20 @@ class SnapprNIC :
   int ftq_idle_recv_state_;
   int ftq_active_recv_state_;
 
+  uint64_t buffer_remaining_;
+
   sstmac::FTQCalendar* send_state_ftq_;
   sstmac::FTQCalendar* recv_state_ftq_;
   SST::Statistics::Statistic<uint64_t>* xmit_stall_;
   SST::Statistics::Statistic<uint64_t>* xmit_active_;
   SST::Statistics::Statistic<uint64_t>* xmit_idle_;
   SST::Statistics::Statistic<uint64_t>* bytes_sent_;
+
+  std::vector<std::queue<SnapprPacket*>> pending_;
+
+  MemoryModel* mem_model_;
+  int mem_req_id_;
+  bool ignore_memory_;
 
 };
 

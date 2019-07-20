@@ -85,7 +85,6 @@ class InstructionProcessor :
   TimeDelta tintop_;
   TimeDelta tmemseq_;
   TimeDelta tmemrnd_;
-  TimeDelta min_flow_byte_delay_;//in sec/byte
 
   uint64_t negligible_bytes_;
 

@@ -5,7 +5,7 @@
 #include <sstmac/skeleton.h>
 #include <sprockit/keyword_registration.h>
 
-#define sstmac_app_name mpi_ping_pong
+#define sstmac_app_name mem_thrash
 
 RegisterKeywords(
  { "sources", "ranks of senders" },
@@ -20,24 +20,33 @@ static void ping(int rank, int src, int dst, int msize) {
   }
 }
 
-int USER_MAIN(int argc, char** argv)
+void runMemThrash()
 {
   int sizes[18] = {1,2,4,8,16,32,128,256,512,1024,2048,5096,10192,20384,40768,81536,163072,326144};
- 
+
+  int nrepeats = sstmac::getParam<int>("repeats", 10);
+  for (int s : sizes) {
+    sstmac_usleep(4);
+    for (int r=0; r < nrepeats; ++r){
+      sstmac_memread(s);
+    }
+  }
+}
+
+void runPingPong()
+{
+  int sizes[18] = {1,2,4,8,16,32,128,256,512,1024,2048,5096,10192,20384,40768,81536,163072,326144};
+
   std::vector<int> src = sstmac::getArrayParam<int>("sources");
   std::vector<int> dst = sstmac::getArrayParam<int>("destinations");
 
-  MPI_Init(&argc, &argv);
   int rank, size;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
   for (int i=0; i < src.size(); ++i) {
-    if (rank == 0)
-      printf("ping-pong between %i and %i\n",src[i],dst[i]);
-    for (int s : sizes) { 
+    for (int s : sizes) {
       double begin,end;
-      MPI_Barrier(MPI_COMM_WORLD);
       if (rank == src[i])
         begin = MPI_Wtime();
       ping(rank,src[i],dst[i],s);
@@ -51,8 +60,22 @@ int USER_MAIN(int argc, char** argv)
       }
     }
   }
+}
+
+int USER_MAIN(int argc, char** argv)
+{
+  MPI_Init(&argc, &argv);
+
+  int rank, size;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  if (rank % 2 == 0){
+    runPingPong();
+  } else {
+    runMemThrash();
+  }
 
   MPI_Finalize();
 
   return 0;
 }
+

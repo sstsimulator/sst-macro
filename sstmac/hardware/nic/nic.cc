@@ -243,8 +243,8 @@ NIC::intranodeSend(NetworkMessage* payload)
   //use 64 as a negligible number of compute bytes
   uint64_t byte_length = payload->byteLength();
   if (byte_length > 64){
-    mem->access(payload->byteLength(),
-                mem->minFlowByteDelay(),
+    mem->accessFlow(payload->byteLength(),
+                TimeDelta(), //assume NIC can issue mem requests without delay
                 newCallback(this, &NIC::finishMemcpy, payload));
   } else {
     finishMemcpy(payload);

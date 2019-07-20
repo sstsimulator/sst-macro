@@ -69,26 +69,68 @@ class MemoryModel : public SubComponent
   SST_ELI_DECLARE_CTOR(SST::Component*,SST::Params&)
 #endif
 
+  struct Request {
+    uint32_t bytes;
+    uintptr_t addr;
+    uint32_t rspId;
+  };
+
+  struct RequestHandlerBase {
+    virtual void handle(Request* req) = 0;
+  };
+
+  template <class T, class Fxn>
+  class RequestHandler : public RequestHandlerBase {
+   public:
+    RequestHandler(T* t, Fxn f) :
+      t_(t), f_(f)
+    {
+    }
+
+    void handle(Request* req) override {
+      (t_->*f_)(req);
+    }
+   private:
+    T* t_;
+    Fxn f_;
+  };
+
+  template <class T, class Fxn>
+  static RequestHandlerBase* makeHandler(T* t, Fxn f){
+    return new RequestHandler<T,Fxn>(t,f);
+  }
+
   MemoryModel(SST::Component* parent, SST::Params& params);
 
   static void deleteStatics();
 
   virtual ~MemoryModel();
 
-  virtual void access(uint64_t bytes, TimeDelta byte_delay, Callback* cb) = 0;
+  /**
+   * @brief access Call for entire flows, with a rate-limiting byte delay
+   * @param bytes
+   * @param byte_delay How long it takes for a memory read/write instruction to be issued
+   * @param cb
+   */
+  virtual void accessFlow(uint64_t bytes, TimeDelta byte_request_delay, Callback* cb) = 0;
+
+  /**
+   * @brief access Call for individal requests
+   * @param linkId
+   * @param req
+   */
+  virtual void accessRequest(int linkId, Request* req) = 0;
+
+  int initialize(RequestHandlerBase* handler);
 
   virtual std::string toString() const = 0;
-
-  virtual TimeDelta minFlowByteDelay() const = 0;
 
   NodeId addr() const;
 
  protected:
-  MemoryModel();
-
- protected:
   NodeId nodeid_;
   Node* parent_node_;
+  std::vector<RequestHandlerBase*> rsp_handlers_;
 
 };
 
@@ -120,9 +162,10 @@ class NullMemoryModel : public MemoryModel
 
   std::string toString() const override { return "null memory"; }
 
-  TimeDelta minFlowByteDelay() const override { return TimeDelta(1e-9); } //use 1 ns
+  void accessFlow(uint64_t bytes, TimeDelta byte_delay, Callback *cb) override {}
 
-  void access(uint64_t bytes, TimeDelta byte_delay, Callback *cb) override {}
+  void accessRequest(int linkId, Request* req) override;
+
 };
 
 }

@@ -85,7 +85,7 @@ void sstmac_compute(double secs);
  * @param nintops The number of int ops executed in the compute block
  * @param bytes
  */
-void sstmac_computeDetailed(uint64_t nflops, uint64_t nintops, uint64_t bytes);
+void sstmac_compute_detailed(uint64_t nflops, uint64_t nintops, uint64_t bytes);
 
 void sstmac_compute_detailed_nthr(uint64_t nflops, uint64_t nintops, uint64_t bytes,
                                   int nthread);
@@ -161,7 +161,7 @@ This has to work from C, so we must regrettably use VA_ARGS
  * @param model
  * @return A thread tag to identify thread-local storage later
  */
-int sstmac_startMemoize(const char* token, const char* model);
+int sstmac_start_memoize(const char* token, const char* model);
 
 void sstmac_finish_memoize0(int thr_tag, const char* token);
 void sstmac_finish_memoize1(int thr_tag, const char* token, double p1);
@@ -209,7 +209,7 @@ void sstmac_free_stack(void* ptr);
 #define SSTMAC_memread(...) sstmac_memread(__VA_ARGS__)
 #define SSTMAC_memwrite(...) sstmac_memwrite(__VA_ARGS__)
 #define SSTMAC_memcopy(...) sstmac_memcopy(__VA_ARGS__)
-#define SSTMAC_computeDetailed(...) sstmac_computeDetailed(__VA_ARGS__)
+#define SSTMAC_computeDetailed(...) sstmac_compute_detailed(__VA_ARGS__)
 #define SSTMAC_computeLoop(...) sstmac_computeLoop(__VA_ARGS__)
 #define SSTMAC_compute_loop2(...) sstmac_compute_loop2(__VA_ARGS__)
 #define SSTMAC_compute_loop3(...) sstmac_compute_loop3(__VA_ARGS__)

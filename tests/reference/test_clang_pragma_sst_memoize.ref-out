@@ -3,7 +3,7 @@
 void memoFxn(int niter);
 
 void memoFxn(int n){
-  int sstmac_thr_tag6 = sstmac_startMemoize("memoFxn","linear"); for (int i=0; i < n; ++i);
+  int sstmac_thr_tag6 = sstmac_start_memoize("memoFxn","linear"); for (int i=0; i < n; ++i);
 ; sstmac_finish_memoize1(sstmac_thr_tag6,"memoFxn",n);}
 
 int fxn()
@@ -13,7 +13,7 @@ int fxn()
   double* x = new double[10];
   int* idx = new int[5];
 
- int sstmac_thr_tag16 = sstmac_startMemoize("forloop","linear"); for (i=0; i < 5; ++i){
+ int sstmac_thr_tag16 = sstmac_start_memoize("forloop","linear"); for (i=0; i < 5; ++i){
     mul *= i;
     for (int j=0; j < 10; ++j){
       mul += (j-1);

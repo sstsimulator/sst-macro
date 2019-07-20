@@ -24,6 +24,8 @@ libsstmac_test_skeletons_la_LDFLAGS =
 
 libsstmac_test_skeletons_la_SOURCES = \
   bw_test.cc \
+  mem_bandwidth.cc \
+  mem_thrash.cc \
   host_compute.cc \
   app_hello_world.cc \
   compute.cc \
