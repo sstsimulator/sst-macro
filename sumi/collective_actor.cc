@@ -581,7 +581,6 @@ DagCollectiveActor::dataSent(CollectiveWorkMessage* msg)
 {
   Action* ac = commActionDone(Action::send, msg->round(), msg->domRecver());
 #if SSTMAC_COMM_DELAY_STATS
-  //the zero doesn't matter here
   my_api_->logMessageDelay(ac->start, msg);
 #endif
 }

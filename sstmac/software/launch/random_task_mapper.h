@@ -80,6 +80,7 @@ class RandomTaskMapper : public TaskMapper
 
  protected:
   RNG::UniformInteger* rng_;
+  bool smp_;
 
 };
 

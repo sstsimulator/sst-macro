@@ -7,12 +7,16 @@ if !INTEGRATED_SST_CORE
 ALLOCTESTS = \
   test_allocation_cart \
   test_allocation_coordinate \
+  test_allocation_coordinate \
   test_allocation_greedy_dfly \
   test_allocation_node_id
 
+#  test_allocation_random 
+#  test_allocation_random_smp 
+
 test_allocation_%.$(CHKSUF): $(SSTMACEXEC)
 	$(PYRUNTEST) 5 $(top_srcdir) $@ 't > 5 and t < 5.2' \
-    $(SSTMACEXEC) -f $(srcdir)/test_configs/test_allocation_$*.ini --no-wall-time -d allocation 
+    $(SSTMACEXEC) -f $(srcdir)/test_configs/test_allocation_$*.ini --no-wall-time -d allocation,indexing 
 
 #------------------------------------------------------------------------------------------#
 endif

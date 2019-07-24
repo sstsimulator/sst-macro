@@ -677,11 +677,6 @@ MpiApi::logMessageDelay(sstmac::Timestamp wait_start, Message* msg)
   if (msg->timeArrived() > start){
     delay = msg->timeArrived() - msg->timeSent();
   }
-  //std::cout << "Arrived=" << msg->timeArrived().sec()
-  //       << " Sent=" << msg->timeSent().sec()
-  //       << " Waited=" << start.sec()
-  //       << " Delay=" << delay.sec()
-  //       << " " << msg->toString() << std::endl;
   //log the message
   qos_analysis_->logDelay(delay, msg);
 #endif
