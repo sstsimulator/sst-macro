@@ -48,6 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <iosfwd>
 #include <stdint.h>
 #include <iostream>
+#include <limits>
 #include <sstmac/common/serializable.h>
 #include <sprockit/errors.h>
 
