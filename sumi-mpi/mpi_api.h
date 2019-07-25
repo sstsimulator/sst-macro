@@ -63,6 +63,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi-mpi/mpi_comm/mpi_comm_factory.h>
 #include <sumi-mpi/mpi_debug.h>
 #include <sumi-mpi/mpi_queue/mpi_queue_fwd.h>
+#include <sumi-mpi/mpi_delay_stats.h>
 
 #include <sstmac/software/process/software_id.h>
 #include <sstmac/software/process/backtrace.h>
@@ -856,6 +857,9 @@ class MpiApi : public sumi::SimTransport
   typedef std::unordered_map<MPI_Request, MpiRequest*> req_ptr_map;
   req_ptr_map req_map_;
   MPI_Request req_counter_;
+
+  SST::Statistics::MultiStatistic<int,int,int,uint64_t,double>* total_delays_;
+  SST::Statistics::MultiStatistic<int,int,int,uint64_t,double>* sync_delays_;
 
   std::unordered_map<int, keyval*> keyvals_;
 

@@ -58,6 +58,7 @@ libsstmac_mpi_la_SOURCES = \
   mpi_api_vcollectives.cc \
   mpi_api_wait.cc \
   mpi_debug.cc \
+  mpi_delay_stats.cc \
   mpi_message.cc \
   mpi_request.cc 
 
@@ -82,6 +83,7 @@ nobase_library_include_HEADERS = \
   mpi_api.h \
   mpi_api_fwd.h \
   mpi_debug.h \
+  mpi_delay_stats.h \
   mpi_message.h \
   mpi_request.h \
   mpi_request_fwd.h \

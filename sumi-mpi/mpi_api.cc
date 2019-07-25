@@ -146,6 +146,10 @@ MpiApi::MpiApi(SST::Params& params, sstmac::sw::App* app,
   double test_delay_s = params.find<SST::UnitAlgebra>("test_delay", "0s").getValue().toDouble();
   test_delay_us_ = test_delay_s * 1e6;
 
+  std::string subname = sprockit::printf("app%d.rank%d", app->aid(), app->tid());
+  sync_delays_ = app->os()->node()->registerMultiStatistic<int,int,int,uint64_t,double>(params, "sync_delays", subname);
+  total_delays_ = app->os()->node()->registerMultiStatistic<int,int,int,uint64_t,double>(params, "total_delays", subname);
+
 #ifdef SSTMAC_OTF2_ENABLED
 #if !SSTMAC_INTEGRATED_SST_CORE
   auto subname = sprockit::printf("App%d-Rank%d", app->sid().app_, app->sid().task_);
@@ -663,24 +667,24 @@ MpiApi::logMessageDelay(sstmac::Timestamp wait_start, Message* msg)
   default:
     break;
   }
-
-  //sstmac::TimeDelta max_delta = now() - current_call_.start;
-  //if (current_call_.idle > max_delta){
-  //  spkt_abort_printf("eaccumulated too much time on sync stat - max is %llu",
-  //                    max_delta.ticks());
-  //}
 #endif
 
 #if SSTMAC_COMM_DELAY_STATS
   //the message arrived after we started waiting for it
-  sstmac::TimeDelta delay;
+  sstmac::TimeDelta sync_delay;
+  sstmac::TimeDelta total_delay = msg->timeArrived() - msg->timeSent();
   if (msg->timeArrived() > start){
-    delay = msg->timeArrived() - msg->timeSent();
+    sync_delay = msg->timeArrived() - start;
   }
-  //log the message
-  qos_analysis_->logDelay(delay, msg);
-#endif
+  qos_analysis_->logDelay(total_delay, msg);
+  sync_delays_->addData(msg->sender(), msg->recver(), msg->byteLength(),
+                       msg->classType(), sync_delay.sec());
+  total_delays_->addData(msg->sender(), msg->recver(), msg->byteLength(),
+                        msg->classType(), total_delay.sec());
 
+
+  //log the message
+#endif
   last_collection_ = now();
 }
 #endif
