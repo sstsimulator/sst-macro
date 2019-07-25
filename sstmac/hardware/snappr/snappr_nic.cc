@@ -185,22 +185,24 @@ SnapprNIC::connectInput(int src_outport, int dst_inport, EventLink::ptr&& link)
 uint32_t
 SnapprNIC::startRequest(uint64_t byte_offset, NetworkMessage* payload)
 {
-  pkt_debug("starting request at offset %" PRIu64 " for flow %" PRIu64 ": %s",
-            byte_offset, payload->flowId(), payload->toString().c_str());
 
   uint64_t bytes_left = payload->byteLength() - byte_offset;
   uint32_t pkt_size = std::min(bytes_left, uint64_t(packet_size_));
-  if (pkt_size > buffer_remaining_){
+  if (send_credits_ && pkt_size > buffer_remaining_){
+    pkt_debug("starting request at offset %" PRIu64 " for flow %" PRIu64 " - buffer full: %s",
+              byte_offset, payload->flowId(), payload->toString().c_str());
     int vl = 0;
     return 0;
   } else {
+    buffer_remaining_ -= pkt_size;
+    pkt_debug("starting request at offset %" PRIu64 " for flow %" PRIu64 " - buffer has %" PRIu64 " remaining: %s",
+            byte_offset, payload->flowId(), buffer_remaining_, payload->toString().c_str());
     bool is_tail = bytes_left == pkt_size;
     NodeId to = payload->toaddr();
     NodeId from = payload->fromaddr();
     uint64_t fid = payload->flowId();
     SnapprPacket* pkt = new SnapprPacket(is_tail ? payload : nullptr, pkt_size, is_tail,
                                          fid, to, from);
-    buffer_remaining_ -= pkt_size;
     if (ignore_memory_){
       //this is like having an infinite buffer on the NIC
       //the packet may or may not have actually sent
@@ -413,6 +415,9 @@ SnapprNIC::handleCredit(Event *ev)
   SnapprCredit* credit = static_cast<SnapprCredit*>(ev);
   int vl = credit->virtualLane();
   credits_[vl] += credit->numBytes();
+  buffer_remaining_ += credit->numBytes();
+  nic_debug("credit received with %" PRIu32 " bytes: now nic buffer %" PRIu64 " and %" PRIu32 " credits",
+            credit->numBytes(), buffer_remaining_, credits_[vl]);
 
   uint32_t bytes_sent = -1;
   while (bytes_sent != 0 && !pending_[vl].empty()){
@@ -421,7 +426,6 @@ SnapprNIC::handleCredit(Event *ev)
     bytes_sent = inject(pkt);
   }
 
-  buffer_remaining_ += credit->numBytes();
   if (!arbitrate_scheduled_ && !inject_queues_[vl]->empty()){
     arbitrate(vl);
   }
@@ -434,9 +438,10 @@ SnapprNIC::handleMemoryResponse(MemoryModel::Request* req)
 {
   SnapprRequest* nreq = static_cast<SnapprRequest*>(req);
   nic_debug("received memory response for packet %s", nreq->pkt->toString().c_str());
-  int vl = nreq->pkt->virtualLane();
   inject(nreq->pkt);
   delete nreq;
+  //inject function can assign the VL
+  int vl = nreq->pkt->virtualLane();
   if (!inject_queues_[vl]->empty()){
     arbitrate(vl);
   }

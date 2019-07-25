@@ -90,11 +90,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 
 MakeDebugSlot(mpi_sync)
-DeclareDebugSlot(mpi_check)
-RegisterDebugSlot(mpi_check,
-    "validation flag that performs various sanity checks to ensure MPI application"
-    " runs and terminates cleanly");
-
+MakeDebugSlot(mpi_finalize)
 RegisterKeywords(
 { "iprobe_delay", "the delay incurred each time MPI_Iprobe is called" },
 { "dump_comm_times", "dump communication time statistics" },
@@ -311,11 +307,8 @@ MpiApi::finalize()
 
   int rank = commWorld()->rank();
   if (rank == 0) {
-    debug_printf(sprockit::dbg::mpi_check,
-      "MPI application with ID %s passed barrier in finalize on Rank 0\n"
-      "at simulation time %10.6e seconds. This generally validates the \n"
-      "simulation meaning everyhing has cleanly terminated\n",
-      sid().toString().c_str(), now().sec());
+    debug_printf(sprockit::dbg::mpi_finalize,
+      "MPI_Finalize passed on app %d", sid().app_);
   }
 
   engine_->cleanUp();
