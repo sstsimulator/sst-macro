@@ -49,6 +49,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/network/network_id.h>
 #include <sstmac/software/process/task_id.h>
 #include <sstmac/software/process/app_id.h>
+#include <sstmac/common/timestamp.h>
 
 namespace sstmac {
 namespace hw {
@@ -243,9 +244,51 @@ class NetworkMessage : public Flow
     qos_ = qos;
   }
 
- protected:
-  //void clone_into(NetworkMessage* cln) const;
+  bool started() const {
+    return !time_started_.empty();
+  }
 
+  void setTimeStarted(Timestamp start){
+    time_started_ = start;
+  }
+
+  Timestamp timeStarted() const {
+    return time_started_;
+  }
+
+  void addInjectionDelay(TimeDelta delay){
+    injection_delay_ = delay;
+  }
+
+  TimeDelta injectionDelay() const {
+    return injection_delay_;
+  }
+
+  void addMinDelay(TimeDelta delay){
+    min_delay_ += delay;
+  }
+
+  TimeDelta minDelay() const {
+    return min_delay_;
+  }
+
+  void addCongestionDelay(TimeDelta delay){
+    congestion_delay_ += delay;
+  }
+
+  TimeDelta congestionDelay() const {
+    return congestion_delay_;
+  }
+
+  Timestamp injectionStarted() const {
+    return injection_started_;
+  }
+
+  void setInjectionStarted(Timestamp now){
+    injection_started_ = now;
+  }
+
+ protected:
   void convertToAck();
 
   NetworkMessage() : //for serialization
@@ -313,6 +356,16 @@ class NetworkMessage : public Flow
   type_t type_;
 
   int qos_;
+
+  Timestamp time_started_;
+
+  Timestamp injection_started_;
+
+  TimeDelta injection_delay_;
+
+  TimeDelta min_delay_;
+
+  TimeDelta congestion_delay_;
 
 };
 

@@ -54,7 +54,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sumi {
 
 RendezvousProtocol::RendezvousProtocol(SST::Params& params, MpiQueue* queue) :
-  MpiProtocol(queue)
+  MpiProtocol(params, queue)
 {
   software_ack_ = params.find<bool>("software_ack", true);
 }
@@ -89,9 +89,7 @@ RendezvousGet::start(void* buffer, int src_rank, int dst_rank, sstmac::sw::TaskI
                            sumi::Message::no_ack, queue_->pt2ptCqId(), sumi::Message::pt2pt,
                            src_rank, dst_rank, type->id,  tag, comm, seq_id,
                            count, type->packed_size(), send_buf, RENDEZVOUS_GET);
-#if SSTMAC_COMM_SYNC_STATS
-  msg->setTimeStarted(mpi_->now());
-#endif
+
   send_flows_.emplace(std::piecewise_construct,
                       std::forward_as_tuple(msg->flowId()),
                       std::forward_as_tuple(req, buffer, send_buf));
@@ -108,16 +106,17 @@ RendezvousGet::incomingAck(MpiMessage *msg)
   }
 
   auto& s = iter->second;
+  if (s.req->activeWait()){
+    sstmac::TimeDelta active_delay = mpi_->activeDelay(s.req->waitStart());
+    mpi_->logMessageDelay(msg, msg->payloadSize(), 2,
+                          msg->recvSyncDelay(), active_delay);
+  }
+
   if (s.original && s.original != s.temporary){
     //temp got allocated for some reason
     delete[] (char*) s.temporary;
   }
   s.req->complete();
-#if SSTMAC_COMM_DELAY_STATS
-  if (s.req->activeWait()){
-    mpi_->logMessageDelay(s.req->waitStart(), msg);
-  }
-#endif
   send_flows_.erase(iter);
   delete msg;
 }
@@ -154,7 +153,9 @@ RendezvousGet::incomingHeader(MpiMessage* msg)
   mpi_queue_protocol_debug("RDMA get incoming header %s", msg->toString().c_str());
   CallGraphAppend(MPIRendezvousProtocol_RDMA_Handle_Header);
   MpiQueueRecvRequest* req = queue_->findMatchingRecv(msg);
-  if (req) incoming(msg, req);
+  if (req){
+    incoming(msg, req);
+  }
 
   queue_->notifyProbes(msg);
 }
@@ -167,6 +168,14 @@ RendezvousGet::incoming(MpiMessage *msg, MpiQueueRecvRequest* req)
   //this is a bit of a hack
   msg->setTimeSynced(mpi_->now());
 #endif
+
+
+  if (req->start() > msg->timeArrived()){
+     sstmac::TimeDelta sync_delay = req->start() - msg->timeArrived();
+     msg->setRecvSyncDelay(sync_delay);
+  }
+  logRecvDelay(0, msg, req);
+
   mpi_->pinRdma(msg->payloadBytes());
   mpi_queue_action_debug(
     queue_->api()->commWorld()->rank(),
@@ -190,6 +199,8 @@ RendezvousGet::incomingPayload(MpiMessage* msg)
 
   MpiQueueRecvRequest* req = iter->second;
   recv_flows_.erase(iter);
+
+  logRecvDelay(1, msg, req);
 
   queue_->finalizeRecv(msg, req);
   if (software_ack_){

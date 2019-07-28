@@ -74,8 +74,8 @@ std::string
 SnapprPacket::toString() const
 {
   return sprockit::printf("pkt bytes=%" PRIu32 " flow %" PRIu64 ": %s",
-                          numBytes(), flowId(), orig()
-                          ? sprockit::toString(orig()).c_str()
+                          numBytes(), flowId(), flow()
+                          ? flow()->toString().c_str()
                           : "no payload");
 
 }

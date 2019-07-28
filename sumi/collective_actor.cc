@@ -287,9 +287,6 @@ DagCollectiveActor::sendEagerMessage(Action* ac)
                                               type_, dom_me_, ac->partner,
                                               tag_, ac->round, ac->nelems, type_size_,
                                               nullptr, CollectiveWorkMessage::eager);
-#if SSTMAC_COMM_SYNC_STATS
-  msg->setTimeStarted(my_api_->now());
-#endif
 
   debug_printf(sumi_collective | sprockit::dbg::sumi,
    "Rank %s, collective %s(%p) sending eager message to %d on tag=%d offset=%d",
@@ -324,10 +321,6 @@ DagCollectiveActor::sendRdmaGetHeader(Action* ac)
                         type_, dom_me_, ac->partner,
                         tag_, ac->round,
                         ac->nelems, type_size_, buf, CollectiveWorkMessage::get); //do not ack the send
-
-#if SSTMAC_COMM_SYNC_STATS
-  msg->setTimeStarted(my_api_->now());
-#endif
 
   debug_printf(sumi_collective | sprockit::dbg::sumi,
    "Rank %s, collective %s(%p) sending RDMA get header to %d on tag=%d offset=%d",
@@ -580,17 +573,19 @@ void
 DagCollectiveActor::dataSent(CollectiveWorkMessage* msg)
 {
   Action* ac = commActionDone(Action::send, msg->round(), msg->domRecver());
-#if SSTMAC_COMM_DELAY_STATS
-  my_api_->logMessageDelay(ac->start, msg);
-#endif
+  my_api_->logMessageDelay(msg, ac->nelems * type_size_, 1,
+                           msg->recvSyncDelay(), my_api_->activeDelay(ac->start));
 }
 
 void
 DagCollectiveActor::dataRecved(Action* ac_, CollectiveWorkMessage* msg, void *recvd_buffer)
 {
-#if SSTMAC_COMM_DELAY_STATS
-  my_api_->logMessageDelay(ac_->start, msg);
-#endif
+  sstmac::TimeDelta sync_delay;
+  if (msg->timeStarted() > ac_->start){
+    sync_delay = msg->timeStarted() - ac_->start;
+  }
+  my_api_->logMessageDelay(msg, ac_->nelems * type_size_, 1,
+                           sync_delay, my_api_->activeDelay(ac_->start));
   RecvAction* ac = static_cast<RecvAction*>(ac_);
   //we are allowed to have a null buffer
   //this just walks through the communication pattern
@@ -751,6 +746,17 @@ DagCollectiveActor::nextRoundReadyToGet(
     "Rank %s, collective %s received get header %p for round=%d tag=%d from rank %d",
     rankStr().c_str(), toString().c_str(),
     header, header->round(), tag_, header->domSender());
+
+  if (ac->start > header->timeArrived()){
+    header->setRecvSyncDelay(ac->start - header->timeArrived());
+  }
+
+  sstmac::TimeDelta sync_delay;
+  if (header->timeStarted() > ac->start){
+    sync_delay = header->timeStarted() - ac->start;
+  }
+  my_api_->logMessageDelay(header, ac->nelems * type_size_, 0,
+                           sync_delay, my_api_->activeDelay(ac->start));
 
   my_api_->rdmaGetRequestResponse(header, ac->nelems*type_size_,
                                      getRecvbuffer(ac), header->partnerBuffer(),

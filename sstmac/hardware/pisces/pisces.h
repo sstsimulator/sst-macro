@@ -75,7 +75,7 @@ class PiscesPacket :
 
  public:
   PiscesPacket(
-    serializable* msg,
+    Flow* msg,
     uint32_t numBytes,
     uint64_t flowId,
     bool isTail,

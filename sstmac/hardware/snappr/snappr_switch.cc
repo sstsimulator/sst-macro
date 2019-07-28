@@ -247,6 +247,7 @@ SnapprSwitch::send(OutPort& p, SnapprPacket* pkt, Timestamp now)
   }
   p.next_free = now + time_to_send;
   pkt->setTimeToSend(time_to_send);
+  pkt->accumulateCongestionDelay(now);
   p.link->send(pkt);
 
   if (send_credits_){

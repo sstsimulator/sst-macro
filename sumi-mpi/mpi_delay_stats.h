@@ -50,18 +50,27 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-class DelayStats : public SST::Statistics::MultiStatistic<int,int,int,uint64_t,double> {
+class DelayStats : public SST::Statistics::MultiStatistic<int,int,int,int,uint64_t,double,double,double,double,double> {
  public:
-  using Parent=SST::Statistics::MultiStatistic<int,int,int,uint64_t,double>;
+  using Parent=SST::Statistics::MultiStatistic<int,int,int,int,uint64_t,double,double,double,double,double>;
 
   struct Message {
     int src;
     int dst;
     int type;
+    int stage;
     uint64_t length;
-    double delay;
-    Message(int s, int d, int t, uint64_t l, double de) :
-      src(s), dst(d), type(t), length(l), delay(de)
+    double sync_delay;
+    double contention_delay;
+    double inj_delay;
+    double min_delay;
+    double active_delay;
+    Message(int s, int d, int t, int st, uint64_t l,
+            double sd, double cd, double id, double md, double ad) :
+      src(s), dst(d), type(t), stage(st), length(l),
+      sync_delay(sd), contention_delay(cd),
+      inj_delay(id), min_delay(md),
+      active_delay(ad)
     {
     }
   };
@@ -79,7 +88,9 @@ class DelayStats : public SST::Statistics::MultiStatistic<int,int,int,uint64_t,d
 
   ~DelayStats(){}
 
-  void addData_impl(int src, int dst, int type, uint64_t bytes, double delay);
+  void addData_impl(int src, int dst, int type, int stage, uint64_t bytes,
+                    double sync_delay, double contention_delay,
+                    double comm_delay, double min_delay, double active_delay);
 
   void registerOutputFields(SST::Statistics::StatisticFieldsOutput *statOutput);
 

@@ -55,12 +55,13 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sumi {
 
 MpiQueueRecvRequest::MpiQueueRecvRequest(
+  sstmac::Timestamp start,
   MpiRequest* key,
   MpiQueue* queue,
   int count,
   MPI_Datatype type,
   int source, int tag, MPI_Comm comm, void* buffer) :
-  queue_(queue), source_(source), tag_(tag), comm_(comm),
+  start_(start), queue_(queue), source_(source), tag_(tag), comm_(comm),
   seqnum_(0), count_(count), type_(queue->api()->typeFromId(type)),
   key_(key), final_buffer_(buffer), recv_buffer_(nullptr)
 {
@@ -76,7 +77,7 @@ MpiQueueRecvRequest::~MpiQueueRecvRequest()
 }
 
 bool
-MpiQueueRecvRequest::is_cancelled() const {
+MpiQueueRecvRequest::isCancelled() const {
   return key_ && key_->isCancelled();
 }
 

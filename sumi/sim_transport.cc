@@ -197,6 +197,31 @@ Transport::~Transport()
   if (engine_) delete engine_;
 }
 
+sstmac::TimeDelta
+Transport::activeDelay(sstmac::Timestamp start)
+{
+  sstmac::Timestamp wait_start = std::max(start, last_collection_);
+  sstmac::Timestamp _now = now();
+  last_collection_ = _now;
+  if (_now > wait_start){
+    return _now - wait_start;
+  } else {
+    return sstmac::TimeDelta();
+  }
+}
+
+void
+Transport::logMessageDelay(Message *msg, uint64_t bytes, int stage,
+                           sstmac::TimeDelta sync_delay, sstmac::TimeDelta active_delay)
+{
+}
+
+void
+Transport::startCollectiveMessageLog()
+{
+  last_collection_ = now();
+}
+
 SimTransport::SimTransport(SST::Params& params, sstmac::sw::App* parent, SST::Component* comp) :
   //the name of the transport itself should be mapped to a unique name
   API(params, parent, comp),
@@ -344,7 +369,9 @@ SimTransport::send(Message* m)
 {
   int qos = qos_analysis_->selectQoS(m);
   m->setQoS(qos);
-  m->setTimeSent(parent_app_->now());
+  if (!m->started()){
+    m->setTimeStarted(parent_app_->now());
+  }
 
   if (spy_bytes_){
     switch(m->sstmac::hw::NetworkMessage::type()){

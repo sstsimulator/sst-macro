@@ -252,9 +252,12 @@ class Transport {
     return engine_;
   }
 
-  virtual void logMessageDelay(sstmac::Timestamp wait_start, Message* msg){}
+  virtual void logMessageDelay(Message *msg, uint64_t size, int stage,
+                               sstmac::TimeDelta sync_delay, sstmac::TimeDelta active_delay);
 
-  virtual void startCollectiveMessageLog(){}
+  void startCollectiveMessageLog();
+
+  sstmac::TimeDelta activeDelay(sstmac::Timestamp time);
 
  private:      
   virtual void send(Message* m) = 0;
@@ -285,6 +288,9 @@ class Transport {
   int nproc_;
 
   CollectiveEngine* engine_;
+
+  sstmac::Timestamp last_collection_;
+
 };
 
 class CollectiveEngine

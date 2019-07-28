@@ -265,7 +265,6 @@ SnapprNIC::inject(SnapprPacket* pkt)
     send_state_ftq_->addData(ftq_active_send_state_, inj_next_free_.time.ticks(), time_to_send.ticks());
   }
   xmit_active_->addData(time_to_send.ticks());
-  inj_next_free_ += time_to_send;
 
 
   pkt->setTimeToSend(time_to_send);
@@ -273,8 +272,13 @@ SnapprNIC::inject(SnapprPacket* pkt)
 
   send_state_ = ACTIVE;
 
+  inj_next_free_ += time_to_send;
   if (pkt->isTail()){
-    NetworkMessage* payload = static_cast<NetworkMessage*>(pkt->orig());
+    NetworkMessage* payload = static_cast<NetworkMessage*>(pkt->flow());
+    TimeDelta min_send_delay = payload->byteLength() * inj_byte_delay_;
+    TimeDelta actual_delay = inj_next_free_ - payload->injectionStarted();
+    TimeDelta inj_contend_delay = actual_delay - min_send_delay;
+    payload->addInjectionDelay(inj_contend_delay);
     if (payload->needsAck()){
       NetworkMessage* ack = payload->cloneInjectionAck();
       auto* ev = newCallback(this, &NIC::sendToNode, ack);
@@ -291,6 +295,8 @@ SnapprNIC::doSend(NetworkMessage* payload)
   nic_debug("snappr: sending %s", payload->toString().c_str());
 
   bytes_sent_->addData(payload->byteLength());
+
+  payload->setInjectionStarted(now());
 
   int vl = 0;
   if (!arbitrate_scheduled_){
@@ -310,7 +316,12 @@ SnapprNIC::cqHandle(SnapprPacket* pkt)
 {
   Flow* msg = cq_.recv(pkt);
   if (msg){
-    recvMessage(static_cast<NetworkMessage*>(msg));
+    NetworkMessage* netmsg = static_cast<NetworkMessage*>(msg);
+    TimeDelta total_delay = now() - netmsg->timeStarted();
+    TimeDelta congestion_delay = total_delay - netmsg->minDelay() - netmsg->injectionDelay();
+    netmsg->addCongestionDelay(congestion_delay);
+    //this is the last packet to arrive
+    recvMessage(netmsg);
   }
   delete pkt;
 }
@@ -336,6 +347,13 @@ SnapprNIC::eject(SnapprPacket* pkt)
   }
   ej_next_free_ = ej_next_free_ + time_to_send;
   auto qev = newCallback(this, &SnapprNIC::cqHandle, pkt);
+  if (pkt->isTail()){
+    NetworkMessage* netmsg = static_cast<NetworkMessage*>(pkt->flow());
+    TimeDelta total_delay = ej_next_free_ - netmsg->timeStarted();
+    TimeDelta min_delay = total_delay - netmsg->injectionDelay() - pkt->congestionDelay();
+    netmsg->addMinDelay(min_delay);
+  }
+
   sendExecutionEvent(ej_next_free_, qev);
   if (send_credits_){
     credit_link_->send(new SnapprCredit(pkt->byteLength(), pkt->virtualLane(), switch_outport_));

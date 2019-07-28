@@ -858,8 +858,17 @@ class MpiApi : public sumi::SimTransport
   req_ptr_map req_map_;
   MPI_Request req_counter_;
 
-  SST::Statistics::MultiStatistic<int,int,int,uint64_t,double>* total_delays_;
-  SST::Statistics::MultiStatistic<int,int,int,uint64_t,double>* sync_delays_;
+  SST::Statistics::MultiStatistic<int, //sender
+                                  int, //recver
+                                  int, //type
+                                  int, //stage
+                                  uint64_t, //byte length
+                                  double, //sync delay
+                                  double, //injection delay
+                                  double, //contention delay
+                                  double, //min delay in absence of contention
+                                  double  //active delay experienced by app
+                                 >* delays_;
 
   std::unordered_map<int, keyval*> keyvals_;
 
@@ -871,16 +880,11 @@ class MpiApi : public sumi::SimTransport
   OTF2Writer* OTF2Writer_;
 #endif
 
-#if SSTMAC_COMM_DELAY_STATS
  public:
-  void logMessageDelay(sstmac::Timestamp wait_start, Message* msg) override;
-
-  void startCollectiveMessageLog() override;
+  void logMessageDelay(Message *msg, uint64_t bytes, int stage,
+                       sstmac::TimeDelta sync_delay, sstmac::TimeDelta active_delay) override;
 
  private:
-  sstmac::Timestamp last_collection_;
-#endif
-
 #if SSTMAC_COMM_SYNC_STATS
   MPI_Call current_call_;
 #endif

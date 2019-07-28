@@ -45,10 +45,12 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi-mpi/mpi_protocol/mpi_protocol.h>
 #include <sumi-mpi/mpi_queue/mpi_queue.h>
 #include <sumi-mpi/mpi_api.h>
+#include <sumi-mpi/mpi_queue/mpi_queue_recv_request.h>
+#include <sprockit/sim_parameters.h>
 
 namespace sumi {
 
-MpiProtocol::MpiProtocol(MpiQueue *queue) :
+MpiProtocol::MpiProtocol(SST::Params& params, MpiQueue *queue) :
   queue_(queue), mpi_(queue_->api())
 {
 }
@@ -66,6 +68,22 @@ MpiProtocol::fillSendBuffer(int count, void* buffer, MpiType* typeobj)
   return eager_buf;
 }
 
+void
+MpiProtocol::logRecvDelay(int stage, MpiMessage* msg, MpiQueueRecvRequest* req)
+{
+  sstmac::TimeDelta active_delay;
+  if (req->req()->activeWait()){
+    active_delay = mpi_->activeDelay(req->req()->waitStart());
+    req->req()->setWaitStart(mpi_->now());
+  }
+  sstmac::TimeDelta sync_delay;
+  if (msg->timeStarted() > req->start()){
+    sync_delay = msg->timeStarted() - req->start();
+  }
+  mpi_->logMessageDelay(msg, msg->payloadSize(), stage,
+                        sync_delay, active_delay);
+}
+
 DirectPut::~DirectPut()
 {
 }
@@ -79,9 +97,6 @@ DirectPut::start(void* buffer, int src_rank, int dst_rank, sstmac::sw::TaskId ti
                 src_rank, dst_rank, type->id, tag, comm, seq_id, count, type->packed_size(),
                 buffer, DIRECT_PUT);
 
-#if SSTMAC_COMM_SYNC_STATS
-  msg->setTimeStarted(mpi_->now());
-#endif
   send_flows_.emplace(std::piecewise_construct,
                       std::forward_as_tuple(msg->flowId()),
                       std::forward_as_tuple(req));
@@ -98,11 +113,6 @@ DirectPut::incomingAck(MpiMessage *msg)
 
   MpiRequest* req = iter->second;
   req->complete();
-#if SSTMAC_COMM_DELAY_STATS
-  if (req->activeWait()){
-    mpi_->logMessageDelay(req->waitStart(), msg);
-  }
-#endif
   send_flows_.erase(iter);
   delete msg;
 }

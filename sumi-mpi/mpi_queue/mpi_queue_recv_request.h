@@ -63,10 +63,9 @@ class MpiQueueRecvRequest  {
   friend class Eager0;
 
  public:
-  MpiQueueRecvRequest(MpiRequest* key, MpiQueue* queue,
-                         int count,
-                         MPI_Datatype type, int source, int tag,
-                         MPI_Comm comm, void* buffer);
+  MpiQueueRecvRequest(sstmac::Timestamp start, MpiRequest* key, MpiQueue* queue,
+                     int count, MPI_Datatype type, int source, int tag,
+                     MPI_Comm comm, void* buffer);
 
   ~MpiQueueRecvRequest();
 
@@ -80,7 +79,11 @@ class MpiQueueRecvRequest  {
     return key_;
   }
 
-  bool is_cancelled() const;
+  sstmac::Timestamp start() const {
+    return start_;
+  }
+
+  bool isCancelled() const;
 
  private:
   /// The queue to whom we belong.
@@ -102,6 +105,7 @@ class MpiQueueRecvRequest  {
   int count_;
   MpiType* type_;
   MpiRequest* key_;
+  sstmac::Timestamp start_;
 };
 
 }

@@ -101,7 +101,7 @@ RecvCQ::recv(uint64_t unique_id, uint32_t bytes, Flow* orig)
 Flow*
 RecvCQ::recv(Packet* pkt)
 {
-  Flow* payload = dynamic_cast<Flow*>(pkt->orig());
+  Flow* payload = dynamic_cast<Flow*>(pkt->flow());
   return recv(pkt->flowId(), pkt->byteLength(), payload);
 }
 

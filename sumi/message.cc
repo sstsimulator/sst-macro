@@ -83,15 +83,8 @@ Message::tostr(class_t ty)
 void
 Message::serialize_order(sstmac::serializer &ser)
 {
-#if SSTMAC_COMM_DELAY_STATS
-  ser & sent_;
   ser & arrived_;
-#endif
-#if SSTMAC_COMM_SYNC_STATS
-  ser & started_;
-  ser & synced_;
-  ser & sync_arrived_;
-#endif
+  ser & recv_sync_delay_;
   ser & sender_;
   ser & recver_;
   ser & class_;

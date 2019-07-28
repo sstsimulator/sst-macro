@@ -231,19 +231,17 @@ class MpiRequest :
     return optype_;
   }
 
-#if SSTMAC_COMM_DELAY_STATS
   sstmac::Timestamp waitStart() const {
     return wait_start_;
+  }
+
+  void setWaitStart(sstmac::Timestamp t){
+    wait_start_ = t;
   }
 
   bool activeWait() const {
     return !wait_start_.empty();
   }
-
-  void setWaitStart(sstmac::Timestamp t) {
-    wait_start_ = t;
-  }
-#endif
 
  private:
   MPI_Status stat_;
@@ -254,9 +252,7 @@ class MpiRequest :
   PersistentOp* persistent_op_;
   CollectiveOpBase::ptr collective_op_;
 
-#if SSTMAC_COMM_DELAY_STATS
   sstmac::Timestamp wait_start_;
-#endif
 
 };
 

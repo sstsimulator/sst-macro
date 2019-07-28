@@ -122,6 +122,14 @@ class SnapprPacket :
     time_to_send_ = time;
   }
 
+  TimeDelta congestionDelay() const {
+    return congestion_delay_;
+  }
+
+  void accumulateCongestionDelay(Timestamp departure){
+    congestion_delay_ += (departure - arrival_);
+  }
+
   int priority() const {
     return priority_;
   }
@@ -154,6 +162,8 @@ class SnapprPacket :
   Timestamp arrival_;
 
   TimeDelta time_to_send_;
+
+  TimeDelta congestion_delay_;
 
   int qos_;
 

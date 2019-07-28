@@ -80,13 +80,15 @@ class MpiProtocol : public sprockit::printable {
   virtual ~MpiProtocol(){}
 
  protected:
-  MpiProtocol(MpiQueue* queue);
+  MpiProtocol(SST::Params& params, MpiQueue* queue);
 
   MpiQueue* queue_;
 
   MpiApi* mpi_;
 
   void* fillSendBuffer(int count, void *buffer, MpiType *typeobj);
+
+  void logRecvDelay(int stage, MpiMessage* msg, MpiQueueRecvRequest* req);
 };
 
 /**
@@ -99,7 +101,7 @@ class Eager0 final : public MpiProtocol
 {
  public:
   Eager0(SST::Params& params, MpiQueue* queue) :
-    MpiProtocol(queue){}
+    MpiProtocol(params,queue){}
 
   ~Eager0(){}
 
@@ -134,7 +136,7 @@ class Eager1 final : public MpiProtocol
 {
  public:
   Eager1(SST::Params& params, MpiQueue* queue)
-    : MpiProtocol(queue) {}
+    : MpiProtocol(params, queue) {}
 
   virtual ~Eager1(){}
 
@@ -218,6 +220,7 @@ class RendezvousGet final : public RendezvousProtocol
   std::map<uint64_t,MpiQueueRecvRequest*> recv_flows_;
 
   std::map<uint64_t,send> send_flows_;
+
 };
 
 /**
@@ -230,7 +233,7 @@ class DirectPut final : public MpiProtocol
 {
  public:
   DirectPut(SST::Params& params, MpiQueue* queue) :
-    MpiProtocol(queue)
+    MpiProtocol(params, queue)
   {
   }
 

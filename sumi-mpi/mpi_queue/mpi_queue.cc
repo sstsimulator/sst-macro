@@ -236,7 +236,7 @@ MpiQueue::recv(MpiRequest* key, int count,
         count, api_->typeStr(type).c_str(), api_->srcStr(source).c_str(),
         api_->tagStr(tag).c_str(), api_->commStr(comm).c_str(), buffer);
 
-  MpiQueueRecvRequest* req = new MpiQueueRecvRequest(key, this,
+  MpiQueueRecvRequest* req = new MpiQueueRecvRequest(api_->now(), key, this,
                             count, type, source, tag, comm->id(), buffer);
   MpiMessage* mess = findMatchingRecv(req);
   if (mess) {
@@ -249,11 +249,6 @@ void
 MpiQueue::finalizeRecv(MpiMessage* msg, MpiQueueRecvRequest* req)
 {
   req->key_->complete(msg);
-#if SSTMAC_COMM_DELAY_STATS
-  if (req->key_->activeWait()){
-    api_->logMessageDelay(req->key_->waitStart(), msg);
-  }
-#endif
   if (req->recv_buffer_ != req->final_buffer_){
     req->type_->unpack_recv(req->recv_buffer_, req->final_buffer_, msg->count());
     delete[] req->recv_buffer_;
@@ -318,7 +313,7 @@ MpiQueue::findMatchingRecv(MpiMessage* message)
   for (auto it = need_send_match_.begin(); it != end;) {
     auto* req = *it;
     auto tmp = it++;
-    if (req->is_cancelled()) {
+    if (req->isCancelled()) {
       need_send_match_.erase(tmp);
     } else if (req->matches(message)) {
       need_send_match_.erase(tmp);
@@ -462,9 +457,7 @@ MpiQueue::progressLoop(MpiRequest* req)
     if (!msg){
       spkt_abort_printf("polling returned null message");
     }
-#if SSTMAC_COMM_DELAY_STATS
     req->setWaitStart(wait_start);
-#endif
     incomingMessage(msg);
   }
 

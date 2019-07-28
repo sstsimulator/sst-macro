@@ -66,9 +66,7 @@ Eager0::start(void* buffer, int src_rank, int dst_rank, sstmac::sw::TaskId tid, 
                               queue_->pt2ptCqId(), queue_->pt2ptCqId(), sumi::Message::pt2pt,
                               src_rank, dst_rank, typeobj->id,  tag, comm, seq_id,
                               count, typeobj->packed_size(), nullptr, EAGER0);
-#if SSTMAC_COMM_SYNC_STATS
-  msg->setTimeStarted(mpi_->now());
-#endif
+
   send_flows_[msg->flowId()] = temp_buf;
   req->complete();
 }
@@ -76,6 +74,7 @@ Eager0::start(void* buffer, int src_rank, int dst_rank, sstmac::sw::TaskId tid, 
 void
 Eager0::incoming(MpiMessage *msg, MpiQueueRecvRequest *req)
 {
+  logRecvDelay(1, msg, req);
   if (req->recv_buffer_){
 #if SSTMAC_SANITY_CHECK
     if (!msg->smsgBuffer()){
@@ -84,9 +83,6 @@ Eager0::incoming(MpiMessage *msg, MpiQueueRecvRequest *req)
 #endif
     ::memcpy(req->recv_buffer_, msg->smsgBuffer(), msg->byteLength());
   }
-#if SSTMAC_COMM_SYNC_STATS
-  msg->setTimeSynced(mpi_->now());
-#endif
   queue_->notifyProbes(msg);
   queue_->memcopy(msg->payloadBytes());
   queue_->finalizeRecv(msg, req);

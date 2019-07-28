@@ -143,8 +143,8 @@ MpiApi::MpiApi(SST::Params& params, sstmac::sw::App* app,
   test_delay_us_ = test_delay_s * 1e6;
 
   std::string subname = sprockit::printf("app%d.rank%d", app->aid(), app->tid());
-  sync_delays_ = app->os()->node()->registerMultiStatistic<int,int,int,uint64_t,double>(params, "sync_delays", subname);
-  total_delays_ = app->os()->node()->registerMultiStatistic<int,int,int,uint64_t,double>(params, "total_delays", subname);
+  delays_ = app->os()->node()->registerMultiStatistic<int,int,int,int,uint64_t,
+      double,double,double,double,double>(params, "delays", subname);
 
 #ifdef SSTMAC_OTF2_ENABLED
 #if !SSTMAC_INTEGRATED_SST_CORE
@@ -595,92 +595,20 @@ CallGraphCreateTag(idle);
 CallGraphCreateTag(active);
 #endif
 
-#if SSTMAC_COMM_DELAY_STATS
 void
-MpiApi::startCollectiveMessageLog()
+MpiApi::logMessageDelay(Message *msg, uint64_t bytes, int stage,
+                        sstmac::TimeDelta sync_delay,
+                        sstmac::TimeDelta active_delay)
 {
-  last_collection_ = now();
-}
-
-void
-MpiApi::logMessageDelay(sstmac::Timestamp wait_start, Message* msg)
-{
-  sstmac::Timestamp start = std::max(last_collection_, wait_start);
 #if SSTMAC_COMM_SYNC_STATS
-  mpi_api_debug(sprockit::dbg::mpi_sync,
-     "%s: starting with current_call=%llu",
-     (msg->sender() == rank() ? "Send" : "Recv"), current_call_.idle.ticks());
-
-  //there are two possible sync delays
-  //#1: For sender (rendezvous only), synced - header_arrived on the recver side
-  //      this time is in the syncDelay
-  //#2: For recver, time_started - wait_start, if we started waiting
-  //      before
-
-  sstmac::TimeDelta sync_delay;
-  switch (msg->type()){
-  case Message::rdma_get_sent_ack: {
-    //the time gap between header arriving and being processed
-    //but only count the time we were actively waiting on it
-    if (start < msg->timeSynced()){
-      if (start < msg->timeSyncArrived()){
-        //we were waiting for all of the sync delay
-        sync_delay = msg->timeSynced() - msg->timeSyncArrived();
-      } else {
-        //we were waiting for some of the delay
-        sync_delay = msg->timeSynced() - start;
-      }
-    } else {
-      //sync_delay is zero, we were never waiting before the sync
-    }
-
-    current_call_.idle += sync_delay;
-    mpi_api_debug(sprockit::dbg::mpi_sync,
-       "Send: call_start=%llu, wait=%llu, last=%llu, arrived=%llu, synced=%llu, delay=%llu, total=%llu",
-       current_call_.start.time.ticks(),
-       wait_start.time.ticks(), last_collection_.time.ticks(),
-       msg->timeSyncArrived().time.ticks(), msg->timeSynced().time.ticks(),
-       sync_delay.ticks(), current_call_.idle.ticks());
-    break;
-  }
-  case Message::rdma_get_payload:
-  case Message::payload: {
-    if (start < msg->timeStarted()){
-      current_call_.idle += msg->timeStarted() - start;
-      sync_delay = msg->timeStarted() - start;
-    }
-    mpi_api_debug(sprockit::dbg::mpi_sync,
-       "Recv: call_start=%llu wait=%llu, last=%llu, started=%llu, delay=%llu, total=%llu",
-       current_call_.start.time.ticks(),
-       wait_start.time.ticks(), last_collection_.time.ticks(),
-       msg->timeStarted().time.ticks(),
-       sync_delay.ticks(), current_call_.idle.ticks());
-    break;
-  }
-  default:
-    break;
-  }
+  current_call_.idle += sync_delay;
 #endif
 
-#if SSTMAC_COMM_DELAY_STATS
-  //the message arrived after we started waiting for it
-  sstmac::TimeDelta sync_delay;
-  sstmac::TimeDelta total_delay = msg->timeArrived() - msg->timeSent();
-  if (msg->timeArrived() > start){
-    sync_delay = msg->timeArrived() - start;
-  }
-  qos_analysis_->logDelay(total_delay, msg);
-  sync_delays_->addData(msg->sender(), msg->recver(), msg->byteLength(),
-                       msg->classType(), sync_delay.sec());
-  total_delays_->addData(msg->sender(), msg->recver(), msg->byteLength(),
-                        msg->classType(), total_delay.sec());
-
-
-  //log the message
-#endif
-  last_collection_ = now();
+  delays_->addData(msg->sender(), msg->recver(), bytes, msg->classType(), stage,
+                   sync_delay.sec(), msg->injectionDelay().sec(),
+                   msg->congestionDelay().sec(), msg->minDelay().sec(),
+                   active_delay.sec());
 }
-#endif
 
 void
 MpiApi::finishCurrentMpiCall()
