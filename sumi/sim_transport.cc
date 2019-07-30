@@ -421,7 +421,7 @@ SimTransport::send(Message* m)
 }
 
 void
-SimTransport::smsgSendResponse(Message* m, uint64_t size, void* buffer, int local_cq, int remote_cq)
+SimTransport::smsgSendResponse(Message* m, uint64_t size, void* buffer, int local_cq, int remote_cq, int qos)
 {
   //reverse both hardware and software info
   m->sstmac::hw::NetworkMessage::reverse();
@@ -429,6 +429,7 @@ SimTransport::smsgSendResponse(Message* m, uint64_t size, void* buffer, int loca
   m->setupSmsg(buffer, size);
   m->setSendCq(local_cq);
   m->setRecvCQ(remote_cq);
+  m->setQoS(qos);
   m->sstmac::hw::NetworkMessage::setType(Message::payload);
   send(m);
 }
@@ -436,32 +437,34 @@ SimTransport::smsgSendResponse(Message* m, uint64_t size, void* buffer, int loca
 void
 SimTransport::rdmaGetRequestResponse(Message* m, uint64_t size,
                                      void* local_buffer, void* remote_buffer,
-                                     int local_cq, int remote_cq)
+                                     int local_cq, int remote_cq, int qos)
 {
   //do not reverse send/recver - this is hardware reverse, not software reverse
   m->sstmac::hw::NetworkMessage::reverse();
   m->setupRdmaGet(local_buffer, remote_buffer, size);
   m->setSendCq(remote_cq);
   m->setRecvCQ(local_cq);
+  m->setQoS(qos);
   m->sstmac::hw::NetworkMessage::setType(Message::rdma_get_request);
   send(m);
 }
 
 void
-SimTransport::rdmaGetResponse(Message* m, uint64_t size, int local_cq, int remote_cq)
+SimTransport::rdmaGetResponse(Message* m, uint64_t size, int local_cq, int remote_cq, int qos)
 {
-  smsgSendResponse(m, size, nullptr, local_cq, remote_cq);
+  smsgSendResponse(m, size, nullptr, local_cq, remote_cq, qos);
 }
 
 void
 SimTransport::rdmaPutResponse(Message* m, uint64_t payload_bytes,
-                 void* loc_buffer, void* remote_buffer, int local_cq, int remote_cq)
+                 void* loc_buffer, void* remote_buffer, int local_cq, int remote_cq, int qos)
 {
   m->reverse();
   m->sstmac::hw::NetworkMessage::reverse();
   m->setupRdmaPut(loc_buffer, remote_buffer, payload_bytes);
   m->setSendCq(local_cq);
   m->setRecvCQ(remote_cq);
+  m->setQoS(qos);
   m->sstmac::hw::NetworkMessage::setType(Message::rdma_put_payload);
   send(m);
 }
@@ -513,6 +516,11 @@ CollectiveEngine::CollectiveEngine(SST::Params& params, Transport *tport) :
   use_put_protocol_ = params.find<bool>("use_put_protocol", false);
   alltoall_type_ = params.find<std::string>("alltoall", "bruck");
   allgather_type_ = params.find<std::string>("allgather", "bruck");
+
+  rdma_get_qos_ = params.find<int>("collective_rdma_get_qos", 0);
+  rdma_header_qos_ = params.find<int>("collective_rdma_header_qos", 0);
+  ack_qos_ = params.find<int>("collective_ack_qos", 0);
+  smsg_qos_ = params.find<int>("collective_smsg_qos", 0);
 }
 
 CollectiveEngine::~CollectiveEngine()
@@ -1033,7 +1041,7 @@ class NullQoSAnalysis : public QoSAnalysis
   }
 
   int selectQoS(Message *m) override {
-    return 0;
+    return m->qos();
   }
 
   void logDelay(sstmac::TimeDelta delay, Message *m) override {

@@ -123,7 +123,7 @@ class Transport {
    * @param remote_cq
    * @return
    */
-  virtual void smsgSendResponse(Message* m, uint64_t sz, void* loc_buffer, int local_cq, int remote_cq) = 0;
+  virtual void smsgSendResponse(Message* m, uint64_t sz, void* loc_buffer, int local_cq, int remote_cq, int qos) = 0;
 
   /**
    * @brief rdma_get_response After receiving a short message payload coordinating an RDMA get,
@@ -136,9 +136,9 @@ class Transport {
    * @return
    */
   virtual void rdmaGetRequestResponse(Message* m, uint64_t sz, void* loc_buffer, void* remote_buffer,
-                                      int local_cq, int remote_cq) = 0;
+                                      int local_cq, int remote_cq, int qos) = 0;
 
-  virtual void rdmaGetResponse(Message* m, uint64_t sz, int local_cq, int remote_cq) = 0;
+  virtual void rdmaGetResponse(Message* m, uint64_t sz, int local_cq, int remote_cq, int qos) = 0;
 
   /**
    * @brief rdma_put_response
@@ -150,16 +150,17 @@ class Transport {
    * @return
    */
   virtual void rdmaPutResponse(Message* m, uint64_t payload_bytes,
-                         void* loc_buffer, void* remote_buffer, int local_cq, int remote_cq) = 0;
+                         void* loc_buffer, void* remote_buffer, int local_cq, int remote_cq, int qos) = 0;
 
   template <class T, class... Args>
   T* rdmaGet(int remote_proc, uint64_t byte_length, void* local_buffer, void* remote_buffer,
-                    int local_cq, int remote_cq, Message::class_t cls, Args&&... args){
+             int local_cq, int remote_cq, Message::class_t cls, int qos,
+             Args&&... args){
     uint64_t flow_id = allocateFlowId();
     bool needs_ack = remote_cq != Message::no_ack;
     T* t = new T(std::forward<Args>(args)...,
                  rank_, remote_proc, remote_cq, local_cq, cls,
-                 flow_id, serverLibname(), sid().app_,
+                 qos, flow_id, serverLibname(), sid().app_,
                  rankToNode(remote_proc), addr(),
                  byte_length, needs_ack, local_buffer, remote_buffer, Message::rdma_get{});
     send(t);
@@ -168,12 +169,12 @@ class Transport {
 
   template <class T, class... Args>
   T* rdmaPut(int remote_proc, uint64_t byte_length, void* local_buffer, void* remote_buffer,
-                    int local_cq, int remote_cq, Message::class_t cls, Args&&... args){
+             int local_cq, int remote_cq, Message::class_t cls, int qos, Args&&... args){
     uint64_t flow_id = allocateFlowId();
     bool needs_ack = local_cq != Message::no_ack;
     T* t = new T(std::forward<Args>(args)...,
                  rank_, remote_proc, local_cq, remote_cq, cls,
-                 flow_id, serverLibname(), sid().app_,
+                 qos, flow_id, serverLibname(), sid().app_,
                  rankToNode(remote_proc), addr(),
                  byte_length, needs_ack, local_buffer, remote_buffer, Message::rdma_put{});
     send(t);
@@ -182,12 +183,12 @@ class Transport {
 
   template <class T, class... Args>
   T* smsgSend(int remote_proc, uint64_t byte_length, void* buffer,
-              int local_cq, int remote_cq, Message::class_t cls, Args&&... args){
+              int local_cq, int remote_cq, Message::class_t cls, int qos, Args&&... args){
     uint64_t flow_id = allocateFlowId();
     bool needs_ack = local_cq != Message::no_ack;
     T* t = new T(std::forward<Args>(args)...,
                  rank_, remote_proc, local_cq, remote_cq, cls,
-                 flow_id, serverLibname(), sid().app_,
+                 qos, flow_id, serverLibname(), sid().app_,
                  rankToNode(remote_proc), addr(),
                  byte_length, needs_ack, buffer, Message::header{});
     send(t);
@@ -476,6 +477,22 @@ class CollectiveEngine
 
   void deadlockCheck();
 
+  int ackQos() const {
+    return ack_qos_;
+  }
+
+  int rdmaGetQos() const {
+    return rdma_get_qos_;
+  }
+
+  int rdmaHeaderQos() const {
+    return rdma_header_qos_;
+  }
+
+  int smsgQos() const {
+    return smsg_qos_;
+  }
+
  private:
   CollectiveDoneMessage* skipCollective(Collective::type_t ty,
                         int cq_id, Communicator* comm,
@@ -517,6 +534,12 @@ class CollectiveEngine
 
   std::string alltoall_type_;
   std::string allgather_type_;
+
+  int rdma_header_qos_;
+  int rdma_get_qos_;
+  int smsg_qos_;
+  int ack_qos_;
+
 };
 
 static void* sumi_null_ptr = ((void*)0x123);

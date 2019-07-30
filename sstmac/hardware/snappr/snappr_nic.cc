@@ -85,7 +85,7 @@ SnapprNIC::SnapprNIC(SST::Component* parent, SST::Params& params) :
 
   uint32_t credits = inj_params.find<SST::UnitAlgebra>("credits").getRoundedValue();
 
-  int qosLevels = inj_params.find<int>("qos_levels", 1);
+  int qosLevels = params.find<int>("qos_levels", 1);
   credits_.resize(qosLevels);
   inject_queues_.resize(qosLevels);
   std::string arb = params.find<std::string>("arbitration", "fifo");
@@ -202,9 +202,9 @@ SnapprNIC::startRequest(uint64_t byte_offset, NetworkMessage* payload)
     NodeId to = payload->toaddr();
     NodeId from = payload->fromaddr();
     uint64_t fid = payload->flowId();
-    SnapprPacket* pkt = new SnapprPacket(is_tail ? payload : nullptr, pkt_size, byte_offset, is_tail,
-                                         fid, to, from);
-    pkt->setVirtualLane(0);
+    SnapprPacket* pkt = new SnapprPacket(is_tail ? payload : nullptr, pkt_size, is_tail,
+                                         fid, to, from, payload->qos());
+    pkt->setVirtualLane(payload->qos());
     if (ignore_memory_){
       tryInject(pkt);
       return pkt->numBytes();
@@ -231,6 +231,7 @@ SnapprNIC::tryInject(SnapprPacket* pkt)
       pending_[vl].push(pkt);
     }
   } else {
+    inj_next_free_ = std::max(inj_next_free_, now());
     pkt_debug("packet adding to stall queue at t=%8.4e: %s",
               inj_next_free_.sec(), pkt->toString().c_str());
     pending_[vl].push(pkt);
@@ -312,7 +313,11 @@ SnapprNIC::doSend(NetworkMessage* payload)
 
   payload->setInjectionStarted(now());
 
-  int vl = 0;
+  int vl = payload->qos();
+  if (payload->qos() >= inject_queues_.size()){
+    spkt_abort_printf("Bad QOS level %d, max is %d",
+                      vl, int(inject_queues_.size() - 1))
+  }
   if (!arbitrate_scheduled_){
     uint32_t bytes_sent = startRequest(0, payload);
     if (bytes_sent < payload->byteLength()){
@@ -524,6 +529,52 @@ struct FIFOQueue : public SnapprNIC::InjectionQueue {
   std::queue<std::pair<uint64_t,NetworkMessage*>> queue_;
 
 };
+
+struct PriorityFIFOQueue : public SnapprNIC::InjectionQueue {
+ public:
+  SPKT_REGISTER_DERIVED(
+    SnapprNIC::InjectionQueue,
+    FIFOQueue,
+    "macro",
+    "priority_fifo",
+    "implements a FIFO strategy for injecting packets")
+
+  PriorityFIFOQueue(SST::Params& p){
+    queues_.resize(p.find<int>("qos_levels", 1));
+  }
+
+  std::pair<uint64_t, NetworkMessage*> top() override {
+    int qos = ready_queues_.top();
+    return queues_[qos].front();
+  }
+
+  void pop() override {
+    int qos = ready_queues_.top();
+    queues_[qos].pop();
+    if (queues_[qos].empty()){
+      ready_queues_.pop();
+    }
+  }
+
+  void adjustTop(uint64_t offset) override {
+    int qos = ready_queues_.top();
+    queues_[qos].front().first = offset;
+  }
+
+  bool empty() const override {
+    return ready_queues_.empty();
+  }
+
+  void insert(uint64_t byte_offset, NetworkMessage *msg) override {
+    queues_[msg->qos()].emplace(byte_offset, msg);
+  }
+
+ private:
+  std::vector<std::queue<std::pair<uint64_t,NetworkMessage*>>> queues_;
+  std::priority_queue<int, std::vector<int>> ready_queues_;
+
+};
+
 
 struct RoundRobinQueue : public SnapprNIC::InjectionQueue {
 

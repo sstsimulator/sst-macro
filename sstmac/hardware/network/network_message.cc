@@ -250,6 +250,7 @@ NetworkMessage::serialize_order(serializer& ser)
   ser & time_started_;
   ser & injection_started_;
   ser & aid_;
+  ser & qos_;
   ser & needs_ack_;
   ser & toaddr_;
   ser & fromaddr_;

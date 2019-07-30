@@ -85,6 +85,7 @@ class NetworkMessage : public Flow
 
  public:
   NetworkMessage(
+   int qos,
    uint64_t flow_id,
    const std::string& libname,
    sw::AppId aid,
@@ -94,13 +95,14 @@ class NetworkMessage : public Flow
    bool needs_ack,
    void* buf,
    header ctor_tag) :
-    NetworkMessage(flow_id, libname, aid, to, from,
+    NetworkMessage(qos, flow_id, libname, aid, to, from,
                     size, size, needs_ack, nullptr, nullptr, buf,
                     payload)
   {
   }
 
   NetworkMessage(
+   int qos,
    uint64_t flow_id,
    const std::string& libname,
    sw::AppId aid,
@@ -111,7 +113,7 @@ class NetworkMessage : public Flow
    void* local_buf,
    void* remote_buf,
    rdma_get ctor_tag) :
-    NetworkMessage(flow_id, libname, aid, to, from,
+    NetworkMessage(qos, flow_id, libname, aid, to, from,
                     64/*default to 64 bytes for now*/,
                     payload_size, needs_ack, local_buf, remote_buf, nullptr,
                     rdma_get_request)
@@ -119,6 +121,7 @@ class NetworkMessage : public Flow
   }
 
   NetworkMessage(
+   int qos,
    uint64_t flow_id,
    const std::string& libname,
    sw::AppId aid,
@@ -129,7 +132,7 @@ class NetworkMessage : public Flow
    void* local_buf,
    void* remote_buf,
    rdma_put ctor_tag) :
-    NetworkMessage(flow_id, libname, aid, to, from,
+    NetworkMessage(qos, flow_id, libname, aid, to, from,
                     payload_size, payload_size, needs_ack, local_buf, remote_buf, nullptr,
                     rdma_put_payload)
   {
@@ -158,6 +161,10 @@ class NetworkMessage : public Flow
   void nicReverse(type_t newtype);
 
   bool isNicAck() const;
+
+  int qos() const {
+    return qos_;
+  }
 
   uint64_t payloadBytes() const {
     return payload_bytes_;
@@ -293,6 +300,7 @@ class NetworkMessage : public Flow
 
   NetworkMessage() : //for serialization
    Flow(-1, 0),
+   qos_(0),
    needs_ack_(true),
    payload_bytes_(0),
    type_(null_netmsg_type)
@@ -301,6 +309,7 @@ class NetworkMessage : public Flow
 
  private:
   NetworkMessage(
+   int qos,
    uint64_t flow_id,
    const std::string& libname,
    sw::AppId aid,
@@ -314,6 +323,7 @@ class NetworkMessage : public Flow
    void* smsg_buf,
    type_t ty) :
     Flow(flow_id, size, libname),
+    qos_(qos),
     smsg_buffer_(smsg_buf),
     local_buffer_(local_buf),
     remote_buffer_(remote_buf),
@@ -323,8 +333,7 @@ class NetworkMessage : public Flow
     payload_bytes_(payload_bytes),
     toaddr_(to),
     fromaddr_(from),
-    type_(ty),
-    qos_(0)
+    type_(ty)
   {
   }
 

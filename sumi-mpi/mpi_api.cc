@@ -252,7 +252,7 @@ MpiApi::init(int* argc, char*** argv)
 
   queue_->init();
 
-  crossed_comm_world_barrier_ = false;
+  crossed_comm_world_barrier_ = true;
   endAPICall();
 
 #ifdef SSTMAC_OTF2_ENABLED

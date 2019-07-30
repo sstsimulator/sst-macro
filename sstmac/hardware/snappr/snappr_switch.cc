@@ -115,10 +115,12 @@ SnapprSwitch::SnapprSwitch(uint32_t id, SST::Params& params) :
   //vtk_ = registerStatistic<uint64_t,int,double,int>("traffic_intensity", getName());
   //if (vtk_) vtk_->configure(my_addr_, top_);
 
+  qos_levels_ = params.find<int>("qos_levels", 1);
+
   outports_.resize(top_->maxNumPorts());
   inports_.resize(top_->maxNumPorts());
   num_vc_ = router()->numVC();
-  num_vl_ = num_vc_;
+  num_vl_ = num_vc_ * qos_levels_;
   switch_debug("initializing with %d VCs and %" PRIu32 " total credits",
                num_vc_, credits);
 
@@ -193,8 +195,8 @@ SnapprSwitch::handleCredit(SnapprCredit* credit, int port)
 {
   OutPort& p = outports_[port];
   p.addCredits(credit->virtualLane(), credit->numBytes());
-  pkt_debug("crediting port %d with %" PRIu32" credits",
-            port, credit->numBytes());
+  pkt_debug("crediting port=%d vl=%d with %" PRIu32" credits",
+            port, credit->virtualLane(), credit->numBytes());
   delete credit;
   if (!p.arbitration_scheduled && !p.empty()){
     requestArbitration(p);
@@ -251,6 +253,8 @@ SnapprSwitch::send(OutPort& p, SnapprPacket* pkt, Timestamp now)
   p.link->send(pkt);
 
   if (send_credits_){
+    pkt_debug("sending credit to port=%d on vl=%d at t=%8.4e: %s",
+              pkt->inport(), pkt->inputVirtualLane(), p.next_free.sec(), pkt->toString().c_str());
     auto& inport = inports_[pkt->inport()];
     inport.link->send(time_to_send, new SnapprCredit(pkt->byteLength(), pkt->inputVirtualLane(), inport.src_outport));
   } else {
@@ -358,8 +362,8 @@ SnapprSwitch::tryToSendPacket(SnapprPacket* pkt)
   } else {
     logQueueDepth(p);
     p.queue(pkt);
-    pkt_debug("incoming packet on port %d -> queue=%d packets now: %s",
-              p.number, p.queueLength(), pkt->toString().c_str());
+    pkt_debug("incoming packet on port=%d vl=%d -> queue=%d, top_vl=%d",
+              p.number, pkt->virtualLane(), p.queueLength(), p.topVirtualLane());
     if (!p.arbitration_scheduled){
       requestArbitration(p);
     }
@@ -374,6 +378,9 @@ SnapprSwitch::handlePayload(SnapprPacket* pkt, int inport)
   router_->route(pkt);
   int vl = pkt->qos() * num_vc_ + pkt->deadlockVC();
   pkt->setVirtualLane(vl);
+  if (vl >= (qos_levels_*num_vc_)){
+    spkt_abort_printf("Bad QoS %d > max=%d", vl, (qos_levels_-1));
+  }
   pkt_debug("handling payload %s on inport %d:%d going to port %d:%d",
             pkt->toString().c_str(), inport, pkt->inputVirtualLane(), pkt->nextPort(), vl);
 

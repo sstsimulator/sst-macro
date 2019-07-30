@@ -70,12 +70,11 @@ class SnapprPacket :
   SnapprPacket(
     Flow* msg,
     uint32_t numBytes,
-    uint64_t offset,
     bool isTail,
     uint64_t flowId,
     NodeId toaddr,
     NodeId fromaddr,
-    int qos = 0);
+    int qos);
 
   SnapprPacket(){} //for serialization
 
@@ -163,8 +162,6 @@ class SnapprPacket :
 
  private:
   uint32_t seqnum_;
-
-  uint64_t offset_;
 
   Timestamp arrival_;
 

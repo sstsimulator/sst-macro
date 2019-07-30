@@ -128,7 +128,7 @@ class SimTransport : public Transport, public sstmac::sw::API {
    * @param remote_cq
    * @return
    */
-  void smsgSendResponse(Message* m, uint64_t sz, void* loc_buffer, int local_cq, int remote_cq) override;
+  void smsgSendResponse(Message* m, uint64_t sz, void* loc_buffer, int local_cq, int remote_cq, int qos) override;
 
   /**
    * @brief rdma_get_response After receiving a short message payload coordinating an RDMA get,
@@ -141,9 +141,9 @@ class SimTransport : public Transport, public sstmac::sw::API {
    * @return
    */
   void rdmaGetRequestResponse(Message* m, uint64_t sz, void* loc_buffer, void* remote_buffer,
-                                 int local_cq, int remote_cq) override;
+                                 int local_cq, int remote_cq, int qos) override;
 
-  void rdmaGetResponse(Message* m, uint64_t sz, int local_cq, int remote_cq) override;
+  void rdmaGetResponse(Message* m, uint64_t sz, int local_cq, int remote_cq, int qos) override;
 
   /**
    * @brief rdma_put_response
@@ -155,7 +155,7 @@ class SimTransport : public Transport, public sstmac::sw::API {
    * @return
    */
   void rdmaPutResponse(Message* m, uint64_t payload_bytes,
-             void* loc_buffer, void* remote_buffer, int local_cq, int remote_cq) override;
+             void* loc_buffer, void* remote_buffer, int local_cq, int remote_cq, int qos) override;
 
   double wallTime() const override {
     return now().sec();

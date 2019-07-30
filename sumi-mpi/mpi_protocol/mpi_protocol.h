@@ -100,8 +100,7 @@ class MpiProtocol : public sprockit::printable {
 class Eager0 final : public MpiProtocol
 {
  public:
-  Eager0(SST::Params& params, MpiQueue* queue) :
-    MpiProtocol(params,queue){}
+  Eager0(SST::Params& params, MpiQueue* queue);
 
   ~Eager0(){}
 
@@ -118,6 +117,7 @@ class Eager0 final : public MpiProtocol
 
  private:
   std::map<uint64_t,void*> send_flows_;
+  int qos_;
 
 };
 
@@ -135,8 +135,7 @@ class Eager0 final : public MpiProtocol
 class Eager1 final : public MpiProtocol
 {
  public:
-  Eager1(SST::Params& params, MpiQueue* queue)
-    : MpiProtocol(params, queue) {}
+  Eager1(SST::Params& params, MpiQueue* queue);
 
   virtual ~Eager1(){}
 
@@ -156,6 +155,10 @@ class Eager1 final : public MpiProtocol
   void incomingHeader(MpiMessage* msg);
   void incomingPayload(MpiMessage* msg);
 
+  int header_qos_;
+  int rdma_get_qos_;
+  int ack_qos_;
+
 };
 
 class RendezvousProtocol : public MpiProtocol
@@ -171,7 +174,9 @@ class RendezvousProtocol : public MpiProtocol
 
  protected:
   bool software_ack_;
-  bool pin_delay_;
+  int header_qos_;
+  int rdma_get_qos_;
+  int ack_qos_;
 
 };
 

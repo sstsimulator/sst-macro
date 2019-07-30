@@ -188,6 +188,14 @@ class SnapprSwitch :
       return ready_lanes_.size();
     }
 
+    int topVirtualLane() const {
+      if (ready_lanes_.empty()){
+        return -1;
+      } else {
+        return ready_lanes_.top();
+      }
+    }
+
     int queueLength(int vl) const {
       return queues_[vl].size();
     }
@@ -268,6 +276,8 @@ class SnapprSwitch :
   bool send_credits_;
 
   double link_bw_;
+
+  int qos_levels_;
 
   int num_vc_;
   int num_vl_;

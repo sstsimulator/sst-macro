@@ -79,7 +79,12 @@ Rank 59 = 5001.2357ms
 Rank 62 = 5001.2405ms
 Rank 63 = 5001.2445ms
 Aggregate time stats: state
-        Inactive:          0.15808 s
+        Inactive:          0.24577 s
+ active:NIC_send:          0.01248 s
+   idle:NIC_send:          0.00020 s
+stalled:NIC_send:          0.02121 s
+ active:NIC_recv:          0.01248 s
+   idle:NIC_recv:          0.02572 s
           idle:X:          0.04044 s
         active:X:          0.02195 s
        stalled:X:          0.00200 s

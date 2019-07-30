@@ -58,13 +58,11 @@ namespace hw {
 SnapprPacket::SnapprPacket(
   Flow* msg,
   uint32_t num_bytes,
-  uint64_t offset,
   bool is_tail,
   uint64_t flow_id,
   NodeId toaddr,
   NodeId fromaddr,
   int qos) :
-  offset_(offset),
   priority_(0),
   inport_(-1),
   qos_(qos),
@@ -75,8 +73,8 @@ SnapprPacket::SnapprPacket(
 std::string
 SnapprPacket::toString() const
 {
-  return sprockit::printf("pkt bytes=%" PRIu32 " offset=%" PRIu64 " flow=%" PRIu64 ": %s",
-                          numBytes(), offset_, flowId(), flow()
+  return sprockit::printf("pkt bytes=%" PRIu32 " flow=%" PRIu64 ": %s",
+                          numBytes(), flowId(), flow()
                           ? flow()->toString().c_str()
                           : "no payload");
 

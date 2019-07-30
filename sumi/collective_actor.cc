@@ -283,7 +283,7 @@ DagCollectiveActor::sendEagerMessage(Action* ac)
   uint64_t num_bytes;
   void* buf = getSendBuffer(ac, num_bytes);
   auto* msg = my_api_->smsgSend<CollectiveWorkMessage>(ac->phys_partner, num_bytes, buf,
-                                              cq_id_, cq_id_, Message::collective,
+                                              cq_id_, cq_id_, Message::collective, engine_->smsgQos(),
                                               type_, dom_me_, ac->partner,
                                               tag_, ac->round, ac->nelems, type_size_,
                                               nullptr, CollectiveWorkMessage::eager);
@@ -299,10 +299,10 @@ DagCollectiveActor::sendRdmaPutHeader(Action* ac)
 {
   void* buf = getRecvbuffer(ac);
   my_api_->smsgSend<CollectiveWorkMessage>(ac->phys_partner, 0, buf,
-                                              Message::no_ack, cq_id_, Message::collective,
-                                              type_, dom_me_, ac->partner,
-                                              tag_, ac->round,
-                                              ac->nelems, type_size_, buf, CollectiveWorkMessage::put);
+                                           Message::no_ack, cq_id_, Message::collective, engine_->rdmaHeaderQos(),
+                                           type_, dom_me_, ac->partner,
+                                           tag_, ac->round,
+                                           ac->nelems, type_size_, buf, CollectiveWorkMessage::put);
 
   debug_printf(sumi_collective | sprockit::dbg::sumi,
    "Rank %s, collective %s(%p) sending put header to %s on round=%d tag=%d offset=%d",
@@ -317,7 +317,7 @@ DagCollectiveActor::sendRdmaGetHeader(Action* ac)
   uint64_t num_bytes;
   void* buf = getSendBuffer(ac, num_bytes);
   auto* msg = my_api_->smsgSend<CollectiveWorkMessage>(ac->phys_partner, 64, //use platform-independent size
-                        buf, Message::no_ack, cq_id_, Message::collective,
+                        buf, Message::no_ack, cq_id_, Message::collective, engine_->rdmaHeaderQos(),
                         type_, dom_me_, ac->partner,
                         tag_, ac->round,
                         ac->nelems, type_size_, buf, CollectiveWorkMessage::get); //do not ack the send
@@ -727,7 +727,7 @@ DagCollectiveActor::nextRoundReadyToPut(
 
   uint64_t size; void* buf = getSendBuffer(ac, size);
   my_api_->rdmaPutResponse(header, size, buf, header->partnerBuffer(),
-                             cq_id_, cq_id_);
+                            cq_id_, cq_id_, engine_->rdmaGetQos());
 
   debug_printf(sumi_collective | sprockit::dbg::sumi,
     "Rank %s, collective %s(%p) starting put %d elems at offset %d to %d for round=%d tag=%d msg %p",
@@ -759,8 +759,8 @@ DagCollectiveActor::nextRoundReadyToGet(
                            sync_delay, my_api_->activeDelay(ac->start));
 
   my_api_->rdmaGetRequestResponse(header, ac->nelems*type_size_,
-                                     getRecvbuffer(ac), header->partnerBuffer(),
-                                     cq_id_, cq_id_);
+                                  getRecvbuffer(ac), header->partnerBuffer(),
+                                  cq_id_, cq_id_, engine_->rdmaGetQos());
 
   debug_printf(sumi_collective | sprockit::dbg::sumi,
       "Rank %s, collective %s(%p) starting get %d elems at offset %d from %d for round=%d tag=%d msg %p",

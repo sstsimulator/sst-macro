@@ -57,6 +57,9 @@ RendezvousProtocol::RendezvousProtocol(SST::Params& params, MpiQueue* queue) :
   MpiProtocol(params, queue)
 {
   software_ack_ = params.find<bool>("software_ack", true);
+  header_qos_ = params.find<int>("rendezvous_header_qos", 0);
+  rdma_get_qos_ = params.find<int>("rendezvous_rdma_get_qos", 0);
+  ack_qos_ = params.find<int>("rendezvous_ack_qos", 0);
 }
 
 RendezvousGet::~RendezvousGet()
@@ -86,10 +89,9 @@ RendezvousGet::start(void* buffer, int src_rank, int dst_rank, sstmac::sw::TaskI
 {
   void* send_buf = configureSendBuffer(count, buffer, type);
   auto* msg = mpi_->smsgSend<MpiMessage>(tid, 64/*fixed size, not sizeof()*/, nullptr,
-                           sumi::Message::no_ack, queue_->pt2ptCqId(), sumi::Message::pt2pt,
+                           sumi::Message::no_ack, queue_->pt2ptCqId(), sumi::Message::pt2pt, header_qos_,
                            src_rank, dst_rank, type->id,  tag, comm, seq_id,
                            count, type->packed_size(), send_buf, RENDEZVOUS_GET);
-
   send_flows_.emplace(std::piecewise_construct,
                       std::forward_as_tuple(msg->flowId()),
                       std::forward_as_tuple(req, buffer, send_buf));
@@ -181,7 +183,8 @@ RendezvousGet::incoming(MpiMessage *msg, MpiQueueRecvRequest* req)
   recv_flows_[msg->flowId()] = req;
   msg->advanceStage();
   mpi_->rdmaGetRequestResponse(msg, msg->payloadSize(), req->recv_buffer_, msg->partnerBuffer(),
-                   queue_->pt2ptCqId(), software_ack_ ? sumi::Message::no_ack : queue_->pt2ptCqId());
+                   queue_->pt2ptCqId(), software_ack_ ? sumi::Message::no_ack : queue_->pt2ptCqId(),
+                   rdma_get_qos_);
 
 }
 
@@ -207,7 +210,8 @@ RendezvousGet::incomingPayload(MpiMessage* msg)
   if (software_ack_){
     msg->advanceStage();
     mpi_->smsgSendResponse(msg, 64/*more sizeof(...) fixes*/, nullptr,
-                             sumi::Message::no_ack, queue_->pt2ptCqId());
+                           sumi::Message::no_ack, queue_->pt2ptCqId(),
+                           ack_qos_);
   } else {
     delete msg;
   }
