@@ -42,6 +42,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
+#include <sumi-mpi/mpi_message.h>
 #include <sstmac/hardware/topology/structured_topology.h>
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/hardware/memory/memory_model.h>
@@ -63,6 +64,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #define pkt_debug(...) \
   debug_printf(sprockit::dbg::snappr | sprockit::dbg::nic, "snappr NIC on node %d: %s", \
     int(addr()), sprockit::printf(__VA_ARGS__).c_str())
+
 
 namespace sstmac {
 namespace hw {
@@ -191,7 +193,6 @@ SnapprNIC::startRequest(uint64_t byte_offset, NetworkMessage* payload)
   if (send_credits_ && pkt_size > buffer_remaining_){
     pkt_debug("starting request at offset %" PRIu64 " for flow %" PRIu64 " - buffer full: %s",
               byte_offset, payload->flowId(), payload->toString().c_str());
-    int vl = 0;
     return 0;
   } else {
     buffer_remaining_ -= pkt_size;
@@ -201,13 +202,11 @@ SnapprNIC::startRequest(uint64_t byte_offset, NetworkMessage* payload)
     NodeId to = payload->toaddr();
     NodeId from = payload->fromaddr();
     uint64_t fid = payload->flowId();
-    SnapprPacket* pkt = new SnapprPacket(is_tail ? payload : nullptr, pkt_size, is_tail,
+    SnapprPacket* pkt = new SnapprPacket(is_tail ? payload : nullptr, pkt_size, byte_offset, is_tail,
                                          fid, to, from);
+    pkt->setVirtualLane(0);
     if (ignore_memory_){
-      //this is like having an infinite buffer on the NIC
-      //the packet may or may not have actually sent
-      //but this function reports whether it was successfull buffered on the NIC
-      inject(pkt);
+      tryInject(pkt);
       return pkt->numBytes();
     } else {
       SnapprRequest* req = new SnapprRequest;
@@ -221,11 +220,28 @@ SnapprNIC::startRequest(uint64_t byte_offset, NetworkMessage* payload)
 
 }
 
+
+void
+SnapprNIC::tryInject(SnapprPacket* pkt)
+{
+  int vl = pkt->virtualLane();
+  if (pending_[vl].empty()){
+    uint32_t bytes = inject(pkt);
+    if (bytes == 0){
+      pending_[vl].push(pkt);
+    }
+  } else {
+    pkt_debug("packet adding to stall queue at t=%8.4e: %s",
+              inj_next_free_.sec(), pkt->toString().c_str());
+    pending_[vl].push(pkt);
+  }
+}
+
+
 uint32_t
 SnapprNIC::inject(SnapprPacket* pkt)
 {
-  int vl = 0; //for now
-
+  int vl = pkt->virtualLane();
   Timestamp now_ = now();
   if (now_ > inj_next_free_){
     if (send_state_ftq_){
@@ -241,14 +257,12 @@ SnapprNIC::inject(SnapprPacket* pkt)
     inj_next_free_ = now_;
   }
 
-  pkt->setVirtualLane(vl);
   pkt->setInport(switch_inport_);
   if (send_credits_){
     if (pkt->numBytes() > credits_[vl]){
       pkt_debug("packet stalling at t=%8.4e: %s",
                 inj_next_free_.sec(), pkt->toString().c_str());
       send_state_ = STALLED;
-      pending_[vl].push(pkt);
       return 0;
     } else {
       credits_[vl] -= pkt->numBytes();
@@ -319,7 +333,7 @@ SnapprNIC::cqHandle(SnapprPacket* pkt)
     NetworkMessage* netmsg = static_cast<NetworkMessage*>(msg);
     TimeDelta total_delay = now() - netmsg->timeStarted();
     TimeDelta congestion_delay = total_delay - netmsg->minDelay() - netmsg->injectionDelay();
-    netmsg->addCongestionDelay(congestion_delay);
+    netmsg->setCongestionDelay(congestion_delay);
     //this is the last packet to arrive
     recvMessage(netmsg);
   }
@@ -338,7 +352,11 @@ SnapprNIC::eject(SnapprPacket* pkt)
       recv_state_ftq_->addData(ftq_idle_recv_state_, ej_next_free_.time.ticks(), idle.ticks());
     }
     ej_next_free_ = now_;
+  } else {
+    TimeDelta ejection_delay = ej_next_free_ - now_;
+    pkt->accumulateCongestionDelay(ejection_delay);
   }
+
   pkt_debug("incoming packet - ejection next free at t=%8.4e: %s",
             ej_next_free_.sec(), pkt->toString().c_str());
   TimeDelta time_to_send = pkt->byteLength() * inj_byte_delay_;
@@ -350,8 +368,11 @@ SnapprNIC::eject(SnapprPacket* pkt)
   if (pkt->isTail()){
     NetworkMessage* netmsg = static_cast<NetworkMessage*>(pkt->flow());
     TimeDelta total_delay = ej_next_free_ - netmsg->timeStarted();
-    TimeDelta min_delay = total_delay - netmsg->injectionDelay() - pkt->congestionDelay();
-    netmsg->addMinDelay(min_delay);
+    TimeDelta min_delay = total_delay - netmsg->injectionDelay() 
+                                      - pkt->congestionDelay() 
+                                      - netmsg->congestionDelay();
+    sumi::MpiMessage* msg = dynamic_cast<sumi::MpiMessage*>(netmsg);
+    netmsg->setMinDelay(min_delay);
   }
 
   sendExecutionEvent(ej_next_free_, qev);
@@ -384,7 +405,7 @@ SnapprNIC::arbitrate(int vl)
   nic_debug("snappr: arbitrating VL=%d", vl);
 
 #if SSTMAC_SANITY_CHECK
-  if (inject_queues_[vl]->empty()){
+  if (inject_queues_[vl]->empty() && pending_[vl].empty()){
     spkt_abort_printf("NIC %d arbitrating empty queue on VL=%d", addr(), vl);
   }
 #endif
@@ -434,14 +455,17 @@ SnapprNIC::handleCredit(Event *ev)
   int vl = credit->virtualLane();
   credits_[vl] += credit->numBytes();
   buffer_remaining_ += credit->numBytes();
-  nic_debug("credit received with %" PRIu32 " bytes: now nic buffer %" PRIu64 " and %" PRIu32 " credits",
-            credit->numBytes(), buffer_remaining_, credits_[vl]);
+  nic_debug("credit received with %" PRIu32 " bytes: now nic buffer %" PRIu64 " and %" PRIu32 " credits: %d pending",
+            credit->numBytes(), buffer_remaining_, credits_[vl], int(pending_[vl].size()));
 
-  uint32_t bytes_sent = -1;
-  while (bytes_sent != 0 && !pending_[vl].empty()){
+  while (!pending_[vl].empty()){
     SnapprPacket* pkt = pending_[vl].front();
-    pending_[vl].pop();
-    bytes_sent = inject(pkt);
+    uint32_t bytes_sent = inject(pkt);
+    if (bytes_sent == 0){
+      break;
+    } else {
+      pending_[vl].pop();
+    }
   }
 
   if (!arbitrate_scheduled_ && !inject_queues_[vl]->empty()){
@@ -456,7 +480,7 @@ SnapprNIC::handleMemoryResponse(MemoryModel::Request* req)
 {
   SnapprRequest* nreq = static_cast<SnapprRequest*>(req);
   nic_debug("received memory response for packet %s", nreq->pkt->toString().c_str());
-  inject(nreq->pkt);
+  tryInject(nreq->pkt);
   delete nreq;
   //inject function can assign the VL
   int vl = nreq->pkt->virtualLane();

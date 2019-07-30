@@ -48,7 +48,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/common/sstmac_config.h>
 
-#if SSTMAC_HAVE_CALL_GRAPH
 
 #include <sstream>
 #include <sstmac/software/process/graphviz.h>
@@ -78,6 +77,7 @@ namespace sw {
 int CallGraphRegistration::id_count = 0;
 std::unique_ptr<std::map<int,const char*>> CallGraphRegistration::names;
 
+#if SSTMAC_HAVE_CALL_GRAPH
 CallGraphIncrementStack::CallGraphIncrementStack(int id)
 {
   Thread* thr = OperatingSystem::currentThread();
@@ -95,6 +95,7 @@ CallGraphIncrementStack::~CallGraphIncrementStack()
     thr->popBacktrace();
   }
 }
+#endif
 
 bool
 CallGraph::FunctionTrace::include() const
@@ -310,5 +311,4 @@ CallGraphOutput::stopOutputGroup()
 }
 }
 
-#endif
 

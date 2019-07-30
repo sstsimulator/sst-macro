@@ -257,23 +257,23 @@ class NetworkMessage : public Flow
   }
 
   void addInjectionDelay(TimeDelta delay){
-    injection_delay_ = delay;
+    injection_delay_ += delay;
   }
 
   TimeDelta injectionDelay() const {
     return injection_delay_;
   }
 
-  void addMinDelay(TimeDelta delay){
-    min_delay_ += delay;
+  void setMinDelay(TimeDelta delay){
+    min_delay_ = delay;
   }
 
   TimeDelta minDelay() const {
     return min_delay_;
   }
 
-  void addCongestionDelay(TimeDelta delay){
-    congestion_delay_ += delay;
+  void setCongestionDelay(TimeDelta delay){
+    congestion_delay_ = delay;
   }
 
   TimeDelta congestionDelay() const {

@@ -209,12 +209,9 @@ class Thread
 
   void collectStats(Timestamp start, TimeDelta elapsed);
 
-#if SSTMAC_HAVE_CALL_GRAPH
   const int* backtrace() const {
     return backtrace_;
   }
-#endif
-
 
   int lastBacktraceNumFxn() const {
     return last_bt_collect_nfxn_;
@@ -379,11 +376,9 @@ class Thread
 
   void spawnOmpParallel();
 
-#if SSTMAC_HAVE_CALL_GRAPH
   CallGraph* callGraph() const {
     return callGraph_;
   }
-#endif
 
  protected:
   Thread(SST::Params& params,
@@ -438,9 +433,9 @@ class Thread
  private:
   API* getAppApi(const std::string& name) const;
 
-#if SSTMAC_HAVE_CALL_GRAPH
   CallGraphTrace backtrace_; //each function is labeled by unique integer
-#endif
+
+  int last_bt_collect_nfxn_;
 
   int bt_nfxn_;
 
@@ -449,8 +444,6 @@ class Thread
   std::map<int, void*> tls_values_;
 
   std::vector<int> active_cores_;
-
-  int last_bt_collect_nfxn_;
 
   void* stack_;
 
@@ -472,9 +465,7 @@ class Thread
 
   std::list<omp_context> omp_contexts_;
 
-#if SSTMAC_HAVE_CALL_GRAPH
   CallGraph* callGraph_;
-#endif
 
   FTQCalendar* ftq_trace_;
 

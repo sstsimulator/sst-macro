@@ -748,7 +748,7 @@ DagCollectiveActor::nextRoundReadyToGet(
     header, header->round(), tag_, header->domSender());
 
   if (ac->start > header->timeArrived()){
-    header->setRecvSyncDelay(ac->start - header->timeArrived());
+    header->addRecvSyncDelay(ac->start - header->timeArrived());
   }
 
   sstmac::TimeDelta sync_delay;
@@ -767,10 +767,6 @@ DagCollectiveActor::nextRoundReadyToGet(
       rankStr().c_str(), toString().c_str(), this,
       ac->nelems, ac->offset,
       header->domSender(), header->round(), tag_, header);
-
-#if SSTMAC_COMM_SYNC_STATS
-  header->setTimeSynced(my_api_->now());
-#endif
 
 }
 

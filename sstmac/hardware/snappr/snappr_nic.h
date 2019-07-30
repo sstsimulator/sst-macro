@@ -138,6 +138,8 @@ class SnapprNIC :
    */
   uint32_t inject(SnapprPacket* pkt);
 
+  void tryInject(SnapprPacket* pkt);
+
  private:
   void scheduleArbitration(int vl);
 

@@ -164,7 +164,7 @@ LogPSwitch::send(Timestamp start, NetworkMessage* msg)
 
   TimeDelta inj_delay = start - now();
   TimeDelta extra_delay = inj_delay + delay;
-  msg->addMinDelay(out_in_lat_ + delay);
+  //msg->addMinDelay(out_in_lat_ + delay);
   nic_links_[dst]->send(extra_delay, new NicEvent(msg));
 }
 

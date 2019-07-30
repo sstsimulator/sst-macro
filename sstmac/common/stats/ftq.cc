@@ -234,7 +234,7 @@ FTQOutput::startOutputGroup(StatisticGroup *grp)
   active_group_ = grp->name;
 
   std::string dat_fname = sprockit::printf("%s.csv", active_group_.c_str());
-  out_ = std::ofstream(dat_fname.c_str());
+  out_.open(dat_fname.c_str());
   includeHeaders_ = true;
 }
 

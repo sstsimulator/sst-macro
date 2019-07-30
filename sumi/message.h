@@ -234,8 +234,8 @@ class Message : public sstmac::hw::NetworkMessage
     return recv_sync_delay_;
   }
 
-  void setRecvSyncDelay(sstmac::TimeDelta delay) {
-    recv_sync_delay_ = delay;
+  void addRecvSyncDelay(sstmac::TimeDelta delay) {
+    recv_sync_delay_ += delay;
   }
 
  private:

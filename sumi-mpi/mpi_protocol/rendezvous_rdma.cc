@@ -164,17 +164,13 @@ void
 RendezvousGet::incoming(MpiMessage *msg, MpiQueueRecvRequest* req)
 {
   mpi_queue_protocol_debug("RDMA get matched payload %s", msg->toString().c_str());
-#if SSTMAC_COMM_SYNC_STATS
-  //this is a bit of a hack
-  msg->setTimeSynced(mpi_->now());
-#endif
 
-
-  if (req->start() > msg->timeArrived()){
-     sstmac::TimeDelta sync_delay = req->start() - msg->timeArrived();
-     msg->setRecvSyncDelay(sync_delay);
-  }
   logRecvDelay(0, msg, req);
+  sstmac::Timestamp now = mpi_->now();
+  if (now > msg->timeArrived()){
+    sstmac::TimeDelta sync_delay = now - msg->timeArrived();
+    msg->addRecvSyncDelay(sync_delay);
+  }
 
   mpi_->pinRdma(msg->payloadBytes());
   mpi_queue_action_debug(
@@ -201,6 +197,11 @@ RendezvousGet::incomingPayload(MpiMessage* msg)
   recv_flows_.erase(iter);
 
   logRecvDelay(1, msg, req);
+  sstmac::Timestamp now = mpi_->now();
+  if (now > msg->timeArrived()){
+    sstmac::TimeDelta sync_delay = now - msg->timeArrived();
+    msg->addRecvSyncDelay(sync_delay);
+  }
 
   queue_->finalizeRecv(msg, req);
   if (software_ack_){

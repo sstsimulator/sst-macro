@@ -179,9 +179,7 @@ Thread::Thread(SST::Params& params, SoftwareId sid, OperatingSystem* os) :
   timed_out_(false),
   block_counter_(0),
   pthread_concurrency_(0),
-#if SSTMAC_HAVE_CALL_GRAPH
   callGraph_(nullptr),
-#endif
   ftq_trace_(nullptr),
   sid_(sid),
   ftag_(FTQTag::null),

@@ -183,6 +183,7 @@ EventManager::runEvents(Timestamp event_horizon)
   while (!event_queue_.empty()){
     auto iter = event_queue_.begin();
     ExecutionEvent* ev = *iter;
+    //std::cout << "Run " << ev->time().time.ticks() << " " << ev->linkId() << " " << ev->seqnum() << std::endl;
 
 #if SSTMAC_SANITY_CHECK
     if (ev->time() < now_){
@@ -419,6 +420,28 @@ EventManager::topologyPartition() const
 void
 EventManager::finishStats()
 {
+}
+
+void 
+EventManager::schedule(ExecutionEvent* ev){
+#if SSTMAC_SANITY_CHECK
+  if (ev->time() < now_){
+    spkt_abort_printf("Time went backwards on manager %d:%d to t=%10.6e for link=%" PRIu64 " seq=%" PRIu32,
+                      me_, thread_id_, ev->time().sec(), ev->linkId(), ev->seqnum());
+  }
+  size_t prev_size = event_queue_.size();
+  debug_printf(sprockit::dbg::event_manager,
+               "manager %d:%d adding event to run at t=%" PRIu64 " seqnum=%" PRIu32 " on link=%" PRIu64,
+               me_, thread_id_, ev->time().time.ticks(), ev->seqnum(), ev->linkId());
+#endif
+  //std::cout << "Schedule " << ev->time().time.ticks() << " " << ev->linkId() << " " << ev->seqnum() << std::endl;
+  event_queue_.insert(ev);
+#if SSTMAC_SANITY_CHECK
+  if (prev_size == event_queue_.size()){
+    spkt_abort_printf("dropped event seqnum=%" PRIu32 " on link %" PRIu64,
+                      ev->seqnum(), ev->linkId());
+  }
+#endif
 }
 
 }

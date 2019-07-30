@@ -216,8 +216,7 @@ NIC::ackSend(NetworkMessage* payload)
 {
   if (payload->needsAck()){
     NetworkMessage* ack = payload->cloneInjectionAck();
-    nic_debug("acking payload %s with ack %p",
-      payload->toString().c_str(), ack);
+    nic_debug("acking payload %s", payload->toString().c_str());
     sendToNode(ack);
   }
 }

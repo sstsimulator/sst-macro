@@ -144,7 +144,7 @@ MpiApi::MpiApi(SST::Params& params, sstmac::sw::App* app,
 
   std::string subname = sprockit::printf("app%d.rank%d", app->aid(), app->tid());
   delays_ = app->os()->node()->registerMultiStatistic<int,int,int,int,uint64_t,
-      double,double,double,double,double>(params, "delays", subname);
+      double,double,double,double,double,double>(params, "delays", subname);
 
 #ifdef SSTMAC_OTF2_ENABLED
 #if !SSTMAC_INTEGRATED_SST_CORE
@@ -220,13 +220,6 @@ MpiApi::commRank(MPI_Comm comm, int *rank)
 int
 MpiApi::init(int* argc, char*** argv)
 {
-#if SSTMAC_COMM_SYNC_STATS
-#if SSTMAC_HAVE_CALL_GRAPH
-#else
-#error Synchronization stats require call graph feature to be activated
-#endif
-#endif
-
   auto start_clock = traceClock();
 
   if (status_ == is_initialized){
@@ -590,30 +583,28 @@ MpiApi::errorString(int errorcode, char *str, int *resultlen)
   return MPI_SUCCESS;
 }
 
-#if SSTMAC_COMM_SYNC_STATS
 CallGraphCreateTag(idle);
 CallGraphCreateTag(active);
-#endif
 
 void
 MpiApi::logMessageDelay(Message *msg, uint64_t bytes, int stage,
                         sstmac::TimeDelta sync_delay,
                         sstmac::TimeDelta active_delay)
 {
-#if SSTMAC_COMM_SYNC_STATS
   current_call_.idle += sync_delay;
-#endif
 
-  delays_->addData(msg->sender(), msg->recver(), bytes, msg->classType(), stage,
-                   sync_delay.sec(), msg->injectionDelay().sec(),
-                   msg->congestionDelay().sec(), msg->minDelay().sec(),
-                   active_delay.sec());
+  if (crossed_comm_world_barrier_){
+    delays_->addData(msg->sender(), msg->recver(), msg->classType(), stage, bytes,
+                     msg->recvSyncDelay().sec(), msg->injectionDelay().sec(),
+                     msg->congestionDelay().sec(), msg->minDelay().sec(),
+                     sync_delay.sec(), active_delay.sec());
+  }
+
 }
 
 void
 MpiApi::finishCurrentMpiCall()
 {
-#if SSTMAC_COMM_SYNC_STATS
   if (current_call_.idle.ticks()){
     auto* thr = parent_app_->os()->activeThread();
     if (thr->callGraph()){
@@ -623,7 +614,6 @@ MpiApi::finishCurrentMpiCall()
       current_call_.idle = sstmac::TimeDelta(); //zero for next guy
     }
   }
-#endif
 }
 
 #define enumcase(x) case x: return #x

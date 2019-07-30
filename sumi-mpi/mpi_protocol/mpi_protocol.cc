@@ -72,13 +72,13 @@ void
 MpiProtocol::logRecvDelay(int stage, MpiMessage* msg, MpiQueueRecvRequest* req)
 {
   sstmac::TimeDelta active_delay;
-  if (req->req()->activeWait()){
-    active_delay = mpi_->activeDelay(req->req()->waitStart());
-    req->req()->setWaitStart(mpi_->now());
-  }
   sstmac::TimeDelta sync_delay;
-  if (msg->timeStarted() > req->start()){
-    sync_delay = msg->timeStarted() - req->start();
+  if (req->req()->activeWait()){
+    sstmac::Timestamp wait_start = req->req()->waitStart();
+    active_delay = mpi_->activeDelay(wait_start);
+    if (stage == 0 && msg->timeArrived() > wait_start){
+      sync_delay = msg->timeArrived() - wait_start;
+    }
   }
   mpi_->logMessageDelay(msg, msg->payloadSize(), stage,
                         sync_delay, active_delay);

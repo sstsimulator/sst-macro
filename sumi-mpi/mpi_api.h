@@ -789,11 +789,9 @@ class MpiApi : public sumi::SimTransport
   void finishCurrentMpiCall();
 
   void setNewMpiCall(MPI_function func){
-#if SSTMAC_COMM_SYNC_STATS
     current_call_.ID = func;
     current_call_.start = last_collection_ = now();
     //update this to at least the beginning of this function
-#endif
   }
 
   bool test(MPI_Request *request, MPI_Status *status, int& tag, int& source);
@@ -867,6 +865,7 @@ class MpiApi : public sumi::SimTransport
                                   double, //injection delay
                                   double, //contention delay
                                   double, //min delay in absence of contention
+                                  double, //active sync delay experienced by app
                                   double  //active delay experienced by app
                                  >* delays_;
 
@@ -885,9 +884,7 @@ class MpiApi : public sumi::SimTransport
                        sstmac::TimeDelta sync_delay, sstmac::TimeDelta active_delay) override;
 
  private:
-#if SSTMAC_COMM_SYNC_STATS
   MPI_Call current_call_;
-#endif
 
 };
 

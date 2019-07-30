@@ -70,6 +70,7 @@ class SnapprPacket :
   SnapprPacket(
     Flow* msg,
     uint32_t numBytes,
+    uint64_t offset,
     bool isTail,
     uint64_t flowId,
     NodeId toaddr,
@@ -126,6 +127,10 @@ class SnapprPacket :
     return congestion_delay_;
   }
 
+  void accumulateCongestionDelay(TimeDelta delay){
+    congestion_delay_ += delay;
+  }
+
   void accumulateCongestionDelay(Timestamp departure){
     congestion_delay_ += (departure - arrival_);
   }
@@ -158,6 +163,8 @@ class SnapprPacket :
 
  private:
   uint32_t seqnum_;
+
+  uint64_t offset_;
 
   Timestamp arrival_;
 
