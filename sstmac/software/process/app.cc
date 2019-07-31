@@ -95,6 +95,7 @@ std::map<std::string, App::empty_main_fxn>* UserAppCxxEmptyMain::empty_main_fxns
 std::map<AppId, UserAppCxxFullMain::argv_entry> UserAppCxxFullMain::argv_map_;
 
 std::map<int, App::dlopen_entry> App::dlopens_;
+int App::app_rc_ = 0;
 
 int
 App::allocateTlsKey(destructor_fxn fxn)
@@ -469,6 +470,8 @@ App::run()
   TaskMapping::removeGlobalMapping(sid_.app_, unique_name_);
   ThreadInfo::deregisterUserSpaceVirtualThread(stack_);
   dlcloseCheck();
+
+  app_rc_ = rc_;
 }
 
 void

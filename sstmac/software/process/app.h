@@ -235,6 +235,10 @@ class App : public Thread
 
   static void unlockDlopen(int aid);
 
+  static int appRC(){
+    return app_rc_;
+  }
+
  protected:
   friend class Thread;
 
@@ -287,6 +291,8 @@ class App : public Thread
   };
 
   static std::map<int, dlopen_entry> dlopens_;
+
+  static int app_rc_;
 
 };
 

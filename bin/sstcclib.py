@@ -6,6 +6,52 @@ SSTMAC_SRC2SRC=0 or 1: run a source-to-source pass converting globals to TLS (de
 SSTMAC_CONFIG=0: running automake, cmake - skip certain steps to fool build system
 """
 
+def createBashWrapper(exeName, ldTarget, sstCore, sstmacExe):
+  import os
+  cmd = ""
+  if sstCore:
+    sys.exit("Do not yet support standalone exe for SST core")
+  else:
+    exeLoad = ldTarget
+    if not os.path.isabs(exeLoad):
+      exeLoad = os.path.join(os.getcwd(), ldTarget)
+    cmd = "%s -a -n 1 --exe=%s --use-app-rc --app-argv='%%s'" % (sstmacExe, exeLoad)
+  str_arr = ["#! /usr/bin/env python",
+   "# -*- coding: utf-8 -*-",
+   "import os",
+   "import sys",
+   "import subprocess as sp",
+   'argv = " ".join(sys.argv[1:])',
+   "cmd = ['%s', '-a', '-n', '1', '--exe=%s', '--use-app-rc', '--app-argv=%%s' %% argv]" % (sstmacExe, exeLoad),
+   "child = sp.Popen(cmd)",
+   "streamdata = child.communicate()[0]",
+   "rc = child.returncode",
+   "sys.exit(rc)",
+   "",
+   '"""',
+   open(ldTarget).read(),
+   '"""',
+  ]
+  open(exeName,"w").write("\n".join(str_arr))
+  os.system("chmod +x %s" % exeName)
+
+def getProcTreeHelper(mypid, arr):
+  mypid = str(mypid)
+  import commands
+  info = commands.getoutput("ps axo pid,ppid,comm")
+  for line in info.splitlines():
+    args = line.strip().split()
+    if args[0] == mypid:
+      arr.append(" ".join(args[2:]))
+      getProcTreeHelper(args[1], arr)
+      break
+   
+
+def getProcTree():
+  import os
+  arr = []
+  getProcTreeHelper(os.getpid(), arr)
+  return arr
 
 def getProcName():
   import os
@@ -117,6 +163,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     cleanPaths.append(os.path.abspath(path))
   defaultIncludePaths = ":".join(cleanPaths)
 
+
   if not os.environ.has_key("SSTMAC_HEADERS"):
     topdir = os.getcwd()
     #unwind to look for a file named sstmac_headers
@@ -142,6 +189,8 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   def cleanFlag(flag):
     return flag.replace("${includedir}", includeDir).replace("${exec_prefix}", execPrefix).replace("${prefix}",prefix)
 
+  sstmacExe = cleanFlag(os.path.join(prefix, "bin", "sstmac"))
+
   sstLibs = []
   if not sstCore:
     sstLibs = [
@@ -158,7 +207,9 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
 
   verbose = False     #whether to print verbose output
   delTempFiles = True #whether to delete all temp files created
-  keepExe = False     #whether to keep exes as exes or convert to SST libX.so
+  #whether to make a shared object for loading 
+  #or a bash script that emulates an executable
+  makeBashExe = False     
   if "SSTMAC_VERBOSE" in os.environ:
     flag = int(os.environ["SSTMAC_VERBOSE"])
     verbose = verbose or flag
@@ -167,11 +218,19 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     delTempFiles = delTempFiles and flag
   if "SSTMAC_CONFIG" in os.environ:
     flag = int(os.environ["SSTMAC_CONFIG"])
-    keepExe = flag
+    makeBashExe = flag
 
-  parentProc = os.path.split(getProcName())[-1].strip()
-  if (parentProc == "configure" or parentProc == "cmake"):
+  procTree = getProcTree()[1:] #throw out python command
+  parentProc = procTree[0]
+  if parentProc.endswith("configure"):
     makeBashExe = True
+  elif parentProc.endswith("cmake"):
+    numCmakes = 0
+    for exe in procTree:
+      if exe.endswith("cmake"):
+        numCmakes += 1
+    if numCmakes > 1:
+        makeBashExe = True
 
   haveClangSrcToSrc = bool(clangCppFlagsStr)
   clangDeglobal = None
@@ -291,9 +350,6 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     #assume fPIC was given
     givenFlags.append("-fPIC")
 
-  if keepExe and sstCore:
-    sys.exit("Running with sst-core does not allow --keep-exe - must create libX.so")
-
   if runClang and haveClangSrcToSrc:
     sstCppFlags.append("-DSSTMAC_NO_REFACTOR_MAIN")
   if memoizing:
@@ -313,11 +369,6 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   ld = cc 
   repldir = os.path.join(includeDir, "sstmac", "replacements")
   repldir = cleanFlag(repldir)
-
-  if ldTarget:
-    if ldTarget.startswith("lib") and ldTarget.endswith("so"):
-      includeMain = False
-    
 
   clangCxxArgs = [
     "-stdlib=libc++", 
@@ -570,43 +621,37 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       extraLibsStr, 
       ldpathMaker
     ]
-  else: #we are building an exe or a lib
-    if not ldTarget: ldTarget = "a.out"
+  else: #we are building a lib or an exe wrapper
+    if not ldTarget: 
+      ldTarget = "a.out"
+
+    #this might be an actual library, not an exe wrapper
+    if ldTarget.startswith("lib"):
+      if ".so" in ldTarget or ".dylib" in ldTarget:
+        makeBashExe = False
+
+    exeName = ldTarget #maybe needed later
+    if makeBashExe:
+      ldTarget += "_exe"
+
     #linking executable/lib from object files (or source files)
     runClang = runClang and sourceFiles
 
-    if not keepExe: #turn exe into a library
-      libTarget = ldTarget
-      arCmdArr = [
-        ld,
-        soFlagsStr,
-        objectFilesStr,
-        sstLdFlagsStr,
-        givenFlagsStr,
-        sstCompilerFlagsStr,
-        ldpathMaker,
-        "-o",
-        libTarget
-      ]
-      if sourceFiles and not runClang: 
-        arCmdArr.extend(sourceFileCompileFlags)
-      arCmdArr.extend(linkerArgs)
-    else: #keep commands as they are
-      ldCmdArr = [
-        ld,
-        objectFilesStr,
-        extraLibsStr,
-        sstLdFlagsStr, 
-        givenFlagsStr,
-        sstCompilerFlagsStr,
-        extraLibsStr, 
-        ldpathMaker,
-        "-o",
-        ldTarget
-      ]
-      ldCmdArr.extend(linkerArgs)
-      if sourceFiles and not runClang: 
-        ldCmdArr.extend(sourceFileCompileFlags)
+    libTarget = ldTarget
+    arCmdArr = [
+      ld,
+      soFlagsStr,
+      objectFilesStr,
+      sstLdFlagsStr,
+      givenFlagsStr,
+      sstCompilerFlagsStr,
+      ldpathMaker,
+      "-o",
+      libTarget
+    ]
+    if sourceFiles and not runClang: 
+      arCmdArr.extend(sourceFileCompileFlags)
+    arCmdArr.extend(linkerArgs)
 
   clangExtraArgs = []
   #if sourceFiles and len(objectFiles) > 1:
@@ -753,6 +798,8 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         arCmdArr.extend(allObjects)
         rc = runCmdArr(arCmdArr,verbose)
         if not rc == 0: return rc
+        if makeBashExe:
+          createBashWrapper(exeName, ldTarget, sstCore, sstmacExe)
       if delTempFiles:
         delete(allObjects)
     return 0
@@ -763,6 +810,8 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     rc = runCmdArr(ldCmdArr,verbose)
     if not rc == 0: return rc
     rc = runCmdArr(arCmdArr,verbose)
+    if makeBashExe:
+      createBashWrapper(exeName, ldTarget, sstCore, sstmacExe)
     return rc
 
 

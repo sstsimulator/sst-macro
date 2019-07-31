@@ -289,76 +289,6 @@ static void tokenize(const std::string& in, std::set<std::string>& tokens){
 }
 
 int
-runStandalone(int argc, char** argv)
-{
-  std::cerr << "WARNING: running standalone executable as-is. This usually happens\n"
-            << "WARNING: when running configure scripts. I hope this is what you want"
-            << std::endl;
-  //oh, hmm, we are running inside configure
-  //this means we actually just want to run a compiled program
-  //and get the hell out of dodge
-  sstmac::TimeDelta::initStamps(100); //100 attoseconds per tick
-
-  SST::Params null_params;
-  SST::Params nic_params = null_params.find_scoped_params("nic");
-  SST::Params mem_params = null_params.find_scoped_params("memory");
-  SST::Params proc_params = null_params.find_scoped_params("proc");
-
-  nic_params.insert("name", "null");
-  nic_params.insert("topology.name", "torus");
-  nic_params.insert("topology.geometry", "[2, 2]");
-  mem_params.insert("name", "null");
-  proc_params.insert("frequency", "1ghz");
-  proc_params.insert("ncores", "1");
-  //put this on Node 1 to avoid a Job Launcher being built
-  null_params.insert("id", "1");
-  null_params.insert("name", "sstmac_standalone_app");
-
-  sstmac::sw::SoftwareId id(1,0);
-
-  sstmac::native::SerialRuntime rt(null_params);
-#if !SSTMAC_INTEGRATED_SST_CORE
-    sstmac::EventManager mgr(null_params, &rt);
-    sstmac::EventManager::global = &mgr;
-    mgr.setComponentManager(0, 0);
-#else
-#endif
-
-  sstmac::hw::SimpleNode node(0, null_params);
-  sstmac::sw::OperatingSystem os(&node, null_params);
-
-
-
-  node.init(0);
-  node.setup();
-
-  std::stringstream argv_sstr;
-  for (int i=1; i < argc; ++i){
-    argv_sstr << " " << argv[i];
-  }
-
-  null_params.insert("argv", argv_sstr.str());
-  null_params.insert("notify", "false");
-
-  sw::TaskMapping::ptr mapping = std::make_shared<sw::TaskMapping>(1);
-  mapping->rankToNode().resize(1);
-  mapping->rankToNode()[0] = 1;
-  mapping->nodeToRank().resize(2);
-  mapping->nodeToRank()[1] = std::list<int>{0};
-  sw::TaskMapping::addGlobalMapping(1, "app1", mapping);
-
-  sw::UserAppCxxEmptyMain::aliasMains();
-  sw::UserAppCxxFullMain::aliasMains();
-  auto* builder = sstmac::sw::App::getBuilderLibrary("macro")->getBuilder("sstmac_app_name");
-  if (!builder){
-    spkt_abort_printf("could not find standalone app registered");
-  }
-  sstmac::sw::App* a = builder->create(null_params, id, &os);
-  os.startApp(a, "");
-  return a->rc();
-}
-
-int
 tryMain(sprockit::SimParameters::ptr params,
         int argc, char **argv, bool params_only)
 {
@@ -371,14 +301,6 @@ tryMain(sprockit::SimParameters::ptr params,
     rt = nullptr;
   } else {
     rt = sstmac::init();
-  }
-
-  const char* cfgMode = getenv("SSTMAC_CONFIG");
-  if (cfgMode){
-    int mode = atoi(cfgMode);
-    if (mode){
-      return runStandalone(argc, argv);
-    }
   }
 
   opts oo;
@@ -441,7 +363,11 @@ tryMain(sprockit::SimParameters::ptr params,
 
   sstmac::finalize(rt);
 #endif
-  return 0;
+  if (oo.use_app_rc){
+    return sstmac::sw::App::appRC();
+  } else {
+    return 0;
+  }
 }
 
 

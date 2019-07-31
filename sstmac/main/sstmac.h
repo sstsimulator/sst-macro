@@ -63,6 +63,7 @@ struct opts {
   std::string configfile;
   bool got_config_file;
   sprockit::SimParameters::ptr params;
+  bool use_app_rc;
   bool print_walltime;
   bool print_params;
   bool low_res_timer;
@@ -79,6 +80,7 @@ struct opts {
     got_config_file(false),
     params(std::make_shared<sprockit::SimParameters>()),
     low_res_timer(false),
+    use_app_rc(false),
     print_walltime(true),
     print_params(false),
     cpu_affinity("") {
@@ -146,8 +148,6 @@ void run(opts& oo,
     sstmac::ParallelRuntime* rt,
     SST::Params& params,
     SimStats& stats);
-
-int runStandalone(int argc, char** argv);
 
 int tryMain(sprockit::SimParameters::ptr params,
    int argc, char **argv,
