@@ -3,6 +3,7 @@
 
 #include <queue>
 #include <map>
+#include <list>
 #include <sprockit/errors.h>
 #include <sstmac/software/process/thread_fwd.h>
 #include <sstmac/software/process/operating_system_fwd.h>
@@ -17,22 +18,22 @@ struct ProgressQueue {
   {
   }
 
-  void block(std::queue<Thread*>& q, double timeout);
-  void unblock(std::queue<Thread*>& q);
+  void block(std::list<Thread*>& q, double timeout);
+  void unblock(std::list<Thread*>& q);
 
 };
 
 template <class Item>
 struct SingleProgressQueue : public ProgressQueue {
   std::queue<Item*> items;
-  std::queue<Thread*> pending_threads;
+  std::list<Thread*> pending_threads;
 
   SingleProgressQueue(OperatingSystem* os) :
     ProgressQueue(os)
   {
   }
 
-  Item* pop(bool blocking = true, double timeout = -1){
+  Item* front(bool blocking = true, double timeout = -1){
     if (items.empty()){
       if (blocking){
         block(pending_threads, timeout);
@@ -49,9 +50,12 @@ struct SingleProgressQueue : public ProgressQueue {
       return nullptr;
     } else {
       auto it = items.front();
-      items.pop();
       return it;
     }
+  }
+
+  void pop(){
+    items.pop();
   }
 
   void incoming(Item* i){
@@ -61,13 +65,14 @@ struct SingleProgressQueue : public ProgressQueue {
     }
   }
 
+
 };
 
 template <class Item>
 struct MultiProgressQueue : public ProgressQueue {
-  std::queue<Thread*> any_threads;
+  std::list<Thread*> any_threads;
   std::map<int,std::queue<Item*>> queues;
-  std::map<int,std::queue<Thread*>> pending_threads;
+  std::map<int,std::list<Thread*>> pending_threads;
   OperatingSystem* os;
 
   MultiProgressQueue(OperatingSystem* os) : ProgressQueue(os)

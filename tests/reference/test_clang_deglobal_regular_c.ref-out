@@ -1,5 +1,5 @@
 
-int x = 10;extern int __offset_x; void init_x(void* ptr){int initer = 10; memcpy(ptr, &initer, sizeof(initer)); } int __sizeof_x = sizeof(int); 
+int x = 10;extern int __offset_x; void init_x(void* ptr){int initer = 10; memcpy(ptr, (void*) &initer, sizeof(initer)); } int __sizeof_x = sizeof(int); 
 
 void fxn()
 { char* sstmac_global_data = get_sstmac_global_data();int* sstmac_x=(int*)(sstmac_global_data + __offset_x); {

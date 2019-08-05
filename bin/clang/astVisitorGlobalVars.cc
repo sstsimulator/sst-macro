@@ -11,11 +11,23 @@ getBaseType(VarDecl* D){
   return ty;
 }
 
+static const Type*
+getPointerBaseType(VarDecl* D){
+  auto ty = D->getType().getTypePtr();
+  while (ty->isPointerType()){
+    ty = ty->getPointeeType().getTypePtr();
+  }
+  return ty;
+}
+
 static std::string
-getFxnTypedef(const Type* ty, const std::string& name){
+getFxnTypedef(clang::SourceLocation loc, const Type* ty, const std::string& name, clang::CompilerInstance* ci){
   std::string typeName = GetAsString(ty);
   //this is horrible... but the only way I know
   auto pos = typeName.find(")");
+  if (pos == std::string::npos){
+    internalError(loc, *ci, "failed typedef on " + typeName);
+  }
   std::string tdefName = "typedef " + typeName.substr(0, pos) + name +typeName.substr(pos);
   return tdefName;
 }
@@ -86,13 +98,15 @@ SkeletonASTVisitor::setupGlobalReplacement(VarDecl *D, const std::string& namePr
     var.typeStr = getCleanName(GetAsString(D->getType()));
     var.retType = var.typeStr + "*";
   } else if (D->getType().getTypePtr()->isFunctionPointerType()){
-    bool isTypeDef = isa<TypedefType>(D->getType().getTypePtr());
+    const Type* baseType = getPointerBaseType(D);
+    bool isTypeDef = isa<TypedefType>(D->getType().getTypePtr()) ||
+                     isa<TypedefType>(baseType);
     if (isTypeDef){
       var.typeStr = GetAsString(D->getType());
       var.retType = var.typeStr + "*";
     } else {
       std::string typedefName = D->getNameAsString() + "_sstmac_fxn_typedef";
-      std::string typedefDecl = getFxnTypedef(D->getType().getTypePtr(), typedefName);
+      std::string typedefDecl = getFxnTypedef(D->getLocStart(), D->getType().getTypePtr(), typedefName, ci_);
       delayedInsertAfter(D, typedefDecl + ";");
       var.typeStr = typedefName;
       var.retType = typedefName + "*";
@@ -105,7 +119,7 @@ SkeletonASTVisitor::setupGlobalReplacement(VarDecl *D, const std::string& namePr
       var.retType = var.typeStr + "*";
     } else {
       std::string typedefName = D->getNameAsString() + "_sstmac_fxn_typedef";
-      std::string typedefDecl = getFxnTypedef(ptrSubTy, typedefName);
+      std::string typedefDecl = getFxnTypedef(D->getLocStart(), ptrSubTy, typedefName, ci_);
       int ptrDepth = std::count(typeStr.begin(), typeStr.end(), '*') - 1;
       var.typeStr = typedefName;
       for (int i=0; i < ptrDepth; i++){
@@ -410,21 +424,27 @@ SkeletonASTVisitor::setupFunctionStaticC(VarDecl* D, const std::string& scopePre
       "}";
   rewriter_.InsertText(fxnStart, replText, false);
 
-  std::string initializer;
-  if (D->hasInit()){
-    initializer = "*sstmac_" + var.scopeUniqueVarName + " = ("
-        + var.typeStr + ") " + printWithGlobalsReplaced(D->getInit()) + ";";
-  }
-
   std::string initText =
    "void** ptrsstmac_" + var.scopeUniqueVarName
     + " = ((void**)(sstmac_global_data + __offset_" + var.scopeUniqueVarName + "));"
     + var.typeStr + "* sstmac_" + var.scopeUniqueVarName + " = (" + var.typeStr
     + "*)(*ptrsstmac_" + var.scopeUniqueVarName + "); "
    "if (sstmac_" + var.scopeUniqueVarName + " == 0){ "
-   "  sstmac_" + var.scopeUniqueVarName + " = (" + var.typeStr + "*) malloc(sizeof(" + var.typeStr + "));"
-   "  *ptrsstmac_" + var.scopeUniqueVarName + " = sstmac_" + var.scopeUniqueVarName + "; "
-   + initializer + "}";
+   "  sstmac_" + var.scopeUniqueVarName + " = (" + var.typeStr + "*) malloc(sizeof(" + var.typeStr + ")); "
+   "  *ptrsstmac_" + var.scopeUniqueVarName + " = sstmac_" + var.scopeUniqueVarName + "; }";
+  if (var.arrayInfo && D->hasInit()){
+    //create a temp that is the original object initialzed
+    //the *x = expr syntax is not valid for certain initializations
+    initText += var.arrayInfo->typedefName + " initer_" + var.scopeUniqueVarName
+                  + "=" + printWithGlobalsReplaced(D->getInit()) + ";";
+    //then memcopy from it into the original
+    initText += " memcpy(*ptrsstmac_" + var.scopeUniqueVarName + ", initer_" + var.scopeUniqueVarName
+                + ", sizeof(" + var.arrayInfo->typedefName + "));";
+  } else if (D->hasInit()){
+    initText += "*sstmac_" + var.scopeUniqueVarName + " = ("
+        + var.typeStr + ") " + printWithGlobalsReplaced(D->getInit()) + ";";
+  }
+
   delayedInsertAfter(D, initText);
   registerGlobalReplacement(D, &var);
   //make sure this is included for the function

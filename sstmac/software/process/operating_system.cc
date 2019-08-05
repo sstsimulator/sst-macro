@@ -757,7 +757,6 @@ OperatingSystem::completeActiveThread()
   if (gdb_active_){
     all_threads_.erase(active_thread_->tid());
   }
-  compute_sched_->releaseCores(1, active_thread_);
   Thread* thr_todelete = active_thread_;
 
   //if any threads waiting on the join, unblock them

@@ -249,7 +249,7 @@ SkeletonASTVisitor::registerNewKeywords(std::ostream& os)
     return;
   }
 
-  os << "#include <sprockit/keyword_registration.h>"
+  os << "\n#include <sprockit/keyword_registration.h>"
      << "\nRegisterKeywords(";
   for (auto& str : pragmaConfig_.newParams){
     os << "\n{\"" << str << "\", \"new keyword\" },";

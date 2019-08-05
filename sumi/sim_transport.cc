@@ -454,13 +454,14 @@ SimTransport::incomingMessage(Message *msg)
     msg->setTimeArrived(parent_app_->now());
   }
 #endif
-
+  msg->writeSyncValue();
   int cq = msg->isNicAck() ? msg->sendCQ() : msg->recvCQ();
   if (cq != Message::no_ack){
     if (cq >= completion_queues_.size()){
       debug_printf(sprockit::dbg::sumi, "No CQ yet for %s", msg->toString().c_str());
       held_[cq].push_back(msg);
     } else {
+      debug_printf(sprockit::dbg::sumi, "CQ %d handle %s", cq, msg->toString().c_str());
       completion_queues_[cq](msg);
     }
   } else {

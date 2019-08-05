@@ -39,6 +39,7 @@ CLANGTESTS = \
   pragma_sst_loop_count_cpp \
   pragma_omp_parallel_nthr_cpp \
   pragma_omp_parallel_cpp \
+  deglobal_array_c \
   deglobal_regular_c \
   deglobal_fxn_static_c \
   deglobal_anon_c 

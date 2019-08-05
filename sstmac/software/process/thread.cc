@@ -133,8 +133,13 @@ Thread::runRoutine(void* threadptr)
     self->state_ = ACTIVE;
     bool success = false;
     try {
-      sstmac::sw::OperatingSystem::CoreAllocateGuard guard(self->os(), self);
-      self->run();
+      {
+        //need to scope it here to force destructor of guard
+        //because of the way context switching works I might
+        //never leave this try block and closing the guard
+        sstmac::sw::OperatingSystem::CoreAllocateGuard guard(self->os(), self);
+        self->run();
+      }
       success = true;
       //this doesn't so much kill the thread as context switch it out
       //it is up to the above delete thread event to actually to do deletion/cleanup
@@ -305,6 +310,7 @@ Thread::now()
 
 Thread::~Thread()
 {
+  active_cores_.clear();
   if (stack_) StackAlloc::free(stack_);
   if (context_) {
     context_->destroyContext();

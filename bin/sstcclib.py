@@ -6,7 +6,15 @@ SSTMAC_SRC2SRC=0 or 1: run a source-to-source pass converting globals to TLS (de
 SSTMAC_CONFIG=0: running automake, cmake - skip certain steps to fool build system
 """
 
-def createBashWrapper(exeName, ldTarget, sstCore, sstmacExe):
+def createBashWrapper(compiler, exeName, ldTarget, sstCore, sstmacExe):
+  import commands
+  #there is one scenario in which autoconf actually WANTS
+  #this to fail... check for it now
+  output = commands.getoutput("nm %s | grep some_bogus_nonexistent_symbol" % ldTarget)
+  if output:
+    #crash and burn
+    return 1
+  
   import os
   cmd = ""
   if sstCore:
@@ -34,6 +42,7 @@ def createBashWrapper(exeName, ldTarget, sstCore, sstmacExe):
   ]
   open(exeName,"w").write("\n".join(str_arr))
   os.system("chmod +x %s" % exeName)
+  return 0
 
 def getProcTreeHelper(mypid, arr):
   mypid = str(mypid)
@@ -137,7 +146,7 @@ class TempFiles:
 def addLlvmPasses(passList, passStr):
   passList.extend(passStr.split(","))
 
-def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=True, runClang=True):
+def run(typ, extraLibs="", makeLibrary=False, redefineSymbols=True, runClang=True):
   extraLibsStr = extraLibs
   extraLibs = extraLibs.split()
   import os
@@ -222,9 +231,10 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
 
   procTree = getProcTree()[1:] #throw out python command
   parentProc = procTree[0]
-  if parentProc.endswith("configure"):
-    makeBashExe = True
-  elif parentProc.endswith("cmake"):
+  #if parentProc.endswith("configure"):
+  #  makeBashExe = True
+  # the parent proc here is just launchd - configure vanishes
+  if parentProc.endswith("cmake"):
     numCmakes = 0
     for exe in procTree:
       if exe.endswith("cmake"):
@@ -357,6 +367,11 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   #always indicate that we are compiling an external skeleton app
   sstCppFlags.append("-DSSTMAC_EXTERNAL")
 
+  #for now, just assume any time an exe name "conftest"
+  #is being built, it comes from configure
+  if ldTarget == "conftest":
+    makeBashExe = True
+
   newLdFlags = []
   for entry in sstLdFlags:
     newLdFlags.append(cleanFlag(entry))
@@ -426,8 +441,6 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   sstCompilerFlagsStr = ""
   compiler = ""
   cxxCmd = ""
-  if includeMain:
-    extraLibsStr += " -lsstmac_main"
   #always c++ no matter what for now
   if typ.lower() == "c++":
     sstCompilerFlagsStr = cleanFlag(sstCxxFlagsStr)
@@ -549,8 +562,8 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   llvmPassesStr = " ".join(llvmPassesArr)
   
   cxxCmdArr = []
-  ldCmdArr = []
   arCmdArr = []
+  validateCmdArr = []
   ppOnly = "-E" in controlArgs
   controlArgStr = " ".join(controlArgs)
   extraCppFlagsStr = " ".join(extraCppFlags)
@@ -649,9 +662,21 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       "-o",
       libTarget
     ]
+    validateCmdArr = [
+      ld,
+      "-lsstmac_main",
+      objectFilesStr,
+      sstLdFlagsStr,
+      givenFlagsStr,
+      sstCompilerFlagsStr,
+      ldpathMaker,
+      "-o",
+      libTarget + "_validate"
+    ]
     if sourceFiles and not runClang: 
       arCmdArr.extend(sourceFileCompileFlags)
     arCmdArr.extend(linkerArgs)
+    validateCmdArr.extend(linkerArgs)
 
   clangExtraArgs = []
   #if sourceFiles and len(objectFiles) > 1:
@@ -790,28 +815,38 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         allTemps.append(newFile)
 
     if exeFromSrc:
-      if ldCmdArr:
-        ldCmdArr.extend(allObjects)
-        rc = runCmdArr(ldCmdArr,verbose)
-        if not rc == 0: return rc
       if arCmdArr:
         arCmdArr.extend(allObjects)
+        validateCmdArr.extend(allObjects)
         rc = runCmdArr(arCmdArr,verbose)
         if not rc == 0: return rc
         if makeBashExe:
-          createBashWrapper(exeName, ldTarget, sstCore, sstmacExe)
+          if validateCmdArr:
+            rc = runCmdArr(validateCmdArr, verbose)
+            if not rc == 0: return rc
+          rc = createBashWrapper(compiler, exeName, ldTarget, sstCore, sstmacExe)
+          if not rc == 0: return rc
       if delTempFiles:
         delete(allObjects)
     return 0
 
   if not runClang:
-    rc = runCmdArr(cxxCmdArr,verbose)
-    if not rc == 0: return rc
-    rc = runCmdArr(ldCmdArr,verbose)
-    if not rc == 0: return rc
-    rc = runCmdArr(arCmdArr,verbose)
+    cmdArr = []
+    rc = 0
+    if cxxCmdArr:
+      cmdArr = cxxCmdArr
+    elif arCmdArr:
+      cmdArr = arCmdArr
+
     if makeBashExe:
-      createBashWrapper(exeName, ldTarget, sstCore, sstmacExe)
+      if validateCmdArr:
+        rc = runCmdArr(validateCmdArr, verbose)
+        if not rc == 0: return rc
+      rc = createBashWrapper(compiler, exeName, ldTarget, sstCore, sstmacExe)
+      if not rc == 0: return rc
+
+    rc = runCmdArr(cmdArr,verbose)
+    if not rc == 0: return rc
     return rc
 
 

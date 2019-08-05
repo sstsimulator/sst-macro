@@ -5,24 +5,26 @@ namespace sstmac {
 namespace sw {
 
 void
-ProgressQueue::block(std::queue<Thread*>& q, double timeout){
-  q.push(os->activeThread());
+ProgressQueue::block(std::list<Thread*>& q, double timeout){
+  Thread* thr = os->activeThread();
+  q.push_back(thr);
   if (timeout > 0){
     os->blockTimeout(TimeDelta(timeout));
   } else {
     os->block();
   }
+  q.remove(thr);
 }
 
 void
-ProgressQueue::unblock(std::queue<Thread*>& q){
+ProgressQueue::unblock(std::list<Thread*>& q){
 #if SSTMAC_SANITY_CHECK
   if (q.empty()){
     spkt_abort_printf("trying to unblock CQ, but there are no pending threads");
   }
 #endif
   auto* thr = q.front();
-  q.pop();
+  //don't erase here - this gets erased in the block call
   os->unblock(thr);
 }
 
