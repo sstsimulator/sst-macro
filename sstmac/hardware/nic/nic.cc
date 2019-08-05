@@ -166,7 +166,7 @@ NIC::injectSend(NetworkMessage* netmsg)
 void
 NIC::recvMessage(NetworkMessage* netmsg)
 {
-  nic_debug("handling message %s:%lu of type %s from node %d while running",
+  nic_debug("handling %s:%lu of type %s from node %d while running",
     netmsg->toString().c_str(),
     netmsg->flowId(),
     NetworkMessage::tostr(netmsg->type()),

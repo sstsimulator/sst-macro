@@ -2631,6 +2631,7 @@ PragmaActivateGuard::init()
     switch (prg->cls){
       case SSTPragma::StackAlloc:
       case SSTPragma::ImplicitState:
+      case SSTPragma::AdvanceTime:
       case SSTPragma::Memoize:  //always - regardless of skeletonization
       case SSTPragma::GlobalVariable:
         skipVisit_ = false;

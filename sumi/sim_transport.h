@@ -258,6 +258,8 @@ class SimTransport : public Transport, public sstmac::sw::API {
 
   std::vector<std::function<void(Message*)>> completion_queues_;
 
+  std::function<void(Message*)> null_completion_notify_;
+
   sstmac::TimeDelta post_rdma_delay_;
 
   sstmac::TimeDelta post_header_delay_;
@@ -272,6 +274,10 @@ class SimTransport : public Transport, public sstmac::sw::API {
   bool pin_delay_;
 
  protected:
+  void registerNullHandler(std::function<void(Message*)> f){
+    null_completion_notify_ = f;
+  }
+
   bool smp_optimize_;
 
   std::map<int,std::list<Message*>> held_;
@@ -288,6 +294,8 @@ class SimTransport : public Transport, public sstmac::sw::API {
 
   QoSAnalysis* qos_analysis_;
 
+ private:
+  void drop(Message* m){}
 };
 
 

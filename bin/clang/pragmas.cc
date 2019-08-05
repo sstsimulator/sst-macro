@@ -467,13 +467,13 @@ SSTAdvanceTimePragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
   PrettyPrinter pp;
   std::string replacement;
 
-  if (units_ == "sec"){
+  if (units_ == "sec" || units_ == "s"){
     replacement = "sstmac_compute(" + amount_ + ");";
-  } else if (units_ == "msec"){
+  } else if (units_ == "msec" || units_ == "msec"){
     replacement = "sstmac_msleep(" + amount_ + ");";
-  } else if (units_ == "usec"){
+  } else if (units_ == "usec" || units_ == "us"){
     replacement = "sstmac_usleep(" + amount_ + ");";
-  } else if (units_ == "nsec"){
+  } else if (units_ == "nsec" || units_ == "ns"){
     replacement = "sstmac_nanosleep(" + amount_ + ");";
   } else {
     std::string error = "invalid time units: " + units_ +

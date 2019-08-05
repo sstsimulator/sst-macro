@@ -28,5 +28,28 @@ ProgressQueue::unblock(std::list<Thread*>& q){
   os->unblock(thr);
 }
 
+void
+PollingQueue::block()
+{
+  int max_empty_polls = 2;
+  Timestamp now = os->now();
+  if (now == last_check_){
+    ++num_empty_calls_;
+  } else {
+    num_empty_calls_ = 0;
+    last_check_ = now;
+  }
+  if (num_empty_calls_ >= max_empty_polls){
+    ProgressQueue::block(pending_threads_, -1);
+  }
+}
+
+void
+PollingQueue::unblock()
+{
+  num_empty_calls_ = 0;
+  ProgressQueue::unblock(pending_threads_);
+}
+
 }
 }
