@@ -106,7 +106,7 @@ SkeletonASTVisitor::setupGlobalReplacement(VarDecl *D, const std::string& namePr
       var.retType = var.typeStr + "*";
     } else {
       std::string typedefName = D->getNameAsString() + "_sstmac_fxn_typedef";
-      std::string typedefDecl = getFxnTypedef(D->getLocStart(), D->getType().getTypePtr(), typedefName, ci_);
+      std::string typedefDecl = getFxnTypedef(getStart(D), D->getType().getTypePtr(), typedefName, ci_);
       delayedInsertAfter(D, typedefDecl + ";");
       var.typeStr = typedefName;
       var.retType = typedefName + "*";
@@ -119,7 +119,7 @@ SkeletonASTVisitor::setupGlobalReplacement(VarDecl *D, const std::string& namePr
       var.retType = var.typeStr + "*";
     } else {
       std::string typedefName = D->getNameAsString() + "_sstmac_fxn_typedef";
-      std::string typedefDecl = getFxnTypedef(D->getLocStart(), ptrSubTy, typedefName, ci_);
+      std::string typedefDecl = getFxnTypedef(getStart(D), ptrSubTy, typedefName, ci_);
       int ptrDepth = std::count(typeStr.begin(), typeStr.end(), '*') - 1;
       var.typeStr = typedefName;
       for (int i=0; i < ptrDepth; i++){
