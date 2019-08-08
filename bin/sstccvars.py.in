@@ -33,6 +33,8 @@ sstCxxFlagsStr="@CXXFLAGS@ @SST_CXXFLAGS@"
 sstCFlagsStr="@CFLAGS@"
 cc="@CC@"
 cxx="@CXX@"
+spackcc="@SPACK_CC@"
+spackcxx="@SPACK_CXX@"
 
 
 # Configure the PYTHONPATH

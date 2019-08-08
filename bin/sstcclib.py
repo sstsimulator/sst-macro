@@ -444,11 +444,11 @@ def run(typ, extraLibs="", makeLibrary=False, redefineSymbols=True, runClang=Tru
   #always c++ no matter what for now
   if typ.lower() == "c++":
     sstCompilerFlagsStr = cleanFlag(sstCxxFlagsStr)
-    compiler = cxx
+    compiler = cxx if spack_cxx == '' else spack_cxx
     ld = cxx
   elif typ.lower() == "c":
     sstCompilerFlagsStr = cleanFlag(sstCFlagsStr)
-    compiler = cc
+    compiler = cc if spack_cc == '' else spack_cc
     if runClang:
       ld = cxx
     else:

@@ -153,6 +153,8 @@ CHECK_CPP_STANDARD()
 
 CHECK_PYTHON()
 
+CHECK_SPACK()
+
 AM_CONDITIONAL(HAVE_REGEXP, false)
 
 # Check what's available and what's requested for
