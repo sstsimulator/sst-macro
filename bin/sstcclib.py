@@ -154,7 +154,7 @@ def run(typ, extraLibs="", makeLibrary=False, redefineSymbols=True, runClang=Tru
   import platform
   from configlib import getstatusoutput
   from sstccvars import sstLdFlags, sstCppFlags
-  from sstccvars import prefix, execPrefix, includeDir, cc, cxx
+  from sstccvars import prefix, execPrefix, includeDir, cc, cxx, spackcc, spackcxx
   from sstccvars import sstCxxFlagsStr, sstCFlagsStr
   from sstccvars import includeDir
   from sstccvars import sstCore
@@ -356,6 +356,10 @@ def run(typ, extraLibs="", makeLibrary=False, redefineSymbols=True, runClang=Tru
     if not eatArg:
       validGccArgs.append(sarg)
 
+    # Substitute compiler path when built using Spack
+    cc = spackcc if spackcc else cc
+    cxx = spackcxx if spackcxx else cxx
+
   if not "-fPIC" in givenFlags and needfPIC:
     #assume fPIC was given
     givenFlags.append("-fPIC")
@@ -444,11 +448,11 @@ def run(typ, extraLibs="", makeLibrary=False, redefineSymbols=True, runClang=Tru
   #always c++ no matter what for now
   if typ.lower() == "c++":
     sstCompilerFlagsStr = cleanFlag(sstCxxFlagsStr)
-    compiler = cxx if spack_cxx == '' else spack_cxx
+    compiler = cxx
     ld = cxx
   elif typ.lower() == "c":
     sstCompilerFlagsStr = cleanFlag(sstCFlagsStr)
-    compiler = cc if spack_cc == '' else spack_cc
+    compiler = cc
     if runClang:
       ld = cxx
     else:
