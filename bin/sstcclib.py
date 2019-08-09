@@ -409,6 +409,13 @@ def run(typ, extraLibs="", makeLibrary=False, redefineSymbols=True, runClang=Tru
   from sstcompile import addSrc2SrcCompile, addComponentCompile, addCompile, addPreprocess
   from sstlink import addLink
 
+  #the format of the entry in the cmd arr is as follows
+  # [outfile, [cmds,...], [tmpFiles,...]]
+  # the outfile can be None or a string saying where stdout should be piped
+  #     if None, stdout is printed to screen 
+  # the cmd arr is directly passed the Popen command to run a subprocess
+  # the tmp files is a (possibly empty) list of files that get generated
+  #      but should be cleaned up after all commands finish
   cmds = []
   if args.preprocess:
     for srcFile in sourceFiles:

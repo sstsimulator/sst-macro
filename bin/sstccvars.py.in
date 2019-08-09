@@ -21,6 +21,8 @@ sstCppFlags = [
 "-DSSTMAC=1",
 ]
 
+clangDir="@CLANG_INSTALL_DIR@"
+
 sstCore=bool("@SST_CPPFLAGS@")
 soFlagsStr="@LD_SO_FLAGS@"
 

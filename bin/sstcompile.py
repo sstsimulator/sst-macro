@@ -13,6 +13,47 @@ def addPreprocess(ctx, sourceFile, outputFile, args, cmds):
   ppArgs.append(sourceFile)
   cmds.append([outputFile,ppArgs,[]]) #pipe file, no extra temps
 
+def addEmitLlvm(ctx, sourceFile, outputFile, args, cmds):
+  cmdArr = [
+    ctx.compiler,
+    "-emit-llvm",
+    "-S",
+    "--no-integrated-cpp",
+    sourceFile,
+    "-o",
+    outputFile
+  ]
+  cmds.append([None,cmdArr,[outputFile]])
+
+def addLlvmOptPass(ctx, llFile, llvmPass, args, cmds):
+  from sstccvars import clangDir
+  from sstccvars import prefix
+  import os
+  optTool = os.path.join(clangDir, "bin", "opt")
+  llvmLib = os.path.join(prefix, "lib", "lib%s.so" % llvmPass)
+  cmdArr = [
+    optTool,
+    "-S",
+    "-load",
+    llvmLib,
+    llFile,
+    "-sst-%s" % llvmPass,
+    "-o",
+    llFile,
+  ]
+  cmds.append([None,cmdArr,[]])
+
+def addLlvmCompile(ctx, llFile, objFile, args, cmds):
+  cmdArr = [
+    ctx.compiler,
+    "-o",
+    objFile,
+    "-c",
+    llFile,
+  ]
+  cmdArr.extend(ctx.compilerFlags)
+  cmds.append([None,cmdArr,[objFile]])
+
 def addSrc2SrcCompile(ctx, sourceFile, outputFile, args, cmds):
   from sstccvars import prefix
   from sstccvars import defaultIncludePaths, includeDir
@@ -63,14 +104,26 @@ def addSrc2SrcCompile(ctx, sourceFile, outputFile, args, cmds):
   cmds.append([None,clangCmdArr,[srcRepl,cxxInitSrcFile]]) #None -> don't pipe output anywhere
 
   tmpTarget = addPrefix("tmp.", outputFile)
-  cmdArr = [ctx.compiler]
-  cmdArr.extend(ctx.compilerFlags)
-  cmdArr.append("--no-integrated-cpp")
-  cmdArr.append("-o")
-  cmdArr.append(tmpTarget)
-  cmdArr.append("-c")
-  cmdArr.append(srcRepl)
-  cmds.append([None,cmdArr,[tmpTarget]])
+  llvmPasses = []
+  if args.skeletonize:
+    llvmPasses = args.skeletonize.split(",")
+
+  if llvmPasses:
+    llvmFile = swapSuffix("ll", tmpTarget)
+    addEmitLlvm(ctx, srcRepl, llvmFile, args, cmds)
+    for llvmPass in llvmPasses:
+      addLlvmOptPass(ctx, llvmFile, llvmPass, args, cmds)
+    addLlvmCompile(ctx, llvmFile, tmpTarget, args, cmds)
+    
+  else:
+    cmdArr = [ctx.compiler]
+    cmdArr.extend(ctx.compilerFlags)
+    cmdArr.append("--no-integrated-cpp")
+    cmdArr.append("-o")
+    cmdArr.append(tmpTarget)
+    cmdArr.append("-c")
+    cmdArr.append(srcRepl)
+    cmds.append([None,cmdArr,[tmpTarget]])
 
   cxxInitObjFile = addPrefix("sstGlobals.", outputFile)
   cxxInitCmdArr = [
