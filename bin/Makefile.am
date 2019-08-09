@@ -24,6 +24,7 @@ dist_bin_SCRIPTS = \
   sstcclib.py \
   sstccutils.py \
   sstcompile.py \
+  sstlink.py \
   configlib.py
 
 if INTEGRATED_SST_CORE

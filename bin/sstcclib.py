@@ -198,10 +198,6 @@ def run(typ, extraLibs="", makeLibrary=False, redefineSymbols=True, runClang=Tru
                     help="whether to activate skeletonization mode, stripping compute and mem allocation. Can take a list of LLVM passes as argument.")
   parser.add_argument('--memoize', default=False, type=str,
                     help="whether to activate memoization mode that instruments and records execution. Can take a list of LLVM passes as argument.")
-  parser.add_argument('-gstab', default=False, action="store_true",
-                    help="a special type of debug mode, flag eaten by SST/macro")
-  parser.add_argument('-g3', default=False, action="store_true",
-                    help="a special type of debug mode, flag eaten by SST/macro")
   parser.add_argument('-I', action="append", type=str, help="an include path", default=[])
   parser.add_argument('-W', action="append", type=str, help="activate a particular warning", default=[])
   parser.add_argument('-L', action="append", type=str, help="a library path", default=[])
@@ -223,6 +219,10 @@ def run(typ, extraLibs="", makeLibrary=False, redefineSymbols=True, runClang=Tru
   
   args, extraArgs = parser.parse_known_args()
 
+  if "SSTMAC_COMPONENT_BUILD" in os.environ:
+    flag = int(os.environ["SSTMAC_COMPONENT_BUILD"])
+    if flag:
+      args.sst_component = True
 
   if args.no_integrated_cpp:
     sys.exit("SST compiler wrapper cannot handle --no-integrated-cpp flag")
@@ -262,6 +262,8 @@ def run(typ, extraLibs="", makeLibrary=False, redefineSymbols=True, runClang=Tru
       sourceFiles.append(sarg)
     elif sarg.endswith('.S') or sarg.endswith(".s"):
       asmFiles = True
+    elif sarg.startswith("-g"):
+      unparsedArgs.append("-g") #gstab,g3,etc can appear but mess things up - make them regular -g
     else:
       unparsedArgs.append(sarg)
   ctx.cFlags.extend(unparsedArgs) #add anything I didn't recognize here for now
@@ -284,10 +286,10 @@ def run(typ, extraLibs="", makeLibrary=False, redefineSymbols=True, runClang=Tru
     #always indicate that we are compiling an external skeleton app
     ctx.defines.append("SSTMAC_EXTERNAL")
 
-  if runClang and haveClangSrcToSrc:
+  if (runClang and haveClangSrcToSrc) or args.sst_component:
     ctx.defines.append("SSTMAC_NO_REFACTOR_MAIN")
 
-  if memoizing or args.memoize:
+  if memoizing or args.memoize or args.sst_component:
     ctx.defines.append("SSTMAC_NO_REPLACEMENTS")
 
   #for now, just assume any time an exe name "conftest"
@@ -338,7 +340,7 @@ def run(typ, extraLibs="", makeLibrary=False, redefineSymbols=True, runClang=Tru
     ctx.compilerFlags = ctx.cxxFlags
     if args.std:
       if sstCxxArgs.std and args.std != sstCxxArgs.std:
-        sys.stderr.write("WARNING: SST compiled with %s, but app compiled with %s - choosing app's version\n" % (args.std, sstCxxArgs.std))
+        sys.stderr.write("WARNING: SST compiled with %s, but app compiled with %s - choosing app's version\n" % (sstCxxArgs.std, args.std))
       ctx.cxxFlags.append("-std=%s" % args.std)
     elif sstCxxArgs.std:
       ctx.cxxFlags.append("-std=%s" % sstCxxArgs.std)
@@ -352,7 +354,9 @@ def run(typ, extraLibs="", makeLibrary=False, redefineSymbols=True, runClang=Tru
       ctx.ld = cxx
     else:
       ctx.ld = cc 
-    if sstCArgs.std:
+    if args.std:
+      ctx.cFlags.append("-std=%s" % args.std)
+    elif sstCArgs.std:
       ctx.cFlags.append("-std=%s" % sstCArgs.std)
     ctx.compilerFlags = ctx.cFlags[:]
     if sstCxxArgs.std: #we will still do some C++, make sure we get the right -std flag
@@ -402,15 +406,22 @@ def run(typ, extraLibs="", makeLibrary=False, redefineSymbols=True, runClang=Tru
 
   runLinker = not args.preprocess and not args.compile
 
-  from sstcompile import addSrc2SrcCompile, addComponentCompile, addCompile
+  from sstcompile import addSrc2SrcCompile, addComponentCompile, addCompile, addPreprocess
+  from sstlink import addLink
 
   cmds = []
+  if args.preprocess:
+    for srcFile in sourceFiles:
+      addPreprocess(ctx, srcFile, None, args, cmds)
+    rc = runAllCmds(cmds, verbose, delTempFiles)
+    return rc
+
   generatedObjects = []
   #this is more complicated - we have to use clang to do a source to source transformation
   #then we need to run the compiler on that modified source
   for srcFile in sourceFiles:
     target = args.output
-    if not target or len(givenObjects) > 1:
+    if not target or len(givenObjects) > 1 or not args.compile:
       srcName = os.path.split(srcFile)[-1]
       target = swapSuffix("o", srcName)
     generatedObjects.append(target)
@@ -421,41 +432,25 @@ def run(typ, extraLibs="", makeLibrary=False, redefineSymbols=True, runClang=Tru
     else:
       addCompile(ctx, srcFile, target, args, cmds)
 
+  allObjects = generatedObjects[:]
+  allObjects.extend(givenObjects)
   if runLinker:
-    linkCmdArr = [ctx.ld] 
-    if not args.sst_component:
-      linkCmdArr.extend(soFlagsStr.split())
-    linkCmdArr.extend(generatedObjects)
-    linkCmdArr.extend(givenObjects)
-    linkCmdArr.extend(ctx.ldFlags)
-    linkCmdArr.extend(ctx.libs)
-    linkCmdArr.extend(ctx.compilerFlags)
-    linkCmdArr.extend(map(lambda x: "-W%s" % x, args.Wl)) #add all the -Wl flags for now
-    linkCmdArr.extend(map(lambda x: "-L%s" % x, args.L)) #add all the -L flags for now
-    linkCmdArr.extend(map(lambda x: "-l%s" % x, args.l)) #add all the -l flags for now
-    linkCmdArr.append("-o")
-    linkCmdArr.append(ldTarget)
-    cmds.append([None,linkCmdArr,[]])
-
+    addLink(ctx, ldTarget, args, cmds, allObjects)
     if makeBashExe:
-      validateCmdArr = [
-        ld,
-        "-lsstmac_main"
-      ]
-      validateCmdArr.extend(generatedObjects)
-      validateCmdArr.extend(givenObjects)
-      validateCmdArr.extend(ctx.ompilerFlags)
-      validateCmdArr.extend(ctx.ldFlags)
-      #validateCmdArr.extend(ldpathMaker)
-      validateTarget = ldTarget + "_validate"
-      validateCmdArr.append("-o")
-      validateCmdArr.append(validateTarget)
-      cmds.append([None,validateCmdArr,[]])
+      objects = allObjects[:]
+      objects.append("-lsstmac_main")
+      addLink(ctx, ldTarget + "_validate", args, cmds, objects, toExe=True)
 
-      rc = createBashWrapper(compiler, exeName, ldTarget, sstCore, sstmacExe)
-      if not rc == 0: return rc
 
-  return runAllCmds(cmds, verbose, delTempFiles)
+  rc = runAllCmds(cmds, verbose, delTempFiles)
+  if not rc == 0: return rc
+
+  if makeBashExe:
+    rc = createBashWrapper(compiler, exeName, ldTarget, sstCore, sstmacExe)
+    if not rc == 0: return rc
+
+  return 0
+
 
 
 

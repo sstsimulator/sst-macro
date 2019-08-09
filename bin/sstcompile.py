@@ -1,16 +1,6 @@
 
 
-def addSrc2SrcCompile(ctx, sourceFile, outputFile, args, cmds):
-  from sstccvars import prefix
-  from sstccvars import defaultIncludePaths, includeDir
-  from sstccutils import cleanFlag, swapSuffix, addPrefixAndRebase, addPrefix
-  from sstccvars import clangCppFlagsStr, clangLdFlagsStr
-  from sstccvars import clangLibtoolingCxxFlagsStr, clangLibtoolingCFlagsStr
-  from sstccvars import haveFloat128
-  import os
-
-
-  #First we must pre-process the file to get it read for source-to-source
+def addPreprocess(ctx, sourceFile, outputFile, args, cmds):
   ppArgs = [ctx.compiler] 
   for entry in ctx.directIncludes:
     ppArgs.append("-include")
@@ -21,11 +11,21 @@ def addSrc2SrcCompile(ctx, sourceFile, outputFile, args, cmds):
   ppArgs.extend(ctx.compilerFlags)
   ppArgs.append("-E")
   ppArgs.append(sourceFile)
+  cmds.append([outputFile,ppArgs,[]]) #pipe file, no extra temps
 
+def addSrc2SrcCompile(ctx, sourceFile, outputFile, args, cmds):
+  from sstccvars import prefix
+  from sstccvars import defaultIncludePaths, includeDir
+  from sstccutils import cleanFlag, swapSuffix, addPrefixAndRebase, addPrefix
+  from sstccvars import clangCppFlagsStr, clangLdFlagsStr
+  from sstccvars import clangLibtoolingCxxFlagsStr, clangLibtoolingCFlagsStr
+  from sstccvars import haveFloat128
+  import os
+
+  #First we must pre-process the file to get it read for source-to-source
   objBaseFolder, objName = os.path.split(outputFile)
   ppTmpFile = addPrefixAndRebase("pp.", sourceFile, objBaseFolder)
-
-  cmds.append([ppTmpFile,ppArgs,[]]) #pipe file, no extra temps
+  addPreprocess(ctx, sourceFile, ppTmpFile, args, cmds)
 
   rawPaths = defaultIncludePaths.split(":")
   cleanPaths = []
@@ -48,7 +48,7 @@ def addSrc2SrcCompile(ctx, sourceFile, outputFile, args, cmds):
   clangCmdArr.append("-stdlib=libc++")
   if args.std:
     clangCmdArr.append("-std=%s" % args.std)
-  else:
+  elif ctx.typ == "c++": #make sure we have something for C++
     clangCmdArr.append("-std=c++1y")
   if not haveFloat128:
     clangCmdArr.append("-D__float128=clangFloat128Fix")

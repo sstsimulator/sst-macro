@@ -59,7 +59,7 @@ llvm::cl::opt<std::string> ASTVisitorCmdLine::memoizeOpt("memoize",
   llvm::cl::value_desc("[optional] list,of,names"),
   llvm::cl::ValueOptional,
   llvm::cl::cat(sstmacCategoryOpt));
-llvm::cl::opt<std::string> ASTVisitorCmdLine::configModeOpt("confg-mode",
+llvm::cl::opt<std::string> ASTVisitorCmdLine::configModeOpt("config-mode",
   llvm::cl::desc("Compile for standalone config mode for use with CMake and autotools"),
   llvm::cl::value_desc("[optional] list,of,names"),
   llvm::cl::ValueOptional,
@@ -2106,7 +2106,7 @@ bool
 SkeletonASTVisitor::TraverseFunctionDecl(clang::FunctionDecl* D)
 {
 
-  if (D->isMain() && refactorMain_){
+  if (D->isMain() && opts_.refactorMain){
     replaceMain(D);
   } else if (D->isTemplateInstantiation()){
     return true; //do not visit implicitly instantiated template stuff
