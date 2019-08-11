@@ -71,31 +71,25 @@ struct DeclDeleteException : public std::runtime_error
 };
 
 struct ASTVisitorCmdLine {
+  static pragmas::Mode mode;
+  static int modeMask;
+
+  static bool modeActive(int mask){
+    return modeMask & mask;
+  }
+
   static llvm::cl::OptionCategory sstmacCategoryOpt;
-  static llvm::cl::opt<std::string> memoizeOpt;
-  static llvm::cl::opt<std::string> skeletonizeOpt;
-  static llvm::cl::opt<std::string> configModeOpt;
+  static llvm::cl::opt<bool> memoizeOpt;
+  static llvm::cl::opt<bool> skeletonizeOpt;
+  static llvm::cl::opt<bool> shadowizeOpt;
+  static llvm::cl::opt<bool> puppetizeOpt;
+  static llvm::cl::opt<bool> encapsulateOpt;
   static llvm::cl::opt<std::string> includeListOpt;
   static llvm::cl::opt<bool> verboseOpt;
   static llvm::cl::opt<bool> refactorMainOpt;
   static llvm::cl::opt<bool> noRefactorMainOpt;
 
-  /** Wether the source to source is for memoization */
-  static bool runMemoize;
-  /** Whether the source to source is for skeletonization */
-  static bool runSkeletonize;
-  /** Whether the source to source needs extra modifications
-   *  to support LLVM analysis/transformation passes
-   *  after running source to source */
-  static bool extraMemoizePasses;
-  /** Whether the source to source needs extra modifications
-   *  to support LLVM analysis/transformation passes
-   *  after running source to source */
-  static bool extraSkeletonizePasses;
-
   static std::list<std::string> includePaths;
-
-  static bool runConfigMode;
 
   static bool refactorMain;
 
@@ -233,6 +227,10 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
 
   void registerNewKeywords(std::ostream& os);
 
+  pragmas::Mode mode() const {
+    return ASTVisitorCmdLine::mode;
+  }
+
   PragmaConfig& getPragmaConfig() {
     return pragmaConfig_;
   }
@@ -262,16 +260,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     return iter->second.reusableText;
   }
 
-  bool skeletonize() const {
-    return opts_.runSkeletonize;
-  }
-
   void setCompilerInstance(clang::CompilerInstance& c){
     ci_ = &c;
-  }
-
-  bool memoize() const {
-    return opts_.runMemoize;
   }
 
   /**
@@ -1108,16 +1098,14 @@ struct PragmaActivateGuard {
   template <class T> //either decl/stmt
   PragmaActivateGuard(T* t, SkeletonASTVisitor* visitor, bool doVisit = true) :
     PragmaActivateGuard(t, *visitor->ci_, visitor->pragmaConfig_, visitor->rewriter_,
-      visitor->pragmas_, doVisit, false/*2nd pass*/,
-      visitor->opts_.runSkeletonize, visitor->opts_.runMemoize)
+      visitor->pragmas_, doVisit, false/*2nd pass*/)
   {
   }
 
   template <class T>
   PragmaActivateGuard(T* t, FirstPassASTVistor* visitor, bool doVisit = true) :
     PragmaActivateGuard(t, visitor->ci_, visitor->pragmaConfig_, visitor->rewriter_,
-      visitor->pragmas_, doVisit, true/*1st pass*/,
-      visitor->opts_.runSkeletonize, visitor->opts_.runMemoize)
+      visitor->pragmas_, doVisit, true/*1st pass*/)
   {
   }
 
@@ -1140,35 +1128,34 @@ struct PragmaActivateGuard {
        PragmaConfig& cfg,
        clang::Rewriter& rewriter,
        SSTPragmaList& pragmas,
-       bool doVisit, bool firstPass,
-       bool skeletonizing, bool memoizing) :
+       bool doVisit, bool firstPass) :
+    skipVisit_(false),
     pragmaConfig_(cfg),
     rewriter_(rewriter),
-    pragmas_(pragmas),
-    skeletonizing_(skeletonizing),
-    memoizing_(memoizing)
+    pragmas_(pragmas)
   {
     ++pragmaConfig_.pragmaDepth;
     myPragmas_ = pragmas_.getMatches<T>(t, firstPass);
     //this removes all inactivate pragmas from myPragmas_
-    init();
     for (SSTPragma* prg : myPragmas_){
       if (doVisit){
         //pragma takes precedence - must occur in pre-visit
         activePragmas_.push_back(prg);
-        deletePragmaText(prg, ci);
+        if (prg->deleteOnUse){
+          deletePragmaText(prg, ci);
+        }
         prg->activate(t, rewriter_, pragmaConfig_);
+        if (pragmaConfig_.makeNoChanges){
+          skipVisit_ = true;
+          pragmaConfig_.makeNoChanges = false;
+        }
       }
     }
   }
 
-  void init();
-
   void deletePragmaText(SSTPragma* prg, clang::CompilerInstance& ci);
 
   bool skipVisit_;
-  bool skeletonizing_;
-  bool memoizing_;
   std::list<SSTPragma*> myPragmas_;
   std::list<SSTPragma*> activePragmas_;
   PragmaConfig& pragmaConfig_;

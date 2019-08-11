@@ -100,8 +100,16 @@ ReplaceAction::ExecuteAction()
 
   //okay, super annoying - I have to DELETE the openmp handlers
   DeleteOpenMPPragma deleter; ci_->getPreprocessor().RemovePragmaHandler(&deleter);
-  ci_->getPreprocessor().AddPragmaHandler("omp", new SSTOpenMPParallelPragmaHandler(
-                     visitor_.getPragmas(), *ci_, visitor_)); //and put it back
+
+  SSTPragmaNamespace* ns = PragmaRegisterMap::getNamespace("omp");
+  for (auto&& name : ns->names()){
+    PragmaHandlerFactoryBase* factory = ns->getFactory(ASTVisitorCmdLine::mode, name);
+    ci_->getPreprocessor().AddPragmaHandler("omp",
+        factory->getHandler(visitor_.getPragmas(), *ci_, visitor_));
+  }
+
+  //ci_->getPreprocessor().AddPragmaHandler("omp", new SSTOpenMPParallelPragmaHandler(
+  //                   visitor_.getPragmas(), *ci_, visitor_)); //and put it back
 
   S.getPreprocessor().EnterMainSourceFile();
   P.Initialize();
@@ -141,10 +149,23 @@ struct PragmaPPCallback : public PPCallbacks {
 };
 
 void
-ReplaceAction::initPragmas(CompilerInstance& CI)
+ReplaceAction::initPragmas(CompilerInstance& CI, pragmas::Mode m)
 {
+  /** Need this to figure out begin location of #pragma */
   CI.getPreprocessor().addPPCallbacks(llvm::make_unique<PragmaPPCallback>());
 
+  for (auto&& pair : PragmaRegisterMap::namespaces()){
+    SSTPragmaNamespace* ns = pair.second;
+    for (auto&& name : ns->names()){
+      PragmaHandlerFactoryBase* factory = ns->getFactory(m, name);
+      CI.getPreprocessor().AddPragmaHandler("sst",
+          factory->getHandler(visitor_.getPragmas(), CI, visitor_));
+    }
+  }
+
+
+
+  /**
   CI.getPreprocessor().AddPragmaHandler("sst",
     new SSTDeletePragmaHandler(visitor_.getPragmas(), CI, visitor_));
   CI.getPreprocessor().AddPragmaHandler("sst",
@@ -205,6 +226,7 @@ ReplaceAction::initPragmas(CompilerInstance& CI)
     new SSTStackAllocPragmaHandler(visitor_.getPragmas(), CI, visitor_));
   CI.getPreprocessor().AddPragmaHandler("sst",
     new SSTImplicitStatePragmaHandler(visitor_.getPragmas(), CI, visitor_));
+  */
 }
 
 void

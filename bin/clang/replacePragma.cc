@@ -301,7 +301,7 @@ SSTInitPragma::activateDeclStmt(DeclStmt* s, Rewriter& r)
 }
 
 std::string
-SSTReplacePragmaHandler::parse(SourceLocation loc,
+SSTReplacePragma::parse(SourceLocation loc,
     CompilerInstance& CI, const std::list<Token>& tokens, std::ostream& os)
 {
   if (tokens.size() < 2){
@@ -319,42 +319,28 @@ SSTReplacePragmaHandler::parse(SourceLocation loc,
   return fxn.getIdentifierInfo()->getNameStart();
 }
 
-SSTPragma*
-SSTReplacePragmaHandler::handleSSTPragma(const std::list<Token> &tokens) const
+SSTReplacePragma::SSTReplacePragma(SourceLocation loc, CompilerInstance& CI,
+    const std::list<Token> &tokens)
 {
   std::stringstream sstr;
-  std::string fxn = parse(pragmaLoc_, ci_, tokens, sstr);
-  return new SSTReplacePragma(fxn, sstr.str());
+  fxn_ = parse(loc, CI, tokens, sstr);
+  replacement_ = sstr.str();
 }
 
-SSTPragma*
-SSTStartReplacePragmaHandler::handleSSTPragma(const std::list<Token> &tokens) const
-{
-  std::stringstream sstr;
-  std::string fxn = SSTReplacePragmaHandler::parse(pragmaLoc_, ci_, tokens, sstr);
-  return new SSTStartReplacePragma(fxn, sstr.str());
-}
+using namespace pragmas;
 
-SSTPragma*
-SSTStopReplacePragmaHandler::handleSSTPragma(const std::list<Token> &tokens) const
-{
-  std::string fxn = tokens.front().getIdentifierInfo()->getNameStart();
-  return new SSTStopReplacePragma(fxn, "not relevant");
-}
+static PragmaRegister<SSTStringPragma, SSTInsteadPragma, true> insteadPragma(
+    "sst", "instead", SKELETONIZE | PUPPETIZE | SHADOWIZE);
 
-SSTPragma*
-SSTInitPragmaHandler::handleSSTPragma(const std::list<Token> &tokens) const
-{
-  std::stringstream sstr;
-  SSTPragma::tokenStreamToString(tokens.begin(), tokens.end(), sstr, ci_);
-  return new SSTInitPragma(sstr.str());
-}
+static PragmaRegister<SSTStringPragma, SSTInitPragma, true> initPragma(
+    "sst", "init", SKELETONIZE | PUPPETIZE | SHADOWIZE);
 
-SSTPragma*
-SSTInsteadPragmaHandler::handleSSTPragma(const std::list<Token> &tokens) const
-{
-  std::stringstream sstr;
-  SSTPragma::tokenStreamToString(tokens.begin(), tokens.end(), sstr, ci_);
-  return new SSTInsteadPragma(sstr.str());
-}
+static PragmaRegister<SSTTokenListPragma, SSTStartReplacePragma, true> startReplacePragma(
+    "sst", "start_replace", SKELETONIZE | PUPPETIZE | SHADOWIZE);
+
+static PragmaRegister<SSTStringPragma, SSTStopReplacePragma, true> stopReplacePragma(
+    "sst", "stop_replace", SKELETONIZE | PUPPETIZE | SHADOWIZE);
+
+static PragmaRegister<SSTTokenListPragma, SSTReplacePragma, true> replacePragma(
+    "sst", "replace", SKELETONIZE | PUPPETIZE | SHADOWIZE);
 

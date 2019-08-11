@@ -54,26 +54,26 @@ clang::LangOptions Printing::langOpts;
 clang::PrintingPolicy Printing::policy(Printing::langOpts);
 
 llvm::cl::OptionCategory ASTVisitorCmdLine::sstmacCategoryOpt("SST/Macro options");
-llvm::cl::opt<std::string> ASTVisitorCmdLine::memoizeOpt("memoize",
-  llvm::cl::desc("Run memoization source-to-source, optional extra LLVM instrumentation passes"),
-  llvm::cl::value_desc("[optional] list,of,names"),
-  llvm::cl::ValueOptional,
-  llvm::cl::cat(sstmacCategoryOpt));
-llvm::cl::opt<std::string> ASTVisitorCmdLine::configModeOpt("config-mode",
-  llvm::cl::desc("Compile for standalone config mode for use with CMake and autotools"),
-  llvm::cl::value_desc("[optional] list,of,names"),
-  llvm::cl::ValueOptional,
-  llvm::cl::cat(sstmacCategoryOpt));
 llvm::cl::opt<std::string> ASTVisitorCmdLine::includeListOpt("system-includes",
   llvm::cl::desc("Give the list of default system include paths for the pre-processing compiler"),
   llvm::cl::value_desc("list:of:paths"),
   llvm::cl::cat(sstmacCategoryOpt),
   llvm::cl::ValueRequired);
-llvm::cl::opt<std::string> ASTVisitorCmdLine::skeletonizeOpt("skeletonize",
-  llvm::cl::desc("Run skeletonization source-to-source, optional extra LLVM skeletonization passes"),
-  llvm::cl::value_desc("[optional] list,of,names"),
-  llvm::cl::cat(sstmacCategoryOpt),
-  llvm::cl::ValueOptional);
+llvm::cl::opt<bool> ASTVisitorCmdLine::skeletonizeOpt("skeletonize",
+  llvm::cl::desc("Run skeletonization source-to-source"),
+  llvm::cl::cat(sstmacCategoryOpt));
+llvm::cl::opt<bool> ASTVisitorCmdLine::memoizeOpt("memoize",
+  llvm::cl::desc("Run memoization source-to-source"),
+  llvm::cl::cat(sstmacCategoryOpt));
+llvm::cl::opt<bool> ASTVisitorCmdLine::encapsulateOpt("encapsulate",
+  llvm::cl::desc("Run skeletonization source-to-source"),
+  llvm::cl::cat(sstmacCategoryOpt));
+llvm::cl::opt<bool> ASTVisitorCmdLine::shadowizeOpt("shadowize",
+  llvm::cl::desc("Run memoization source-to-source"),
+  llvm::cl::cat(sstmacCategoryOpt));
+llvm::cl::opt<bool> ASTVisitorCmdLine::puppetizeOpt("puppetize",
+  llvm::cl::desc("Run skeletonization source-to-source"),
+  llvm::cl::cat(sstmacCategoryOpt));
 llvm::cl::opt<bool> ASTVisitorCmdLine::verboseOpt("verbose",
   llvm::cl::desc("Print verbose source-to-source output"),
   llvm::cl::cat(sstmacCategoryOpt));
@@ -87,17 +87,15 @@ llvm::cl::opt<bool> ASTVisitorCmdLine::noRefactorMainOpt("no-refactor-main",
   llvm::cl::desc("Do not refactor main, leaving symbol as is"),
   llvm::cl::cat(ASTVisitorCmdLine::sstmacCategoryOpt));
 
-bool ASTVisitorCmdLine::extraMemoizePasses = false;
-bool ASTVisitorCmdLine::extraSkeletonizePasses = false;
-bool ASTVisitorCmdLine::runMemoize = false;
-bool ASTVisitorCmdLine::runSkeletonize = false;
+pragmas::Mode ASTVisitorCmdLine::mode;
+int ASTVisitorCmdLine::modeMask;
 bool ASTVisitorCmdLine::refactorMain = true;
-bool ASTVisitorCmdLine::runConfigMode = false;
 std::list<std::string> ASTVisitorCmdLine::includePaths;
 
 using namespace clang;
 using namespace clang::driver;
 using namespace clang::tooling;
+using namespace pragmas;
 
 static std::string appendText(clang::Expr* expr, const std::string& toAppend)
 {
@@ -110,34 +108,90 @@ static std::string appendText(clang::Expr* expr, const std::string& toAppend)
 void
 ASTVisitorCmdLine::setup()
 {
+  int skeletonize = 0;
   const char* skelStr = getenv("SSTMAC_SKELETONIZE");
   if (skelStr){
-    runSkeletonize = atoi(skelStr);
-  }
-
-  const char* configStr = getenv("SSTMAC_CONFIG");
-  if (configStr){
-    runConfigMode = atoi(configStr);
+    int runSkeletonize = atoi(skelStr);
+    if (runSkeletonize){
+      skeletonize = 1;
+    }
   }
 
   if (skeletonizeOpt.getNumOccurrences()){
-    //this overwrites anything from the environment
-    runSkeletonize = true;
-    StringRef sref(skeletonizeOpt);
-    extraSkeletonizePasses = !sref.empty();
+    skeletonize = 1;
   }
 
+  int puppetize = 0;
+  const char* puppetStr = getenv("SSTMAC_PUPPETIZE");
+  if (puppetStr){
+    int runPuppetize = atoi(puppetStr);
+    if (runPuppetize){
+      puppetize = 1;
+    }
+  }
+
+  if (puppetizeOpt.getNumOccurrences()){
+    puppetize = 1;
+  }
+
+  int shadowize = 0;
+  const char* shadowStr = getenv("SSTMAC_SHADOWIZE");
+  if (shadowStr){
+    int runShadowize = atoi(shadowStr);
+    if (runShadowize){
+      shadowize = 1;
+    }
+  }
+
+  if (shadowizeOpt.getNumOccurrences()){
+    shadowize = 1;
+  }
+
+  int memoize = 0;
   const char* memoStr = getenv("SSTMAC_MEMOIZE");
   if (memoStr){
-    runMemoize = atoi(memoStr);
+    int runMemoize = atoi(memoStr);
+    if (runMemoize){
+      memoize = 1;
+    }
   }
 
   if (memoizeOpt.getNumOccurrences()){
-    //this overwrites anything from the environment
-    runMemoize = true;
-    StringRef sref(memoizeOpt);
-    extraMemoizePasses = !sref.empty();
+    memoize = 1;
   }
+
+  int encapsulate = 0;
+  const char* encapsulaeStr = getenv("SSTMAC_ENCAPSULATE");
+  if (encapsulaeStr){
+    int runEncapsulate = atoi(encapsulaeStr);
+    if (runEncapsulate){
+      encapsulate = 1;
+    }
+  }
+
+  if (encapsulateOpt.getNumOccurrences()){
+    encapsulate = 1;
+  }
+
+  int modeSum = skeletonize + memoize + shadowize + puppetize + encapsulate;
+  if (modeSum > 1){
+    std::cerr << "input error: can only specify one mode of "
+                 "skeletonize, memoize, shadowize, puppetize, or encapsulate"
+              << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+  if (modeSum == 0){
+    mode = ENCAPSULATE_MODE;
+  } else {
+    if (encapsulate) mode = ENCAPSULATE_MODE;
+    if (skeletonize) mode = SKELETONIZE_MODE;
+    if (puppetize)   mode = PUPPETIZE_MODE;
+    if (shadowize)   mode = SHADOWIZE_MODE;
+    if (memoize)     mode = MEMOIZE_MODE;
+  }
+  modeMask = 1 << mode;
+
 
   if (includeListOpt.getNumOccurrences()){
     StringRef sref(includeListOpt);
@@ -389,7 +443,7 @@ SkeletonASTVisitor::TraverseCXXDeleteExpr(CXXDeleteExpr* expr, DataRecursionQueu
 {
   activeBinOpIdx_ = IndexResetter;
 
-  if (opts_.runSkeletonize){
+  if (opts_.modeActive(SKELETONIZE | SHADOWIZE)){
     goIntoContext(expr, [&]{
       TraverseStmt(expr->getArgument());
     });
@@ -626,7 +680,6 @@ void
 SkeletonASTVisitor::visitNullVariable(Expr* expr, NamedDecl* nd)
 {
   SSTNullVariablePragma* nullVarPrg = getNullVariable(nd->getCanonicalDecl());
-
   if (!nullVarPrg->deleteAll() && !activeDerefs_.empty()){
     if (nullVarPrg->skeletonizeCompute()){
       //oh, okay - auto-skeletonize computes involving this
@@ -747,7 +800,6 @@ bool
 SkeletonASTVisitor::VisitDeclRefExpr(DeclRefExpr* expr)
 {
   clang::NamedDecl* nd = expr->getFoundDecl();
-
   if (isNullVariable(nd->getCanonicalDecl())){
     bool shouldVisitNull = true;
     if (!memberAccesses_.empty()){
@@ -771,7 +823,7 @@ SkeletonASTVisitor::VisitDeclRefExpr(DeclRefExpr* expr)
 void
 SkeletonASTVisitor::visitCollective(CallExpr *expr)
 {
-  if (opts_.runSkeletonize){
+  if (opts_.modeActive(SKELETONIZE | SHADOWIZE)){
       //first buffer argument to nullptr
       if (expr->getArg(0)->getType()->isPointerType()){
         //make sure this isn't a shortcut function without buffers
@@ -788,7 +840,7 @@ SkeletonASTVisitor::visitCollective(CallExpr *expr)
 void
 SkeletonASTVisitor::visitReduce(CallExpr *expr)
 {
-  if (opts_.runSkeletonize){
+  if (opts_.modeActive(SKELETONIZE | SHADOWIZE)){
     //first buffer argument to nullptr
     if (expr->getArg(0)->getType()->isPointerType()){
       //make sure this isn't a shortcut function without buffers
@@ -805,7 +857,7 @@ SkeletonASTVisitor::visitReduce(CallExpr *expr)
 void
 SkeletonASTVisitor::visitPt2Pt(CallExpr *expr)
 {
-  if (opts_.runSkeletonize){
+  if (opts_.modeActive(SKELETONIZE | SHADOWIZE)){
     //first buffer argument to nullptr
     if (expr->getArg(0)->getType()->isPointerType()){
       //make sure this isn't a shortcut function without buffers
@@ -818,10 +870,14 @@ SkeletonASTVisitor::visitPt2Pt(CallExpr *expr)
 bool 
 SkeletonASTVisitor::TraverseReturnStmt(clang::ReturnStmt* stmt, DataRecursionQueue* queue)
 {
-  PragmaActivateGuard pag(stmt, this);
-  if (pag.skipVisit()) return true;
-  
-  TraverseStmt(stmt->getRetValue());
+  try {
+    PragmaActivateGuard pag(stmt, this);
+    if (pag.skipVisit()) return true;
+
+    TraverseStmt(stmt->getRetValue());
+  } catch (StmtDeleteException& e){
+    if (e.deleted != stmt) throw e;
+  }
 
   return true;
 }
@@ -830,7 +886,9 @@ bool
 SkeletonASTVisitor::TraverseCXXMemberCallExpr(CXXMemberCallExpr* expr, DataRecursionQueue* queue)
 {
   PragmaActivateGuard pag(expr, this);
-  if (pag.skipVisit()) return true;
+  if (pag.skipVisit()){
+    return true;
+  }
 
   CXXRecordDecl* cls = expr->getRecordDecl();
   std::string clsName = cls->getNameAsString();
@@ -970,7 +1028,8 @@ SkeletonASTVisitor::TraverseCallExpr(CallExpr* expr, DataRecursionQueue* queue)
     if (pag.skipVisit()) return true;
 
     DeclRefExpr* baseFxn = nullptr;
-    if (opts_.runSkeletonize && !pragmaConfig_.replacePragmas.empty()){
+    bool changeCall = opts_.modeActive(SKELETONIZE | SHADOWIZE);
+    if (changeCall && !pragmaConfig_.replacePragmas.empty()){
       Expr* fxn = getUnderlyingExpr(const_cast<Expr*>(expr->getCallee()));
       if (fxn->getStmtClass() == Stmt::DeclRefExprClass){
         //this is a basic function call
@@ -984,7 +1043,7 @@ SkeletonASTVisitor::TraverseCallExpr(CallExpr* expr, DataRecursionQueue* queue)
           }
         }
       }
-    } else if (opts_.runSkeletonize) {
+    } else if (changeCall) {
       Expr* fxn = getUnderlyingExpr(const_cast<Expr*>(expr->getCallee()));
       if (fxn->getStmtClass() == Stmt::DeclRefExprClass){
         DeclRefExpr* dref = cast<DeclRefExpr>(fxn);
@@ -2004,7 +2063,7 @@ SkeletonASTVisitor::visitVarDecl(VarDecl* D)
   }
 
   //memoization should do no refactoring of global variables
-  if (opts_.runMemoize)
+  if (opts_.modeActive(MEMOIZE))
     return false;
 
   bool skipInit = false;
@@ -2035,9 +2094,7 @@ SkeletonASTVisitor::replaceMain(clang::FunctionDecl* mainFxn)
 
   foundCMain_ = true;
 
-  if (opts_.runConfigMode){
-    mainName_ = "sstmac_standalone_app";
-  } else if (mainName_.empty()){
+  if (mainName_.empty()){
     //we need to select a unique name for the application
     //lets just do this as the source file and the date
 
@@ -2105,7 +2162,6 @@ SkeletonASTVisitor::traverseFunctionBody(clang::Stmt* s)
 bool
 SkeletonASTVisitor::TraverseFunctionDecl(clang::FunctionDecl* D)
 {
-
   if (D->isMain() && opts_.refactorMain){
     replaceMain(D);
   } else if (D->isTemplateInstantiation()){
@@ -2142,6 +2198,8 @@ SkeletonASTVisitor::TraverseFunctionDecl(clang::FunctionDecl* D)
     }
   } catch (StmtDeleteException& e) {
     if (e.deleted != D->getBody()) throw e;
+  } catch (DeclDeleteException& e) {
+    if (e.deleted != D) throw e;
   }
 
   return true;
@@ -2233,11 +2291,16 @@ SkeletonASTVisitor::TraverseCXXMethodDecl(CXXMethodDecl *D)
   if (D->isTemplateInstantiation())
     return true;
 
-  PragmaActivateGuard pag(D, this);
-  if (D->isThisDeclarationADefinition() && !pag.skipVisit()) {
-    IncrementGuard ig(insideCxxMethod_);
-    traverseFunctionBody(D->getBody());
+  try {
+    PragmaActivateGuard pag(D, this);
+    if (D->isThisDeclarationADefinition() && !pag.skipVisit()) {
+      IncrementGuard ig(insideCxxMethod_);
+      traverseFunctionBody(D->getBody());
+    }
+  } catch (DeclDeleteException& e) {
+    if (e.deleted != D) throw e;
   }
+
   return true;
 }
 
@@ -2564,14 +2627,11 @@ SkeletonASTVisitor::TraverseArraySubscriptExpr(ArraySubscriptExpr* expr, DataRec
 bool
 SkeletonASTVisitor::VisitStmt(Stmt *S)
 {
-  if (opts_.runSkeletonize){
-    try {
-      PragmaActivateGuard pag(S, this);
-    } catch (StmtDeleteException& e) {
-      if (e.deleted != S) throw e;
-    }
+  try {
+    PragmaActivateGuard pag(S, this);
+  } catch (StmtDeleteException& e) {
+    if (e.deleted != S) throw e;
   }
-
   return true;
 }
 
@@ -2611,64 +2671,6 @@ SkeletonASTVisitor::TraverseDecl(Decl *D)
     if (e.deleted != D) throw e;
   }
   return true;
-}
-
-
-void
-PragmaActivateGuard::init()
-{
-  skipVisit_ = false;
-  auto iter = myPragmas_.begin();
-  auto end = myPragmas_.end();
-  while (iter != end){
-    auto tmp = iter++;
-    SSTPragma* prg = *tmp;
-
-    bool activate = skeletonizing_;
-
-    //a compute pragma totally deletes the block
-    bool blockDeleted = false;
-    switch (prg->cls){
-      case SSTPragma::StackAlloc:
-      case SSTPragma::ImplicitState:
-      case SSTPragma::AdvanceTime:
-      case SSTPragma::Memoize:  //always - regardless of skeletonization
-      case SSTPragma::GlobalVariable:
-        skipVisit_ = false;
-        activate = true;
-        break;
-      case SSTPragma::Keep:
-        skipVisit_ = true;
-        activate = true; //always - regardless of skeletonization
-        break;
-      case SSTPragma::Overhead:
-        activate = !memoizing_;
-        skipVisit_ = false;
-        break;
-      case SSTPragma::AlwaysCompute:
-        blockDeleted = true;
-        activate = true;
-        break;
-      case SSTPragma::Compute:
-      case SSTPragma::Delete:
-      case SSTPragma::Init:
-      case SSTPragma::Instead:
-      case SSTPragma::Return:
-        blockDeleted = true;
-        break;
-      default: break;
-    }
-    skipVisit_ = skipVisit_ || blockDeleted;
-
-    if (!activate){
-      myPragmas_.erase(tmp);
-    }
-  }
-
-  if (pragmaConfig_.makeNoChanges){
-    skipVisit_ = true;
-    pragmaConfig_.makeNoChanges = false;
-  }
 }
 
 PragmaActivateGuard::~PragmaActivateGuard()
