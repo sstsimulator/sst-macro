@@ -151,7 +151,8 @@ struct SnapprOutPort {
     notifier_ = new TailNotifierDerived<T,Fxn>(t,f);
   }
 
-  SnapprOutPort(SST::Params& params, const std::string& arb, const std::string& portName, int number,
+  SnapprOutPort(SST::Params& params, const std::string& arb,
+                const std::string& subId, const std::string& portName, int number,
                 TimeDelta byte_delay, bool congestion, bool flow_control, Component* parent);
 
  private:

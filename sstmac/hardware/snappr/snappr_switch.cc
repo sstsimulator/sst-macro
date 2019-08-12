@@ -112,36 +112,21 @@ SnapprSwitch::SnapprSwitch(uint32_t id, SST::Params& params) :
   TimeDelta byte_delay(1.0/link_bw_);
   std::string arbtype = params.find<std::string>("arbitrator", "fifo");
   outports_.reserve(top_->maxNumPorts());
-  for (int i=0; i < top_->maxNumPorts(); ++i){
-    std::string portTypeName = top_->portTypeName(addr(), i);
-    std::string portName = sprockit::printf("Switch%d:%s:%d", addr(), portTypeName.c_str(), i);
-    outports_.emplace_back(link_params, arbtype, portName, i,
-                           byte_delay, congestion, flow_control, this);
-  }
-
   inports_.resize(top_->maxNumPorts());
   num_vc_ = router()->numVC();
   num_vl_ = num_vc_ * qos_levels_;
   switch_debug("initializing with %d VCs and %" PRIu32 " total credits",
                num_vc_, credits);
-
-  for (int i=0; i < outports_.size(); ++i){
+  for (int i=0; i < top_->maxNumPorts(); ++i){
     std::string subId = sprockit::printf("Switch:%d.Port:%d", addr(), i);
+    std::string portName = top_->portTypeName(addr(), i);
+    outports_.emplace_back(link_params, arbtype, subId, portName, i,
+                           byte_delay, congestion, flow_control, this);
     SnapprOutPort& p = outports_[i];
     p.setVirtualLanes(num_vl_, credits);
-    p.xmit_active = registerStatistic<uint64_t>(link_params, "xmit_active", subId);
-    p.xmit_idle = registerStatistic<uint64_t>(link_params, "xmit_idle", subId);
-    p.xmit_stall = registerStatistic<uint64_t>(link_params, "xmit_stall", subId);
-    p.bytes_sent = registerStatistic<uint64_t>(link_params, "bytes_sent", subId);
-    p.state_ftq = dynamic_cast<FTQCalendar*>(registerMultiStatistic<int,uint64_t,uint64_t>(link_params, "state", subId));
-    p.queue_depth_ftq = dynamic_cast<FTQCalendar*>(registerMultiStatistic<int,uint64_t,uint64_t>(link_params, "queue_depth", subId));
-
-    std::string portName = top_->portTypeName(addr(), i);
-    p.ftq_idle_state = FTQTag::allocateCategoryId("idle:" + portName);
-    p.ftq_active_state = FTQTag::allocateCategoryId("active:" + portName);
-    p.ftq_stalled_state = FTQTag::allocateCategoryId("stalled:" + portName);
     p.inports = inports_.data();
   }
+
   for (int i=0; i < inports_.size(); ++i){
     inports_[i].number = i;
   }

@@ -91,20 +91,11 @@ SnapprNIC::SnapprNIC(SST::Component* parent, SST::Params& params) :
   flow_control_ = inj_params.find<bool>("flow_control", true);
   inj_byte_delay_ = TimeDelta(inj_params.find<SST::UnitAlgebra>("bandwidth").getValue().inverse().toDouble());
   for (int i=0; i < num_ports; ++i){
-    std::string portName = sprockit::printf("NIC%d:%d", addr(), i);
-    outports_.emplace_back(inj_params, arbtype, portName, i, inj_byte_delay_,
+    std::string subId = sprockit::printf("NIC%d:%d", addr(), i);
+    outports_.emplace_back(inj_params, arbtype, subId, "NIC_send", i, inj_byte_delay_,
                            true/*always need congestion on NIC*/, flow_control_, parent);
     SnapprOutPort& p = outports_[i];
-    std::string subId = sprockit::printf("NIC:%d", addr());
-    p.ftq_active_state = FTQTag::allocateCategoryId("active:NIC_send");
-    p.ftq_idle_state = FTQTag::allocateCategoryId("idle:NIC_send");
-    p.ftq_stalled_state = FTQTag::allocateCategoryId("idle:NIC_send");
-    p.xmit_active = registerStatistic<uint64_t>(inj_params, "xmit_active", subId);
-    p.xmit_idle = registerStatistic<uint64_t>(inj_params, "xmit_idle", subId);
-    p.xmit_stall = registerStatistic<uint64_t>(inj_params, "xmit_stall", subId);
-    p.byte_delay = inj_byte_delay_;
     p.setVirtualLanes(qosLevels, credits);
-    p.bytes_sent = registerStatistic<uint64_t>(inj_params, "bytes_sent", subId);
     p.addTailNotifier(this, &SnapprNIC::handleTailPacket);
   }
 

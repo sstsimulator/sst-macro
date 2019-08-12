@@ -7,6 +7,8 @@
 #include <sstmac/common/stats/ftq.h>
 #include <sstmac/common/event_scheduler.h>
 #include <sstmac/common/event_callback.h>
+#include <sstmac/common/stats/ftq.h>
+#include <sstmac/common/stats/ftq_tag.h>
 #include <queue>
 
 #define pkt_debug(...) \
@@ -20,14 +22,29 @@
 namespace sstmac {
 namespace hw {
 
-SnapprOutPort::SnapprOutPort(SST::Params& params, const std::string &arb, const std::string& name,
-                             int number, TimeDelta byte_delay, bool congestion, bool flow_control,
+SnapprOutPort::SnapprOutPort(SST::Params& params, const std::string &arb,
+                             const std::string& subId, const std::string& portName,
+                             int number, TimeDelta byt_delay, bool congestion, bool flow_control,
                              Component* parent)
   : arbitration_scheduled(false),
-    portName_(name), number_(number), congestion_(congestion), flow_control_(flow_control),
+    portName_(subId), number_(number),
+    byte_delay(byt_delay), congestion_(congestion), flow_control_(flow_control),
     parent_(parent), notifier_(nullptr)
 {
   arb_ = sprockit::create<SnapprPortArbitrator>("macro", arb, byte_delay, params);
+  xmit_active = parent->registerStatistic<uint64_t>(params, "xmit_active", subId);
+  xmit_idle = parent->registerStatistic<uint64_t>(params, "xmit_idle", subId);
+  xmit_stall = parent->registerStatistic<uint64_t>(params, "xmit_stall", subId);
+  bytes_sent = parent->registerStatistic<uint64_t>(params, "bytes_sent", subId);
+  state_ftq = dynamic_cast<FTQCalendar*>(
+        parent->registerMultiStatistic<int,uint64_t,uint64_t>(params, "state", subId));
+  queue_depth_ftq = dynamic_cast<FTQCalendar*>(
+        parent->registerMultiStatistic<int,uint64_t,uint64_t>(params, "queue_depth", subId));
+
+
+  ftq_idle_state = FTQTag::allocateCategoryId("idle:" + portName);
+  ftq_active_state = FTQTag::allocateCategoryId("active:" + portName);
+  ftq_stalled_state = FTQTag::allocateCategoryId("stalled:" + portName);
 }
 
 void
