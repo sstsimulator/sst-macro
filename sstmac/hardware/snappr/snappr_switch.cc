@@ -117,7 +117,12 @@ SnapprSwitch::SnapprSwitch(uint32_t id, SST::Params& params) :
 
   qos_levels_ = params.find<int>("qos_levels", 1);
 
-  outports_.resize(top_->maxNumPorts());
+  std::string arbtype = params.find<std::string>("arbitrator", "fifo");
+  outports_.reserve(top_->maxNumPorts());
+  for (int i=0; i < top_->maxNumPorts(); ++i){
+    outports_.emplace_back(arbtype);
+  }
+
   inports_.resize(top_->maxNumPorts());
   num_vc_ = router()->numVC();
   num_vl_ = num_vc_ * qos_levels_;
@@ -264,7 +269,7 @@ SnapprSwitch::send(OutPort& p, SnapprPacket* pkt, Timestamp now)
 
   pkt_debug("packet leaving port %d at t=%8.4e: %s",
             p.number, p.next_free.sec(), pkt->toString().c_str());
-  if (p.readyVirtualLanes()){
+  if (p.ready()){
     scheduleArbitration(p);
   }
 }
@@ -275,6 +280,9 @@ SnapprSwitch::scheduleArbitration(OutPort& p)
 #if SSTMAC_SANITY_CHECK
   if (p.arbitration_scheduled){
     spkt_abort_printf("arbitration already scheduled on switch %d port %d", addr(), p.number);
+  }
+  if (p.queueLength() == 0){
+    spkt_abort_printf("scheduling arbitration on port with nothing queued");
   }
 #endif
   pkt_debug("scheduling arbitrate from port %d at t=%8.4e with %d queued",
@@ -322,7 +330,7 @@ SnapprSwitch::arbitrate(int portnum)
 #endif
 
   p.arbitration_scheduled = false;
-  if (p.readyVirtualLanes()){
+  if (p.ready()){
     logQueueDepth(p);
     SnapprPacket* pkt = p.popReady();
     pkt_debug("arbitrating packet from port %d:%d with %d queued",
@@ -362,8 +370,8 @@ SnapprSwitch::tryToSendPacket(SnapprPacket* pkt)
   } else {
     logQueueDepth(p);
     p.queue(pkt);
-    pkt_debug("incoming packet on port=%d vl=%d -> queue=%d, top_vl=%d",
-              p.number, pkt->virtualLane(), p.queueLength(), p.topVirtualLane());
+    pkt_debug("incoming packet on port=%d vl=%d -> queue=%d",
+              p.number, pkt->virtualLane(), p.queueLength());
     if (!p.arbitration_scheduled){
       requestArbitration(p);
     }
@@ -431,6 +439,11 @@ SnapprSwitch::InPort::toString() const
   return sprockit::printf("SNAPPR InPort %d", number);
 }
 
+SnapprSwitch::OutPort::OutPort(const std::string &arb)
+{
+  arb_ = sprockit::create<SnapprPortArbitrator>("macro", arb);
+}
+
 void
 SnapprSwitch::OutPort::handle(Event *ev)
 {
@@ -442,6 +455,7 @@ SnapprSwitch::OutPort::toString() const
 {
   return sprockit::printf("SNAPPR OutPort %d", number);
 }
+
 
 }
 }

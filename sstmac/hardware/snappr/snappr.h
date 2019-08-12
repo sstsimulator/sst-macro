@@ -72,6 +72,7 @@ class SnapprPacket :
     uint32_t numBytes,
     bool isTail,
     uint64_t flowId,
+    uint64_t offset,
     NodeId toaddr,
     NodeId fromaddr,
     int qos);
@@ -100,6 +101,10 @@ class SnapprPacket :
 
   void saveInputVirtualLane(){
     input_vl_ = vl_;
+  }
+
+  uint64_t offset() const {
+    return offset_;
   }
 
   int inputVirtualLane() const {
@@ -169,6 +174,8 @@ class SnapprPacket :
 
   TimeDelta congestion_delay_;
 
+  uint64_t offset_;
+
   int qos_;
 
   int vl_;
@@ -224,6 +231,25 @@ class SnapprCredit :
   int port_;
 
 
+};
+
+struct SnapprPortArbitrator {
+  SPKT_DECLARE_BASE(SnapprPortArbitrator)
+  SPKT_DECLARE_DEFAULT_CTOR()
+
+  virtual void insert(uint64_t cycle, SnapprPacket* pkt) = 0;
+
+  virtual void addCredits(int vl, uint32_t credits) = 0;
+
+  virtual SnapprPacket* pop(uint64_t cycle) = 0;
+
+  virtual bool empty() const = 0;
+
+  virtual void scaleCredits(double factor) = 0;
+
+  virtual void setVirtualLanes(int num_vl, uint32_t total_credits) = 0;
+
+  virtual int queueLength(int vl) const = 0;
 };
 
 

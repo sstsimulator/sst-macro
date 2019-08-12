@@ -1,100 +1,27 @@
-Rank 16 = 5000.3245ms
-Rank 17 = 5000.3274ms
-Rank 18 = 5000.3322ms
-Rank 24 = 5000.3372ms
-Rank 25 = 5000.3394ms
-Rank 26 = 5000.3415ms
-Rank 27 = 5000.3437ms
-Rank 20 = 5000.3443ms
-Rank 28 = 5000.3459ms
-Rank 19 = 5000.3471ms
-Rank 29 = 5000.3481ms
-Rank 21 = 5000.3495ms
-Rank 32 = 5000.3545ms
-Rank 33 = 5000.3567ms
-Rank 34 = 5000.3588ms
-Rank 35 = 5000.3610ms
-Rank 36 = 5000.3632ms
-Rank 30 = 5000.3636ms
-Rank 31 = 5000.3650ms
-Rank 37 = 5000.3654ms
-Rank 40 = 5000.3724ms
-Rank 41 = 5000.3746ms
-Rank 42 = 5000.3767ms
-Rank 43 = 5000.3789ms
-Rank 38 = 5000.3789ms
-Rank 6 = 5000.3799ms
-Rank 0 = 5000.3813ms
-Rank 44 = 5000.3811ms
-Rank 45 = 5000.3833ms
-Rank 22 = 5000.3833ms
-Rank 46 = 5000.3854ms
-Rank 47 = 5000.3876ms
-Rank 39 = 5000.3877ms
-Rank 8 = 5000.3897ms
-Rank 23 = 5000.3921ms
-Rank 4 = 5000.3946ms
-Rank 1 = 5000.3953ms
-Rank 10 = 5000.3995ms
-Rank 2 = 5000.4014ms
-Rank 12 = 5000.4029ms
-Rank 3 = 5000.4039ms
-Rank 7 = 5000.4044ms
-Rank 5 = 5000.4059ms
-Rank 9 = 5000.4103ms
-Rank 11 = 5000.4152ms
-Rank 14 = 5000.4161ms
-Rank 13 = 5000.4191ms
-Rank 15 = 5000.4268ms
-Rank 64 = 5000.4730ms
-Rank 65 = 5000.4777ms
-Rank 66 = 5000.4850ms
-Rank 48 = 5000.4885ms
-Rank 49 = 5000.4893ms
-Rank 68 = 5000.4935ms
-Rank 67 = 5000.4950ms
-Rank 69 = 5000.4983ms
-Rank 52 = 5000.5039ms
-Rank 72 = 5000.5076ms
-Rank 50 = 5000.5105ms
-Rank 70 = 5000.5138ms
-Rank 53 = 5000.5145ms
-Rank 73 = 5000.5156ms
-Rank 76 = 5000.5160ms
-Rank 71 = 5000.5202ms
-Rank 51 = 5000.5204ms
-Rank 74 = 5000.5340ms
-Rank 56 = 5000.5370ms
-Rank 77 = 5000.5388ms
-Rank 75 = 5000.5398ms
-Rank 54 = 5000.5436ms
-Rank 60 = 5000.5444ms
-Rank 58 = 5000.5509ms
-Rank 55 = 5000.5517ms
-Rank 57 = 5000.5526ms
-Rank 61 = 5000.5667ms
-Rank 78 = 5000.5723ms
-Rank 59 = 5000.5732ms
-Rank 79 = 5000.5737ms
-Rank 62 = 5000.5870ms
-Rank 63 = 5000.5994ms
+Rank 0 = 5000.3673ms
+Rank 1 = 5000.3773ms
+Rank 2 = 5000.3782ms
+Rank 4 = 5000.3811ms
+Rank 6 = 5000.3847ms
+Rank 3 = 5000.3863ms
+Rank 5 = 5000.3910ms
+Rank 7 = 5000.3961ms
 Aggregate time stats: state
-        Inactive:          0.10534 s
- active:NIC_send:          0.01248 s
+        Inactive:          0.09698 s
+ active:NIC_send:          0.01135 s
    idle:NIC_send:          0.00027 s
-stalled:NIC_send:          0.00504 s
- active:NIC_recv:          0.01248 s
-   idle:NIC_recv:          0.00593 s
-  idle:leaf->agg:          0.02035 s
-active:leaf->agg:          0.02400 s
-stalled:leaf->agg:          0.00162 s
-  idle:agg->leaf:          0.02853 s
-active:agg->leaf:          0.01215 s
-stalled:agg->leaf:          0.00323 s
-  idle:agg->core:          0.01400 s
-active:agg->core:          0.00257 s
-stalled:agg->core:          0.00003 s
-  idle:core->agg:          0.02523 s
-active:core->agg:          0.00512 s
-stalled:core->agg:          0.00283 s
-Estimated total runtime of           5.00060856 seconds
+stalled:NIC_send:          0.00421 s
+ active:NIC_recv:          0.01134 s
+   idle:NIC_recv:          0.00573 s
+  idle:leaf->agg:          0.01870 s
+active:leaf->agg:          0.02173 s
+stalled:leaf->agg:          0.00113 s
+  idle:agg->leaf:          0.02863 s
+active:agg->leaf:          0.01100 s
+stalled:agg->leaf:          0.00234 s
+  idle:agg->core:          0.01410 s
+active:agg->core:          0.00235 s
+  idle:core->agg:          0.02710 s
+active:core->agg:          0.00469 s
+stalled:core->agg:          0.00109 s
+Estimated total runtime of           5.00040264 seconds

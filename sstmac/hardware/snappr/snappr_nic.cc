@@ -203,7 +203,7 @@ SnapprNIC::startRequest(uint64_t byte_offset, NetworkMessage* payload)
     NodeId from = payload->fromaddr();
     uint64_t fid = payload->flowId();
     SnapprPacket* pkt = new SnapprPacket(is_tail ? payload : nullptr, pkt_size, is_tail,
-                                         fid, to, from, payload->qos());
+                                         fid, byte_offset, to, from, payload->qos());
     pkt->setVirtualLane(payload->qos());
     if (ignore_memory_){
       tryInject(pkt);

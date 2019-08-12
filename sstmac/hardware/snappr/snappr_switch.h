@@ -111,59 +111,6 @@ class SnapprSwitch :
 
   void handlePayload(SnapprPacket* ev, int port);
 
-  struct priority_less {
-    bool operator()(SnapprPacket* l, SnapprPacket* r) const {
-      if (l->priority() == r->priority()){
-        return l->seqnum() > r->seqnum();
-      } else {
-        return l->priority() < r->priority();
-      }
-    }
-  };
-
-  struct OutputQueue {
-    bool addCredits(uint32_t bytes){
-      uint32_t holSize = packets_.empty() ? 0 : packets_.front()->byteLength();
-      bool stalled = holSize > credits_;
-      credits_ += bytes;
-      //pass back if were stalled but aren't anymore
-      return stalled && holSize <= credits_;
-    }
-
-    bool push(SnapprPacket* pkt){
-      bool newly_active = packets_.empty() && pkt->byteLength() <= credits_;
-      packets_.push(pkt);
-      return newly_active;
-    }
-
-    size_t size() const {
-      return packets_.size();
-    }
-
-    bool spaceToSend() const {
-      SnapprPacket* pkt = packets_.front();
-      return pkt->byteLength() <= credits_;
-    }
-
-    SnapprPacket* pop(bool& stalled) {
-      SnapprPacket* pkt = packets_.front();
-      packets_.pop();
-      credits_ -= pkt->byteLength();
-      stalled = packets_.empty() || packets_.front()->byteLength() > credits_;
-      return pkt;
-    }
-
-    OutputQueue(uint32_t credits) : credits_(credits){}
-
-    void scaleBuffers(double scale){
-      credits_ *= scale;
-    }
-
-   private:
-    std::queue<SnapprPacket*> packets_;
-    uint32_t credits_;
-  };
-
   struct OutPort {
     int number;
     int dst_port;
@@ -184,24 +131,16 @@ class SnapprSwitch :
 
     void handle(Event* ev);
 
-    bool readyVirtualLanes() const {
-      return ready_lanes_.size();
-    }
-
-    int topVirtualLane() const {
-      if (ready_lanes_.empty()){
-        return -1;
-      } else {
-        return ready_lanes_.top();
-      }
-    }
-
     int queueLength(int vl) const {
-      return queues_[vl].size();
+      return arb_->queueLength(vl);
     }
 
     int queueLength() const {
       return total_packets_;
+    }
+
+    bool ready() const {
+      return !arb_->empty();
     }
 
     bool empty() const {
@@ -209,49 +148,34 @@ class SnapprSwitch :
     }
 
     void addCredits(int vl, uint32_t credits){
-      bool lane_activated = queues_[vl].addCredits(credits);
-      if (lane_activated){
-        ready_lanes_.push(vl);
-      }
+      arb_->addCredits(vl, credits);
     }
 
     void scaleBuffers(double factor){
-      for (auto& queue : queues_){
-        queue.scaleBuffers(factor);
-      }
+      arb_->scaleCredits(factor);
     }
 
     SnapprPacket* popReady(){
-      int vl = ready_lanes_.top();
-      bool stalled;
-      SnapprPacket* pkt = queues_[vl].pop(stalled);
-      if (stalled){
-        ready_lanes_.pop();
-      }
       --total_packets_;
-      return pkt;
+      return arb_->pop(parent->now().time.ticks());
     }
 
     void queue(SnapprPacket* pkt){
-      OutputQueue& q = queues_[pkt->virtualLane()];
-      bool queue_activated = q.push(pkt);
-      if (queue_activated){
-        ready_lanes_.push(pkt->virtualLane());
-      }
+      arb_->insert(parent->now().time.ticks(), pkt);
       total_packets_++;
     }
 
     void setVirtualLanes(int num_vl, uint32_t total_credits){
-      uint32_t credits_per_vl = total_credits / num_vl;
-      queues_.resize(num_vl, OutputQueue(credits_per_vl));
+      //uint32_t credits_per_vl = total_credits / num_vl;
+      arb_->setVirtualLanes(num_vl, total_credits);
     }
 
     EventLink::ptr link;
-    OutPort() : link(nullptr), arbitration_scheduled(false), total_packets_(0) {}
+    OutPort(const std::string& arb);
+    //: link(nullptr), arbitration_scheduled(false), total_packets_(0) {}
 
    private:
-    std::priority_queue<int, std::vector<int>> ready_lanes_;
-    std::vector<OutputQueue> queues_;
+    SnapprPortArbitrator* arb_;
     int total_packets_;
 
   };
