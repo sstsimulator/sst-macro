@@ -91,8 +91,6 @@ class SnapprNIC :
 
   void setup() override;
 
-  void arbitrate(int vl);
-
   virtual ~SnapprNIC() throw ();
 
   void handlePayload(Event* ev);
@@ -103,9 +101,9 @@ class SnapprNIC :
 
   void connectInput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
 
-  LinkHandler* creditHandler(int Port) override;
+  LinkHandler* creditHandler(int port) override;
 
-  LinkHandler* payloadHandler(int Port) override;
+  LinkHandler* payloadHandler(int port) override;
 
   struct InjectionQueue {
     SPKT_DECLARE_BASE(InjectionQueue)
@@ -130,72 +128,29 @@ class SnapprNIC :
 
   void eject(SnapprPacket* pkt);
 
-  /**
-   * @brief inject
-   * @param pkt
-   * @param payload
-   * @return The number of bytes injected (can be zero if no progress)
-   */
-  uint32_t inject(SnapprPacket* pkt);
-
-  void tryInject(SnapprPacket* pkt);
-
  private:
-  void scheduleArbitration(int vl);
+  void copyToNicBuffer();
 
-  /**
-   * @brief startRequest
-   * @param byte_offset
-   * @param payload
-   * @return The number of bytes injected (can be zero if no progress)
-   */
-  uint32_t startRequest(uint64_t byte_offset, NetworkMessage* payload);
+  void injectPacket(uint32_t pkt_size, uint64_t byte_offset, NetworkMessage* payload);
 
   void handleMemoryResponse(MemoryModel::Request* req);
 
-  Timestamp inj_next_free_;
-  EventLink::ptr inj_link_;
   EventLink::ptr credit_link_;
-
-  TimeDelta inj_byte_delay_;
 
   uint32_t packet_size_;
 
-  int switch_inport_;
   int switch_outport_;
 
-  bool send_credits_;
-  std::vector<uint32_t> credits_;
+  TimeDelta inj_byte_delay_;
 
-  std::vector<InjectionQueue*> inject_queues_;
+  bool flow_control_;
+  std::vector<SnapprOutPort> outports_;
+  InjectionQueue* inject_queue_;
 
   Timestamp ej_next_free_;
   RecvCQ cq_;
 
-  bool arbitrate_scheduled_;
-
-  enum state_t {
-    STALLED = 0,
-    ACTIVE = 1
-  };
-  int send_state_;
-
-  int ftq_idle_send_state_;
-  int ftq_active_send_state_;
-  int ftq_stalled_send_state_;
-  int ftq_idle_recv_state_;
-  int ftq_active_recv_state_;
-
   uint64_t buffer_remaining_;
-
-  sstmac::FTQCalendar* send_state_ftq_;
-  sstmac::FTQCalendar* recv_state_ftq_;
-  SST::Statistics::Statistic<uint64_t>* xmit_stall_;
-  SST::Statistics::Statistic<uint64_t>* xmit_active_;
-  SST::Statistics::Statistic<uint64_t>* xmit_idle_;
-  SST::Statistics::Statistic<uint64_t>* bytes_sent_;
-
-  std::vector<std::queue<SnapprPacket*>> pending_;
 
   MemoryModel* mem_model_;
   int mem_req_id_;
