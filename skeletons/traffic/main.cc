@@ -55,6 +55,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <algorithm>
 #include <sys/time.h>
 #include <cstring>
+#include <utility>
+#include <fstream>
 
 static const int nrepeat = 40;
 static const int warmup = 10;
@@ -160,13 +162,10 @@ void check_argument(int arg, const char* descr){
 void send_traffic(int recver, MPI_Request* reqs, void* buffer, std::vector<double>& tputs);
 void recv_traffic(const std::vector<int>& senders, MPI_Request* reqs, void* buffer);
 void do_nothing();
+void read_infile(std::string filename, std::vector< std::pair<int,int> >& flows);
 
 int main(int argc, char** argv)
 {
-  if (argc != 5){
-    crash("wrong number of arguments");
-  }
-
   MPI_Request reqs[100];
  #pragma sst new
   char* buffer = new char[max_buffer_size];
@@ -218,34 +217,62 @@ int main(int argc, char** argv)
   The lists of senders and recvers are randomly shuffled to create the pairings.
 */
 
-  int num_senders = std::atoi(argv[1]);
-  check_argument(num_senders, "number of senders");
-  if (num_senders == 0){
-    crash("num_senders mis-formatted"); 
-  } else if (num_senders > nproc/2){
-    crash("num_senders cannot be more than half the total number of ranks");
-  } 
-
-  int num_recvers = std::atoi(argv[2]);
-  if (num_recvers == 0){
-    crash("num_recvers mis-formatted"); 
-  } else if (num_senders > nproc/2){
-    crash("num_recvers cannot be more than half the total number of ranks");
-  } 
-
-  int send_seed = std::atoi(argv[3]);
-  if (send_seed == 0){
-    crash("bad seed value - must be non-zero integer or negative to indicate no shuffle");
+  std::string arg1(argv[1]);
+  bool randomizing = true;
+  std::vector< std::pair<int,int> > flows;
+  if (arg1.compare("-f") == 0) {
+    randomizing = false;
+    std::string infile(argv[2]);
+    read_infile(infile,flows);
   }
 
-  int recv_seed = std::atoi(argv[4]);
-  if (recv_seed == 0){
-    crash("bad seed value - must be non-zero integer or negative to indicate no shuffle");
+  int num_senders, num_recvers;
+  int recv_seed = 0;
+  int send_seed = 0;
+  if (randomizing) {
+    if (argc != 5){
+      crash("wrong number of arguments");
+    }
+
+    num_senders = std::atoi(argv[1]);
+    check_argument(num_senders, "number of senders");
+    if (num_senders == 0){
+      crash("num_senders mis-formatted");
+    } else if (num_senders > nproc/2){
+      crash("num_senders cannot be more than half the total number of ranks");
+    }
+
+    num_recvers = std::atoi(argv[2]);
+    if (num_recvers == 0){
+      crash("num_recvers mis-formatted");
+    } else if (num_senders > nproc/2){
+      crash("num_recvers cannot be more than half the total number of ranks");
+    }
+
+    send_seed = std::atoi(argv[3]);
+    if (send_seed == 0){
+      crash("bad seed value - must be non-zero integer or negative to indicate no shuffle");
+    }
+
+    recv_seed = std::atoi(argv[4]);
+    if (recv_seed == 0){
+      crash("bad seed value - must be non-zero integer or negative to indicate no shuffle");
+    }
+
+    if (num_senders % num_recvers){
+      crash("num_recvers must evenly divide num_senders");
+    }
+  }
+  else {
+    std::set<int> send_set, recv_set;
+    for( auto it = flows.begin(); it != flows.end(); ++it) {
+      send_set.insert((*it).first);
+      recv_set.insert((*it).second);
+    }
+    num_senders = send_set.size();
+    num_recvers = recv_set.size();
   }
 
-  if (num_senders % num_recvers){
-    crash("num_recvers must evenly divide num_senders");
-  }
   int senders_per_recver = num_senders / num_recvers;
 
   int num_half = nproc/2;
@@ -263,36 +290,48 @@ int main(int argc, char** argv)
     senders = pseudo_random_shuffle(send_seed, senders);
   }
 
-  if (recv_seed > 0){
+  recvers.resize(num_recvers);
+  if (recv_seed > 0)
     recvers = shuffled_recvers(num_senders, senders, recv_seed, num_half, num_recvers);
-  } else {
-    recvers.resize(num_recvers);
-    for (int i=0; i < num_recvers; ++i){
-      recvers[i] = 2*i + 1;
-    }
-  }
 
   std::vector<int> senders_to_me;
-  int recver_from_me = -1;
-  int sender = 0;
   int my_send_idx = -1;
-  for (int s=0; s < num_senders; ++s){
-    int recver = recvers[s/senders_per_recver];
-    int sender = senders[s];
-    if ( (sender+1) == recver && recv_seed > 0 && send_seed > 0 ){
-      //don't let sender and recver be on same node
-      std::cerr << "sender and recver are same node! invalid" << std::endl;
-      MPI_Finalize();
-      return 0;
+  int recver_from_me = -1;
+  if (randomizing) {
+    int sender = 0;
+    for (int s=0; s < num_senders; ++s){
+      int recver = recvers[s/senders_per_recver];
+      int sender = senders[s];
+      if ( (sender+1) == recver && recv_seed > 0 && send_seed > 0 ){
+        //don't let sender and recver be on same node
+        std::cerr << "sender and recver are same node! invalid" << std::endl;
+        MPI_Finalize();
+        return 0;
+      }
+      if (rank == 0){
+        printf("Rank %-3d -> Rank %-3d\n", sender, recver);
+      }
+      if (recver == rank){
+        senders_to_me.push_back(sender);
+      } else if (sender == rank){
+        recver_from_me = recver;
+        my_send_idx = s;
+      }
     }
-    if (rank == 0){
-      printf("Rank %-3d -> Rank %-3d\n", sender, recver);
-    }
-    if (recver == rank){
-      senders_to_me.push_back(sender);
-    } else if (sender == rank){
-      recver_from_me = recver;
-      my_send_idx = s;
+  }
+  else {
+    for (auto it = flows.begin(); it != flows.end(); ++it) {
+      int src = it->first;
+      int dst = it->second;
+      if (src == rank) {
+        my_send_idx = rank;
+        recver_from_me = dst;
+      }
+      else if (dst == rank)
+        senders_to_me.push_back(src);
+      if (rank == 0){
+        printf("Rank %-3d -> Rank %-3d\n", src, dst);
+      }
     }
   }
 
@@ -313,8 +352,15 @@ int main(int argc, char** argv)
       int num_times = buffer_sizes.size();
       for (int i=0; i < num_senders; ++i){
         double* tputs = &allTputs[num_times*i];
-        int recver = recvers[i/senders_per_recver];
-        int sender = senders[i];
+        int recver, sender;
+        if (randomizing) {
+          recver = recvers[i/senders_per_recver];
+          sender = senders[i];
+        }
+        else {
+          sender = flows[i].first;
+          recver = flows[i].second;
+        }
         for (int t=0; t < num_times; ++t){
           printf("Rank %-3d -> %-3d %8d: %10.6f GB/s  %10.6fus\n", 
                  sender, recver, buffer_sizes[t], tputs[t]/1e9, buffer_sizes[t]*1e6/tputs[t]);
@@ -416,5 +462,21 @@ void do_nothing()
   for (int i=0; i < num_buffer_sizes; ++i){
     MPI_Barrier(MPI_COMM_WORLD);
   }
+}
+
+void read_infile(std::string filename, std::vector< std::pair<int,int> >& flows)
+{
+  std::ifstream in;
+  in.open(filename);
+  char c;
+  while (in.get(c)) {
+    in.unget();
+    int src, dst;
+    in >> src;
+    in >> dst;
+    in >> std::ws;
+    flows.push_back( std::pair<int,int>(src,dst));
+  }
+  in.close();
 }
 
