@@ -66,11 +66,6 @@ Questions? Contact sst-macro-help@sandia.gov
 RegisterNamespaces("switch", "router", "xbar", "link");
 
 
-
-#define pkt_debug(...) \
-  debug_printf(sprockit::dbg::snappr, "snappr switch %d: %s", \
-    int(addr()), sprockit::printf(__VA_ARGS__).c_str())
-
 namespace sstmac {
 namespace hw {
 
@@ -80,8 +75,6 @@ static FTQTag stalled("stalled_port", 0);
 
 SnapprSwitch::SnapprSwitch(uint32_t id, SST::Params& params) :
   router_(nullptr),
-  congestion_(true),
-  send_credits_(false),
   NetworkSwitch(id, params)
 {
   SST::Params rtr_params = params.find_scoped_params("router");
@@ -89,21 +82,21 @@ SnapprSwitch::SnapprSwitch(uint32_t id, SST::Params& params) :
   router_ = sprockit::create<Router>(
    "macro", rtr_params.find<std::string>("name"), rtr_params, top_, this);
 
-  congestion_ = params.find<bool>("congestion", true);
+  bool congestion = params.find<bool>("congestion", true);
 
   SST::Params link_params = params.find_scoped_params("link");
   link_bw_ = link_params.find<SST::UnitAlgebra>("bandwidth").getValue().toDouble();
 
-  send_credits_ = params.find<bool>("flow_control", true);
+  bool flow_control = params.find<bool>("flow_control", true);
   uint32_t credits = std::numeric_limits<uint32_t>::max();
-  if (send_credits_){
+  if (flow_control){
     if (link_params.contains("credits")){
       credits = link_params.find<SST::UnitAlgebra>("credits").getRoundedValue();
     } else {
       spkt_abort_printf("must specify credits for Sculpin link when flow_control=true");
     }
 
-    if (!congestion_){
+    if (!congestion){
       spkt_abort_printf("must specify flow_control=false when congestion=false");
     }
   }
@@ -120,7 +113,10 @@ SnapprSwitch::SnapprSwitch(uint32_t id, SST::Params& params) :
   std::string arbtype = params.find<std::string>("arbitrator", "fifo");
   outports_.reserve(top_->maxNumPorts());
   for (int i=0; i < top_->maxNumPorts(); ++i){
-    outports_.emplace_back(arbtype);
+    std::string portTypeName = top_->portTypeName(addr(), i);
+    std::string portName = sprockit::printf("Switch%d:%s:%d", addr(), portTypeName.c_str(), i);
+    outports_.emplace_back(arbtype, portName, i,
+                           congestion, flow_control, this);
   }
 
   inports_.resize(top_->maxNumPorts());
@@ -129,14 +125,9 @@ SnapprSwitch::SnapprSwitch(uint32_t id, SST::Params& params) :
   switch_debug("initializing with %d VCs and %" PRIu32 " total credits",
                num_vc_, credits);
 
-  ftq_idle_states_.resize(top_->maxNumPorts());
-  ftq_active_states_.resize(top_->maxNumPorts());
-  ftq_stalled_states_.resize(top_->maxNumPorts());
-
   for (int i=0; i < outports_.size(); ++i){
     std::string subId = sprockit::printf("Switch:%d.Port:%d", addr(), i);
-    OutPort& p = outports_[i];
-    p.number = i;
+    SnapprOutPort& p = outports_[i];
     p.setVirtualLanes(num_vl_, credits);
     p.xmit_active = registerStatistic<uint64_t>(link_params, "xmit_active", subId);
     p.xmit_idle = registerStatistic<uint64_t>(link_params, "xmit_idle", subId);
@@ -146,9 +137,10 @@ SnapprSwitch::SnapprSwitch(uint32_t id, SST::Params& params) :
     p.queue_depth_ftq = dynamic_cast<FTQCalendar*>(registerMultiStatistic<int,uint64_t,uint64_t>(link_params, "queue_depth", subId));
 
     std::string portName = top_->portTypeName(addr(), i);
-    ftq_idle_states_[i] = FTQTag::allocateCategoryId("idle:" + portName);
-    ftq_active_states_[i] = FTQTag::allocateCategoryId("active:" + portName);
-    ftq_stalled_states_[i] = FTQTag::allocateCategoryId("stalled:" + portName);
+    p.ftq_idle_state = FTQTag::allocateCategoryId("idle:" + portName);
+    p.ftq_active_state = FTQTag::allocateCategoryId("active:" + portName);
+    p.ftq_stalled_state = FTQTag::allocateCategoryId("stalled:" + portName);
+    p.inports = inports_.data();
   }
   for (int i=0; i < inports_.size(); ++i){
     inports_[i].number = i;
@@ -166,12 +158,11 @@ SnapprSwitch::connectOutput(int src_outport, int dst_inport, EventLink::ptr&& li
 {
   double scale_factor = top_->portScaleFactor(my_addr_, src_outport);
   double port_bw = scale_factor * link_bw_;
-  OutPort& p = outports_[src_outport];
+  SnapprOutPort& p = outports_[src_outport];
   p.link = std::move(link);
   p.byte_delay = TimeDelta(1.0/port_bw);
   p.dst_port = dst_inport;
   p.scaleBuffers(scale_factor);
-  p.parent = this;
   switch_debug("connecting output port %d to input port %d with scale=%10.4f byte_delay=%10.5e",
                src_outport, dst_inport, scale_factor, p.byte_delay.sec());
 }
@@ -195,187 +186,10 @@ SnapprSwitch::queueLength(int port, int vc) const
   return p.queueLength();
 }
 
-void
-SnapprSwitch::handleCredit(SnapprCredit* credit, int port)
-{
-  OutPort& p = outports_[port];
-  p.addCredits(credit->virtualLane(), credit->numBytes());
-  pkt_debug("crediting port=%d vl=%d with %" PRIu32" credits",
-            port, credit->virtualLane(), credit->numBytes());
-  delete credit;
-  if (!p.arbitration_scheduled && !p.empty()){
-    requestArbitration(p);
-  }
-}
 
 void
 SnapprSwitch::deadlockCheck()
 {
-}
-
-void
-SnapprSwitch::send(OutPort& p, SnapprPacket* pkt, Timestamp now)
-{
-#if SSTMAC_SANITY_CHECK
-  if (p.next_free > now){
-    spkt_abort_printf("Internal error: snappr switch %d port %d sending packet at time %llu < %llu",
-                      addr(), p.number, now.time.ticks(), p.next_free.time.ticks());
-  }
-#endif
-
-  if (!p.stall_start.empty()){
-    TimeDelta stall_time = now - p.stall_start;
-    p.xmit_stall->addData(stall_time.ticks());
-    if (p.state_ftq){
-      p.state_ftq->addData(ftq_stalled_states_[p.dst_port], p.stall_start.time.ticks(), stall_time.ticks());
-    }
-    if (p.stall_start > p.next_free){
-      //we also have idle time
-      TimeDelta idle_time = p.stall_start - p.next_free;
-      p.xmit_idle->addData(idle_time.ticks());
-      if (p.state_ftq){
-        p.state_ftq->addData(ftq_idle_states_[p.dst_port], p.next_free.time.ticks(), idle_time.ticks());
-      }
-    }
-    p.stall_start = Timestamp();
-  } else if (now > p.next_free){
-    TimeDelta idle_time = now - p.next_free;
-    p.xmit_idle->addData(idle_time.ticks());
-    if (p.state_ftq){
-      p.state_ftq->addData(ftq_idle_states_[p.dst_port], p.next_free.time.ticks(), idle_time.ticks());
-    }
-  }
-
-  TimeDelta time_to_send = pkt->numBytes() * p.byte_delay;
-  p.bytes_sent->addData(pkt->numBytes());
-  p.xmit_active->addData(time_to_send.ticks());
-  if (p.state_ftq){
-    p.state_ftq->addData(ftq_active_states_[p.dst_port], now.time.ticks(), time_to_send.ticks());
-  }
-  p.next_free = now + time_to_send;
-  pkt->setTimeToSend(time_to_send);
-  pkt->accumulateCongestionDelay(now);
-  p.link->send(pkt);
-
-  if (send_credits_){
-    pkt_debug("sending credit to port=%d on vl=%d at t=%8.4e: %s",
-              pkt->inport(), pkt->inputVirtualLane(), p.next_free.sec(), pkt->toString().c_str());
-    auto& inport = inports_[pkt->inport()];
-    inport.link->send(time_to_send, new SnapprCredit(pkt->byteLength(), pkt->inputVirtualLane(), inport.src_outport));
-  } else {
-    //immediately add the credits back - we don't worry about credits here
-    p.addCredits(pkt->virtualLane(), pkt->byteLength());
-  }
-
-  pkt_debug("packet leaving port %d at t=%8.4e: %s",
-            p.number, p.next_free.sec(), pkt->toString().c_str());
-  if (p.ready()){
-    scheduleArbitration(p);
-  }
-}
-
-void
-SnapprSwitch::scheduleArbitration(OutPort& p)
-{
-#if SSTMAC_SANITY_CHECK
-  if (p.arbitration_scheduled){
-    spkt_abort_printf("arbitration already scheduled on switch %d port %d", addr(), p.number);
-  }
-  if (p.queueLength() == 0){
-    spkt_abort_printf("scheduling arbitration on port with nothing queued");
-  }
-#endif
-  pkt_debug("scheduling arbitrate from port %d at t=%8.4e with %d queued",
-            p.number, p.next_free.sec(), p.queueLength());
-  //schedule this port to pull another packet
-  auto* ev = newCallback(this, &SnapprSwitch::arbitrate, p.number);
-  sendExecutionEvent(p.next_free, ev);
-  p.arbitration_scheduled = true;
-}
-
-void
-SnapprSwitch::requestArbitration(OutPort& p)
-{
-#if SSTMAC_SANITY_CHECK
-  if (p.empty()){
-    spkt_abort_printf("SnapprSwitch::arbitrate: incorrectly requesting arbitrate on switch %d from empty port %d",
-                      int(addr()), p.number);
-  }
-  if (p.arbitration_scheduled){
-    spkt_abort_printf("SnapprSwitch::arbitrate: incorrectly requesting arbitrate on switch %d from port %d with arbitrate scheduled already",
-                      int(addr()), p.number);
-  }
-#endif
-  Timestamp now_ = now();
-  if (p.next_free > now_){
-    scheduleArbitration(p);
-  } else {
-    arbitrate(p.number);
-  }
-}
-
-void
-SnapprSwitch::arbitrate(int portnum)
-{
-  OutPort& p = outports_[portnum];
-#if SSTMAC_SANITY_CHECK
-  if (p.empty()){
-    spkt_abort_printf("SnapprSwitch::arbitrate: incorrectly arbitrate switch %d from empty port %d",
-                      int(addr()), p.number);
-  }
-  if (p.next_free > now()){
-    spkt_abort_printf("SnapprSwitch::arbitrate: switch %d arbitrating before port %d is free to send",
-                      int(addr()), p.number);
-  }
-#endif
-
-  p.arbitration_scheduled = false;
-  if (p.ready()){
-    logQueueDepth(p);
-    SnapprPacket* pkt = p.popReady();
-    pkt_debug("arbitrating packet from port %d:%d with %d queued",
-              portnum, pkt->virtualLane(), p.queueLength());
-    send(p, pkt, now());
-  } else {
-    if (p.stall_start.empty()){
-      p.stall_start = now();
-    }
-    pkt_debug("insufficient credits to send on port %d with %d queued",
-              portnum, p.queueLength());
-  }
-}
-
-void
-SnapprSwitch::logQueueDepth(OutPort& p)
-{
-  if (p.queue_depth_ftq){
-    TimeDelta dt = now() - p.last_queue_depth_collection;
-    p.queue_depth_ftq->addData(p.queueLength(), p.last_queue_depth_collection.time.ticks(), dt.ticks());
-    p.last_queue_depth_collection = now();
-  }
-}
-
-void
-SnapprSwitch::tryToSendPacket(SnapprPacket* pkt)
-{
-  Timestamp now_ = now();
-
-  pkt->setArrival(now_);
-  OutPort& p = outports_[pkt->nextPort()];
-
-  if (!congestion_){
-    TimeDelta time_to_send = pkt->numBytes() * p.byte_delay;
-    pkt->setTimeToSend(time_to_send);
-    p.link->send(pkt);
-  } else {
-    logQueueDepth(p);
-    p.queue(pkt);
-    pkt_debug("incoming packet on port=%d vl=%d -> queue=%d",
-              p.number, pkt->virtualLane(), p.queueLength());
-    if (!p.arbitration_scheduled){
-      requestArbitration(p);
-    }
-  }
 }
 
 void
@@ -389,21 +203,18 @@ SnapprSwitch::handlePayload(SnapprPacket* pkt, int inport)
   if (vl >= (qos_levels_*num_vc_)){
     spkt_abort_printf("Bad QoS %d > max=%d", vl, (qos_levels_-1));
   }
-  pkt_debug("handling payload %s on inport %d:%d going to port %d:%d",
-            pkt->toString().c_str(), inport, pkt->inputVirtualLane(), pkt->nextPort(), vl);
 
-  OutPort& p = outports_[pkt->nextPort()];
+  SnapprOutPort& p = outports_[pkt->nextPort()];
   TimeDelta time_to_send = p.byte_delay * pkt->numBytes();
   /** I am processing the head flit - so I assume compatibility with wormhole routing
     The tail flit cannot leave THIS switch prior to its departure time in the prev switch */
   if (pkt->timeToSend() > time_to_send){
     //delay the packet
-    auto ev = newCallback(this, &SnapprSwitch::tryToSendPacket, pkt);
+    auto ev = newCallback(&p, &SnapprOutPort::tryToSendPacket, pkt);
     TimeDelta delta_t = pkt->timeToSend() - time_to_send;
     sendDelayedExecutionEvent(delta_t, ev);
-    pkt_debug("delaying packet on port %d for %8.4es so tail flit can arrive", inport, delta_t.sec());
   } else {
-    tryToSendPacket(pkt);
+    p.tryToSendPacket(pkt);
   }
 }
 
@@ -417,44 +228,17 @@ LinkHandler*
 SnapprSwitch::creditHandler(int port)
 {
   switch_debug("returning credit handler on output port %d", port);
-  return newLinkHandler(&outports_[port], &OutPort::handle);
+  return newLinkHandler(&outports_[port], &SnapprOutPort::handle);
 }
 
 LinkHandler*
 SnapprSwitch::payloadHandler(int port)
 {
   switch_debug("returning payload handler on input port %d", port);
-  return newLinkHandler(&inports_[port], &InPort::handle);
+  return newLinkHandler(&inports_[port], &SnapprInPort::handle);
 }
 
-void
-SnapprSwitch::InPort::handle(Event *ev)
-{
-  parent->handlePayload(static_cast<SnapprPacket*>(ev), number);
-}
 
-std::string
-SnapprSwitch::InPort::toString() const
-{
-  return sprockit::printf("SNAPPR InPort %d", number);
-}
-
-SnapprSwitch::OutPort::OutPort(const std::string &arb)
-{
-  arb_ = sprockit::create<SnapprPortArbitrator>("macro", arb);
-}
-
-void
-SnapprSwitch::OutPort::handle(Event *ev)
-{
-  parent->handleCredit(static_cast<SnapprCredit*>(ev), number);
-}
-
-std::string
-SnapprSwitch::OutPort::toString() const
-{
-  return sprockit::printf("SNAPPR OutPort %d", number);
-}
 
 
 }

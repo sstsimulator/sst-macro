@@ -85,10 +85,12 @@ Aggregate time stats: state
 stalled:NIC_send:          0.00784 s
  active:NIC_recv:          0.01248 s
    idle:NIC_recv:          0.01547 s
-      idle:intra:          0.02468 s
-    active:intra:          0.02195 s
+      idle:intra:          0.00921 s
+    active:intra:          0.00947 s
    stalled:intra:          0.00033 s
      idle:global:          0.01544 s
    active:global:          0.00819 s
   stalled:global:          0.00177 s
+  idle:injection:          0.01547 s
+active:injection:          0.01248 s
 Estimated total runtime of           5.00075002 seconds

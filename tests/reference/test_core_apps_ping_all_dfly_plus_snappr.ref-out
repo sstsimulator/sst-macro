@@ -85,9 +85,11 @@ Aggregate time stats: state
 stalled:NIC_send:          0.00845 s
  active:NIC_recv:          0.01248 s
    idle:NIC_recv:          0.01139 s
-   idle:intra-up:          0.02072 s
- active:intra-up:          0.02400 s
+   idle:intra-up:          0.00934 s
+ active:intra-up:          0.01152 s
 stalled:intra-up:          0.00156 s
+  idle:injection:          0.01139 s
+active:injection:          0.01248 s
  idle:intra-down:          0.01201 s
 active:intra-down:          0.01152 s
 stalled:intra-down:          0.00091 s

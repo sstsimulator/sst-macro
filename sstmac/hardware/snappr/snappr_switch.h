@@ -47,6 +47,8 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/snappr/snappr.h>
+#include <sstmac/hardware/snappr/snappr_inport.h>
+#include <sstmac/hardware/snappr/snappr_outport.h>
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/common/stats/stat_collector.h>
 #include <sstmac/common/stats/ftq_fwd.h>
@@ -104,100 +106,15 @@ class SnapprSwitch :
   void deadlockCheck() override;
 
  private:
-  friend class InPort;
-  friend class OutPort;
-
-  void handleCredit(SnapprCredit* ev, int port);
+  friend class SnapprInPort;
 
   void handlePayload(SnapprPacket* ev, int port);
 
-  struct OutPort {
-    int number;
-    int dst_port;
-    bool arbitration_scheduled;
-    Timestamp next_free;
-    Timestamp stall_start;
-    Timestamp send_start;
-    Timestamp last_queue_depth_collection;
-    TimeDelta byte_delay;
-    SST::Statistics::Statistic<uint64_t>* xmit_stall;
-    SST::Statistics::Statistic<uint64_t>* xmit_active;
-    SST::Statistics::Statistic<uint64_t>* xmit_idle;
-    SST::Statistics::Statistic<uint64_t>* bytes_sent;
-    sstmac::FTQCalendar* state_ftq;
-    sstmac::FTQCalendar* queue_depth_ftq;
-    SnapprSwitch* parent;
-    std::string toString() const;
+  std::vector<SnapprOutPort> outports_;
 
-    void handle(Event* ev);
-
-    int queueLength(int vl) const {
-      return arb_->queueLength(vl);
-    }
-
-    int queueLength() const {
-      return total_packets_;
-    }
-
-    bool ready() const {
-      return !arb_->empty();
-    }
-
-    bool empty() const {
-      return total_packets_ == 0;
-    }
-
-    void addCredits(int vl, uint32_t credits){
-      arb_->addCredits(vl, credits);
-    }
-
-    void scaleBuffers(double factor){
-      arb_->scaleCredits(factor);
-    }
-
-    SnapprPacket* popReady(){
-      --total_packets_;
-      return arb_->pop(parent->now().time.ticks());
-    }
-
-    void queue(SnapprPacket* pkt){
-      arb_->insert(parent->now().time.ticks(), pkt);
-      total_packets_++;
-    }
-
-    void setVirtualLanes(int num_vl, uint32_t total_credits){
-      //uint32_t credits_per_vl = total_credits / num_vl;
-      arb_->setVirtualLanes(num_vl, total_credits);
-    }
-
-    EventLink::ptr link;
-    OutPort(const std::string& arb);
-    //: link(nullptr), arbitration_scheduled(false), total_packets_(0) {}
-
-   private:
-    SnapprPortArbitrator* arb_;
-    int total_packets_;
-
-  };
-  std::vector<OutPort> outports_;
-
-  struct InPort {
-    int number;
-    int src_outport;
-    EventLink::ptr link;
-    SnapprSwitch* parent;
-    void handle(Event* ev);
-
-    std::string toString() const;
-  };
-
-  std::vector<InPort> inports_;
+  std::vector<SnapprInPort> inports_;
 
   Router* router_;
-
-  bool congestion_;
-
-  bool send_credits_;
 
   double link_bw_;
 
@@ -206,22 +123,6 @@ class SnapprSwitch :
   int num_vc_;
   int num_vl_;
 
-  std::vector<int> ftq_idle_states_;
-  std::vector<int> ftq_active_states_;
-  std::vector<int> ftq_stalled_states_;
-
- private:
-  void send(OutPort& p, SnapprPacket* pkt, Timestamp now);
-
-  void tryToSendPacket(SnapprPacket* pkt);
-
-  void arbitrate(int port);
-
-  void requestArbitration(OutPort& p);
-
-  void scheduleArbitration(OutPort& p);
-
-  void logQueueDepth(OutPort& p);
 
 };
 

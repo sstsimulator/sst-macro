@@ -42,15 +42,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef sculpin_packet_h
-#define sculpin_packet_h
+#ifndef snappr_packet_h
+#define snappr_packet_h
 
 #include <sstmac/hardware/common/packet.h>
 #include <sstmac/hardware/common/flow.h>
 #include <sprockit/thread_safe_new.h>
 #include <sprockit/factory.h>
 #include <sprockit/debug.h>
-
 
 DeclareDebugSlot(snappr)
 
@@ -232,26 +231,6 @@ class SnapprCredit :
 
 
 };
-
-struct SnapprPortArbitrator {
-  SPKT_DECLARE_BASE(SnapprPortArbitrator)
-  SPKT_DECLARE_DEFAULT_CTOR()
-
-  virtual void insert(uint64_t cycle, SnapprPacket* pkt) = 0;
-
-  virtual void addCredits(int vl, uint32_t credits) = 0;
-
-  virtual SnapprPacket* pop(uint64_t cycle) = 0;
-
-  virtual bool empty() const = 0;
-
-  virtual void scaleCredits(double factor) = 0;
-
-  virtual void setVirtualLanes(int num_vl, uint32_t total_credits) = 0;
-
-  virtual int queueLength(int vl) const = 0;
-};
-
 
 }
 }
