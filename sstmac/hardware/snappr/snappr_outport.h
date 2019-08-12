@@ -56,7 +56,7 @@ namespace hw {
 
 struct SnapprPortArbitrator {
   SPKT_DECLARE_BASE(SnapprPortArbitrator)
-  SPKT_DECLARE_DEFAULT_CTOR()
+  SPKT_DECLARE_CTOR(TimeDelta, SST::Params&)
 
   virtual void insert(uint64_t cycle, SnapprPacket* pkt) = 0;
 
@@ -66,7 +66,7 @@ struct SnapprPortArbitrator {
 
   virtual bool empty() const = 0;
 
-  virtual void scaleCredits(double factor) = 0;
+  virtual void scale(double factor) = 0;
 
   virtual void setVirtualLanes(int num_vl, uint32_t total_credits) = 0;
 
@@ -74,6 +74,22 @@ struct SnapprPortArbitrator {
 };
 
 struct SnapprOutPort {
+
+  struct TailNotifier {
+    virtual void notify(Timestamp,SnapprPacket*) = 0;
+  };
+
+  template <class T, class Fxn>
+  struct TailNotifierDerived : public TailNotifier {
+    TailNotifierDerived(T* t, Fxn f) : t_(t), f_(f) {}
+
+    void notify(Timestamp done, SnapprPacket* pkt) override {
+      (t_->*f_)(done,pkt);
+    }
+    T* t_;
+    Fxn f_;
+  };
+
   int dst_port;
   bool arbitration_scheduled;
   Timestamp next_free;
@@ -91,6 +107,7 @@ struct SnapprOutPort {
   sstmac::FTQCalendar* state_ftq;
   sstmac::FTQCalendar* queue_depth_ftq;
   SnapprInPort* inports;
+  EventLink::ptr link;
 
   std::string toString() const;
 
@@ -120,24 +137,25 @@ struct SnapprOutPort {
   void handleCredit(SnapprCredit* credit);
 
   void scaleBuffers(double factor){
-    arb_->scaleCredits(factor);
+    arb_->scale(factor);
   }
 
   void tryToSendPacket(SnapprPacket* pkt);
 
   void setVirtualLanes(int num_vl, uint32_t total_credits){
-    //uint32_t credits_per_vl = total_credits / num_vl;
     arb_->setVirtualLanes(num_vl, total_credits);
   }
 
-  EventLink::ptr link;
-  SnapprOutPort(const std::string& arb, const std::string& portName, int number,
-                bool congestion, bool flow_control, Component* parent);
-  //: link(nullptr), arbitration_scheduled(false), total_packets_(0) {}
+  template <class T, class Fxn>
+  void addTailNotifier(T* t, Fxn f){
+    notifier_ = new TailNotifierDerived<T,Fxn>(t,f);
+  }
+
+  SnapprOutPort(SST::Params& params, const std::string& arb, const std::string& portName, int number,
+                TimeDelta byte_delay, bool congestion, bool flow_control, Component* parent);
 
  private:
   void logQueueDepth();
-
 
   void arbitrate();
 
@@ -168,6 +186,7 @@ struct SnapprOutPort {
   bool congestion_;
   std::string portName_;
   int number_;
+  TailNotifier* notifier_;
 
 };
 

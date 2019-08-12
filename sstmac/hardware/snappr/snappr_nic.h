@@ -97,6 +97,8 @@ class SnapprNIC :
 
   void handleCredit(Event* ev);
 
+  void handleTailPacket(Timestamp done, SnapprPacket* pkt);
+
   void connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
 
   void connectInput(int src_outport, int dst_inport, EventLink::ptr&& link) override;

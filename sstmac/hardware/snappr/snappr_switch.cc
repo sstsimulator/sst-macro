@@ -109,14 +109,14 @@ SnapprSwitch::SnapprSwitch(uint32_t id, SST::Params& params) :
   //if (vtk_) vtk_->configure(my_addr_, top_);
 
   qos_levels_ = params.find<int>("qos_levels", 1);
-
+  TimeDelta byte_delay(1.0/link_bw_);
   std::string arbtype = params.find<std::string>("arbitrator", "fifo");
   outports_.reserve(top_->maxNumPorts());
   for (int i=0; i < top_->maxNumPorts(); ++i){
     std::string portTypeName = top_->portTypeName(addr(), i);
     std::string portName = sprockit::printf("Switch%d:%s:%d", addr(), portTypeName.c_str(), i);
-    outports_.emplace_back(arbtype, portName, i,
-                           congestion, flow_control, this);
+    outports_.emplace_back(link_params, arbtype, portName, i,
+                           byte_delay, congestion, flow_control, this);
   }
 
   inports_.resize(top_->maxNumPorts());

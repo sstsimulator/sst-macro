@@ -92,8 +92,8 @@ SnapprNIC::SnapprNIC(SST::Component* parent, SST::Params& params) :
   inj_byte_delay_ = TimeDelta(inj_params.find<SST::UnitAlgebra>("bandwidth").getValue().inverse().toDouble());
   for (int i=0; i < num_ports; ++i){
     std::string portName = sprockit::printf("NIC%d:%d", addr(), i);
-    outports_.emplace_back(arbtype, portName, i, true/*always need congestion on NIC*/,
-                           flow_control_, parent);
+    outports_.emplace_back(inj_params, arbtype, portName, i, inj_byte_delay_,
+                           true/*always need congestion on NIC*/, flow_control_, parent);
     SnapprOutPort& p = outports_[i];
     std::string subId = sprockit::printf("NIC:%d", addr());
     p.ftq_active_state = FTQTag::allocateCategoryId("active:NIC_send");
@@ -105,6 +105,7 @@ SnapprNIC::SnapprNIC(SST::Component* parent, SST::Params& params) :
     p.byte_delay = inj_byte_delay_;
     p.setVirtualLanes(qosLevels, credits);
     p.bytes_sent = registerStatistic<uint64_t>(inj_params, "bytes_sent", subId);
+    p.addTailNotifier(this, &SnapprNIC::handleTailPacket);
   }
 
 
@@ -293,6 +294,21 @@ SnapprNIC::handleCredit(Event *ev)
   copyToNicBuffer();
   //this transfer ownership - don't delete here
   outports_[credit->port()].handleCredit(credit);
+}
+
+void
+SnapprNIC::handleTailPacket(Timestamp done, SnapprPacket* pkt)
+{
+  NetworkMessage* payload = static_cast<NetworkMessage*>(pkt->flow());
+  TimeDelta min_send_delay = payload->byteLength() * inj_byte_delay_;
+  TimeDelta actual_delay = done - payload->injectionStarted();
+  TimeDelta inj_contend_delay = actual_delay - min_send_delay;
+  payload->addInjectionDelay(inj_contend_delay);
+  if (payload->needsAck()){
+    NetworkMessage* ack = payload->cloneInjectionAck();
+    auto* ev = newCallback(this, &NIC::sendToNode, ack);
+    sendExecutionEvent(done, ev);
+  }
 }
 
 void
