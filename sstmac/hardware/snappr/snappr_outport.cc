@@ -26,7 +26,7 @@ SnapprOutPort::SnapprOutPort(SST::Params& params, const std::string &arb,
                              const std::string& subId, const std::string& portName,
                              int number, TimeDelta byt_delay, bool congestion, bool flow_control,
                              Component* parent)
-  : arbitration_scheduled(false),
+  : arbitration_scheduled(false), inports(nullptr),
     portName_(subId), number_(number),
     byte_delay(byt_delay), congestion_(congestion), flow_control_(flow_control),
     parent_(parent), notifier_(nullptr)
@@ -302,6 +302,8 @@ struct FifoPortArbitrator : public SnapprPortArbitrator
                this, vl, v.credits);
     while (!v.pending.empty() && v.pending.front()->numBytes() <= v.credits){
       SnapprPacket* pkt = v.pending.front();
+      port_debug("FIFO %p VL %d now has enough credits to send packet %s",
+                 this, pkt->virtualLane(), pkt->toString().c_str());
       port_queue_.push(pkt);
       v.credits -= pkt->numBytes();
       v.pending.pop();

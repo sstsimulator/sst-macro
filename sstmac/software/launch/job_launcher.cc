@@ -125,6 +125,10 @@ JobLauncher::addLaunchRequests(SST::Params& params)
     if (!app_params.empty()){
       SST::Params app_params = params.find_scoped_params(name);
       app_params.insert(all_app_params);
+      bool terminate_on_end = app_params.find<bool>("terminate", false);
+      if (terminate_on_end){
+        terminators_.insert(aid);
+      }
       AppLaunchRequest* mgr = new AppLaunchRequest(app_params, AppId(aid), name);
       initial_requests_.push_back(mgr);
       node_debug("adding app launch request %d", aid);
@@ -174,6 +178,10 @@ JobLauncher::cleanupApp(JobStopRequest* ev)
   for (int i=0; i < num_ranks; ++i){
     NodeId nid = rank_to_node[i];
     available_.insert(nid);
+  }
+
+  if (terminators_.find(ev->aid()) != terminators_.end()){
+    os_->endSimulation();
   }
 }
 

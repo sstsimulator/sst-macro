@@ -175,7 +175,11 @@ SnapprNIC::copyToNicBuffer()
     if (pkt_size <= buffer_remaining_){
       nic_debug("packet of size=%" PRIu32 " at offset=%" PRIu64 " ready to inject: %s",
                 pkt_size, byte_offset, payload->toString().c_str());
-      buffer_remaining_ -= pkt_size;
+      //if flow control is off we won't get credits
+      //so just don't worry about buffer space
+      if (flow_control_){
+        buffer_remaining_ -= pkt_size;
+      }
       if (ignore_memory_){
         injectPacket(pkt_size, byte_offset, payload);
       } else {
@@ -192,6 +196,8 @@ SnapprNIC::copyToNicBuffer()
         inject_queue_->adjustTop(byte_offset + pkt_size);
       }
     } else {
+      nic_debug("packet of size=%" PRIu32 " at offset=%" PRIu64 " lacks buffer space to inject: %s",
+                pkt_size, byte_offset, payload->toString().c_str());
       break; //no more room in NIC buffer
     }
   }
@@ -282,6 +288,8 @@ SnapprNIC::handleCredit(Event *ev)
 {
   SnapprCredit* credit = static_cast<SnapprCredit*>(ev);
   buffer_remaining_ += credit->numBytes();
+  nic_debug("received %" PRIu32 " credits, buffer now %" PRIu64,
+            credit->numBytes(), buffer_remaining_);
   copyToNicBuffer();
   //this transfer ownership - don't delete here
   outports_[credit->port()].handleCredit(credit);

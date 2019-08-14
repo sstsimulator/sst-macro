@@ -198,6 +198,8 @@ class EventScheduler : public sprockit::printable
     SST::SimTime_t delay = arrival.time.ticks() - getCurrentSimTime(time_converter_);
     self_link_->send(delay, time_converter_, ev);
   }
+
+  void endSimulation();
 #else
   Component* getTrueComponent() const {
     return comp_;
@@ -245,6 +247,8 @@ class EventScheduler : public sprockit::printable
   }
 
   void sendExecutionEvent(Timestamp arrival, ExecutionEvent* ev);
+
+  void endSimulation();
 #endif
 
  public:
