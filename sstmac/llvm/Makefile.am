@@ -12,8 +12,7 @@
 include $(top_srcdir)/Makefile.common
 
 AM_CPPFLAGS += ${LLVM_CPPFLAGS}
-AM_CXXFLAGS += -fno-rtti
-CXX = clang++
+AM_CXXFLAGS += -fno-rtti -fno-exceptions
 
 #this contains instrumentation functions usable by LLVM
 if HAVE_CLANG
@@ -25,8 +24,8 @@ lib_LTLIBRARIES = \
   libmemtrace.la
 
 libmemtrace_la_SOURCES = \
-  memtrace.cc
-
+  memtrace2.cc \
+	memtraceTools.cc 
 
 libmemtrace_la_LDFLAGS = \
  ${LLVM_LDFLAGS} \

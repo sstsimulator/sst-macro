@@ -89,6 +89,7 @@ sstmac_clang_SOURCES = \
   clang/computePragma.cc \
   clang/computeVisitor.cc \
   clang/replacePragma.cc \
+  clang/annotatePragma.cc \
   clang/astConsumers.cc \
   clang/frontendActions.cc \
   clang/astVisitor.cc 

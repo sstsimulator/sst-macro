@@ -128,7 +128,8 @@ struct SSTPragma {
   }
 
   static std::string getSingleString(const std::list<clang::Token>& tokens, clang::CompilerInstance& CI);
-  static std::map<std::string, std::list<std::string>> getMap(
+  using PragmaArgMap = std::map<std::string, std::list<std::string>>;
+  static PragmaArgMap getMap(
       clang::SourceLocation loc, clang::CompilerInstance& CI, const std::list<clang::Token>& tokens);
 
   SSTPragma(){}
