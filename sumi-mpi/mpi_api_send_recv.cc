@@ -198,8 +198,8 @@ MpiApi::startall(int count, MPI_Request* req)
 
 int
 MpiApi::sendInit(const void *buf, int count,
-                   MPI_Datatype datatype, int dest, int tag,
-                   MPI_Comm comm, MPI_Request *request)
+                 MPI_Datatype datatype, int dest, int tag,
+                 MPI_Comm comm, MPI_Request *request)
 {
   auto call_start_time = (uint64_t)now().usec();
 

@@ -442,6 +442,8 @@ struct WRR_PortArbitrator : public SnapprPortArbitrator
     VirtualLane& v = vls_[vl];
     if (v.pending.empty()){ //always enough credits when empty - better be
       uint64_t deadline = cycle + pkt->numBytes() * v.max_byte_delay;
+      port_debug("WRR %p VL %d is empty and emplacing at deadline=%" PRIu64 " on cycle=%" PRIu64 ": %s",
+                 this, vl, deadline, cycle, pkt->toString().c_str());
       port_queue_.emplace(deadline, vl);
     }
     vls_[vl].pending.push(pkt);
@@ -461,16 +463,21 @@ struct WRR_PortArbitrator : public SnapprPortArbitrator
     vl.pending.pop();
     vl.credits -= pkt->numBytes();
 
+    port_debug("WRR %p VL %d sending on cycle=%" PRIu64 ": %s",
+               this, next_vl, cycle, pkt->toString().c_str());
+
     if (!vl.pending.empty()){
       SnapprPacket* pkt = vl.pending.front();
       uint64_t deadline = cycle + pkt->numBytes() * vl.max_byte_delay;
       if (vl.credits >= pkt->numBytes()){
-        port_debug("FIFO %p VL %d has enough credits=%u to emplace %s",
-                   this, next_vl, vl.credits, pkt->toString().c_str());
+        port_debug("WRR %p VL %d has enough credits=%u to emplace at deadline=%" PRIu64
+                   " on cycle=%" PRIu64 ": %s",
+                   this, next_vl, deadline, cycle, vl.credits, pkt->toString().c_str());
         port_queue_.emplace(deadline, next_vl);
       } else {
-        port_debug("FIFO %p VL %d has insufficient credits=%u to emplace %s for deadline %" PRIu64,
-                   this, next_vl, vl.credits, pkt->toString().c_str(), deadline);
+        port_debug("WRR %p VL %d has insufficient credits=%u for deadline=%" PRIu64
+                   " on cycle=%" PRIu64 ": %s",
+                   this, next_vl, vl.credits, deadline, cycle, pkt->toString().c_str(), deadline);
         vl.blocked_deadline = deadline;
       }
     }
@@ -483,7 +490,7 @@ struct WRR_PortArbitrator : public SnapprPortArbitrator
     if (v.blocked_deadline){
       SnapprPacket* pkt = v.pending.front();
       if (pkt->numBytes() <= v.credits){
-        port_debug("FIFO %p VL %d now has enough credits to emplace %s for deadline %" PRIu64,
+        port_debug("WRR %p VL %d now has enough credits to emplace %s for deadline %" PRIu64,
                    this, vl, pkt->toString().c_str(), v.blocked_deadline);
         port_queue_.emplace(v.blocked_deadline, vl);
         v.blocked_deadline = 0;

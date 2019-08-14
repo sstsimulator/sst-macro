@@ -185,8 +185,9 @@ SnapprSwitch::handlePayload(SnapprPacket* pkt, int inport)
   router_->route(pkt);
   int vl = pkt->qos() * num_vc_ + pkt->deadlockVC();
   pkt->setVirtualLane(vl);
-  if (vl >= (qos_levels_*num_vc_)){
-    spkt_abort_printf("Bad QoS %d > max=%d", vl, (qos_levels_-1));
+  int max_vl = qos_levels_*num_vc_;
+  if (vl >= max_vl){
+    spkt_abort_printf("Bad QoS %d > max=%d", vl, (max_vl-1));
   }
 
   SnapprOutPort& p = outports_[pkt->nextPort()];
