@@ -54,7 +54,10 @@ struct ReplacementConfig
 {
   ReplacementConfig(const std::string& match, const std::string& repl,
                     std::list<const Expr*>& replaced) :
-    matchText(match), replacementText(repl), replacedExprs(replaced) {}
+    replacedExprs(replaced),
+    matchText(match), 
+    replacementText(repl) 
+  {}
   std::list<const Expr*> parents;
   std::list<const Expr*>& replacedExprs;
   const std::string& matchText;

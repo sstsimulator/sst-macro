@@ -61,7 +61,7 @@ int SSTPragmaHandler::idCounter_ = 0;
 SourceLocation SSTPragmaHandler::pragmaDirectiveLoc;
 std::map<std::string, SSTPragmaNamespace*>* PragmaRegisterMap::namespaces_ = nullptr;
 
-static std::string getStringToken(const Token& next, clang::CompilerInstance& ci)
+[[maybe_unused]] static std::string getStringToken(const Token& next, clang::CompilerInstance& ci)
 {
   //the next token should be a string naming the argument
   std::string argName;
@@ -81,7 +81,7 @@ static std::string getStringToken(const Token& next, clang::CompilerInstance& ci
   return argName;
 }
 
-static void assertToken(const Token& tok, tok::TokenKind kind, clang::CompilerInstance& ci)
+[[maybe_unused]] static void assertToken(const Token& tok, tok::TokenKind kind, clang::CompilerInstance& ci)
 {
   if (tok.getKind() != kind){
     std::string error = std::string("invalid pragma token of type ") + tok.getName()
@@ -620,9 +620,10 @@ SSTGlobalVariablePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
 
 SSTNullVariablePragma::SSTNullVariablePragma(SourceLocation loc, CompilerInstance& CI,
                                              const std::list<Token> &tokens)
- : nullSafe_(false), deleteAll_(false),
-   declAppliedTo_(nullptr),
+ : declAppliedTo_(nullptr),
    transitiveFrom_(nullptr),
+   nullSafe_(false), 
+   deleteAll_(false),
    skelComputes_(false)
 {
   if (tokens.empty()){

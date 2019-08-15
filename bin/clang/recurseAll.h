@@ -70,7 +70,7 @@ enum class ExprRole {
   ReturnValue
 };
 
-static const char* tostr(ExprRole role)
+[[maybe_unused]] static const char* tostr(ExprRole role)
 {
 #define enum_case(x) case ExprRole::x: return #x
   switch(role){

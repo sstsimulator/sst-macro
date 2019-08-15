@@ -100,7 +100,7 @@ struct ASTVisitorCmdLine {
 class FirstPassASTVistor : public clang::RecursiveASTVisitor<FirstPassASTVistor>
 {
  public:
-  friend class PragmaActivateGuard;
+  friend struct PragmaActivateGuard;
 
   FirstPassASTVistor(clang::CompilerInstance& ci,
                      SSTPragmaList& prgs, clang::Rewriter& rw,
@@ -147,7 +147,11 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     bool isFxnStatic;
     //struct X_anonymous_type - gives unique typename to anonymous truct
     std::string typeName;
-    AnonRecord() : decl(nullptr), isFxnStatic(false), typeNameAdded(false) {}
+    AnonRecord() : 
+      decl(nullptr), 
+      typeNameAdded(false),
+      isFxnStatic(false)
+    {}
   };
 
   struct ArrayInfo {
@@ -174,13 +178,17 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   SkeletonASTVisitor(clang::Rewriter &R,
                      GlobalVarNamespace& ns,
                      PragmaConfig& cfg) :
-    rewriter_(R), visitingGlobal_(false),
-    globalNs_(ns), currentNs_(&ns),
-    insideCxxMethod_(0), activeBinOpIdx_(-1),
-    foundCMain_(false), keepGlobals_(false),
-    refactorMain_(true),
-    pragmaConfig_(cfg),
+    rewriter_(R), 
+    visitingGlobal_(false),
+    globalNs_(ns), 
+    currentNs_(&ns),
+    insideCxxMethod_(0), 
     numRelocations_(0),
+    activeBinOpIdx_(-1),
+    foundCMain_(false), 
+    refactorMain_(true),
+    keepGlobals_(false),
+    pragmaConfig_(cfg),
     reconstructCount_(0)
   {
     initHeaders();
@@ -563,7 +571,10 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     GlobalReplacement(const std::string& reusable,
                       const std::string& oneOff,
                       bool app) :
-      append(app), reusableText(reusable), inlineUseText(oneOff) {}
+      reusableText(reusable), 
+      inlineUseText(oneOff),
+      append(app)
+    {}
   };
 
   std::map<const clang::Decl*,GlobalReplacement> globals_;
@@ -783,7 +794,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
 
   std::map<unsigned, std::pair<clang::VarDecl*,std::string>> declsToInsertAfter_;
 
-  friend class PragmaActivateGuard;
+  friend struct PragmaActivateGuard;
 
   struct GlobalStandin {
     bool fxnStatic;
@@ -1046,7 +1057,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     SkeletonASTVisitor* parent_;
   };
 
-  friend class ReplaceGlobalsPrinterHelper;
+  friend struct ReplaceGlobalsPrinterHelper;
   std::string printWithGlobalsReplaced(clang::Stmt* stmt);
 
   bool maybePrintGlobalReplacement(clang::VarDecl* vd, llvm::raw_ostream& os);
@@ -1167,7 +1178,9 @@ struct PragmaActivateGuard {
 class GlobalVariableVisitor : public clang::RecursiveASTVisitor<GlobalVariableVisitor> {
  public:
   GlobalVariableVisitor(clang::VarDecl* D, SkeletonASTVisitor* parent) :
-    decl_(D), parent_(parent), visitedGlobals_(false)
+    visitedGlobals_(false),
+    parent_(parent), 
+    decl_(D) 
   {
   }
 
@@ -1182,7 +1195,7 @@ class GlobalVariableVisitor : public clang::RecursiveASTVisitor<GlobalVariableVi
  private:
   bool visitedGlobals_;
   SkeletonASTVisitor* parent_;
-  clang::VarDecl* decl_;
+  [[maybe_unused]] clang::VarDecl* decl_;
 };
 
 

@@ -45,6 +45,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef bin_clang_compute_loops_h
 #define bin_clang_compute_loops_h
 
+#include <list>
+#include <string>
+
 struct Loop {
   struct Body {
     int depth;
@@ -57,7 +60,12 @@ struct Loop {
     }
     std::string branchPrediction;
     std::list<Loop> subLoops;
-    Body() : flops(0), intops(0), readBytes(0), writeBytes(0) {}
+    Body() : 
+      flops(0), 
+      intops(0), 
+      writeBytes(0),
+      readBytes(0)
+    {}
   };
 
 

@@ -79,10 +79,10 @@ struct opts {
     configfile(""),
     got_config_file(false),
     params(std::make_shared<sprockit::SimParameters>()),
-    low_res_timer(false),
     use_app_rc(false),
     print_walltime(true),
     print_params(false),
+    low_res_timer(false),
     cpu_affinity("") {
   }
 

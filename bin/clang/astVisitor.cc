@@ -1647,7 +1647,7 @@ SkeletonASTVisitor::deleteStmt(Stmt *s)
   ::replace(s, rewriter_, "", *ci_);
 }
 
-static bool isCombinedDecl(VarDecl* vD, RecordDecl* rD)
+[[maybe_unused]] static bool isCombinedDecl(VarDecl* vD, RecordDecl* rD)
 {
   return getStart(vD) <= getStart(rD) && getEnd(rD) <= getEnd(vD);
 }
@@ -2918,7 +2918,10 @@ FirstPassASTVistor::VisitStmt(Stmt *s)
 
 FirstPassASTVistor::FirstPassASTVistor(CompilerInstance& ci,
   SSTPragmaList& prgs, clang::Rewriter& rw, PragmaConfig& cfg) :
-  ci_(ci), pragmas_(prgs), rewriter_(rw), pragmaConfig_(cfg)
+  ci_(ci), 
+  pragmas_(prgs), 
+  pragmaConfig_(cfg),
+  rewriter_(rw)
 {
   opts_.setup();
 }
