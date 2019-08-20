@@ -703,6 +703,12 @@ OperatingSystem::block()
 }
 
 void
+OperatingSystem::unblockCore(int core)
+{
+  spkt_abort_printf("unimplemented: OperatingSystem::unblockCore");
+}
+
+void
 OperatingSystem::blockTimeout(TimeDelta delay)
 {
   sendDelayedExecutionEvent(delay, new TimeoutEvent(this, active_thread_));

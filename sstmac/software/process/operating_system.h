@@ -414,6 +414,8 @@ class OperatingSystem : public SubComponent
 
   void incrementAppRefcount();
 
+  void unblockCore(int core);
+
   static void gdbSwitchToThread(uint32_t thr_id);
 
   static void gdbSetActive(int flag){

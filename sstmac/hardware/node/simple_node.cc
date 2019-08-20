@@ -50,6 +50,10 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/libraries/compute/compute_event.h>
 
+#if SSTMAC_HAVE_SST_ELEMENTS
+#include <sst/elements/ariel/arielnotify.h>
+#endif
+
 #include <sprockit/errors.h>
 #include <sprockit/util.h>
 
@@ -67,6 +71,15 @@ SimpleNode::SimpleNode(uint32_t id, SST::Params& params)
   : Node(id, params)
 {
   initLinks(params);
+
+#if SSTMAC_INTEGRATED_SST_CORE
+  int ncores = proc_->ncores();
+  unblock_links_.resize(ncores);
+  for (int i=0; i < ncores; ++i){
+    std::string linkName = "unblock" + std::to_string(i);
+    unblock_links_[i] = configureLink(linkName, new Event::Handler<SimpleNode>(this, &SimpleNode::unblock));
+  }
+#endif
 }
 
 void
@@ -88,6 +101,15 @@ SimpleNode::execute(ami::COMP_FUNC func, Event* data, ExecutionEvent* cb)
             "simplenode: cannot process kernel %s",
             ami::tostr(func));
   }
+}
+
+void
+SimpleNode::unblock(Event *ev)
+{
+#if SSTMAC_INTEGRATED_SST_CORE
+  auto* nev = dynamic_cast<SST::ArielComponent::NotifyEvent*>(ev);
+  os_->unblockCore(nev->core());
+#endif
 }
 
 }
