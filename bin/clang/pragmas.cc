@@ -196,7 +196,16 @@ SSTPragmaNamespace::addFactory(int modeMask, const std::string &name,
   for (int i=0; i < NUM_MODES; ++i){
     int testMask = 1 << i;
     if (modeMask & testMask){
-      factories_[i][name] = factory;
+			auto &modeFactories = factories_[i];
+
+			if(modeFactories.count(name) > 0){
+				internalError("Trying to add factory with name key " 
+											+ name + " for mode "	
+											+ std::to_string(i) 
+											+ " but it was already added.\n");
+			}
+
+      modeFactories.insert({name,factory});
     }
   }
   pragmaNames_.insert(name);
