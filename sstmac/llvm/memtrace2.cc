@@ -27,6 +27,8 @@
 
 using namespace llvm;
 
+#if LLVM_VERSION_MAJOR >= 8
+
 namespace {
 StringSet<> FunctionCallWhiteList = {
     "gettimeofday",
@@ -269,3 +271,5 @@ struct MemtracePass : public ModulePass {
 char MemtracePass::ID = 0;
 static RegisterPass<MemtracePass> X("sst-memtrace", "SSTMAC Memtrace Pass",
                                     false, false);
+
+#endif

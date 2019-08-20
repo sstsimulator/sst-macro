@@ -155,8 +155,8 @@ parseToolStr(std::string const &Tool) {
 
 template <typename T>
 std::pair<int, int> getLines(clang::SourceManager &Sm, T const *t) {
-  return {Sm.getPresumedLineNumber(t->getBeginLoc()),
-          Sm.getPresumedLineNumber(t->getEndLoc())};
+  return {Sm.getPresumedLineNumber(getStart(t)),
+          Sm.getPresumedLineNumber(getStart(t))};
 }
 
 } // namespace
@@ -188,10 +188,10 @@ SSTAnnotatePragma::SSTAnnotatePragma(
 void SSTAnnotatePragma::activate(clang::Stmt *S, clang::Rewriter &R,
                                  PragmaConfig &Cfg) {
   if (auto ParentFunc = getParentFunctionDecl(S, Ctx)) {
-    R.InsertTextBefore(ParentFunc->getBeginLoc(),
+    R.InsertTextBefore(getStart(ParentFunc),
                        annotationStr(Tool, Args, getLines(Sm, S)));
   } else {
-    errorAbort(S->getBeginLoc(), Cfg.astVisitor->getCompilerInstance(),
+    errorAbort(getStart(S), Cfg.astVisitor->getCompilerInstance(),
                "Couldn't find a parent function for the statement");
   }
 }
@@ -203,7 +203,7 @@ void SSTAnnotatePragma::activate(clang::Decl *D, clang::Rewriter &R,
     LocalD = TD->getAsFunction();
   }
 
-  R.InsertTextBefore(LocalD->getBeginLoc(),
+  R.InsertTextBefore(getStart(LocalD),
                      annotationStr(Tool, Args, getLines(Sm, LocalD)));
 }
 

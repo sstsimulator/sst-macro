@@ -20,6 +20,8 @@
 
 #include "memtraceTools.h"
 
+#if LLVM_VERSION_MAJOR >= 8
+
 using namespace llvm;
 
 void AnnotationMap::addFunctionAnnotation(Function const *F, AnnotationKind K) {
@@ -216,3 +218,5 @@ void appendRegexFuncMatches(llvm::Module &M, AnnotationMap &AM) {
     }
   }
 }
+
+#endif
