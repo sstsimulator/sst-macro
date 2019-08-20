@@ -8,7 +8,7 @@ void fxn1()
  auto x = nullptr;
   auto y = nullptr;
 
- auto z = allocate<int>();
+ auto z = nullptr;
 }
 
 

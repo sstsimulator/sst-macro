@@ -82,7 +82,7 @@ test_clang_%_c.tmp-out: sst.pp.%.c $(SSTMAC_DEGLOBAL)
 
 sst.pp.pragma_sst_memoize.cc: pp.pragma_sst_memoize.cc $(SSTMAC_DEGLOBAL)
 	-SSTMAC_CLANG_TEST_PREFIX=xyz SSTMAC_MEMOIZE=1 SSTMAC_DELETE_TEMPS=0 \
-  $(SSTMAC_DEGLOBAL) $< -- -std=c++11
+  $(SSTMAC_DEGLOBAL) $< -- -std=c++11 $(MACSDK_CXXFLAGS)
 
 sst.pp.pragma_sst_memoize_compute.cc: pp.pragma_sst_memoize_compute.cc $(SSTMAC_DEGLOBAL)
 	-SSTMAC_CLANG_TEST_PREFIX=xyz SSTMAC_SKELETONIZE=1 SSTMAC_DELETE_TEMPS=0 \
@@ -94,7 +94,7 @@ sst.pp.puppet_%.cc: pp.puppet_%.cc $(SSTMAC_DEGLOBAL)
 
 sst.pp.%.cc: pp.%.cc $(SSTMAC_DEGLOBAL)
 	-SSTMAC_CLANG_TEST_PREFIX=xyz SSTMAC_SKELETONIZE=1 SSTMAC_DELETE_TEMPS=0 \
-  $(SSTMAC_DEGLOBAL) $< -- -std=c++11
+  $(SSTMAC_DEGLOBAL) $< -- -std=c++11 $(MACSDK_CXXFLAGS)
 
 pp.puppet_%.cc: $(top_srcdir)/tests/clang_src2src/puppet_%.cc $(SSTMAC_DEGLOBAL)
 	-$(CXX) -std=c++11 -E $< >& $@
@@ -104,7 +104,7 @@ pp.%.cc: $(top_srcdir)/tests/clang_src2src/%.cc $(SSTMAC_DEGLOBAL)
 
 sst.pp.%.c: pp.%.c $(SSTMAC_DEGLOBAL)
 	-SSTMAC_CLANG_TEST_PREFIX=xyz SSTMAC_SKELETONIZE=1 SSTMAC_DELETE_TEMPS=0 \
-  $(SSTMAC_DEGLOBAL) $< -- 
+  $(SSTMAC_DEGLOBAL) $< -- $(MACSDK_CXXFLAGS)
 
 pp.%.c: $(top_srcdir)/tests/clang_src2src/%.c $(SSTMAC_DEGLOBAL)
 	-$(CC) -E $< >& $@

@@ -6,8 +6,8 @@ sstLdFlags = [
 haveFloat128=@have_float_128@
 clangCppFlagsStr="@CLANG_CPPFLAGS@"
 clangLdFlagsStr="@CLANG_LDFLAGS@"
-clangLibtoolingCxxFlagsStr="@CLANG_LIBTOOLING_CXX_FLAGS@"
-clangLibtoolingCFlagsStr="@CLANG_LIBTOOLING_C_FLAGS@"
+clangLibtoolingCxxFlagsStr="@CLANG_LIBTOOLING_CXX_FLAGS@ @MACSDK_CXXFLAGS@"
+clangLibtoolingCFlagsStr="@CLANG_LIBTOOLING_C_FLAGS@ @MACSDK_CFLAGS@"
 defaultIncludePaths="@DEFAULT_INCLUDE_PATHS@"
 
 sstCppFlags = [

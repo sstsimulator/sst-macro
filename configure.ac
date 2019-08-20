@@ -118,6 +118,8 @@ LT_INIT([shared disable-static dlopen])
 LT_PREREQ([2.2.6])
 AC_PROG_LN_S
 
+CHECK_SDK()
+
 os=`$srcdir/bin/config_tools/get_os`
 
 if test "X$os" = "Xubuntu"; then
@@ -128,6 +130,7 @@ AM_CONDITIONAL([HAVE_UBUNTU], [false])
 fi
 
 CHECK_DLOPEN()
+
 
 CHECK_SST_CORE()
 
@@ -203,6 +206,7 @@ CHECK_COMM_SYNC_STATS()
 CHECK_COMM_DELAY_STATS()
 
 CHECK_CLANG_LLVM()
+
 
 #-------------------------------------------------
 # Configure subdirs
@@ -298,6 +302,7 @@ echo "  Spinlock         $with_spinlock"
 echo "  Thread Affinity  $with_cpu_affinity"
 echo
 
+echo "MAC SDK            $enable_sdk"
 echo "SUMI MPI           $install_sumi_mpi"
 echo "SST Core           $have_integrated_core"
 echo "Clang Autoskeleton $found_clang"

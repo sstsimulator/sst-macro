@@ -34,6 +34,7 @@ sstmacro.h \
 util.h \
 sstsockets.h \
 skeleton.h \
+skeleton_tls.h \
 null_buffer.h \
 sumi.h
 

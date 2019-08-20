@@ -53,7 +53,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <stdint.h>
 #include <sprockit/thread_safe_new.h>
 #include <list>
-#include <sstmac/skeleton.h>
+#include <sstmac/skeleton_tls.h>
 #include <sstmac/software/process/operating_system.h>
 
 namespace sstmac {

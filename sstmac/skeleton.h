@@ -61,7 +61,6 @@ typedef int (*main_fxn)(int,char**);
 typedef int (*empty_main_fxn)();
 
 #include <sstmac/common/sstmac_config.h>
-#include <sstmac/software/process/tls.h>
 #ifndef __cplusplus
 #include <stdbool.h>
 #else
@@ -232,8 +231,6 @@ extern "C" {
 extern int sstmac_global_stacksize;
 extern char* static_init_glbls_segment;
 extern char* static_init_tls_segment;
-void allocate_static_init_glbls_segment();
-void allocate_static_init_tls_segment();
 void sstmac_init_global_space(void* ptr, int size, int offset, bool tls);
 void sstmac_advance_time(const char* param_name);
 
@@ -241,45 +238,7 @@ void sstmac_advance_time(const char* param_name);
 }
 #endif
 
-
-#ifndef SSTMAC_INLINE
-#ifdef __STRICT_ANSI__
-#define SSTMAC_INLINE
-#else
-#define SSTMAC_INLINE inline
-#endif
-#endif
-
-static SSTMAC_INLINE char* get_sstmac_global_data(){
-  if (sstmac_global_stacksize == 0){
-    if (static_init_glbls_segment == 0){
-      allocate_static_init_glbls_segment();
-    }
-    return static_init_glbls_segment;
-  } else {
-    char** globalMapPtr = (char**)(get_sstmac_tls() + SSTMAC_TLS_GLOBAL_MAP);
-    return *globalMapPtr;
-  }
-}
-
-static SSTMAC_INLINE char* get_sstmac_tls_data(){
-  if (sstmac_global_stacksize == 0){
-    if (static_init_tls_segment == 0){
-      allocate_static_init_tls_segment();
-    }
-    return static_init_tls_segment;
-  } else {
-    char** globalMapPtr = (char**)(get_sstmac_tls() + SSTMAC_TLS_TLS_MAP);
-    return *globalMapPtr;
-  }
-}
-
-static SSTMAC_INLINE int get_sstmac_tls_thread_id(){
-  int* idPtr = (int*)(get_sstmac_tls() + SSTMAC_TLS_THREAD_ID);
-  return *idPtr;
-}
-
-#undef SSTMAC_INLINE
+#include <sstmac/skeleton_tls.h>
 
 #endif
 
