@@ -58,9 +58,9 @@ void getLiteralDataAsString(const clang::Token &tok, std::ostream& os);
 
 class SkeletonASTVisitor;
 struct SSTPragma;
-struct SSTReplacePragma;
-struct SSTNullVariablePragma;
-struct SSTNullVariableGeneratorPragma;
+class SSTReplacePragma;
+class SSTNullVariablePragma;
+class SSTNullVariableGeneratorPragma;
 struct PragmaConfig {
   std::map<std::string,SSTReplacePragma*> replacePragmas;
   std::map<clang::Decl*,SSTNullVariablePragma*> nullVariables;
@@ -128,7 +128,8 @@ struct SSTPragma {
   }
 
   static std::string getSingleString(const std::list<clang::Token>& tokens, clang::CompilerInstance& CI);
-  static std::map<std::string, std::list<std::string>> getMap(
+  using PragmaArgMap = std::map<std::string, std::list<std::string>>;
+  static PragmaArgMap getMap(
       clang::SourceLocation loc, clang::CompilerInstance& CI, const std::list<clang::Token>& tokens);
 
   SSTPragma(){}
@@ -250,8 +251,11 @@ class SSTPragmaHandler : public clang::PragmaHandler {
                    SSTPragmaList& plist,
                    clang::CompilerInstance& ci,
                    SkeletonASTVisitor& visitor) :
-    PragmaHandler(name), pragmas_(plist), ci_(ci),
-    visitor_(visitor), deleteOnUse_(deleteOnUse)
+    PragmaHandler(name), 
+    ci_(ci),
+    pragmas_(plist), 
+    visitor_(visitor), 
+    deleteOnUse_(deleteOnUse)
   {}
 
   clang::CompilerInstance& ci_;
@@ -548,9 +552,10 @@ class SSTNullVariablePragma : public SSTPragma {
                         const std::list<clang::Token>& tokens);
 
   SSTNullVariablePragma() :
-    nullSafe_(false), deleteAll_(false),
     declAppliedTo_(nullptr),
     transitiveFrom_(nullptr),
+    nullSafe_(false), 
+    deleteAll_(false),
     skelComputes_(false)
   {}
 

@@ -1,18 +1,18 @@
 /**
-Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
-LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
+Copyright 2009-2019 National Technology and Engineering Solutions of Sandia,
+LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government
 retains certain rights in this software.
 
 Sandia National Laboratories is a multimission laboratory managed and operated
-by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
-owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
+by National Technology and Engineering Solutions of Sandia, LLC., a wholly
+owned subsidiary of Honeywell International, Inc., for the U.S. Department of
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2018, NTESS
+Copyright (c) 2009-2019, NTESS
 
 All rights reserved.
 
-Redistribution and use in source and binary forms, with or without modification, 
+Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
 
     * Redistributions of source code must retain the above copyright
@@ -42,50 +42,25 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef bin_clang_compute_loops_h
-#define bin_clang_compute_loops_h
+#ifndef bin_clang_annotatePragma_h
+#define bin_clang_annotatePragma_h
 
-#include <list>
-#include <string>
+#include "pragmas.h"
 
-struct Loop {
-  struct Body {
-    int depth;
-    int flops;
-    int intops;
-    int writeBytes;
-    int readBytes;
-    bool hasBranchPrediction() const {
-      return branchPrediction.size() > 0;
-    }
-    std::string branchPrediction;
-    std::list<Loop> subLoops;
-    Body() : 
-      flops(0), 
-      intops(0), 
-      writeBytes(0),
-      readBytes(0)
-    {}
-  };
+class SSTAnnotatePragma : public SSTPragma {
+public:
+  SSTAnnotatePragma(
+      clang::SourceLocation Loc, clang::CompilerInstance &CI,
+      std::map<std::string, std::list<std::string>> &&PragmaStrings);
 
+  void activate(clang::Stmt *S, clang::Rewriter &R, PragmaConfig &Cfg) override;
+  void activate(clang::Decl *D, clang::Rewriter &R, PragmaConfig &Cfg) override;
 
-
-  std::string tripCount;
-  Body body;
-  Loop(int depth){
-    body.depth = depth;
-  }
+private:
+  std::string Tool;
+  std::vector<std::string> Args;
+  clang::SourceManager &Sm;
+  clang::ASTContext &Ctx;
 };
 
-struct ForLoopSpec
-{
-  bool increment = true;
-  clang::Expr* stride;
-  clang::Expr* init;
-  clang::Expr* predicateMax;
-  std::string explicitLoopCount;
-  clang::NamedDecl* incrementer;
-};
-
-#endif
-
+#endif // bin_clang_annotatePragma_h

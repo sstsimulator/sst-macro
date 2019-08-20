@@ -67,7 +67,7 @@ namespace sstmac {
 class TimeDelta
 {
  public:
-  friend class Timestamp;
+  friend struct Timestamp;
 
   /// The type that holds a timestamp.
   typedef uint64_t tick_t;

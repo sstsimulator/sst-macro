@@ -89,11 +89,12 @@ sstmac_clang_SOURCES = \
   clang/computePragma.cc \
   clang/computeVisitor.cc \
   clang/replacePragma.cc \
+  clang/annotatePragma.cc \
   clang/astConsumers.cc \
   clang/frontendActions.cc \
   clang/astVisitor.cc 
 
-sstmac_clang_CXXFLAGS = -fno-rtti $(AM_CXXFLAGS)
+sstmac_clang_CXXFLAGS = -fno-rtti -fno-exceptions $(AM_CXXFLAGS)
 sstmac_clang_CPPFLAGS = $(CLANG_CPPFLAGS) $(AM_CPPFLAGS)
 sstmac_clang_LDFLAGS = $(CLANG_LDFLAGS) \
  -Wl,-rpath,@CLANG_INSTALL_DIR@/lib \
