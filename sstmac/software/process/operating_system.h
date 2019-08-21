@@ -73,6 +73,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <queue>
 #include <functional>
 
+#include <sstmac/software/process/ipc_tunnel.h>
+
 DeclareDebugSlot(os);
 
 extern "C" double sstmacWallTime();
@@ -245,6 +247,10 @@ class OperatingSystem : public SubComponent
     return active_thread_;
   }
 
+  ShadowPuppetSync* syncTunnel() const {
+    return sync_tunnel_->get();
+  }
+
   void reassignCores(Thread* thr);
 
   static void deleteStatics();
@@ -414,7 +420,9 @@ class OperatingSystem : public SubComponent
 
   void incrementAppRefcount();
 
-  void unblockCore(int core);
+  void unblockActiveThread();
+
+  void setIpcName(const std::string& name);
 
   static void gdbSwitchToThread(uint32_t thr_id);
 
@@ -500,6 +508,8 @@ class OperatingSystem : public SubComponent
 #else
   static OperatingSystem* active_os_;
 #endif
+
+  IPCTunnel<ShadowPuppetSync>* sync_tunnel_;
 
 };
 

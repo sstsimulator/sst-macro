@@ -72,12 +72,27 @@ SimpleNode::SimpleNode(uint32_t id, SST::Params& params)
 {
   initLinks(params);
 
-#if SSTMAC_INTEGRATED_SST_CORE
+#if SSTMAC_HAVE_SST_ELEMENTS
   int ncores = proc_->ncores();
   unblock_links_.resize(ncores);
   for (int i=0; i < ncores; ++i){
     std::string linkName = "unblock" + std::to_string(i);
     unblock_links_[i] = configureLink(linkName, new Event::Handler<SimpleNode>(this, &SimpleNode::unblock));
+  }
+#endif
+}
+
+void
+SimpleNode::init(unsigned int phase)
+{
+#if SSTMAC_HAVE_SST_ELEMENTS
+  if (phase == 0){
+    SST::Link* link0 = unblock_links_[0];
+    if (link0){
+      Event* ev = link0->recvInitData();
+      auto* nev = dynamic_cast<SST::ArielComponent::NameEvent*>(ev);
+      os_->setIpcName(nev->name());
+    }
   }
 #endif
 }
@@ -108,7 +123,7 @@ SimpleNode::unblock(Event *ev)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   auto* nev = dynamic_cast<SST::ArielComponent::NotifyEvent*>(ev);
-  os_->unblockCore(nev->core());
+  os_->unblockActiveThread();
 #endif
 }
 

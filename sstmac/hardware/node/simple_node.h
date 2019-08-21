@@ -93,8 +93,11 @@ class SimpleNode :
 
   void unblock(Event* ev);
 
+  void init(unsigned int phase);
  private:
+#if SSTMAC_HAVE_SST_ELEMENTS
   std::vector<SST::Link*> unblock_links_;
+#endif
 };
 
 

@@ -296,6 +296,7 @@ class App : public Thread
 
 };
 
+
 class UserAppCxxFullMain : public App
 {
  public:

@@ -120,7 +120,11 @@ sstmac_clang_LDFLAGS = $(CLANG_LDFLAGS) \
  @CLANG_LIBTOOLING_SYSTEM_LIBS@ 
 endif
 
-
+if HAVE_SST_ELEMENTS
+bin_PROGRAMS += ariel_test
+ariel_test_SOURCES = ariel_test.cc
+ariel_test_CPPFLAGS = $(SST_ELEMENTS_CPPFLAGS) $(SST_CPPFLAGS)
+endif
 
 
 
