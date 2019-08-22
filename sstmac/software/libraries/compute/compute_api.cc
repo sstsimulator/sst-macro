@@ -55,6 +55,12 @@ using sstmac::TimeDelta;
 using sstmac::Timestamp;
 using os = sstmac::sw::OperatingSystem;
 
+extern "C" double sstmac_block()
+{
+  os::currentOs()->block();
+  return os::currentOs()->now().sec();
+}
+
 extern "C" unsigned int sstmac_sleep(unsigned int secs){
   os::currentOs()->sleep(TimeDelta(secs, TimeDelta::one_second));
   return 0;

@@ -313,6 +313,7 @@ std::unique_ptr<std::map<std::string,std::string>> OperatingSystem::memoize_init
 
 OperatingSystem::OperatingSystem(SST::Component* parent, SST::Params& params) :
   node_(safe_cast(hw::Node,parent)),
+  blocked_thread_(nullptr),
   active_thread_(nullptr),
   des_context_(nullptr),
   compute_sched_(nullptr),
@@ -592,6 +593,9 @@ OperatingSystem::switchToThread(Thread* tothread)
   }
 
   os_debug("switching to thread %d", tothread->threadId());
+  if (active_thread_ == blocked_thread_){
+    blocked_thread_ = nullptr;
+  }
   active_thread_ = tothread;
   activeOs() = this;
   tothread->context()->resumeContext(des_context_);
@@ -688,6 +692,7 @@ OperatingSystem::block()
   //reset the time flag
   active_thread_->setTimedOut(false);
   os_debug("pausing context on thread %d", active_thread_->threadId());
+  blocked_thread_ = active_thread_;
   active_thread_ = nullptr;
   old_context->pauseContext(des_context_);
 
@@ -711,9 +716,11 @@ OperatingSystem::block()
 }
 
 void
-OperatingSystem::unblockActiveThread()
+OperatingSystem::unblockBlockedThread()
 {
-  unblock(active_thread_);
+  if (blocked_thread_){
+    unblock(blocked_thread_);
+  }
 }
 
 void
