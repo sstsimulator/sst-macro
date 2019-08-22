@@ -59,40 +59,25 @@ class IPCTunnel {
   std::string name_;
   int fd_;
   T* t_;
-
-
 };
 
 
 class ShadowPuppetSync {
  private:
-  struct TunnelString {
-    char bytes[1024];
-  };
-
-  std::atomic<bool> started;
-  std::atomic<bool> progressFlag;
-  std::atomic<TunnelString> ariel_name;
+  char ArielTunnelString[256];
+  std::atomic_bool stringSet;
+  std::atomic_int32_t progressFlag;
 
  public:
-  ShadowPuppetSync() :
-    started(false), progressFlag(false)
-  {
-  }
+  ShadowPuppetSync() : stringSet(false), progressFlag(0) {}
+  ShadowPuppetSync(ShadowPuppetSync const&) = delete;
+  ShadowPuppetSync& operator=(ShadowPuppetSync const&) = delete;
 
-  bool isInited() {
-    return started.load(); 
-  }
-
-  void setInited() {
-    started.store(true); 
-  }
-
-  bool allowPuppetEnter() {
+  bool allowPuppetEnter() const {
     return progressFlag.load();
   }
 
-  bool allowShadowExit() {
+  bool allowShadowExit() const {
     return !progressFlag.load();
   }
 
@@ -105,20 +90,18 @@ class ShadowPuppetSync {
   }
 
   void setTunnelName(const std::string& name){
-    TunnelString str;
-    ::strcpy(str.bytes, name.c_str());
-    ariel_name.store(str);
+    std::strcpy(ArielTunnelString, name.c_str());
+    stringSet.store(true); // CST should ensure that copy is complete 
   }
 
-  std::string getTunnelName() {
-    std::string ret(ariel_name.load().bytes);
-    return ret;
+  char const* getTunnelName() const {
+    while(!stringSet.load()){}
+
+    return ArielTunnelString;
   }
 };
 
-
 }
 }
-
 #endif
 

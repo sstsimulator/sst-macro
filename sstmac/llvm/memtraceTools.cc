@@ -113,31 +113,35 @@ StringMap<Function *> declareSSTFunctions(Module &M, AnnotationKind K) {
   {
     auto StartType = FunctionType::get(VoidType, false);
     Funcs["start_trace"] = Function::Create(
-        StartType, Function::ExternalLinkage, "sstmac_start_trace", M);
+        StartType, Function::ExternalLinkage, "sstmac_puppet_start_trace", M);
 
     auto StopType = StartType;
     Funcs["stop_trace"] = Function::Create(StopType, Function::ExternalLinkage,
-                                           "sstmac_end_trace", M);
+                                           "sstmac_puppet_end_trace", M);
+
+    auto InitType = StartType;
+    Funcs["Init"] = Function::Create(InitType, Function::ExternalLinkage,
+                                     "sstmac_puppet_init", M);
+
+    auto FiniType = StartType;
+    Funcs["Finalize"] = Function::Create(FiniType, Function::ExternalLinkage,
+                                         "sstmac_puppet_finalize", M);
 
     // TODO Disable this if we are not using OMP
-    auto ThreadNumType = FunctionType::get(IntType32, false);
-    Funcs["omp_get_thread_num"] = Function::Create(
-        ThreadNumType, Function::ExternalLinkage, "omp_get_thread_num", M);
+    // auto ThreadNumType = FunctionType::get(IntType32, false);
+    // Funcs["omp_get_thread_num"] = Function::Create(
+    //     ThreadNumType, Function::ExternalLinkage, "omp_get_thread_num", M);
   }
 
   if (K == AnnotationKind::Memtrace) {
     auto LoadType =
         FunctionType::get(VoidType, {IntPtrType8, IntType64, IntType32}, false);
     Funcs["Load"] = Function::Create(LoadType, Function::ExternalLinkage,
-                                     "sstmac_address_load", M);
+                                     "sstmac_puppet_address_load", M);
 
     auto StoreType = LoadType;
     Funcs["Store"] = Function::Create(StoreType, Function::ExternalLinkage,
-                                      "sstmac_address_store", M);
-
-    auto DumpType = FunctionType::get(VoidType, false);
-    Funcs["Dump"] = Function::Create(DumpType, Function::ExternalLinkage,
-                                     "sstmac_print_address_info", M);
+                                      "sstmac_puppet_address_store", M);
   }
 
   return Funcs;
@@ -207,7 +211,7 @@ AnnotationMap parseAnnotations(Module &M) {
 // Find functions that need to get picked up that aren't annotated
 void appendRegexFuncMatches(llvm::Module &M, AnnotationMap &AM) {
   const StringMap<AnnotationKind> AlwaysMatch = {
-      {"omp", AnnotationKind::Memtrace}};
+      {"omp.", AnnotationKind::Memtrace}};
 
   for (auto const &F : M) {
     auto const &Name = F.getName();

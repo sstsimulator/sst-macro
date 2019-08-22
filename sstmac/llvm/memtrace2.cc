@@ -30,10 +30,7 @@ using namespace llvm;
 #if LLVM_VERSION_MAJOR >= 8
 
 namespace {
-StringSet<> FunctionCallWhiteList = {
-    "gettimeofday",
-    "printf"
-};
+StringSet<> FunctionCallWhiteList = {"gettimeofday", "printf"};
 
 bool functionIsWhiteListed(StringRef const &Str) {
   if (Str.startswith("__kmpc")) { // Whitelist builtin OMP Funcs
@@ -137,9 +134,9 @@ struct MemtracePass : public ModulePass {
   }
 
   // Deals with things like _Znam and other special functions
-  bool handleSpecialFunctions(CallSite CS, Value* ThreadID){
+  bool handleSpecialFunctions(CallSite CS, Value *ThreadID) {
     auto Callee = CS.getCalledFunction();
-    if(Callee->getName() == "_Znam"){
+    if (Callee->getName() == "_Znam") {
       // Don't handle _Znam for now since we don't know how many addresses were
       // actually touched.
       return true;
@@ -159,8 +156,8 @@ struct MemtracePass : public ModulePass {
       }
       return;
     }
-    
-    if(handleSpecialFunctions(CS, ThreadID)){
+
+    if (handleSpecialFunctions(CS, ThreadID)) {
       return;
     }
 
@@ -189,16 +186,16 @@ struct MemtracePass : public ModulePass {
   Value *startTracing(Function *F) {
     auto FirstInst = &F->front().front();
 
-    // TODO Check that OMP is actually enabled otherwise return 0
-    auto OmpNumThreads = SSTFunctions["omp_get_thread_num"];
-    auto ThreadID = CallInst::Create(OmpNumThreads->getFunctionType(),
-                                     OmpNumThreads, "", FirstInst);
+    // // TODO Check that OMP is actually enabled otherwise return 0
+    // auto OmpNumThreads = SSTFunctions["omp_get_thread_num"];
+    // auto ThreadID = CallInst::Create(OmpNumThreads->getFunctionType(),
+    //                                  OmpNumThreads, "", FirstInst);
 
     auto StartTracing = SSTFunctions["start_trace"];
     CallInst::Create(StartTracing->getFunctionType(), StartTracing, "",
                      FirstInst);
 
-    return ThreadID;
+    return ConstantInt::get(F->getContext(), APInt(32,false));
   }
 
   void stopTracing(Instruction *Ret) {
@@ -251,12 +248,18 @@ struct MemtracePass : public ModulePass {
     for (Function &F : M.functions()) {
       runOnFunction(F);
 
-      // Hack in a function call at the end of main for a bit
       if (F.getName() == "main") {
+        errs() << "Adding calls to Main\n";
+        // Initialize the shadow app
+        auto FirstInst = &F.front().front();
+        auto Init = SSTFunctions["Init"];
+        CallInst::Create(Init->getFunctionType(), Init, "", FirstInst);
+
+        // Then search for the returns to finalize the shadow app
         for (auto &I : instructions(F)) {
           if (auto Ret = dyn_cast<ReturnInst>(&I)) {
-            auto Dump = SSTFunctions["Dump"];
-            CallInst::Create(Dump->getFunctionType(), Dump, "", Ret);
+            auto Finalize = SSTFunctions["Finalize"];
+            CallInst::Create(Finalize->getFunctionType(), Finalize, "", Ret);
           }
         }
       }
