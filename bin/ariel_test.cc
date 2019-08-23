@@ -20,25 +20,26 @@ int main(int argc, char** argv)
   std::cout << std::endl;
   auto* tunnel = new ArielTunnel(name);
 
+  static const int numOps = 1000;
+  for (int op=0; op < numOps; ++op){
+    ArielCommand ac;
+    ac.command = ARIEL_START_INSTRUCTION;
+    tunnel->writeMessage(0, ac);
+
+    ac.command = ARIEL_PERFORM_READ;
+    ac.instPtr = 0;
+    ac.inst.addr = 0x4000000;
+    ac.inst.size = 4096;
+    ac.inst.instClass = 0;
+    ac.inst.simdElemCount = 0;
+    tunnel->writeMessage(0, ac);
+
+    ac.command = ARIEL_END_INSTRUCTION;
+    tunnel->writeMessage(0, ac);
+  }
   ArielCommand ac;
-  ac.command = ARIEL_START_INSTRUCTION;
-  tunnel->writeMessage(0, ac);
-
-  ac.command = ARIEL_PERFORM_READ;
-  ac.instPtr = 0;
-  ac.inst.addr = 0x4000000;
-  ac.inst.size = 4096;
-  ac.inst.instClass = 0;
-  ac.inst.simdElemCount = 0;
-  std::cout << "Writing test address" << std::endl;
-  tunnel->writeMessage(0, ac);
-
-  ac.command = ARIEL_END_INSTRUCTION;
-  tunnel->writeMessage(0, ac);
-
   ac.command = ARIEL_PERFORM_EXIT;
   tunnel->writeMessage(0, ac);
-
 
   return 0;
 }

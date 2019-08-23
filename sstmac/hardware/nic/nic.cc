@@ -298,17 +298,17 @@ NIC::internodeSend(NetworkMessage* netmsg)
 void 
 NIC::sendManagerMsg(NetworkMessage* msg)
 {
-  //if (msg->toaddr() == my_addr_){
-  //  intranodeSend(msg);
-  //} else {
+  if (msg->toaddr() == my_addr_){
+    intranodeSend(msg);
+  } else {
 #if SSTMAC_SANITY_CHECK
-  if (!logp_link_){
-    spkt_abort_printf("NIC %d does not have LogP link", addr());
-  }
+    if (!logp_link_){
+      spkt_abort_printf("NIC %d does not have LogP link", addr());
+    }
 #endif
-  logp_link_->send(new NicEvent(msg));
-  ackSend(msg);
-  //}
+    logp_link_->send(new NicEvent(msg));
+    ackSend(msg);
+  }
 }
 
 void

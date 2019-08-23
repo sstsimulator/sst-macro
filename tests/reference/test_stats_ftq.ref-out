@@ -1,7 +1,7 @@
 - Finished testing! test successful 
-Total runtime 2004.1831ms
+Total runtime 2004.1835ms
 Aggregate time stats for ftq: 
          Compute:          0.01601 s
-             MPI:         13.01756 s
+             MPI:         13.01755 s
            Sleep:          3.00000 s
 Estimated total runtime of     2.00 seconds

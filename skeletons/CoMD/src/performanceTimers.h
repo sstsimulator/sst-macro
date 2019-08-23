@@ -54,6 +54,7 @@ enum TimerHandle{
 /// be turned off.  Typically this means they are outside the main
 /// simulation loop.  If the timer is inside the main loop use
 /// startTimer and stopTimer instead.
+void initTimers();
 void profileStart(const enum TimerHandle handle);
 void profileStop(const enum TimerHandle handle);
 
