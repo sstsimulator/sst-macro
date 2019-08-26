@@ -16,9 +16,12 @@ AM_CPPFLAGS += ${SST_ELEMENTS_CPPFLAGS}
 
 #this contains instrumentation functions usable by LLVM
 if HAVE_CLANG
+
+if HAVE_SST_ELEMENTS
 noinst_LTLIBRARIES = libsstmac_inst.la
 libsstmac_inst_la_SOURCES = \
   meminst.cc
+endif
 
 lib_LTLIBRARIES = \
   libmemtrace.la

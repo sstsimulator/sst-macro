@@ -56,6 +56,7 @@ class IPCTunnel {
         spkt_abort_printf("create mmap region of size %d on fd %d for region %s: %s",
                           size_, fd_, name_.c_str(), ::strerror(errno));
       }
+      return ptr;
   }
 
   int getPuppetFileDescriptor() {
