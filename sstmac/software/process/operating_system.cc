@@ -729,7 +729,6 @@ OperatingSystem::setIpcName(const std::string &name)
   if (sync_tunnel_){
     ShadowPuppetSync* tunnel = sync_tunnel_->get();
     tunnel->setTunnelName(name);
-    tunnel->setInited();
   }
 }
 
