@@ -54,7 +54,6 @@ using sstmac::Timestamp;
 extern "C" int SSTMAC_gettimeofday(struct timeval* tv, struct timezone* tz)
 {
   OperatingSystem* os = OperatingSystem::currentOs();
-  Timestamp t = os->now();
   uint64_t usecs = os->now().usecRounded();
   tv->tv_sec =  usecs / 1000000;
   tv->tv_usec = usecs % 1000000;

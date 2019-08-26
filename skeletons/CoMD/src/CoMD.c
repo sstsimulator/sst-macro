@@ -88,6 +88,7 @@ extern FILE* yamlFile;
 int main(int argc, char** argv)
 {
    // Prolog
+   initTimers();
    initParallel(&argc, &argv);
    profileStart(totalTimer);
    initSubsystems();

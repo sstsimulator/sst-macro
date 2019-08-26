@@ -420,7 +420,7 @@ class OperatingSystem : public SubComponent
 
   void incrementAppRefcount();
 
-  void unblockActiveThread();
+  void unblockBlockedThread();
 
   void setIpcName(const std::string& name);
 
@@ -482,6 +482,7 @@ class OperatingSystem : public SubComponent
   std::map<std::string, std::string> env_;
 
   Thread* active_thread_;
+  Thread* blocked_thread_;
 
   NodeId my_addr_;
 

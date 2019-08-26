@@ -562,7 +562,7 @@ class SubLink : public EventLink
   }
 
  private:
-  [[maybe_unused]] SST::Link* self_link_;
+  SST::Link* self_link_;
   Component* comp_;
   EventHandler* handler_;
 };
