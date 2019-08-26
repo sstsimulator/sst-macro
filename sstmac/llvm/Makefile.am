@@ -16,9 +16,13 @@ AM_CPPFLAGS += ${SST_ELEMENTS_CPPFLAGS}
 
 #this contains instrumentation functions usable by LLVM
 if HAVE_CLANG
-noinst_LTLIBRARIES = libsstmac_inst.la
-libsstmac_inst_la_SOURCES = \
-  meminst.cc
+noinst_LTLIBRARIES = libshadow_app.la
+libshadow_app_la_SOURCES = \
+  shadowFunctions.cc
+
+noinst_LTLIBRARIES += libpuppet_app.la
+libpuppet_app_la_SOURCES = \
+  puppetFunctions.cc
 
 lib_LTLIBRARIES = \
   libmemtrace.la
