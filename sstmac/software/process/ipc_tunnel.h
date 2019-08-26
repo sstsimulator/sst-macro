@@ -50,35 +50,35 @@ class IPCTunnel {
   }
 
   void * mmapSharedRegion(){
-      void* ptr = mmap(NULL, size_, PROT_READ|PROT_WRITE, MAP_SHARED, fd_, 0);
-      if (ptr == MAP_FAILED){
-        shm_unlink(name_.c_str());
-        spkt_abort_printf("create mmap region of size %d on fd %d for region %s: %s",
-                          size_, fd_, name_.c_str(), ::strerror(errno));
-      }
+    void* ptr = mmap(NULL, size_, PROT_READ|PROT_WRITE, MAP_SHARED, fd_, 0);
+    if (ptr == MAP_FAILED){
+      shm_unlink(name_.c_str());
+      spkt_abort_printf("create mmap region of size %d on fd %d for region %s: %s",
+                        size_, fd_, name_.c_str(), ::strerror(errno));
+    }
   }
 
   int getPuppetFileDescriptor() {
-      int fd = shm_open(name_.c_str(), O_RDWR, S_IRUSR|S_IWUSR);
-      if (fd_ == -1){
-        spkt_abort_printf("failed attaching shm region %s", name_.c_str());
-      }
+    int fd = shm_open(name_.c_str(), O_RDWR, S_IRUSR|S_IWUSR);
+    if (fd_ == -1){
+      spkt_abort_printf("failed attaching shm region %s", name_.c_str());
+    }
 
-      return fd;
+    return fd;
   }
 
   int getShadowFileDescriptor() {
-      int fd = shm_open(name_.c_str(), 
-                        O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
-      
-      if (fd == -1){
-        spkt_abort_printf("failed creating shm region %s", name_.c_str());
-      } else if (ftruncate(fd, size_)){
-        spkt_abort_printf("failed truncating fd %d for region %s to size %d",
-                          fd, name_.c_str(), size_);
-      }
+    int fd = shm_open(name_.c_str(), 
+                      O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
+    
+    if (fd == -1){
+      spkt_abort_printf("failed creating shm region %s", name_.c_str());
+    } else if (ftruncate(fd, size_)){
+      spkt_abort_printf("failed truncating fd %d for region %s to size %d",
+                        fd, name_.c_str(), size_);
+    }
 
-      return fd;
+    return fd;
   }
 
   void* initPuppetRegion(){ 
