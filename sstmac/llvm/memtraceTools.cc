@@ -123,6 +123,7 @@ StringMap<Function *> declareSSTFunctions(Module &M, AnnotationKind K) {
     Funcs["Init"] = Function::Create(InitType, Function::ExternalLinkage,
                                      "sstmac_puppet_init", M);
 
+
     auto FiniType = StartType;
     Funcs["Finalize"] = Function::Create(FiniType, Function::ExternalLinkage,
                                          "sstmac_puppet_finalize", M);

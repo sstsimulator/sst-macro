@@ -195,7 +195,7 @@ struct MemtracePass : public ModulePass {
     CallInst::Create(StartTracing->getFunctionType(), StartTracing, "",
                      FirstInst);
 
-    return ConstantInt::get(F->getContext(), APInt(32,false));
+    return ConstantInt::get(F->getContext(), APInt(32, false));
   }
 
   void stopTracing(Instruction *Ret) {
@@ -252,8 +252,19 @@ struct MemtracePass : public ModulePass {
         errs() << "Adding calls to Main\n";
         // Initialize the shadow app
         auto FirstInst = &F.front().front();
-        auto Init = SSTFunctions["Init"];
-        CallInst::Create(Init->getFunctionType(), Init, "", FirstInst);
+        // auto Init = SSTFunctions["Init"];
+
+        auto Init =
+            Function::Create(F.getFunctionType(), Function::ExternalLinkage,
+                             "sstmac_puppet_init_no_shadow", M);
+        SmallVector<Value*,2> Args;
+        for(auto a = F.arg_begin(); a != F.arg_end(); ++a){
+          if(auto V = dyn_cast<Value>(a)){
+            Args.push_back(V);
+          }
+        }
+        CallInst::Create(Init->getFunctionType(), Init, Args, "",
+                         FirstInst);
 
         // Then search for the returns to finalize the shadow app
         for (auto &I : instructions(F)) {
