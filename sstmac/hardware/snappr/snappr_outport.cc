@@ -113,6 +113,12 @@ SnapprOutPort::send(SnapprPacket* pkt, Timestamp now)
   next_free = now + time_to_send;
   pkt->setTimeToSend(time_to_send);
   pkt->accumulateCongestionDelay(now);
+#if SSTMAC_SANITY_CHECK
+  if (!link){
+    spkt_abort_printf("trying send on null link going to %d: %s",
+                      pkt->toaddr(), pkt->toString().c_str());
+  }
+#endif
   link->send(pkt);
 
   if (flow_control_ && inports){
