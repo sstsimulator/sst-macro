@@ -16,7 +16,7 @@ AM_CPPFLAGS += ${SST_ELEMENTS_CPPFLAGS}
 
 #this contains instrumentation functions usable by LLVM
 if HAVE_CLANG
-if INTEGRATED_SST_CORE
+if HAVE_SST_ELEMENTS
 noinst_LTLIBRARIES = libshadow_app.la
 libshadow_app_la_SOURCES = \
   shadowFunctions.cc
