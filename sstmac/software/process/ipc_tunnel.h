@@ -94,8 +94,8 @@ private:
 class ShadowPuppetSync {
 private:
   char ArielTunnelString[256];
-  std::atomic_int32_t progressFlag;
-  std::atomic_bool NameSet;
+  std::atomic<std::int32_t> progressFlag;
+  std::atomic<bool> NameSet;
 
 public:
   ShadowPuppetSync() : progressFlag(0), NameSet(false) {}
