@@ -3,15 +3,7 @@ Rank 0 on MPI_Comm 0 passed test: 3.31e-02
 Rank 0 on MPI_Comm 0 passed test: 3.56e-02
 Rank 0 on MPI_Comm 0 passed test: 3.61e-02
 Rank 0 on MPI_Comm 0 passed test: 3.72e-02
-<<<<<<< HEAD
 Rank 0 on MPI_Comm 2 passed test: 3.74e-02
-=======
-Rank 0 on MPI_Comm 2 passed test: 3.73e-02
-Rank 0 on MPI_Comm 2 passed test: 3.73e-02
-Rank 0 on MPI_Comm 2 passed test: 3.73e-02
-Rank 0 on MPI_Comm 2 passed test: 3.73e-02
-Rank 0 on MPI_Comm 2 passed test: 3.73e-02
->>>>>>> dca1ee9d4be0f8f477589e7ac2b165cdef4d5d04
 Rank 0 on MPI_Comm 2 passed test: 3.74e-02
 Rank 0 on MPI_Comm 2 passed test: 3.74e-02
 Rank 0 on MPI_Comm 2 passed test: 3.74e-02
@@ -38,16 +30,7 @@ Rank 0 on MPI_Comm 2 passed test: 3.92e-02
 Rank 0 on MPI_Comm 2 passed test: 3.92e-02
 Rank 0 on MPI_Comm 2 passed test: 3.92e-02
 Rank 0 on MPI_Comm 2 passed test: 3.92e-02
-<<<<<<< HEAD
 Rank 0 on MPI_Comm 2 passed test: 3.93e-02
-=======
-Rank 0 on MPI_Comm 2 passed test: 3.92e-02
-Rank 0 on MPI_Comm 3 passed test: 3.93e-02
-Rank 0 on MPI_Comm 3 passed test: 3.93e-02
-Rank 0 on MPI_Comm 3 passed test: 3.93e-02
-Rank 0 on MPI_Comm 3 passed test: 3.93e-02
-Rank 0 on MPI_Comm 3 passed test: 3.93e-02
->>>>>>> dca1ee9d4be0f8f477589e7ac2b165cdef4d5d04
 Rank 0 on MPI_Comm 2 passed test: 3.93e-02
 Rank 0 on MPI_Comm 2 passed test: 3.93e-02
 Rank 0 on MPI_Comm 3 passed test: 3.93e-02
@@ -100,7 +83,6 @@ Rank 0 on MPI_Comm 3 passed test: 3.94e-02
 Rank 0 on MPI_Comm 3 passed test: 3.94e-02
 Rank 0 on MPI_Comm 3 passed test: 3.94e-02
 Rank 0 on MPI_Comm 3 passed test: 3.94e-02
-<<<<<<< HEAD
 Rank 0 on MPI_Comm 3 passed test: 3.94e-02
 Rank 0 on MPI_Comm 3 passed test: 3.94e-02
 Rank 0 on MPI_Comm 3 passed test: 3.94e-02
@@ -111,7 +93,4 @@ Rank 0 on MPI_Comm 3 passed test: 3.94e-02
 Rank 0 on MPI_Comm 3 passed test: 3.94e-02
 Rank 0 on MPI_Comm 3 passed test: 3.94e-02
 Rank 0 on MPI_Comm 3 passed test: 3.94e-02
-Estimated total runtime of           0.03941552 seconds
-=======
-Estimated total runtime of           0.03938917 seconds
->>>>>>> dca1ee9d4be0f8f477589e7ac2b165cdef4d5d04
+Estimated total runtime of           0.03941147 seconds

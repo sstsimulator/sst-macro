@@ -448,6 +448,7 @@ SSTNewPragma::visitDeclStmt(DeclStmt *stmt, Rewriter &r)
         std::stringstream sstr;
         sstr << type << " " << name << " = nullptr;"; //don't know why - but okay, semicolon needed
         replace(stmt, r, sstr.str(), *CI);
+        throw StmtDeleteException(stmt);
       } //boy, I really hope this doesn't allocate any memory
     }
   } else {
@@ -464,6 +465,7 @@ SSTNewPragma::visitBinaryOperator(BinaryOperator *op, Rewriter& r)
     pp.print(op->getLHS());
     pp.os << " = nullptr"; //don't know why - but okay, semicolon not needed
     replace(op, r, pp.os.str(),*CI);
+    throw StmtDeleteException(op);
   } //boy, I really hope this doesn't allocate any memory
 }
 
