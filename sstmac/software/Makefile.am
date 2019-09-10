@@ -90,7 +90,6 @@ nobase_library_include_HEADERS = \
   process/app_id.h \
   process/ftq_scope.h \
   process/ipc_tunnel.h \
-  process/key.h \
   process/host_timer.h \
   process/operating_system.h \
   process/operating_system_fwd.h \
