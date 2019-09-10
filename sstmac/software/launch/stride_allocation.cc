@@ -42,74 +42,76 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef __STDC_FORMAT_MACROS
-#define __STDC_FORMAT_MACROS
-#endif
+#include <sstmac/backends/common/parallel_runtime.h>
+#include <sstmac/software/launch/hostname_allocation.h>
+#include <sstmac/software/launch/node_allocator.h>
+#include <sstmac/common/sstmac_config.h>
+#include <sstmac/hardware/interconnect/interconnect.h>
+#include <sstmac/hardware/topology/cartesian_topology.h>
+#include <sprockit/keyword_registration.h>
+#include <sprockit/util.h>
+#include <sprockit/fileio.h>
+#include <sprockit/sim_parameters.h>
+#include <sstream>
 
-#include <inttypes.h>
-#include <queue>
-
-#include <sstmac/hardware/snappr/snappr.h>
-
-RegisterDebugSlot(snappr, "print all the details of the snappr model")
-
+RegisterKeywords(
+{ "hostfile", "a file containing a line-by-line list of hostnames for each node in system" },
+);
 
 namespace sstmac {
-namespace hw {
+namespace sw {
 
-SnapprPacket::SnapprPacket(
-  Flow* msg,
-  uint32_t num_bytes,
-  bool is_tail,
-  uint64_t flow_id,
-  uint64_t offset,
-  NodeId toaddr,
-  NodeId fromaddr,
-  int qos) :
-  offset_(offset),
-  priority_(0),
-  inport_(-1),
-  qos_(qos),
-  Packet(msg, num_bytes, flow_id, is_tail, fromaddr, toaddr)
-{
-}
+class StrideAllocation : public NodeAllocator {
+ public:
+  SST_ELI_REGISTER_DERIVED(
+    NodeAllocator,
+    StrideAllocation,
+    "macro",
+    "stride",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "Return nodes at regular strided intervals")
 
-std::string
-SnapprPacket::toString() const
-{
-  return sprockit::printf("pkt bytes=%" PRIu32 " flow=%" PRIu64 " offset=%" PRIu64 ": %s",
-                          numBytes(), flowId(), offset_,
-                          (flow() ? flow()->toString().c_str() : "no payload"));
+  StrideAllocation(SST::Params& params) :
+    NodeAllocator(params)
+  {
+    stride_ = params.find<int>("stride");
+  }
 
-}
+  std::string toString() const override {
+    return "stride allocation";
+  }
 
-void
-SnapprPacket::serialize_order(serializer& ser)
-{
-  //routable::serialize_order(ser);
-  Packet::serialize_order(ser);
-  ser & arrival_;
-  ser & time_to_send_;
-  ser & priority_;
-  ser & inport_;
-  ser & qos_;
-  ser & vl_;
-  ser & input_vl_;
-}
+  bool allocate(
+    int nnode_requested,
+    const ordered_node_set& available,
+    ordered_node_set& allocation) const override
+  {
+    int toSkip = stride_ - 1;
+    auto iter = available.begin();
+    int idx = 0;
+    while (iter != available.end() && allocation.size() < nnode_requested){
+      if (idx % stride_ == 0){
+        debug_printf(sprockit::dbg::allocation,
+            "stride_allocation: node[%d]=%d",
+            int(allocation.size()), *iter);
+        allocation.insert(*iter);
 
-std::string
-SnapprCredit::toString() const {
-  return sprockit::printf("credit bytes=%" PRIu32 " port=%d", num_bytes_, port_);
-}
+      }
+      ++idx;
+      ++iter;
+    }
 
-void
-SnapprCredit::serialize_order(serializer &ser)
-{
-  Event::serialize_order(ser);
-  ser & port_;
-  ser & num_bytes_;
-  ser & vl_;
-}
+    if  (allocation.size() != nnode_requested){
+      allocation.clear();
+      return false;
+    } else {
+      return true;
+    }
+  }
+
+ private:
+  int stride_;
+};
 
 }
 }

@@ -159,6 +159,7 @@ EventManager::addLinkHandler(uint64_t linkId, EventHandler *handler)
 void
 EventManager::stop()
 {
+  printf("Shutting down simulation at t=%20.12fs\n", now().sec());
   for (ExecutionEvent* ev : event_queue_){
     delete ev;
   }

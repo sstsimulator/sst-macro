@@ -800,5 +800,250 @@ class DragonflyFlyStatsRouter : public DragonflyMinimalRouter
 
 };
 
+
+struct DragonflyScatterRouter : public Router {
+  SST_ELI_REGISTER_DERIVED(
+    Router,
+    DragonflyScatterRouter,
+    "macro",
+    "dragonfly_scatter",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "router implementing dragonfly that obliviously scatters traffic")
+
+  struct header : public Packet::Header {
+    uint8_t num_group_hops : 2;
+    uint8_t num_hops : 4;
+  };
+
+  static const int max_hops = 3;
+
+  struct destination {
+    std::set<int>::iterator rotater;
+    std::set<int> ports;
+
+    int nextPort(){
+      int port = *rotater; //ports[rotater];
+      ++rotater;
+      if (rotater == ports.end()){
+        rotater = ports.begin();
+      }
+      return port;
+    }
+
+    void init(){
+      rotater = ports.begin();
+    }
+
+    destination(){}
+  };
+
+ public:
+  DragonflyScatterRouter(SST::Params& params, Topology* top,
+                           NetworkSwitch* netsw) :
+    Router(params, top, netsw)
+  {
+    dfly_ = dynamic_cast<Dragonfly*>(top);
+    if (!dfly_){
+      spkt_abort_printf("dragonfly router can only be used with dragonfly topology");
+    }
+
+    my_a_ = dfly_->computeA(my_addr_);
+    my_g_ = dfly_->computeG(my_addr_);
+
+    for (int i=1; i <= max_hops; ++i){
+      destination_table_[i].resize(dfly_->numSwitches());
+    }
+
+    followPath(my_addr_, 0, 0);
+
+    for (int sid=0; sid < dfly_->numSwitches(); ++sid){
+      for (int i=1; i <= max_hops; ++i){
+        destination& d = destination_table_[i][sid];
+        d.init();
+        for (int port : d.ports){
+          rter_debug("adding %d-hop path to %4d on port %d",
+                      i, sid, port);
+        }
+      }
+    }
+  }
+
+  void followPathHelper(int sid, int num_hops, int num_group_hops, int port){
+    int a = dfly_->computeA(sid);
+    int g = dfly_->computeG(sid);
+    if (port < dfly_->a() || g != my_g_){
+      //don't follow inter-grp ports for intra-grp sends
+      for (int h=num_hops; h <= 3; ++h){
+        destination_table_[h][sid].ports.insert(port);
+        if (port == my_a_){
+          spkt_abort_printf("adding invalid port %d in path to %d",
+                            port, sid);
+        }
+      }
+    }
+    followPath(sid, num_hops, num_group_hops, port);
+  }
+
+  void followPath(int sid, int num_hops, int num_group_hops, int port = -1){
+    if (num_hops < 3){
+      int a = dfly_->computeA(sid);
+      int g = dfly_->computeG(sid);
+      if (num_group_hops == 0){
+        std::vector<int> connections;
+        dfly_->groupWiring()->connectedRouters(a, g, connections);
+        for (int c=0; c < connections.size(); ++c){
+          int next_port = port == -1 ? c + dfly_->a() : port;
+          int next_sid = connections[c];
+          followPathHelper(next_sid, num_hops+1, num_group_hops+1, next_port);
+        }
+      }
+      for (int aa=0; aa < dfly_->a(); ++aa){
+        if (aa != a){
+          int next_sid = dfly_->getUid(aa, g);
+          int next_port = port == -1 ? aa : port;
+          followPathHelper(next_sid, num_hops+1, num_group_hops, next_port);
+        }
+      }
+    }
+  }
+
+  int numVC() const override {
+    return 3;
+  }
+
+  std::string toString() const override {
+    return "dragonfly scatter router";
+  }
+
+  void route(Packet *pkt) override
+  {
+    auto* hdr = pkt->rtrHeader<header>();
+    SwitchId ejaddr = pkt->toaddr() / dfly_->concentration();
+    if (ejaddr == my_addr_){
+      int port = pkt->toaddr() % dfly_->concentration();
+      hdr->edge_port = dfly_->a() + dfly_->h() + port;
+      hdr->deadlock_vc = 0;
+      return;
+    }
+
+    int hops = hdr->num_hops;
+    int dst_g = dfly_->computeG(ejaddr);
+    SwitchId injaddr = pkt->fromaddr() / dfly_->concentration();
+    int src_g = dfly_->computeG(injaddr);
+    /**
+
+    if (dst_g == my_g_){
+      int dst_a = dfly_->computeA(ejaddr);
+      hdr->edge_port = dst_a;
+    } else {
+    */
+    int max_hops = src_g == dst_g ? 2 : 3;
+    int allowed_hops = max_hops - hops;
+    destination& d = destination_table_[allowed_hops][ejaddr];
+#if SSTMAC_SANITY_CHECK
+    if (d.ports.empty()){
+      spkt_abort_printf("Router %d: packet has no path to destination %d from source %d: %s",
+                        my_addr_, ejaddr, injaddr, pkt->toString().c_str());
+    }
+#endif
+    int port = d.nextPort();
+    hdr->edge_port = port;
+    if (port > dfly_->a()){
+      //group port
+      hdr->num_group_hops++;
+    }
+    hdr->deadlock_vc = hdr->num_hops;
+    hdr->num_hops++;
+  }
+
+ protected:
+  Dragonfly* dfly_;
+
+  std::vector<destination> destination_table_[max_hops+1];
+
+  int my_g_;
+  int my_a_;
+};
+
+struct DragonflyRotateRouter : public DragonflyMinimalRouter {
+  SST_ELI_REGISTER_DERIVED(
+    Router,
+    DragonflyRotateRouter,
+    "macro",
+    "dragonfly_rotate",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "router implementing dragonfly that obliviously scatters traffic")
+
+ public:
+  DragonflyRotateRouter(SST::Params& params, Topology* top,
+                        NetworkSwitch* netsw) :
+    DragonflyMinimalRouter(params, top, netsw)
+  {
+    std::vector<int> connections;
+    dfly_->groupWiring()->connectedRouters(my_a_, my_g_, connections);
+    for (int c=0; c < connections.size(); ++c){
+      SwitchId dst = connections[c];
+      int dstG = dfly_->computeG(dst);
+      if (dstG != my_g_){
+        int port = c + dfly_->a();
+        rter_debug("adding valid group port %d", port);
+        valid_ports_.insert(port);
+      }
+    }
+
+    port_rotater_ = valid_ports_.begin();
+  }
+
+  int numVC() const override {
+    return 4;
+  }
+
+  std::string toString() const override {
+    return "dragonfly rotate router";
+  }
+
+  void route(Packet *pkt) override
+  {
+    auto* hdr = pkt->rtrHeader<header>();
+    SwitchId ejaddr = pkt->toaddr() / dfly_->concentration();
+    if (ejaddr == my_addr_){
+      int port = pkt->toaddr() % dfly_->concentration();
+      hdr->edge_port = dfly_->a() + dfly_->h() + port;
+      hdr->deadlock_vc = 0;
+      return;
+    }
+
+#if SSTMAC_SANITY_CHECK
+    if (hdr->num_hops > 3){
+      spkt_abort_printf("Took too many hops on %s going to %d",
+                        pkt->toString().c_str(), ejaddr);
+    }
+#endif
+
+    int dst_g = dfly_->computeG(ejaddr);
+    if (hdr->num_group_hops >= 1){
+      DragonflyMinimalRouter::routeToSwitch(pkt, ejaddr);
+    } else {
+      if (dst_g == my_g_){
+        int dst_a = dfly_->computeA(ejaddr);
+        hdr->edge_port = dst_a;
+      } else {
+        hdr->edge_port = *port_rotater_;
+        hdr->num_group_hops++;
+        ++port_rotater_;
+        if (port_rotater_ == valid_ports_.end()){
+          port_rotater_ = valid_ports_.begin();
+        }
+      }
+    }
+    hdr->deadlock_vc = hdr->num_hops;
+    hdr->num_hops++;
+  }
+
+ private:
+  std::set<int>::iterator port_rotater_;
+  std::set<int> valid_ports_;
+};
+
 }
 }

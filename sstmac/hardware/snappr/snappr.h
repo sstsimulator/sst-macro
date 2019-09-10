@@ -42,15 +42,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef sculpin_packet_h
-#define sculpin_packet_h
+#ifndef snappr_packet_h
+#define snappr_packet_h
 
 #include <sstmac/hardware/common/packet.h>
 #include <sstmac/hardware/common/flow.h>
 #include <sprockit/thread_safe_new.h>
 #include <sprockit/factory.h>
 #include <sprockit/debug.h>
-
 
 DeclareDebugSlot(snappr)
 
@@ -72,6 +71,7 @@ class SnapprPacket :
     uint32_t numBytes,
     bool isTail,
     uint64_t flowId,
+    uint64_t offset,
     NodeId toaddr,
     NodeId fromaddr,
     int qos);
@@ -100,6 +100,10 @@ class SnapprPacket :
 
   void saveInputVirtualLane(){
     input_vl_ = vl_;
+  }
+
+  uint64_t offset() const {
+    return offset_;
   }
 
   int inputVirtualLane() const {
@@ -169,6 +173,8 @@ class SnapprPacket :
 
   TimeDelta congestion_delay_;
 
+  uint64_t offset_;
+
   int qos_;
 
   int vl_;
@@ -225,7 +231,6 @@ class SnapprCredit :
 
 
 };
-
 
 }
 }

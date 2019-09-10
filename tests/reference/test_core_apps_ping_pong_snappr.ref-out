@@ -5,18 +5,18 @@ ping-pong between 0 and 3
 32:   0.0656 GB/s
 64:   0.1111 GB/s
 128:   0.0863 GB/s
-512:   0.1082 GB/s
-1024:   0.1914 GB/s
-2048:   0.2260 GB/s
-4096:   0.2485 GB/s
-8192:   0.2615 GB/s
-20384:   0.4429 GB/s
-40768:   0.4490 GB/s
-81536:   0.4522 GB/s
-163072:   0.4537 GB/s
-326144:   0.4547 GB/s
-652288:   0.4551 GB/s
-1304576:   0.4553 GB/s
+512:   0.1380 GB/s
+1024:   0.3100 GB/s
+2048:   0.3006 GB/s
+4096:   0.2961 GB/s
+8192:   0.2938 GB/s
+20384:   0.5050 GB/s
+40768:   0.5013 GB/s
+81536:   0.4995 GB/s
+163072:   0.4986 GB/s
+326144:   0.4997 GB/s
+652288:   0.5002 GB/s
+1304576:   0.5001 GB/s
 ping-pong between 2 and 1
 4:   0.0098 GB/s
 8:   0.0190 GB/s
@@ -24,25 +24,22 @@ ping-pong between 2 and 1
 32:   0.0656 GB/s
 64:   0.1111 GB/s
 128:   0.0863 GB/s
-512:   0.1082 GB/s
-1024:   0.1914 GB/s
-2048:   0.2260 GB/s
-4096:   0.2485 GB/s
-8192:   0.2615 GB/s
-20384:   0.4429 GB/s
-40768:   0.4490 GB/s
-81536:   0.4522 GB/s
-163072:   0.4537 GB/s
-326144:   0.4547 GB/s
-652288:   0.4551 GB/s
-1304576:   0.4553 GB/s
+512:   0.1380 GB/s
+1024:   0.3100 GB/s
+2048:   0.3006 GB/s
+4096:   0.2961 GB/s
+8192:   0.2938 GB/s
+20384:   0.5050 GB/s
+40768:   0.5013 GB/s
+81536:   0.4995 GB/s
+163072:   0.4986 GB/s
+326144:   0.4997 GB/s
+652288:   0.5002 GB/s
+1304576:   0.5001 GB/s
 Aggregate time stats: state
-        Inactive:          1.94342 s
- active:NIC_send:          0.01042 s
-   idle:NIC_send:          0.01020 s
-stalled:NIC_send:          0.00101 s
- active:NIC_recv:          0.01042 s
-   idle:NIC_recv:          0.01122 s
-          idle:X:          0.02243 s
-        active:X:          0.02084 s
-Estimated total runtime of           0.01153446 seconds
+        Inactive:          1.47008 s
+          idle:X:          0.00924 s
+        active:X:          0.01042 s
+  idle:injection:          0.00924 s
+active:injection:          0.01042 s
+Estimated total runtime of           0.01048202 seconds

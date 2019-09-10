@@ -87,8 +87,12 @@ nobase_library_include_HEADERS += \
   sculpin/sculpin.h \
   snappr/snappr_nic.h \
   snappr/snappr_switch.h \
+  snappr/snappr_switch_fwd.h \
   snappr/snappr_mem.h \
   snappr/snappr.h \
+  snappr/snappr_inport.h \
+  snappr/snappr_inport_fwd.h \
+  snappr/snappr_outport.h \
   network/network_id.h \
   network/network_message.h \
   network/network_message_fwd.h \
@@ -144,6 +148,8 @@ libsstmac_hw_la_SOURCES +=  \
   sculpin/sculpin_nic.cc \
   sculpin/sculpin_switch.cc \
   sculpin/sculpin.cc \
+  snappr/snappr_inport.cc \
+  snappr/snappr_outport.cc \
   snappr/snappr_nic.cc \
   snappr/snappr_switch.cc \
   snappr/snappr_mem.cc \

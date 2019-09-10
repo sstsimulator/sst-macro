@@ -115,6 +115,7 @@ class JobLauncher : public Service
   /** The set of available nodes - equivalent to std::set<NodeId> */
   ordered_node_set available_;
   std::list<AppLaunchRequest*> initial_requests_;
+  std::set<int> terminators_;
 
  private:
   void addLaunchRequests(SST::Params& params);
@@ -219,6 +220,7 @@ class ExclusiveJoblauncher : public DefaultJoblauncher
 
   std::list<AppLaunchRequest*> pending_requests_;
   AppLaunchRequest* active_job_;
+
 
 };
 

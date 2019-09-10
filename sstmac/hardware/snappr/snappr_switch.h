@@ -47,6 +47,8 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/snappr/snappr.h>
+#include <sstmac/hardware/snappr/snappr_inport.h>
+#include <sstmac/hardware/snappr/snappr_outport.h>
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/common/stats/stat_collector.h>
 #include <sstmac/common/stats/ftq_fwd.h>
@@ -104,176 +106,15 @@ class SnapprSwitch :
   void deadlockCheck() override;
 
  private:
-  friend class InPort;
-  friend class OutPort;
-
-  void handleCredit(SnapprCredit* ev, int port);
+  friend class SnapprInPort;
 
   void handlePayload(SnapprPacket* ev, int port);
 
-  struct priority_less {
-    bool operator()(SnapprPacket* l, SnapprPacket* r) const {
-      if (l->priority() == r->priority()){
-        return l->seqnum() > r->seqnum();
-      } else {
-        return l->priority() < r->priority();
-      }
-    }
-  };
+  std::vector<SnapprOutPort> outports_;
 
-  struct OutputQueue {
-    bool addCredits(uint32_t bytes){
-      uint32_t holSize = packets_.empty() ? 0 : packets_.front()->byteLength();
-      bool stalled = holSize > credits_;
-      credits_ += bytes;
-      //pass back if were stalled but aren't anymore
-      return stalled && holSize <= credits_;
-    }
-
-    bool push(SnapprPacket* pkt){
-      bool newly_active = packets_.empty() && pkt->byteLength() <= credits_;
-      packets_.push(pkt);
-      return newly_active;
-    }
-
-    size_t size() const {
-      return packets_.size();
-    }
-
-    bool spaceToSend() const {
-      SnapprPacket* pkt = packets_.front();
-      return pkt->byteLength() <= credits_;
-    }
-
-    SnapprPacket* pop(bool& stalled) {
-      SnapprPacket* pkt = packets_.front();
-      packets_.pop();
-      credits_ -= pkt->byteLength();
-      stalled = packets_.empty() || packets_.front()->byteLength() > credits_;
-      return pkt;
-    }
-
-    OutputQueue(uint32_t credits) : credits_(credits){}
-
-    void scaleBuffers(double scale){
-      credits_ *= scale;
-    }
-
-   private:
-    std::queue<SnapprPacket*> packets_;
-    uint32_t credits_;
-  };
-
-  struct OutPort {
-    int number;
-    int dst_port;
-    bool arbitration_scheduled;
-    Timestamp next_free;
-    Timestamp stall_start;
-    Timestamp send_start;
-    Timestamp last_queue_depth_collection;
-    TimeDelta byte_delay;
-    SST::Statistics::Statistic<uint64_t>* xmit_stall;
-    SST::Statistics::Statistic<uint64_t>* xmit_active;
-    SST::Statistics::Statistic<uint64_t>* xmit_idle;
-    SST::Statistics::Statistic<uint64_t>* bytes_sent;
-    sstmac::FTQCalendar* state_ftq;
-    sstmac::FTQCalendar* queue_depth_ftq;
-    SnapprSwitch* parent;
-    std::string toString() const;
-
-    void handle(Event* ev);
-
-    bool readyVirtualLanes() const {
-      return ready_lanes_.size();
-    }
-
-    int topVirtualLane() const {
-      if (ready_lanes_.empty()){
-        return -1;
-      } else {
-        return ready_lanes_.top();
-      }
-    }
-
-    int queueLength(int vl) const {
-      return queues_[vl].size();
-    }
-
-    int queueLength() const {
-      return total_packets_;
-    }
-
-    bool empty() const {
-      return total_packets_ == 0;
-    }
-
-    void addCredits(int vl, uint32_t credits){
-      bool lane_activated = queues_[vl].addCredits(credits);
-      if (lane_activated){
-        ready_lanes_.push(vl);
-      }
-    }
-
-    void scaleBuffers(double factor){
-      for (auto& queue : queues_){
-        queue.scaleBuffers(factor);
-      }
-    }
-
-    SnapprPacket* popReady(){
-      int vl = ready_lanes_.top();
-      bool stalled;
-      SnapprPacket* pkt = queues_[vl].pop(stalled);
-      if (stalled){
-        ready_lanes_.pop();
-      }
-      --total_packets_;
-      return pkt;
-    }
-
-    void queue(SnapprPacket* pkt){
-      OutputQueue& q = queues_[pkt->virtualLane()];
-      bool queue_activated = q.push(pkt);
-      if (queue_activated){
-        ready_lanes_.push(pkt->virtualLane());
-      }
-      total_packets_++;
-    }
-
-    void setVirtualLanes(int num_vl, uint32_t total_credits){
-      uint32_t credits_per_vl = total_credits / num_vl;
-      queues_.resize(num_vl, OutputQueue(credits_per_vl));
-    }
-
-    EventLink::ptr link;
-    OutPort() : link(nullptr), arbitration_scheduled(false), total_packets_(0) {}
-
-   private:
-    std::priority_queue<int, std::vector<int>> ready_lanes_;
-    std::vector<OutputQueue> queues_;
-    int total_packets_;
-
-  };
-  std::vector<OutPort> outports_;
-
-  struct InPort {
-    int number;
-    int src_outport;
-    EventLink::ptr link;
-    SnapprSwitch* parent;
-    void handle(Event* ev);
-
-    std::string toString() const;
-  };
-
-  std::vector<InPort> inports_;
+  std::vector<SnapprInPort> inports_;
 
   Router* router_;
-
-  bool congestion_;
-
-  bool send_credits_;
 
   double link_bw_;
 
@@ -282,22 +123,6 @@ class SnapprSwitch :
   int num_vc_;
   int num_vl_;
 
-  std::vector<int> ftq_idle_states_;
-  std::vector<int> ftq_active_states_;
-  std::vector<int> ftq_stalled_states_;
-
- private:
-  void send(OutPort& p, SnapprPacket* pkt, Timestamp now);
-
-  void tryToSendPacket(SnapprPacket* pkt);
-
-  void arbitrate(int port);
-
-  void requestArbitration(OutPort& p);
-
-  void scheduleArbitration(OutPort& p);
-
-  void logQueueDepth(OutPort& p);
 
 };
 

@@ -42,74 +42,27 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef __STDC_FORMAT_MACROS
-#define __STDC_FORMAT_MACROS
-#endif
+#ifndef snappr_inport_h
+#define snappr_inport_h
 
-#include <inttypes.h>
-#include <queue>
-
-#include <sstmac/hardware/snappr/snappr.h>
-
-RegisterDebugSlot(snappr, "print all the details of the snappr model")
-
+#include <sstmac/common/event_scheduler.h>
+#include <sstmac/hardware/snappr/snappr_switch_fwd.h>
 
 namespace sstmac {
 namespace hw {
 
-SnapprPacket::SnapprPacket(
-  Flow* msg,
-  uint32_t num_bytes,
-  bool is_tail,
-  uint64_t flow_id,
-  uint64_t offset,
-  NodeId toaddr,
-  NodeId fromaddr,
-  int qos) :
-  offset_(offset),
-  priority_(0),
-  inport_(-1),
-  qos_(qos),
-  Packet(msg, num_bytes, flow_id, is_tail, fromaddr, toaddr)
-{
-}
+struct SnapprInPort {
+  int number;
+  int src_outport;
+  EventLink::ptr link;
+  SnapprSwitch* parent;
+  void handle(Event* ev);
 
-std::string
-SnapprPacket::toString() const
-{
-  return sprockit::printf("pkt bytes=%" PRIu32 " flow=%" PRIu64 " offset=%" PRIu64 ": %s",
-                          numBytes(), flowId(), offset_,
-                          (flow() ? flow()->toString().c_str() : "no payload"));
-
-}
-
-void
-SnapprPacket::serialize_order(serializer& ser)
-{
-  //routable::serialize_order(ser);
-  Packet::serialize_order(ser);
-  ser & arrival_;
-  ser & time_to_send_;
-  ser & priority_;
-  ser & inport_;
-  ser & qos_;
-  ser & vl_;
-  ser & input_vl_;
-}
-
-std::string
-SnapprCredit::toString() const {
-  return sprockit::printf("credit bytes=%" PRIu32 " port=%d", num_bytes_, port_);
-}
-
-void
-SnapprCredit::serialize_order(serializer &ser)
-{
-  Event::serialize_order(ser);
-  ser & port_;
-  ser & num_bytes_;
-  ser & vl_;
-}
+  std::string toString() const;
+};
 
 }
 }
+
+#endif
+

@@ -46,6 +46,7 @@ CORETESTS+= \
   test_core_apps_ping_all_fattree4 \
   test_core_apps_ping_all_fattree_tapered
 
+#  test_core_apps_ping_pong_qos_25_75 \
 #  test_core_apps_distributed_service 
 
 test_sumi_%.$(CHKSUF): sumi/sst_%
