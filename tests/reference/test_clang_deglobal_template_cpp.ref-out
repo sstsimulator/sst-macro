@@ -1,0 +1,13 @@
+
+template <class T> class A {};
+A<int> a;extern int __offset_a; int __sizeof_a = sizeof(A<int>);static std::function<void(void*)> init_a = [](void* ptr){ new (ptr) A<int>{}; };sstmac::CppGlobalRegisterGuard a_sstmac_ctor(__offset_a, __sizeof_a, false, "a", std::move(init_a));
+
+void fxn()
+{ char* sstmac_global_data = get_sstmac_global_data();A<int>* sstmac_a=(A<int>*)(sstmac_global_data + __offset_a); {
+  auto ptr = &(*sstmac_a);
+ }}
+#include <sstmac/software/process/cppglobal.h>
+#include <sstmac/software/process/memoize.h>
+
+extern int __sizeof_a;
+int __offset_a = 0;

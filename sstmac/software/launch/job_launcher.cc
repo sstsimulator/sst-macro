@@ -69,8 +69,7 @@ RegisterKeywords(
 namespace sstmac {
 namespace sw {
 
-JobLauncher::JobLauncher(SST::Params& params,
-                           OperatingSystem* os) :
+JobLauncher::JobLauncher(SST::Params& params, OperatingSystem* os) :
   Service(std::string("JobLauncher"), SoftwareId(0,0,0), os)
 {
   topology_ = sstmac::hw::Topology::staticTopology(params);
@@ -131,7 +130,7 @@ JobLauncher::addLaunchRequests(SST::Params& params)
       keep_going = true;
       last_used_aid = aid;
 
-      App::dlopenCheck(aid, app_params, false/*no name check*/);
+      App::lockDlopen(aid);
     } else {
       keep_going = false;
     }
@@ -164,7 +163,8 @@ JobLauncher::addLaunchRequests(SST::Params& params)
 void
 JobLauncher::cleanupApp(JobStopRequest* ev)
 {
-  App::dlcloseCheck(ev->aid());
+  //the job launcher needs to cleanup
+  App::unlockDlopen(ev->aid());
 
   TaskMapping::ptr themap = TaskMapping::globalMapping(ev->aid());
   TaskMapping::removeGlobalMapping(ev->aid(), ev->uniqueName());

@@ -53,6 +53,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <stdint.h>
 #include <sprockit/thread_safe_new.h>
 #include <list>
+#include <sstmac/skeleton_tls.h>
+#include <sstmac/software/process/operating_system.h>
 
 namespace sstmac {
 
@@ -64,9 +66,52 @@ static const int tls_sanity_check = 42042042;
 
 static thread_lock globals_lock;
 
+static void configureStack(int thread_id, void* stack, void* globals, void* tlsMap)
+{
+  //essentially treat this as thread-local storage
+  char* tls = (char*) stack;
+  int* thr_id_ptr = (int*) &tls[SSTMAC_TLS_THREAD_ID];
+  *thr_id_ptr = thread_id;
+
+  int* sanity_ptr = (int*) &tls[SSTMAC_TLS_SANITY_CHECK];
+  *sanity_ptr = tls_sanity_check;
+
+  //this is dirty - so dirty, but it works
+  void** globalPtr = (void**) &tls[SSTMAC_TLS_GLOBAL_MAP];
+  *globalPtr = globals;
+
+  void** tlsPtr = (void**) &tls[SSTMAC_TLS_TLS_MAP];
+  *tlsPtr = tlsMap;
+
+  void** statePtr = (void**) &tls[SSTMAC_TLS_IMPLICIT_STATE];
+  *statePtr = nullptr;
+}
+
+extern "C" void* sstmac_alloc_stack(int sz, int md_sz)
+{
+  if (md_sz >= SSTMAC_TLS_OFFSET){
+    spkt_abort_printf("Cannot have stack metadata larger than %d - requested %d",
+                      SSTMAC_TLS_OFFSET, md_sz);
+  }
+  if (sz > sstmac::sw::OperatingSystem::stacksize()){
+    spkt_abort_printf("Cannot allocate stack larger than %d - requested %d",
+                      sstmac::sw::OperatingSystem::stacksize(), sz);
+  }
+  void* stack = sstmac::sw::StackAlloc::alloc();
+  configureStack(get_sstmac_tls_thread_id(), stack, get_sstmac_global_data(), get_sstmac_tls_data());
+  return stack;
+}
+
+extern "C" void sstmac_free_stack(void* ptr)
+{
+  sstmac::sw::StackAlloc::free(ptr);
+}
+
 void
 ThreadInfo::registerUserSpaceVirtualThread(int phys_thread_id, void *stack,
-                                           void* globalsMap, void* tlsMap)
+                                           void* globalsMap, void* tlsMap,
+                                           bool isAppStartup,
+                                           bool isThreadStartup)
 {
   size_t stack_mod = ((size_t)stack) % sstmac_global_stacksize;
   if (stack_mod != 0){
@@ -75,35 +120,32 @@ ThreadInfo::registerUserSpaceVirtualThread(int phys_thread_id, void *stack,
         sstmac_global_stacksize);
   }
 
-  //essentially treat this as thread-local storage
-  char* tls = (char*) stack;
-  int* thr_id_ptr = (int*) &tls[SSTMAC_TLS_THREAD_ID];
-  *thr_id_ptr = phys_thread_id;
+  
+  configureStack(phys_thread_id, stack, globalsMap, tlsMap);
 
-  int* sanity_ptr = (int*) &tls[SSTMAC_TLS_SANITY_CHECK];
-  *sanity_ptr = tls_sanity_check;
+  int activeStack; int* activeStackPtr = &activeStack;
+  intptr_t stackTopInt = sstmac_global_stacksize //avoid errors if this is zero
+        ? ((intptr_t)activeStackPtr/sstmac_global_stacksize)*sstmac_global_stacksize
+        : 0;
 
-  //this is dirty - so dirty, but it works
-  void** globalPtr = (void**) &tls[SSTMAC_TLS_GLOBAL_MAP];
-  *globalPtr = globalsMap;
-
-  void** tlsPtr = (void**) &tls[SSTMAC_TLS_TLS_MAP];
-  *tlsPtr = tlsMap;
-
-  void** statePtr = (void**) &tls[SSTMAC_TLS_IMPLICIT_STATE];
-  *statePtr = nullptr;
+  void** currentGlobalsPtr = (void**)(stackTopInt + SSTMAC_TLS_GLOBAL_MAP);
+  void** currentTlsPtr = (void**)(stackTopInt + SSTMAC_TLS_TLS_MAP);
 
   globals_lock.lock();
-  if (globalsMap){
+  if (globalsMap && isAppStartup){
+    void* currentGlobals = *currentGlobalsPtr;
+    *currentGlobalsPtr = globalsMap;
     GlobalVariable::glblCtx.addActiveSegment(globalsMap);
-    GlobalVariable::glblCtx.callCtors(globalsMap);
-    GlobalVariable::glblCtx.relocatePointers(globalsMap);
+    GlobalVariable::glblCtx.callInitFxns(globalsMap);
+    *currentGlobalsPtr = currentGlobals;
   }
 
-  if (tlsMap){
+  if (tlsMap && isThreadStartup){
+    void* currentTls = *currentTlsPtr;
+    *currentTlsPtr = tlsMap;
     GlobalVariable::tlsCtx.addActiveSegment(tlsMap);
-    GlobalVariable::tlsCtx.callCtors(tlsMap);
-    GlobalVariable::tlsCtx.relocatePointers(tlsMap);
+    GlobalVariable::tlsCtx.callInitFxns(tlsMap);
+    *currentTlsPtr = currentTls;
   }
   globals_lock.unlock();
 }

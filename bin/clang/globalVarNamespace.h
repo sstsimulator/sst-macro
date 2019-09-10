@@ -60,14 +60,18 @@ struct GlobalVarNamespace
   }
 
   struct Variable {
+    bool isCpp;
     bool isFxnStatic;
     bool isThreadLocal;
+
+    Variable(bool Cpp, bool fxnStatic, bool thrLocal) :
+      isCpp(Cpp), isFxnStatic(fxnStatic), isThreadLocal(thrLocal)
+    {
+    }
   };
 
   std::string ns;
   std::map<std::string, Variable> replVars;
-  std::list<std::string> relocations;
-  std::set<std::string> relocationOffsets;
   std::map<std::string,std::string> memoizationModels;
   std::map<std::string, GlobalVarNamespace> subspaces;
   std::string filenamePrefix;
@@ -112,42 +116,34 @@ struct GlobalVarNamespace
     return testPrefix ? testPrefix : uniqueFilePrefix(ci, loc).c_str();
   }
 
-  bool relocationOffsetDeclared(const std::string& name) const {
-    return relocationOffsets.find(name) != relocationOffsets.end();
-  }
-
-  void setRelocationOffsetDeclared(const std::string& name) {
-    relocationOffsets.insert(name);
-  }
-
   bool genSSTCode(std::ostream& os, const std::string& indent){
     bool nonEmpty = !replVars.empty();
     for (auto& pair : replVars){
       auto& name = pair.first;
       Variable& var = pair.second;
       os << indent << "extern int __sizeof_" << name << ";\n";
-      if (!var.isFxnStatic)
-        os << indent << "extern void* __ptr_" << name << ";\n";
-      os << indent << "int __offset_" << name << " = "
-         << "sstmac::GlobalVariable::init(" 
-              << "__sizeof_" << name
-              << ",\"" << name << "\"";
-      if (var.isFxnStatic){
-        os << ",nullptr";
-      } else {
-        os  << ",__ptr_" << name;
+      os << indent << "int __offset_" << name << " = 0;";
+      //   << "sstmac::GlobalVariable::init("
+      //   << "__sizeof_" << name
+      //   << ",\"" << name << "\""
+      //   << "," << std::boolalpha << var.isThreadLocal
+      //   << ");\n";
+      if (!var.isCpp){
+        //we have to register the init function
+        os << indent << "extern \"C\" void init_" << name << "(void*);\n"
+          << "sstmac::CppGlobalRegisterGuard "
+          << name << "_sstmac_ctor("
+          << "__offset_" << name
+          << ", __sizeof_" << name
+          << ", " << std::boolalpha << var.isThreadLocal
+          << ", \"" << name << "\""
+          << ", init_" << name << ");";
       }
-      os << "," << std::boolalpha << var.isThreadLocal
-         << ");\n";
     }
 
     for (auto& pair : memoizationModels){
       os << "static sstmac::Memoization memoize_" << makeCxxName(pair.first)
          << "(\"" << pair.first << "\",\"" << pair.second << "\");\n";
-    }
-
-    for (auto& str : relocations){
-      os << "\n" << str << "\n";
     }
 
     for (auto& pair : subspaces){

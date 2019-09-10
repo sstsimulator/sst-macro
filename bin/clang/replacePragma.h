@@ -51,11 +51,12 @@ class SSTReplacePragma : public SSTPragma {
   std::string fxn_;
   std::string replacement_;
  public:
-  SSTReplacePragma(const std::string& fxn, const std::string& replace) :
-    fxn_(fxn), replacement_(replace),
-    SSTPragma(Replace)
-  {
-  }
+  SSTReplacePragma(clang::SourceLocation loc, clang::CompilerInstance& CI,
+                   const std::list<clang::Token>& tokens);
+
+  static std::string parse(clang::SourceLocation loc,
+      clang::CompilerInstance& CI,
+      const std::list<clang::Token>& tokens, std::ostream& os);
 
   const std::string& replacement() const {
     return replacement_;
@@ -78,28 +79,30 @@ class SSTReplacePragma : public SSTPragma {
 
 class SSTStartReplacePragma : public SSTReplacePragma {
  public:
-  SSTStartReplacePragma(const std::string& fxn, const std::string& replace) :
-    SSTReplacePragma(fxn,replace){}
+  SSTStartReplacePragma(clang::SourceLocation loc, clang::CompilerInstance& CI,
+                        const std::list<clang::Token>& tokens) :
+    SSTReplacePragma(loc,CI,tokens){}
 
   void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg) override {
     cfg.replacePragmas[fxn_] = this;
   }
 };
 
-class SSTStopReplacePragma : public SSTReplacePragma {
+class SSTStopReplacePragma : public SSTPragma {
  public:
-  SSTStopReplacePragma(const std::string& fxn, const std::string& replace) :
-    SSTReplacePragma(fxn,replace){}
+  SSTStopReplacePragma(const std::string& fxn) :
+    fxn_(fxn){}
 
   void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg) override {
     cfg.replacePragmas.erase(fxn_);
   }
-
+ private:
+  std::string fxn_;
 };
 
 class SSTInsteadPragma : public SSTPragma {
  public:
-  SSTInsteadPragma(const std::string& repl) : repl_(repl), SSTPragma(Instead) {}
+  SSTInsteadPragma(const std::string& repl) : repl_(repl) {}
 
   void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg) override;
 
@@ -109,7 +112,8 @@ class SSTInsteadPragma : public SSTPragma {
 
 class SSTInitPragma : public SSTPragma {
  public:
-  SSTInitPragma(const std::string& repl) : init_(repl), SSTPragma(Init) {}
+  SSTInitPragma(const std::string& repl) : init_(repl) {}
+
   const std::string& init() const {
     return init_;
   }
@@ -122,71 +126,7 @@ class SSTInitPragma : public SSTPragma {
   std::string init_;
 };
 
-class SSTReplacePragmaHandler : public SSTPragmaHandler
-{
- public:
-  SSTReplacePragmaHandler(SSTPragmaList& plist,
-                        clang::CompilerInstance& CI,
-                        SkeletonASTVisitor& visitor) :
-     SSTPragmaHandler("replace", plist, CI, visitor){}
 
-  static std::string parse(clang::SourceLocation loc,
-      clang::CompilerInstance& CI,
-      const std::list<clang::Token>& tokens, std::ostream& os);
 
- private:
-  SSTPragma* handleSSTPragma(const std::list<clang::Token> &tokens) const override;
-
-};
-
-class SSTInsteadPragmaHandler : public SSTPragmaHandler
-{
- public:
-  SSTInsteadPragmaHandler(SSTPragmaList& plist,
-                        clang::CompilerInstance& CI,
-                        SkeletonASTVisitor& visitor) :
-     SSTPragmaHandler("instead", plist, CI, visitor){}
-
- private:
-  SSTPragma* handleSSTPragma(const std::list<clang::Token> &tokens) const override;
-
-};
-
-class SSTInitPragmaHandler : public SSTPragmaHandler
-{
- public:
-  SSTInitPragmaHandler(SSTPragmaList& plist,
-                        clang::CompilerInstance& CI,
-                        SkeletonASTVisitor& visitor) :
-     SSTPragmaHandler("init", plist, CI, visitor){}
-
- private:
-  SSTPragma* handleSSTPragma(const std::list<clang::Token> &tokens) const override;
-
-};
-
-class SSTStartReplacePragmaHandler : public SSTPragmaHandler
-{
- public:
-  SSTStartReplacePragmaHandler(SSTPragmaList& plist,
-                        clang::CompilerInstance& CI,
-                        SkeletonASTVisitor& visitor) :
-     SSTPragmaHandler("start_replace", plist, CI, visitor){}
-
- private:
-  SSTPragma* handleSSTPragma(const std::list<clang::Token> &tokens) const override;
-};
-
-class SSTStopReplacePragmaHandler : public SSTPragmaHandler
-{
- public:
-  SSTStopReplacePragmaHandler(SSTPragmaList& plist,
-                        clang::CompilerInstance& CI,
-                        SkeletonASTVisitor& visitor) :
-     SSTPragmaHandler("stop_replace", plist, CI, visitor){}
-
- private:
-  SSTPragma* handleSSTPragma(const std::list<clang::Token> &tokens) const override;
-};
 
 #endif

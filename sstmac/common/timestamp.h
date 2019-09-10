@@ -68,7 +68,7 @@ namespace sstmac {
 class TimeDelta
 {
  public:
-  friend class Timestamp;
+  friend struct Timestamp;
 
   /// The type that holds a timestamp.
   typedef uint64_t tick_t;
@@ -227,6 +227,10 @@ struct Timestamp
 
   uint64_t usecRounded() const {
     return time.ticks() / time.one_microsecond;
+  }
+
+  uint64_t nsecRounded() const {
+    return time.ticks() / time.one_nanosecond;
   }
 
   Timestamp& operator+=(const TimeDelta& t);

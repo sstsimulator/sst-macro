@@ -36,15 +36,15 @@ MemPass::runOnModule(llvm::Module &M)
 
   for (llvm::Function& f : M.functions()){
     std::cout << "Have function " << f.getName().str() << std::endl;
-    for (const llvm::Attribute& attr : f.getAttributes().getFnAttributes()){
-      std::cout << " attribte=" << attr.getAsString() << std::endl;
-    }
+    //for (const llvm::Attribute& attr : f.getAttributes().getFnAttributes()){
+    //  std::cout << " attribte=" << attr.getAsString() << std::endl;
+    //}
   }
 #endif
   return false;
 }
 
-static llvm::RegisterPass<MemPass> myPass("memtrace", "Add memory tracing");
+static llvm::RegisterPass<MemPass> myPass("sst-memtrace", "Add memory tracing");
 
 static void registerMemTracePass(const llvm::PassManagerBuilder& pass_mgr_builder,
                                  llvm::legacy::PassManagerBase& pass_mgr) {

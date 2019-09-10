@@ -15,3 +15,15 @@ void next_fxn()
   y += 3;
 }
 
+class A {
+ public:
+  A(int x){}
+};
+
+void fxn2()
+{
+  static int z;
+  static A a{3};
+  static A* aptr = new A(z);
+}
+

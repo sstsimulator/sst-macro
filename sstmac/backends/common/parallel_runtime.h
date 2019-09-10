@@ -101,8 +101,12 @@ class ParallelRuntime :
       char* buffer;
     };
 
-    CommBuffer() : storage(nullptr), allocation(nullptr),
-      filledSize(0), bytesAllocated(0) {}
+    CommBuffer() : 
+      bytesAllocated(0),
+      filledSize(0), 
+      allocation(nullptr),
+      storage(nullptr)
+    {}
 
     ~CommBuffer(){
       if (allocation) delete[] allocation;

@@ -63,30 +63,20 @@ void allocate_static_init_glbls_segment(){
 
 namespace sstmac {
 
-/**
-int GlobalVariable::stackOffset = 0;
-int GlobalVariable::allocSize_ = 4096;
-char* GlobalVariable::globalInits = nullptr;
-std::list<GlobalVariable::relocation> GlobalVariable::relocations;
-std::list<GlobalVariable::relocationCfg> GlobalVariable::relocationCfgs;
-std::list<CppGlobal*> GlobalVariable::cppCtors;
-std::unordered_set<void*> GlobalVariable::activeGlobalMaps_;
-*/
-
 GlobalVariableContext GlobalVariable::glblCtx;
 GlobalVariableContext GlobalVariable::tlsCtx;
 bool GlobalVariable::inited = false;
 
 int
-GlobalVariable::init(const int size, const char* name, const void *initData, bool tls)
+GlobalVariable::init(const int size, const char* name, bool tls)
 {
   if (!inited){
     tlsCtx.init();
     glblCtx.init();
     inited = true;
   }
-  if (tls) return tlsCtx.append(size, name, initData);
-  else return glblCtx.append(size, name, initData);
+  if (tls) return tlsCtx.append(size, name);
+  else return glblCtx.append(size, name);
 }
 
 void
@@ -97,8 +87,14 @@ GlobalVariableContext::init()
   globalInits = nullptr;
 }
 
+void
+GlobalVariableContext::registerInitFxn(int offset, std::function<void (void *)> &&fxn)
+{
+  initFxns[offset] = std::move(fxn);
+}
+
 int
-GlobalVariableContext::append(const int size, const char* name, const void *initData)
+GlobalVariableContext::append(const int size, const char* name)
 {
   int offset = stackOffset;
 
@@ -131,92 +127,39 @@ GlobalVariableContext::append(const int size, const char* name, const void *init
   //       name, size, offset, (realloc ? "reallocated to fit" : "already fits"));
   //fflush(stdout);
 
-  if (initData){
-    void* initStart = (char*)globalInits + stackOffset;
-    ::memcpy(initStart, initData, size);
-    for (void* seg : activeGlobalMaps_){
-      char* dst = ((char*)seg) + stackOffset;
-      ::memcpy(dst, initData, size);
-    }
-  }
-
   stackOffset += offsetIncrement;
 
   return offset;
 }
 
-CppGlobalHolder::CppGlobalHolder(CppGlobal *glbl, bool tls) :
-  glbl_(glbl), tls_(tls)
+CppGlobalRegisterGuard::CppGlobalRegisterGuard(int& offset, int size, bool tls, const char* name,
+                                               std::function<void(void*)>&& fxn) :
+  tls_(tls), offset_(offset)
 {
+  offset_ = offset = GlobalVariable::init(size, name, tls);
   if (tls){
-    GlobalVariable::tlsCtx.registerCtor(glbl);
+    GlobalVariable::tlsCtx.registerInitFxn(offset, std::move(fxn));
   } else {
-    GlobalVariable::glblCtx.registerCtor(glbl);
+    GlobalVariable::glblCtx.registerInitFxn(offset, std::move(fxn));
   }
 }
 
-CppGlobalHolder::~CppGlobalHolder()
+CppGlobalRegisterGuard::~CppGlobalRegisterGuard()
 {
   if (tls_){
-    GlobalVariable::tlsCtx.unregisterCtor(glbl_);
+    GlobalVariable::tlsCtx.unregisterInitFxn(offset_);
   } else {
-    GlobalVariable::glblCtx.unregisterCtor(glbl_);
-  }
-}
-
-
-void
-GlobalVariableContext::registerRelocation(void* srcPtr, void* srcBasePtr, int& srcOffset,
-                                   void* dstPtr, void* dstBasePtr, int& dstOffset)
-{
-  relocationCfgs.emplace_back(srcPtr, srcBasePtr, srcOffset,
-                              dstPtr, dstBasePtr, dstOffset);
-}
-
-void
-GlobalVariableContext::dlopenRelocate()
-{
-  //after a dlopen, there might be new relocations to execute
-  if (!relocationCfgs.empty()){
-    for (auto& cfg : relocationCfgs){
-      int dstFieldDelta = (intptr_t)cfg.dstPtr - (intptr_t)cfg.dstBasePtr;
-      int srcFieldDelta = (intptr_t)cfg.srcPtr - (intptr_t)cfg.srcBasePtr;
-      int src = cfg.srcOffset + srcFieldDelta;
-      int dst = cfg.dstOffset + dstFieldDelta;
-      relocations.emplace_back(src,dst);
-      for (void* seg : activeGlobalMaps_){
-        relocate(relocations.back(), (char*)seg);
-      }
-    }
-    relocationCfgs.clear();
+    GlobalVariable::glblCtx.unregisterInitFxn(offset_);
   }
 }
 
 void
-GlobalVariableContext::relocatePointers(void* globals)
+GlobalVariableContext::callInitFxns(void *globals)
 {
-  if (!relocationCfgs.empty()){
-    for (auto& cfg : relocationCfgs){
-      int dstFieldDelta = (intptr_t)cfg.dstPtr - (intptr_t)cfg.dstBasePtr;
-      int srcFieldDelta = (intptr_t)cfg.srcPtr - (intptr_t)cfg.srcBasePtr;
-      int src = cfg.srcOffset + srcFieldDelta;
-      int dst = cfg.dstOffset + dstFieldDelta;
-      relocations.emplace_back(src,dst);
-    }
-    relocationCfgs.clear();
-  }
-
-  char* segment = (char*) globals;
-  for (relocation& r : relocations){
-    relocate(r,segment);
-  }
-}
-
-void
-GlobalVariableContext::callCtors(void *globals)
-{
-  for (CppGlobal* g : cppCtors){
-    g->allocate(globals);
+  for (auto& pair : initFxns){
+    int offset = pair.first;
+    char* ptr = ((char*)globals) + offset;
+    (pair.second)(ptr);
   }
 }
 
@@ -241,12 +184,6 @@ GlobalVariableContext::initGlobalSpace(void* ptr, int size, int offset)
   ::memcpy(dst, ptr, size);
 }
 
-void
-GlobalVariableContext::unregisterCtor(CppGlobal *g)
-{
-  cppCtors.remove(g);
-}
-
 }
 
 #include <dlfcn.h>
@@ -254,8 +191,6 @@ GlobalVariableContext::unregisterCtor(CppGlobal *g)
 extern "C" void *sstmac_dlopen(const char* filename, int flag)
 {
   void* ret = dlopen(filename, flag);
-  sstmac::GlobalVariable::glblCtx.dlopenRelocate();
-  sstmac::GlobalVariable::tlsCtx.dlopenRelocate();
   return ret;
 }
 

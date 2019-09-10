@@ -49,16 +49,46 @@ Questions? Contact sst-macro-help@sandia.gov
 using namespace clang;
 using namespace clang::driver;
 using namespace clang::tooling;
+using namespace pragmas;
 
 #define lexify(x) \
   PP.Lex(x); std::cout << x.getName(); \
   if (x.getKind() == tok::identifier) std::cout << " " << x.getIdentifierInfo()->getNameStart(); \
   std::cout << std::endl;
 
-static int pragmaDepth = 0;
-static int maxPragmaDepth = 0;
+int SSTPragmaHandler::idCounter_ = 0;
 
 SourceLocation SSTPragmaHandler::pragmaDirectiveLoc;
+std::map<std::string, SSTPragmaNamespace*>* PragmaRegisterMap::namespaces_ = nullptr;
+
+[[maybe_unused]] static std::string getStringToken(const Token& next, clang::CompilerInstance& ci)
+{
+  //the next token should be a string naming the argument
+  std::string argName;
+  switch (next.getKind()){
+    case tok::string_literal:
+      argName = next.getLiteralData();
+      break;
+    case tok::identifier:
+      argName = next.getIdentifierInfo()->getName().str();
+      break;
+    default: {
+      std::string error = std::string("invalid pragma token of type ") + next.getName()
+         + " - expected string literal argument name";
+      errorAbort(next.getLocation(), ci, error);
+    }
+  }
+  return argName;
+}
+
+[[maybe_unused]] static void assertToken(const Token& tok, tok::TokenKind kind, clang::CompilerInstance& ci)
+{
+  if (tok.getKind() != kind){
+    std::string error = std::string("invalid pragma token of type ") + tok.getName()
+       + " - expected " + tok::getTokenName(kind);
+    errorAbort(tok.getLocation(), ci, error);
+  }
+}
 
 void getLiteralDataAsString(const Token &tok, std::ostream &os)
 {
@@ -160,30 +190,72 @@ static void tokenToString(const Token& tok, std::ostream& os,
 }
 
 void
-SSTPragmaHandler::configure(Token& PragmaTok, Preprocessor& PP, SSTPragma* fsp)
+SSTPragmaNamespace::addFactory(int modeMask, const std::string &name,
+                               bool deleteOnUse, PragmaHandlerFactoryBase *factory)
 {
-  switch(fsp->cls){
-    case SSTPragma::ImplicitState:
-    case SSTPragma::Memoize:
-    case SSTPragma::AlwaysCompute:
-    case SSTPragma::GlobalVariable:
-    case SSTPragma::AdvanceTime:
-    case SSTPragma::Overhead:
-    case SSTPragma::StackAlloc:
-    case SSTPragma::Keep: //always obey these
-      pragmas_.push_back(fsp);
-      break;
-    default: //otherwise check if we are skeletonizing
-      if (!visitor_.skeletonize()){
-        return;
-      }
-      pragmas_.push_back(fsp);
-      break;
+  for (int i=0; i < NUM_MODES; ++i){
+    int testMask = 1 << i;
+    if (modeMask & testMask){
+			auto &modeFactories = factories_[i];
+
+			if(modeFactories.count(name) > 0){
+				internalError("Trying to add factory with name key " 
+											+ name + " for mode "	
+											+ std::to_string(i) 
+											+ " but it was already added.\n");
+			}
+
+      modeFactories.insert({name,factory});
+    }
   }
+  pragmaNames_.insert(name);
+}
 
+PragmaHandlerFactoryBase*
+SSTPragmaNamespace::getFactory(Mode m, const std::string &name)
+{
+  auto& map = factories_[m];
+  auto iter = map.find(name);
+  if (iter == map.end()){
+    auto* handler = new PragmaHandlerFactory<SSTNoArgsPragma<SSTDoNothingPragma>, true>("do_nothing");
+    map[name] = handler;
+    return handler;
+  } else {
+    return iter->second;
+  }
+}
 
+SSTPragmaNamespace*
+PragmaRegisterMap::getNamespace(const std::string &ns)
+{
+  if (!namespaces_){
+    namespaces_ = new std::map<std::string,SSTPragmaNamespace*>;
+  }
+  auto iter = namespaces_->find(ns);
+  if (iter == namespaces_->end()){
+    auto* nsObj = new SSTPragmaNamespace(ns);
+    (*namespaces_)[ns] = nsObj;
+    return nsObj;
+  } else {
+    return iter->second;
+  }
+}
+
+int
+SSTPragmaHandler::allocateUniqueId()
+{
+  return idCounter_++;
+}
+
+void
+SSTPragmaHandler::configure(bool delOnUse, Token& PragmaTok, Preprocessor& PP, SSTPragma* fsp)
+{
+  static int pragmaDepth = 0;
+  static int maxPragmaDepth = 0;
+  pragmas_.push_back(fsp);
   pragmaDepth++;
   maxPragmaDepth++;
+  fsp->deleteOnUse = delOnUse;
   fsp->pragmaList = &pragmas_;
   fsp->name = getName();
   //fsp->startPragmaLoc = PragmaTok.getLocation();
@@ -219,52 +291,23 @@ SSTPragmaHandler::HandlePragma(Preprocessor &PP, PragmaIntroducerKind Introducer
   }
   pragmaLoc_ = PragmaTok.getLocation();
 
-  SSTPragma* fsp = handleSSTPragma(tokens);
+  SSTPragma* fsp = allocatePragma(tokens);
   fsp->pragmaDirectiveLoc = pragmaDirectiveLoc;
   fsp->startPragmaLoc = PragmaTok.getLocation();
   fsp->endPragmaLoc = next.getLocation();
 
-  configure(PragmaTok, PP, fsp);
+  configure(deleteOnUse_, PragmaTok, PP, fsp);
 }
 
-static std::string getStringToken(const Token& next, clang::CompilerInstance& ci)
-{
-  //the next token should be a string naming the argument
-  std::string argName;
-  switch (next.getKind()){
-    case tok::string_literal:
-      argName = next.getLiteralData();
-      break;
-    case tok::identifier:
-      argName = next.getIdentifierInfo()->getName().str();
-      break;
-    default: {
-      std::string error = std::string("invalid pragma token of type ") + next.getName()
-         + " - expected string literal argument name";
-      errorAbort(next.getLocation(), ci, error);
-    }
-  }
-  return argName;
-}
-
-static void assertToken(const Token& tok, tok::TokenKind kind, clang::CompilerInstance& ci)
-{
-  if (tok.getKind() != kind){
-    std::string error = std::string("invalid pragma token of type ") + tok.getName()
-       + " - expected " + tok::getTokenName(kind);
-    errorAbort(tok.getLocation(), ci, error);
-  }
-}
-
-SSTPragma*
-SSTStringMapPragmaHandler::handleSSTPragma(const std::list<clang::Token>& tokens) const
+std::map<std::string, std::list<std::string>>
+SSTPragma::getMap(SourceLocation loc, CompilerInstance& CI, const std::list<clang::Token>& tokens)
 {
   std::map<std::string, std::list<std::string>> allArgs;
   auto iter = tokens.begin();
   auto incrementIter = [&](){
     ++iter;
     if (iter == tokens.end()){
-      errorAbort(pragmaLoc_, ci_,
+      errorAbort(loc, CI,
        "mis-formatted pragma, pragma modifiers should be of the form 'arg(a)' or 'arg(a,b)'");
     }
   };
@@ -281,7 +324,7 @@ SSTStringMapPragmaHandler::handleSSTPragma(const std::list<clang::Token>& tokens
         argName = sstr.str();
         sstr.str("");
       } else {
-        tokenToString(t, sstr, ci_);
+        tokenToString(t, sstr, CI);
       }
       ++parenDepth;
       break;
@@ -292,7 +335,7 @@ SSTStringMapPragmaHandler::handleSSTPragma(const std::list<clang::Token>& tokens
         sstr.str("");
         allArgs[argName] = std::move(argList);
       } else {
-        tokenToString(t, sstr, ci_);
+        tokenToString(t, sstr, CI);
       }
       --parenDepth;
       break;
@@ -301,15 +344,23 @@ SSTStringMapPragmaHandler::handleSSTPragma(const std::list<clang::Token>& tokens
         argList.push_back(sstr.str());
         sstr.str("");
       } else {
-        tokenToString(t, sstr, ci_);
+        tokenToString(t, sstr, CI);
       }
       break;
     default:
-      tokenToString(t, sstr, ci_);
+      tokenToString(t, sstr, CI);
       break;
     }
   }
-  return allocatePragma(allArgs);
+  return allArgs;
+}
+
+std::string
+SSTPragma::getSingleString(const std::list<Token>& tokens, clang::CompilerInstance& CI)
+{
+  std::stringstream sstr;
+  SSTPragma::tokenStreamToString(tokens.begin(), tokens.end(), sstr, CI);
+  return sstr.str();
 }
 
 void
@@ -328,6 +379,7 @@ SSTDeletePragma::activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg)
 void
 SSTDeletePragma::activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig& cfg){
   replace(d,r,"",*CI);
+  throw DeclDeleteException(d);
 }
 
 void
@@ -344,6 +396,7 @@ SSTEmptyPragma::activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig& cfg){
       break;
   }
 #undef prg_case
+  throw DeclDeleteException(d);
 }
 
 void
@@ -467,13 +520,13 @@ SSTAdvanceTimePragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
   PrettyPrinter pp;
   std::string replacement;
 
-  if (units_ == "sec"){
+  if (units_ == "sec" || units_ == "s"){
     replacement = "sstmac_compute(" + amount_ + ");";
-  } else if (units_ == "msec"){
+  } else if (units_ == "msec" || units_ == "msec"){
     replacement = "sstmac_msleep(" + amount_ + ");";
-  } else if (units_ == "usec"){
+  } else if (units_ == "usec" || units_ == "us"){
     replacement = "sstmac_usleep(" + amount_ + ");";
-  } else if (units_ == "nsec"){
+  } else if (units_ == "nsec" || units_ == "ns"){
     replacement = "sstmac_nanosleep(" + amount_ + ");";
   } else {
     std::string error = "invalid time units: " + units_ +
@@ -544,6 +597,7 @@ SSTReturnPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
               "pragma return not applied to return statement");
   }
   replace(s, r, "return " + repl_, *CI);
+  throw StmtDeleteException(s);
 }
 
 void
@@ -558,6 +612,7 @@ SSTReturnPragma::activate(Decl* d, Rewriter& r, PragmaConfig& cfg)
   }
   std::string repl = "{ return " + repl_ + "; }";
   replace(fd->getBody(), r, repl, *CI);
+  throw DeclDeleteException(d);
 }
 
 void
@@ -572,12 +627,12 @@ SSTGlobalVariablePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
   errorAbort(d, *CI, "global pragma should only be applied to statements");
 }
 
-SSTNullVariablePragma::SSTNullVariablePragma(CompilerInstance& CI,
+SSTNullVariablePragma::SSTNullVariablePragma(SourceLocation loc, CompilerInstance& CI,
                                              const std::list<Token> &tokens)
- : SSTPragma(NullVariable),
-   nullSafe_(false), deleteAll_(false),
-   declAppliedTo_(nullptr),
+ : declAppliedTo_(nullptr),
    transitiveFrom_(nullptr),
+   nullSafe_(false), 
+   deleteAll_(false),
    skelComputes_(false)
 {
   if (tokens.empty()){
@@ -737,9 +792,111 @@ SSTNullVariablePragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
   }
 }
 
-SSTNullTypePragma::SSTNullTypePragma(CompilerInstance& CI,
+static void addFields(RecordDecl* rd, PragmaConfig& cfg, bool defaultNull,
+                      std::set<std::string>& fields, SSTNullVariablePragma* prg)
+{
+  for (auto iter=rd->decls_begin(); iter != rd->decls_end(); ++iter){
+    Decl* d = *iter;
+    if (d->getKind() == Decl::Field){
+      FieldDecl* fd = cast<FieldDecl>(d);
+      auto iter = fields.find(fd->getName());
+      if (iter == fields.end()){
+        if (defaultNull) cfg.nullVariables[fd] = prg;
+      } else {
+        if (!defaultNull) cfg.nullVariables[fd] = prg;
+        fields.erase(iter);
+      }
+    }
+  }
+}
+
+
+static void doActivateFieldsPragma(Decl* d, PragmaConfig& cfg, bool defaultNull,
+                                   std::set<std::string>& fields, SSTNullVariablePragma* prg,
+                                   clang::CompilerInstance& CI)
+{
+  switch (d->getKind()){
+  //case Decl::Function: {
+  //  return;
+  //}
+  case Decl::CXXRecord:
+  case Decl::Record: {
+    RecordDecl* rd = cast<RecordDecl>(d);
+    addFields(rd, cfg, defaultNull, fields, prg);
+    break;
+  }
+  case Decl::Typedef: {
+    TypedefDecl* td = cast<TypedefDecl>(d);
+    if (td->getTypeForDecl() == nullptr){
+      internalError(d, CI, "typedef declaration has no underlying type");
+      break;
+    } else if (td->getTypeForDecl()->isStructureType()){
+      RecordDecl* rd = td->getTypeForDecl()->getAsStructureType()->getDecl();
+      addFields(rd, cfg, defaultNull, fields, prg);
+      break;
+    }
+  }
+  default:
+    errorAbort(d, CI, "nonnull_fields pragma should only be applied to struct or function declarations");
+  }
+
+  if (!fields.empty()){
+    std::stringstream sstr;
+    sstr << "Provided variable name not found in attached scope for pragma nonnull_fields:\n";
+    for (auto& str : fields){
+      sstr << " " << str;
+    }
+    errorAbort(d, CI, sstr.str());
+  }
+}
+
+SSTNullFieldsPragma::SSTNullFieldsPragma(SourceLocation loc, CompilerInstance &CI, const std::list<Token> &tokens) :
+  SSTNullVariablePragma(loc, CI, tokens)
+{
+  for (auto& str : extras_){
+    nullFields_.insert(str);
+  }
+  extras_.clear();
+}
+
+void
+SSTNullFieldsPragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
+{
+  doActivateFieldsPragma(d, cfg, false, nullFields_, this, *CI);
+}
+
+void
+SSTNullFieldsPragma::activate(Stmt *stmt, Rewriter &r, PragmaConfig &cfg)
+{
+  errorAbort(stmt, *CI,
+      "null_fields pragma should only be applied to struct declarations, not statements");
+}
+
+SSTNonnullFieldsPragma::SSTNonnullFieldsPragma(SourceLocation loc, CompilerInstance &CI,
+                                               const std::list<Token> &tokens) :
+  SSTNullVariablePragma(loc, CI, tokens)
+{
+  for (auto& str : extras_){
+    nonnullFields_.insert(str);
+  }
+  extras_.clear();
+}
+
+void
+SSTNonnullFieldsPragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
+{
+  doActivateFieldsPragma(d, cfg, true, nonnullFields_, this, *CI);
+}
+
+void
+SSTNonnullFieldsPragma::activate(Stmt *stmt, Rewriter &r, PragmaConfig &cfg)
+{
+  errorAbort(stmt, *CI,
+     "nonull_fields pragma should only be applied to struct declarations, not statements");
+}
+
+SSTNullTypePragma::SSTNullTypePragma(SourceLocation loc, CompilerInstance& CI,
                                      const std::list<Token> &tokens)
- : SSTNullVariablePragma(NullType)
 {
   //this is valid - it just means wipe out the type
   //if (tokens.empty()){
@@ -816,110 +973,6 @@ SSTNullTypePragma::SSTNullTypePragma(CompilerInstance& CI,
 }
 
 
-static void addFields(RecordDecl* rd, PragmaConfig& cfg, bool defaultNull,
-                      std::set<std::string>& fields, SSTNullVariablePragma* prg)
-{
-  for (auto iter=rd->decls_begin(); iter != rd->decls_end(); ++iter){
-    Decl* d = *iter;
-    if (d->getKind() == Decl::Field){
-      FieldDecl* fd = cast<FieldDecl>(d);
-      auto iter = fields.find(fd->getName());
-      if (iter == fields.end()){
-        if (defaultNull) cfg.nullVariables[fd] = prg;
-      } else {
-        if (!defaultNull) cfg.nullVariables[fd] = prg;
-        fields.erase(iter);
-      }
-    }
-  }
-}
-
-
-static void doActivateFieldsPragma(Decl* d, PragmaConfig& cfg, bool defaultNull,
-                                   std::set<std::string>& fields, SSTNullVariablePragma* prg,
-                                   clang::CompilerInstance& CI)
-{
-  switch (d->getKind()){
-  //case Decl::Function: {
-  //  return;
-  //}
-  case Decl::CXXRecord:
-  case Decl::Record: {
-    RecordDecl* rd = cast<RecordDecl>(d);
-    addFields(rd, cfg, defaultNull, fields, prg);
-    break;
-  }
-  case Decl::Typedef: {
-    TypedefDecl* td = cast<TypedefDecl>(d);
-    if (td->getTypeForDecl() == nullptr){
-      internalError(d, CI, "typedef declaration has no underlying type");
-      break;
-    } else if (td->getTypeForDecl()->isStructureType()){
-      RecordDecl* rd = td->getTypeForDecl()->getAsStructureType()->getDecl();
-      addFields(rd, cfg, defaultNull, fields, prg);
-      break;
-    }
-  }
-  default:
-    errorAbort(d, CI, "nonnull_fields pragma should only be applied to struct or function declarations");
-  }
-
-  if (!fields.empty()){
-    std::stringstream sstr;
-    sstr << "Provided variable name not found in attached scope for pragma nonnull_fields:\n";
-    for (auto& str : fields){
-      sstr << " " << str;
-    }
-    errorAbort(d, CI, sstr.str());
-  }
-}
-
-SSTNullFieldsPragma::SSTNullFieldsPragma(CompilerInstance &CI, const std::list<Token> &tokens) :
-  SSTNullVariablePragma(CI, tokens)
-{
-  for (auto& str : extras_){
-    nullFields_.insert(str);
-  }
-  extras_.clear();
-  this->cls = NullFields;
-}
-
-void
-SSTNullFieldsPragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
-{
-  doActivateFieldsPragma(d, cfg, false, nullFields_, this, *CI);
-}
-
-void
-SSTNullFieldsPragma::activate(Stmt *stmt, Rewriter &r, PragmaConfig &cfg)
-{
-  errorAbort(stmt, *CI,
-      "null_fields pragma should only be applied to struct declarations, not statements");
-}
-
-SSTNonnullFieldsPragma::SSTNonnullFieldsPragma(CompilerInstance &CI, const std::list<Token> &tokens) :
-  SSTNullVariablePragma(CI, tokens)
-{
-  this->cls = NonnullFields;
-  for (auto& str : extras_){
-    nonnullFields_.insert(str);
-  }
-  extras_.clear();
-}
-
-void
-SSTNonnullFieldsPragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
-{
-  doActivateFieldsPragma(d, cfg, true, nonnullFields_, this, *CI);
-}
-
-void
-SSTNonnullFieldsPragma::activate(Stmt *stmt, Rewriter &r, PragmaConfig &cfg)
-{
-  errorAbort(stmt, *CI,
-     "nonull_fields pragma should only be applied to struct declarations, not statements");
-}
-
 void
 SSTNullTypePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
 {
@@ -954,81 +1007,11 @@ SSTPragma::tokenStreamToString(std::list<Token>::const_iterator beg,
   }
 }
 
-SSTPragma*
-SSTNullTypePragmaHandler::handleSSTPragma(const std::list<Token> &tokens) const
-{
-  return new SSTNullTypePragma(ci_, tokens);
-}
-
-SSTPragma*
-SSTNullVariablePragmaHandler::handleSSTPragma(const std::list<Token> &tokens) const
-{
-  return new SSTNullVariablePragma(ci_, tokens);
-}
-
-SSTPragma*
-SSTNullVariableGeneratorPragmaHandler::handleSSTPragma(const std::list<Token> &tokens) const
-{
-  return new SSTNullVariableGeneratorPragma(ci_, tokens);
-}
-
-SSTPragma*
-SSTNullFieldsPragmaHandler::handleSSTPragma(const std::list<Token> &tokens) const
-{
-  return new SSTNullFieldsPragma(ci_, tokens);
-}
-
-SSTPragma*
-SSTNonnullFieldsPragmaHandler::handleSSTPragma(const std::list<Token> &tokens) const
-{
-  return new SSTNonnullFieldsPragma(ci_, tokens);
-}
-
-SSTPragma*
-SSTKeepIfPragmaHandler::handleSSTPragma(const std::list<Token> &tokens) const
-{
-  std::stringstream sstr;
-  SSTPragma::tokenStreamToString(tokens.begin(), tokens.end(), sstr, ci_);
-  return new SSTKeepIfPragma(sstr.str());
-}
-
-SSTPragma*
-SSTReturnPragmaHandler::handleSSTPragma(const std::list<Token> &tokens) const
-{
-  std::stringstream sstr;
-  SSTPragma::tokenStreamToString(tokens.begin(), tokens.end(), sstr, ci_);
-  return new SSTReturnPragma(ci_, sstr.str());
-}
-
-SSTPragma*
-SSTGlobalVariablePragmaHandler::handleSSTPragma(const std::list<Token> &tokens) const
-{
-  std::stringstream sstr;
-  SSTPragma::tokenStreamToString(tokens.begin(), tokens.end(), sstr, ci_);
-  return new SSTGlobalVariablePragma(ci_, sstr.str());
-}
-
-SSTPragma*
-SSTEmptyPragmaHandler::handleSSTPragma(const std::list<Token> &tokens) const
-{
-  std::stringstream sstr;
-  SSTPragma::tokenStreamToString(tokens.begin(), tokens.end(), sstr, ci_);
-  return new SSTEmptyPragma(sstr.str());
-}
-
-SSTPragma*
-SSTBranchPredictPragmaHandler::handleSSTPragma(const std::list<Token> &tokens) const
-{
-  std::stringstream sstr;
-  SSTPragma::tokenStreamToString(tokens.begin(), tokens.end(), sstr, ci_);
-  return new SSTBranchPredictPragma(sstr.str());
-}
-
-SSTPragma*
-SSTAdvanceTimePragmaHandler::handleSSTPragma(const std::list<Token> &tokens) const
+SSTAdvanceTimePragma::SSTAdvanceTimePragma(SourceLocation loc, CompilerInstance& CI,
+                                      const std::list<Token> &tokens)
 {
   if (tokens.size() < 2){
-    errorAbort(pragmaLoc_, ci_,
+    errorAbort(loc, CI,
       "advance_time pragma needs at least two arguments: <units> <number>");
   }
   
@@ -1037,64 +1020,53 @@ SSTAdvanceTimePragmaHandler::handleSSTPragma(const std::list<Token> &tokens) con
 
   std::stringstream units;  
   iter++;
-  SSTPragma::tokenStreamToString(tokens.begin(), iter, units, ci_);
+  SSTPragma::tokenStreamToString(tokens.begin(), iter, units, CI);
 
   std::stringstream sval;
-  SSTPragma::tokenStreamToString(iter, tokens.end(), sval, ci_);
-  return new SSTAdvanceTimePragma(units.str(), sval.str());
+  SSTPragma::tokenStreamToString(iter, tokens.end(), sval, CI);
+  units_ = units.str();
+  amount_ = sval.str();
 }
 
-SSTPragma*
-SSTCallFunctionPragmaHandler::handleSSTPragma(const std::list<Token> &tokens) const
+SSTCallFunctionPragma::SSTCallFunctionPragma(SourceLocation loc, CompilerInstance& CI,
+                                             const std::list<Token> &tokens)
 {
   std::stringstream sstr;
-  SSTPragma::tokenStreamToString(tokens.begin(), tokens.end(), sstr, ci_);
+  SSTPragma::tokenStreamToString(tokens.begin(), tokens.end(), sstr, CI);
   sstr << ";"; //semi-colon not required in pragma
-  return new SSTCallFunctionPragma(sstr.str());
+  repl_ = sstr.str();
 }
 
-SSTPragma*
-SSTOverheadPragmaHandler::handleSSTPragma(const std::list<Token> &tokens) const
+SSTStackAllocPragma::SSTStackAllocPragma(SourceLocation loc, CompilerInstance& CI,
+                                         std::map<std::string, std::list<std::string>>&& in_args)
 {
-  std::stringstream sstr;
-  SSTPragma::tokenStreamToString(tokens.begin(), tokens.end(), sstr, ci_);
-  return new SSTOverheadPragma(sstr.str());
-}
-
-SSTPragma*
-SSTStackAllocPragmaHandler::allocatePragma(const std::map<std::string, std::list<std::string>>& in_args) const
-{
-  std::string toFree;
-  std::string stackSize;
-  std::string mdataSize = "0";
+  mdataSize_ = "0";
 
   auto args = in_args;
 
   auto iter = args.find("free");
   if (iter != args.end()){
-    toFree = iter->second.front();
+    toFree_ = iter->second.front();
     args.erase(iter);
   }
 
   iter = args.find("alloc");
   if (iter != args.end()){
     auto& list = iter->second;
-    stackSize = list.front();
+    stackSize_ = list.front();
     if (list.size()  == 2){
-      mdataSize = list.back();
+      mdataSize_ = list.back();
     }
     args.erase(iter);
   }
 
-  if (!stackSize.empty() && !toFree.empty()){
-    errorAbort(pragmaLoc_, ci_, "cannot have both free and alloc for stack pragma");
+  if (!stackSize_.empty() && !toFree_.empty()){
+    errorAbort(loc, CI, "cannot have both free and alloc for stack pragma");
   }
 
   if (!args.empty()){
-    errorAbort(pragmaLoc_, ci_, "invalid token passed to pragma: allowed alloc,free");
+    errorAbort(loc, CI, "invalid token passed to pragma: allowed alloc,free");
   }
-
-  return new SSTStackAllocPragma(stackSize, mdataSize, toFree);
 }
 
 void
@@ -1132,3 +1104,46 @@ SSTStackAllocPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
     throw StmtDeleteException(s);
   }
 }
+
+static constexpr int ALL_MODES = SKELETONIZE | PUPPETIZE | SHADOWIZE | MEMOIZE | ENCAPSULATE;
+
+static PragmaRegister<SSTNoArgsPragma, SSTDeletePragma, true> delPragma(
+    "sst", "delete", SKELETONIZE | SHADOWIZE);
+static PragmaRegister<SSTNoArgsPragma, SSTMallocPragma, true> mallocPragma(
+    "sst", "malloc", SKELETONIZE | SHADOWIZE);
+static PragmaRegister<SSTNoArgsPragma, SSTNewPragma, true> newPragma(
+    "sst", "new", SKELETONIZE | SHADOWIZE);
+static PragmaRegister<SSTNoArgsPragma, SSTKeepPragma, true> keepPragma(
+    "sst", "keep", ALL_MODES);
+static PragmaRegister<SSTStringPragma, SSTKeepIfPragma, true> keepIfPragma(
+    "sst", "keep_if", ALL_MODES);
+static PragmaRegister<SSTTokenListPragma, SSTNullTypePragma, true> nullTypePragma(
+    "sst", "null_type", SKELETONIZE | SHADOWIZE);
+static PragmaRegister<SSTTokenListPragma, SSTNullVariablePragma, true> nullVariablePragma(
+    "sst", "null_variable", SKELETONIZE | SHADOWIZE);
+static PragmaRegister<SSTTokenListPragma, SSTNullVariableGeneratorPragma, true> nullVariableGenPragma(
+    "sst", "start_null_variable", SKELETONIZE | SHADOWIZE);
+static PragmaRegister<SSTNoArgsPragma, SSTNullVariableStopPragma, true> nullVarStopPragma(
+    "sst", "stop_null_variable", SKELETONIZE | SHADOWIZE);
+static PragmaRegister<SSTStringPragma, SSTEmptyPragma, true> emptyPragma(
+    "sst", "empty", SKELETONIZE | SHADOWIZE);
+static PragmaRegister<SSTStringPragma, SSTGlobalVariablePragma, true> globalPragma(
+    "sst", "global", ALL_MODES);
+static PragmaRegister<SSTStringPragma, SSTReturnPragma, true> returnPragma(
+    "sst", "return", SKELETONIZE | SHADOWIZE | PUPPETIZE);
+static PragmaRegister<SSTStringPragma, SSTBranchPredictPragma, true> branchPredictPragma(
+    "sst", "branch_predict", SKELETONIZE | SHADOWIZE | PUPPETIZE);
+static PragmaRegister<SSTTokenListPragma, SSTAdvanceTimePragma, true> advanceTimePragma(
+    "sst", "advance_time", SKELETONIZE | SHADOWIZE | ENCAPSULATE);
+static PragmaRegister<SSTTokenListPragma, SSTCallFunctionPragma, true> callFunctionPragma(
+    "sst", "call", SKELETONIZE | SHADOWIZE | PUPPETIZE);
+static PragmaRegister<SSTStringPragma, SSTOverheadPragma, true> overheadPragma(
+    "sst", "overhead", SKELETONIZE | SHADOWIZE | ENCAPSULATE);
+static PragmaRegister<SSTTokenListPragma, SSTNonnullFieldsPragma, true> nonnullFieldPragma(
+    "sst", "nonnull_fields", SKELETONIZE | SHADOWIZE);
+static PragmaRegister<SSTTokenListPragma, SSTNullFieldsPragma, true> nullFieldPragma(
+    "sst", "null_fields", SKELETONIZE | SHADOWIZE);
+static PragmaRegister<SSTArgMapPragma, SSTStackAllocPragma, true> stackAllocPragma(
+    "sst", "stack_alloc", ALL_MODES);
+
+

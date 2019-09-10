@@ -1,0 +1,32 @@
+
+int bound_i = 5;extern int __offset_bound_i; int __sizeof_bound_i = sizeof(int);static std::function<void(void*)> init_bound_i = [](void* ptr){ new (ptr) int{5}; };sstmac::CppGlobalRegisterGuard bound_i_sstmac_ctor(__offset_bound_i, __sizeof_bound_i, false, "bound_i", std::move(init_bound_i));
+int bound_j = 10;extern int __offset_bound_j; int __sizeof_bound_j = sizeof(int);static std::function<void(void*)> init_bound_j = [](void* ptr){ new (ptr) int{10}; };sstmac::CppGlobalRegisterGuard bound_j_sstmac_ctor(__offset_bound_j, __sizeof_bound_j, false, "bound_j", std::move(init_bound_j));
+
+int fxn()
+{ char* sstmac_global_data = get_sstmac_global_data();int* sstmac_bound_i=(int*)(sstmac_global_data + __offset_bound_i); int* sstmac_bound_j=(int*)(sstmac_global_data + __offset_bound_j); {
+  int i=0;
+  int mul = 0;
+  double* x = new double[10];
+  int* idx = new int[5];
+
+  { uint64_t flops=0; uint64_t readBytes=0; uint64_t writeBytes=0; uint64_t intops=0; {  uint64_t tripCount0=((((*sstmac_bound_i))-(0)));  intops += tripCount0*1;{  uint64_t tripCount1=tripCount0*((((*sstmac_bound_j))-(0)));  flops += tripCount1*1; readBytes += tripCount1*36; writeBytes += tripCount1*12; intops += tripCount1*16;}}sstmac_computeDetailed(flops,intops,readBytes); }
+
+
+
+
+
+
+
+
+
+
+
+
+  return 0;
+ }}
+#include <sstmac/software/process/cppglobal.h>
+#include <sstmac/software/process/memoize.h>
+
+extern int __sizeof_bound_i;
+int __offset_bound_i = 0;extern int __sizeof_bound_j;
+int __offset_bound_j = 0;

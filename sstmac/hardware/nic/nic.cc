@@ -166,7 +166,7 @@ NIC::injectSend(NetworkMessage* netmsg)
 void
 NIC::recvMessage(NetworkMessage* netmsg)
 {
-  nic_debug("handling message %s:%lu of type %s from node %d while running",
+  nic_debug("handling %s:%lu of type %s from node %d while running",
     netmsg->toString().c_str(),
     netmsg->flowId(),
     NetworkMessage::tostr(netmsg->type()),
@@ -297,13 +297,17 @@ NIC::internodeSend(NetworkMessage* netmsg)
 void 
 NIC::sendManagerMsg(NetworkMessage* msg)
 {
+  if (msg->toaddr() == my_addr_){
+    intranodeSend(msg);
+  } else {
 #if SSTMAC_SANITY_CHECK
-  if (!logp_link_){
-    spkt_abort_printf("NIC %d does not have LogP link", addr());
-  }
+    if (!logp_link_){
+      spkt_abort_printf("NIC %d does not have LogP link", addr());
+    }
 #endif
-  logp_link_->send(new NicEvent(msg));
-  ackSend(msg);
+    logp_link_->send(new NicEvent(msg));
+    ackSend(msg);
+  }
 }
 
 void

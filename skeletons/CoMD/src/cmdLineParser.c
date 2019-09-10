@@ -42,11 +42,11 @@ static char* dupString(const char* s)
    return d;
 }
 
+static int iBase=129;
 static MyOption* myOptionAlloc(
    const char* longOption, const char shortOption,
    int has_arg, const char type, void* dataPtr, int dataSize, const char* help)
 {
-   static int iBase=129;
    MyOption* o = (MyOption*)comdCalloc(1, sizeof(MyOption));
    o->help = dupString(help);
    o->longArg = dupString(longOption);

@@ -213,6 +213,10 @@ class Thread
     return backtrace_;
   }
 
+  virtual bool isMainThread() const {
+    return false;
+  }
+
   int lastBacktraceNumFxn() const {
     return last_bt_collect_nfxn_;
   }

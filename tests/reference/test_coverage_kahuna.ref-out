@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 Rank 0 on MPI_Comm 0 passed test: 1.90e-04
+=======
+Rank 0 on MPI_Comm 0 passed test: 1.87e-04
+>>>>>>> dca1ee9d4be0f8f477589e7ac2b165cdef4d5d04
 Rank 0 on MPI_Comm 0 passed test: 1.09e-02
 Rank 0 on MPI_Comm 0 passed test: 1.16e-02
 Rank 0 on MPI_Comm 0 passed test: 1.18e-02
@@ -93,4 +97,8 @@ Rank 0 on MPI_Comm 3 passed test: 1.30e-02
 Rank 0 on MPI_Comm 3 passed test: 1.30e-02
 Rank 0 on MPI_Comm 3 passed test: 1.30e-02
 Rank 0 on MPI_Comm 3 passed test: 1.30e-02
+<<<<<<< HEAD
 Estimated total runtime of           0.01298113 seconds
+=======
+Estimated total runtime of           0.01298078 seconds
+>>>>>>> dca1ee9d4be0f8f477589e7ac2b165cdef4d5d04

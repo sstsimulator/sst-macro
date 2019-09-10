@@ -41,6 +41,9 @@ libsstmac_test_skeletons_la_SOURCES = \
   sstmac_mpi_test_all.cc 
 
 
+if HAVE_SST_ELEMENTS
+libsstmac_test_skeletons_la_SOURCES += ariel_test.cc
+endif
 
 
 

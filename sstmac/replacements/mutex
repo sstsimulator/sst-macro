@@ -12,6 +12,7 @@
 
 namespace std {
 
+#if __cplusplus >= 201103L
 using mutex = sstmac::sw::stdMutex;
 using recursive_mutex = sstmac::sw::stdRecursiveMutex;
 
@@ -27,6 +28,13 @@ void call_once(once_flag& flag, Callable&& f, Args&&... args ){
   }
   flag.called = true;
 }
+#else
+struct once_flag {
+  once_flag() : called(false) {}
+  bool called;
+};
+#endif
+
 
 }
 

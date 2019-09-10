@@ -236,7 +236,7 @@ SimTransport::SimTransport(SST::Params& params, sstmac::sw::App* parent, SST::Co
 {
   completion_queues_[0] = std::bind(&DefaultProgressQueue::incoming,
                                     &default_progress_queue_, 0, std::placeholders::_1);
-
+  null_completion_notify_ = std::bind(&SimTransport::drop, this, std::placeholders::_1);
   rank_ = sid().task_;
   auto* server_lib = parent_->os()->lib(server_libname_);
   SumiServer* server;
@@ -483,17 +483,19 @@ SimTransport::incomingMessage(Message *msg)
     msg->setTimeArrived(parent_app_->now());
   }
 #endif
-
+  msg->writeSyncValue();
   int cq = msg->isNicAck() ? msg->sendCQ() : msg->recvCQ();
   if (cq != Message::no_ack){
     if (cq >= completion_queues_.size()){
       debug_printf(sprockit::dbg::sumi, "No CQ yet for %s", msg->toString().c_str());
       held_[cq].push_back(msg);
     } else {
+      debug_printf(sprockit::dbg::sumi, "CQ %d handle %s", cq, msg->toString().c_str());
       completion_queues_[cq](msg);
     }
   } else {
     debug_printf(sprockit::dbg::sumi, "Dropping message without CQ: %s", msg->toString().c_str());
+    null_completion_notify_(msg);
     delete msg;
   }
 }

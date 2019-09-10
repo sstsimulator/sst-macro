@@ -352,7 +352,12 @@ EventManager::spinUp(void(*fxn)(void*), void* args)
   active_lock.unlock();
   
   void* stack = sw::StackAlloc::alloc();
-  sstmac::ThreadInfo::registerUserSpaceVirtualThread(thread_id_, stack, nullptr, nullptr);
+
+  std::vector<char> dummyGlobals(1e6);
+  std::vector<char> dummyTls(1e6);
+
+  sstmac::ThreadInfo::registerUserSpaceVirtualThread(thread_id_, stack,
+                            dummyGlobals.data(), dummyTls.data(), false, false);
   main_thread_ = des_context_->copy();
   main_thread_->initContext();
   spin_up_config cfg;

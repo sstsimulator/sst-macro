@@ -22,6 +22,9 @@ dist_bin_SCRIPTS = \
   libsstcc \
   dsstcc \
   sstcclib.py \
+  sstccutils.py \
+  sstcompile.py \
+  sstlink.py \
   configlib.py
 
 if INTEGRATED_SST_CORE
@@ -81,10 +84,12 @@ bin_PROGRAMS += sstmac_clang
 sstmac_clang_SOURCES = \
   clang/util.cc \
   clang/main.cc \
+  clang/astVisitorGlobalVars.cc \
   clang/pragmas.cc \
   clang/computePragma.cc \
   clang/computeVisitor.cc \
   clang/replacePragma.cc \
+  clang/annotatePragma.cc \
   clang/astConsumers.cc \
   clang/frontendActions.cc \
   clang/astVisitor.cc 
@@ -115,7 +120,11 @@ sstmac_clang_LDFLAGS = $(CLANG_LDFLAGS) \
  @CLANG_LIBTOOLING_SYSTEM_LIBS@ 
 endif
 
-
+if HAVE_SST_ELEMENTS
+bin_PROGRAMS += ariel_test
+ariel_test_SOURCES = ariel_test.cc
+ariel_test_CPPFLAGS = $(SST_ELEMENTS_CPPFLAGS) $(SST_CPPFLAGS)
+endif
 
 
 

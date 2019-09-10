@@ -61,7 +61,12 @@ LogPMemoryModel::LogPMemoryModel(SST::Component* nd, SST::Params& params)
 {
 
   lat_ = TimeDelta(params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
-  min_byte_delay_ = TimeDelta(params.find<SST::UnitAlgebra>("bandwidth").getValue().inverse().toDouble());
+
+  auto bw = params.find<SST::UnitAlgebra>("bandwidth").getValue();
+  if (bw.toDouble() == 0){
+    spkt_abort_printf("Zero or missing memory.bandwidth parameter");
+  }
+  min_byte_delay_ = TimeDelta(bw.inverse().toDouble());
   link_ = new Link(min_byte_delay_, lat_);
 }
 

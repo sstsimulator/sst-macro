@@ -3,7 +3,7 @@
 from sstcclib import run
 import sys
 extra_libs = "-lsstmac" #for multipass issues
-rc = run("c", extra_libs, runClang=False, makeLibrary=True)
+rc = run("c", extra_libs, runClang=False)
 if not rc == 0:
   sys.exit(1)
 

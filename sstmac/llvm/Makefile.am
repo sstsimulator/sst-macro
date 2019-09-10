@@ -12,21 +12,30 @@
 include $(top_srcdir)/Makefile.common
 
 AM_CPPFLAGS += ${LLVM_CPPFLAGS}
-AM_CXXFLAGS += -fno-rtti
-CXX = clang++
+AM_CPPFLAGS += ${SST_ELEMENTS_CPPFLAGS}
 
 #this contains instrumentation functions usable by LLVM
 if HAVE_CLANG
-noinst_LTLIBRARIES = libsstmac_inst.la
-libsstmac_inst_la_SOURCES = \
-  meminst.cc
+if HAVE_SST_ELEMENTS
+noinst_LTLIBRARIES = libshadow_app.la
+libshadow_app_la_SOURCES = \
+  shadowFunctions.cc
+
+noinst_LTLIBRARIES += libpuppet_app.la
+libpuppet_app_la_SOURCES = \
+  puppetFunctions.cc
+endif
 
 lib_LTLIBRARIES = \
   libmemtrace.la
 
 libmemtrace_la_SOURCES = \
-  memtrace.cc
+  memtrace2.cc \
+	memtraceTools.cc 
 
+libmemtrace_la_CXXFLAGS = \
+  -fno-rtti \
+	-fno-exceptions
 
 libmemtrace_la_LDFLAGS = \
  ${LLVM_LDFLAGS} \

@@ -69,7 +69,10 @@ class SimpleNode :
     "Basic processor that only does timed_message computes",
     COMPONENT_CATEGORY_NETWORK)
 
-  SST_ELI_DOCUMENT_PORTS(SSTMAC_VALID_PORTS)
+  SST_ELI_DOCUMENT_PORTS(
+    SSTMAC_VALID_PORTS,
+    {"unblock%(core)d", "receives unblock events from other components", {}}
+  )
 
   SST_ELI_DOCUMENT_STATISTICS(
     {"xmit_wait", "stalled cycles with data but no credits", "nanoseconds", 1},
@@ -88,7 +91,13 @@ class SimpleNode :
   virtual void execute(ami::COMP_FUNC func,
          Event* data, ExecutionEvent* cb);
 
+  void unblock(Event* ev);
 
+  void init(unsigned int phase);
+ private:
+#if SSTMAC_HAVE_SST_ELEMENTS
+  std::vector<SST::Link*> unblock_links_;
+#endif
 };
 
 

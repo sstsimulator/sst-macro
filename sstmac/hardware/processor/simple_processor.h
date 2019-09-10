@@ -67,8 +67,7 @@ class SimpleProcessor :
     SST_ELI_ELEMENT_VERSION(1,0,0),
     "Basic processor that only does timed_message computes")
 
-  SimpleProcessor(SST::Params& params,
-                   MemoryModel* mem, Node* nd) :
+  SimpleProcessor(SST::Params& params, MemoryModel* mem, Node* nd) :
     Processor(params, mem, nd) {}
 
   virtual ~SimpleProcessor() {}
