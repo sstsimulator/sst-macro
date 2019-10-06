@@ -2,6 +2,7 @@
 helpText = """The following environmental variables can be defined for the SST compiler
 SSTMAC_VERBOSE=0 or 1:        produce verbose output from the SST compiler (default 0)
 SSTMAC_DELETE_TEMPS=0 or 1:   remove all temp source-to-source files (default 1)
+SSTMAC_DELETE_TEMP_OFILES=0 or 1:   remove all temporary object files (default 1)
 SSTMAC_SRC2SRC=0 or 1: run a source-to-source pass converting globals to TLS (default 1)
 SSTMAC_CONFIG=0: running automake, cmake - skip certain steps to fool build system
 """
@@ -67,10 +68,12 @@ def runCmdArr(cmdArr,verbose):
     return 0
 
 class TempFiles:
-  def __init__(self, doDelete, verbose):
-    self.doDelete = doDelete
+  def __init__(self, doDeleteAll, doDeleteObjects, verbose, clangBin):
+    self.doDeleteAll = doDeleteAll
+    self.doDeleteObjects = doDeleteObjects
     self.verbose = verbose
     self.files = []
+    self.clangBin = clangBin
 
   def append(self, f):
     self.files.append(f)
@@ -81,12 +84,45 @@ class TempFiles:
   def cleanUp(self):
     import os
     import sys
-    cmd = "rm -f %s" % " ".join(self.files)
+    cmdall = "rm -f %s" % " ".join(self.files)
+    cmdobjects = "rm -f %s" % " ".join([f for f in self.files if f.endswith('.o')])
     import traceback
-    if self.doDelete:
+    if self.doDeleteAll:
         if self.verbose:
-          sys.stderr.write("%s\n" % cmd)
-        os.system(cmd)
+          sys.stderr.write("%s\n" % cmdall)
+        os.system(cmdall)
+        self.files = []
+    if self.doDeleteObjects:
+        if self.verbose:
+          sys.stderr.write("%s\n" % cmdobjects)
+        os.system(cmdobjects)
+        self.files = [f for f in self.files if not f.endswith('.o')]
+    if not self.doDeleteAll: # attempt to format the files with clangformat
+        # taken from https://stackoverflow.com/questions/377017/test-if-executable-exists-in-python/12611523
+        clang_format_prog = "clang-format"
+        clang_format = os.path.join(self.clangBin + "bin/", clang_format_prog)
+        has_clang_format = os.path.isfile(clang_format) and os.access(clang_format, os.X_OK)
+
+        if not has_clang_format: # Look for one in the path
+            for path in os.environ["PATH"].split(os.pathsep):
+                exe = os.path.join(path, clang_format_prog)
+                if os.path.isfile(exe) and os.access(exe, os.X_OK):
+                    has_clang_format = true
+                    clang_format = exe
+                    break
+
+        if self.verbose:
+            if has_clang_format:
+                sys.stderr.write("Attempting to format temp files with %s\n" % clang_format)
+            else:
+                sys.stderr.write("Could not find %s\n" % clang_format)
+
+        if has_clang_format:
+            for f in self.files:
+                cmd = clang_format + " -i -style=llvm " + f 
+                if self.verbose:
+                    sys.stderr.write(cmd + "\n")
+                os.system(cmd)
 
 def addLlvmPasses(passList, passStr):
   passList.extend(passStr.split(","))
@@ -104,6 +140,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   from sstccvars import includeDir
   from sstccvars import sstCore
   from sstccvars import soFlagsStr
+  from sstccvars import clangBin
   from sstccvars import clangCppFlagsStr, clangLdFlagsStr
   from sstccvars import clangLibtoolingCxxFlagsStr, clangLibtoolingCFlagsStr
   from sstccvars import haveFloat128
@@ -148,6 +185,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
 
   verbose = False     #whether to print verbose output
   delTempFiles = True #whether to delete all temp files created
+  delTempObjectFiles = True #whether to delete all temporary object files created
   keepExe = False     #whether to keep exes as exes or convert to SST libX.so
   if "SSTMAC_VERBOSE" in os.environ:
     flag = int(os.environ["SSTMAC_VERBOSE"])
@@ -155,6 +193,9 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   if "SSTMAC_DELETE_TEMPS" in os.environ:
     flag = int(os.environ["SSTMAC_DELETE_TEMPS"])
     delTempFiles = delTempFiles and flag
+  if "SSTMAC_DELETE_TEMP_OFILES" in os.environ:
+    flag = int(os.environ["SSTMAC_DELETE_TEMP_OFILES"])
+    delTempObjectFiles = delTempObjectFiles and flag
   if "SSTMAC_CONFIG" in os.environ:
     flag = int(os.environ["SSTMAC_CONFIG"])
     keepExe = flag
@@ -598,7 +639,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   if runClang:
     #this is more complicated - we have to use clang to do a source to source transformation
     #then we need to run the compiler on that modified source
-    allTemps = TempFiles(delTempFiles, verbose)
+    allTemps = TempFiles(delTempFiles, delTempObjectFiles, verbose, clangBin)
     for srcFile in sourceFiles:
       target = objTarget
       if not objTarget or len(objectFiles) > 1:
@@ -736,9 +777,8 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         arCmdArr.extend(allObjects)
         rc = runCmdArr(arCmdArr,verbose)
         if not rc == 0: return rc
-      if delTempFiles:
+      if delTempObjectFiles or delTempFiles:
         delete(allObjects)
-    return 0
 
   if not runClang:
     rc = runCmdArr(cxxCmdArr,verbose)
@@ -747,7 +787,3 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     if not rc == 0: return rc
     rc = runCmdArr(arCmdArr,verbose)
     return rc
-
-
-
-
