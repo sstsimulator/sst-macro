@@ -24,9 +24,6 @@ STD_SUBDIRS = \
   sst_core \
   install 
 
-# llvm
-
-
 library_includedir=$(includedir)/sstmac
 
 library_include_HEADERS = \
