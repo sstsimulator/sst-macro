@@ -183,6 +183,9 @@ libsstmac_hw_la_SOURCES +=  \
   topology/topology.cc 
 
 
+if HAVE_SST_ELEMENTS
+AM_CPPFLAGS += $(SST_ELEMENTS_CPPFLAGS)
+endif
 
 if INTEGRATED_SST_CORE
 libsstmac_hw_la_SOURCES +=  \

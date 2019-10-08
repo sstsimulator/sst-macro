@@ -61,13 +61,19 @@ Questions? Contact sst-macro-help@sandia.gov
 static const int nrepeat = 40;
 static const int warmup = 10;
 static const int max_buffer_size = 1024*1024;
-const std::vector<int> buffer_sizes =
+std::vector<int> default_buffer_sizes =
   { 256,512,1024,2048,3072,4096,6144,8192,12288,16384,32768,49152,65536,98304,131072,262144,524288,1048576};
-const std::vector<int> total_num_sends =
+std::vector<int> default_total_num_sends =
   { 64, 64, 64,  64,  64,  64,  16,  16,  16,   16,   16,   16,   16,   16,   16,    16,    16,    16};
-const std::vector<int> window_num_sends =
+std::vector<int> default_window_num_sends =
   { 16, 16, 16,  16,  16,  16,  4,   4,   4,    4,    4,    4,    4,    4,    4,     4,     4,     4};
+std::vector<int> big_buffer_sizes = { 10485760 };
+std::vector<int> big_total_num_sends = { 10 };
+std::vector<int> big_window_num_sends = { 1 };
 const std::vector<int> primes = { 17, 19, 103, 107, 59, 41, 37 };
+std::vector<int> *buffer_sizes;
+std::vector<int> *total_num_sends;
+std::vector<int> *window_num_sends;
 
 void usage(std::ostream& os){
   os << "usage: ./run <num_senders> <num_recvers> <send_seed> <recv_seed>" << std::endl;
@@ -217,13 +223,27 @@ int main(int argc, char** argv)
   The lists of senders and recvers are randomly shuffled to create the pairings.
 */
 
+
+
   std::string arg1(argv[1]);
   bool randomizing = true;
   std::vector< std::pair<int,int> > flows;
   if (arg1.compare("-f") == 0) {
     randomizing = false;
     std::string infile(argv[2]);
-    read_infile(infile,flows);
+    int go_big;
+    read_infile(infile,flows,go_big);
+    go_big = bool(temp);
+    if (go_big) {
+      buffer_sizes = &big_buffer_sizes;
+      total_num_sends = &big_total_num_sends;
+      window_num_sends = &big_window_num_sends;
+    }
+    else {
+      buffer_sizes = &default_buffer_sizes;
+      total_num_sends = &default_total_num_sends;
+      window_num_sends = &default_window_num_sends;
+    }
   }
 
   int num_senders, num_recvers;
@@ -340,16 +360,16 @@ int main(int argc, char** argv)
   MPI_Barrier(MPI_COMM_WORLD);
   if (recver_from_me != -1){
     MPI_Comm_split(MPI_COMM_WORLD, 0, my_send_idx, &roleComm);
-    std::vector<double> tputs(buffer_sizes.size());
+    std::vector<double> tputs((*buffer_sizes).size());
     send_traffic(recver_from_me, reqs, buffer, tputs);
-    std::vector<double> allTputs(buffer_sizes.size()*num_senders);
+    std::vector<double> allTputs((*buffer_sizes).size()*num_senders);
   #pragma sst keep
-    MPI_Allgather(tputs.data(), buffer_sizes.size(), MPI_DOUBLE,
-                  allTputs.data(), buffer_sizes.size(), MPI_DOUBLE, roleComm);
+    MPI_Allgather(tputs.data(), (*buffer_sizes).size(), MPI_DOUBLE,
+                  allTputs.data(), (*buffer_sizes).size(), MPI_DOUBLE, roleComm);
     int roleRank = 0;
     MPI_Comm_rank(roleComm, &roleRank);
     if (roleRank == 0){
-      int num_times = buffer_sizes.size();
+      int num_times = (*buffer_sizes).size();
       for (int i=0; i < num_senders; ++i){
         double* tputs = &allTputs[num_times*i];
         int recver, sender;
@@ -363,7 +383,7 @@ int main(int argc, char** argv)
         }
         for (int t=0; t < num_times; ++t){
           printf("Rank %-3d -> %-3d %8d: %10.6f GB/s  %10.6fus\n", 
-                 sender, recver, buffer_sizes[t], tputs[t]/1e9, buffer_sizes[t]*1e6/tputs[t]);
+                 sender, recver, (*buffer_sizes)[t], tputs[t]/1e9, (*buffer_sizes)[t]*1e6/tputs[t]);
         }
       }
     }
@@ -400,19 +420,19 @@ void send_traffic(int partner, int niter, int buffer_size, int num_sends, int wi
 
 void send_traffic(int recver, MPI_Request* reqs, void* buffer, std::vector<double>& tputs){
   //send a total of 100MB in 1MB window sizes, starting from 1KB base size
-  int num_buffer_sizes = buffer_sizes.size();
+  int num_buffer_sizes = (*buffer_sizes).size();
   for (int i=0; i < num_buffer_sizes; ++i){
-    send_traffic(recver, warmup, buffer_sizes[i], total_num_sends[i], 
-          window_num_sends[i], reqs, buffer);
+    send_traffic(recver, warmup, (*buffer_sizes)[i], (*total_num_sends)[i],
+          (*window_num_sends)[i], reqs, buffer);
     struct timeval t_start;
     gettimeofday(&t_start, NULL);
-    send_traffic(recver, nrepeat, buffer_sizes[i], total_num_sends[i], 
-          window_num_sends[i], reqs, buffer);
+    send_traffic(recver, nrepeat, (*buffer_sizes)[i], (*total_num_sends)[i],
+          (*window_num_sends)[i], reqs, buffer);
 
     struct timeval t_stop;
     gettimeofday(&t_stop, NULL);
     double time = (t_stop.tv_sec-t_start.tv_sec) + 1e-6*(t_stop.tv_usec-t_start.tv_usec);
-    auto total_bytes_sent = uint64_t(buffer_sizes[i]) * uint64_t(total_num_sends[i]) * uint64_t(nrepeat);
+    auto total_bytes_sent = uint64_t((*buffer_sizes)[i]) * uint64_t((*total_num_sends)[i]) * uint64_t(nrepeat);
     double tput = total_bytes_sent / time;
     tputs[i] = tput;
     MPI_Barrier(MPI_COMM_WORLD);
@@ -446,29 +466,34 @@ void recv_traffic(const std::vector<int>& senders, int niter,
 
 void recv_traffic(const std::vector<int>& senders, MPI_Request* reqs, void* buffer){
   //send a total of 100MB in 1MB window sizes, starting from 1KB base size
-  int num_buffer_sizes = buffer_sizes.size();
+  int num_buffer_sizes = (*buffer_sizes).size();
   for (int i=0; i < num_buffer_sizes; ++i){
-    recv_traffic(senders, warmup, buffer_sizes[i], total_num_sends[i], 
-          window_num_sends[i], reqs, buffer);
-    recv_traffic(senders, nrepeat, buffer_sizes[i], total_num_sends[i], 
-          window_num_sends[i], reqs, buffer);
+    recv_traffic(senders, warmup, (*buffer_sizes)[i], (*total_num_sends)[i],
+          (*window_num_sends)[i], reqs, buffer);
+    recv_traffic(senders, nrepeat, (*buffer_sizes)[i], (*total_num_sends)[i],
+          (*window_num_sends)[i], reqs, buffer);
     MPI_Barrier(MPI_COMM_WORLD);
   }
 }
 
 void do_nothing()
 {
-  int num_buffer_sizes = buffer_sizes.size();
+  int num_buffer_sizes = (*buffer_sizes).size();
   for (int i=0; i < num_buffer_sizes; ++i){
     MPI_Barrier(MPI_COMM_WORLD);
   }
 }
 
-void read_infile(std::string filename, std::vector< std::pair<int,int> >& flows)
+void read_infile(std::string filename, std::vector< std::pair<int,int> >& flows, int go_big)
 {
   std::ifstream in;
   in.open(filename);
   char c;
+  in >> go_big;
+  if (go_big != 0 && go_big != 1) {
+    std::cerr << "first line of input file should be boolean indicating whether to use big buffer send";
+    abort();
+  }
   while (in.get(c)) {
     in.unget();
     int src, dst;

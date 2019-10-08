@@ -1,6 +1,7 @@
 AM_CPPFLAGS = -I$(top_builddir) -I$(top_srcdir) -I$(top_srcdir)/sprockit -I$(top_builddir)/sprockit
 AM_LDFLAGS = 
 AM_CXXFLAGS = 
+AM_CFLAGS =
 
 if INTEGRATED_SST_CORE
   AM_CPPFLAGS += $(SST_CPPFLAGS)
@@ -15,8 +16,16 @@ if HAVE_GCC
 #clean up warnings on clang
 endif
 
+if HAVE_MACSDK
+AM_CFLAGS += $(MACSDK_CFLAGS)
+AM_CXXFLAGS += $(MACSDK_CXXFLAGS)
+endif
+
 AM_CPPFLAGS += $(PTH_CPPFLAGS)
 AM_LDFLAGS += $(PTH_LDFLAGS)
 AM_CPPFLAGS += $(UCONTEXT_CPPFLAGS)
 AM_LDFLAGS += $(UCONTEXT_LDFLAGS)
+
+if HAVE_SST_ELEMENTS
+endif
 

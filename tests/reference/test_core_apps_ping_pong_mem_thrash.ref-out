@@ -35,9 +35,9 @@
 1304576:   0.5000 GB/s
 1304576:   0.5000 GB/s
 Aggregate time stats: state
-        Inactive:          0.73535 s
+        Inactive:          0.73536 s
           idle:X:          0.00009 s
         active:X:          0.01042 s
   idle:injection:          0.00009 s
 active:injection:          0.01042 s
-Estimated total runtime of           0.00564980 seconds
+Estimated total runtime of           0.00564984 seconds

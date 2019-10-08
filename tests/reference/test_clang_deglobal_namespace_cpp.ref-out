@@ -1,0 +1,25 @@
+
+namespace ns {
+ namespace ns2 {
+  int x = 10;extern int __offset_x; int __sizeof_x = sizeof(int);static std::function<void(void*)> init_x = [](void* ptr){ new (ptr) int{10}; };sstmac::CppGlobalRegisterGuard x_sstmac_ctor(__offset_x, __sizeof_x, false, "x", std::move(init_x));
+ }
+}
+
+namespace ns {
+int x = 10;extern int __offset_x; int __sizeof_x = sizeof(int);static std::function<void(void*)> init_x = [](void* ptr){ new (ptr) int{10}; };sstmac::CppGlobalRegisterGuard x_sstmac_ctor(__offset_x, __sizeof_x, false, "x", std::move(init_x));
+}
+
+void fxn()
+{ char* sstmac_global_data = get_sstmac_global_data();int* __ns__ns2__sstmac_x=(int*)(sstmac_global_data + ::ns::ns2::__offset_x); int* __ns__sstmac_x=(int*)(sstmac_global_data + ::ns::__offset_x); {
+  (*__ns__sstmac_x) += 5;
+  (*__ns__ns2__sstmac_x) -= 3;
+ }}
+#include <sstmac/software/process/cppglobal.h>
+#include <sstmac/software/process/memoize.h>
+
+namespace ns {
+ extern int __sizeof_x;
+ int __offset_x = 0; namespace ns2 {
+  extern int __sizeof_x;
+  int __offset_x = 0; }
+}

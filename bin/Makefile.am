@@ -22,6 +22,9 @@ dist_bin_SCRIPTS = \
   libsstcc \
   dsstcc \
   sstcclib.py \
+  sstccutils.py \
+  sstcompile.py \
+  sstlink.py \
   configlib.py
 
 if INTEGRATED_SST_CORE
@@ -32,7 +35,7 @@ bin_SCRIPTS = sstmacro-config sstccvars.py
 
 EXTRA_DIST = sstmacro-config.in sstccvars.py.in tools config_tools manifest uq plots
 
-AM_LDFLAGS += -ldl
+AM_LDFLAGS += -ldl -lrt
 
 AM_CPPFLAGS += \
  -I$(top_builddir)/bin \
@@ -81,10 +84,12 @@ bin_PROGRAMS += sstmac_clang
 sstmac_clang_SOURCES = \
   clang/util.cc \
   clang/main.cc \
+  clang/astVisitorGlobalVars.cc \
   clang/pragmas.cc \
   clang/computePragma.cc \
   clang/computeVisitor.cc \
   clang/replacePragma.cc \
+  clang/annotatePragma.cc \
   clang/astConsumers.cc \
   clang/frontendActions.cc \
   clang/astVisitor.cc 
@@ -93,6 +98,7 @@ sstmac_clang_CXXFLAGS = -fno-rtti $(AM_CXXFLAGS)
 sstmac_clang_CPPFLAGS = $(CLANG_CPPFLAGS) $(AM_CPPFLAGS)
 sstmac_clang_LDFLAGS = $(CLANG_LDFLAGS) \
  -Wl,-rpath,@CLANG_INSTALL_DIR@/lib \
+ -lrt \
  -lclangFrontend \
  -lclangFrontendTool \
  -lclangTooling \
@@ -115,7 +121,11 @@ sstmac_clang_LDFLAGS = $(CLANG_LDFLAGS) \
  @CLANG_LIBTOOLING_SYSTEM_LIBS@ 
 endif
 
-
+if HAVE_SST_ELEMENTS
+bin_PROGRAMS += ariel_test
+ariel_test_SOURCES = ariel_test.cc
+ariel_test_CPPFLAGS = $(SST_ELEMENTS_CPPFLAGS) $(SST_CPPFLAGS)
+endif
 
 
 

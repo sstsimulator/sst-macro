@@ -83,7 +83,7 @@ RandomAllocation::allocate(
   std::vector<NodeId> availvec(available.size());
   std::copy(available.begin(), available.end(), availvec.begin());
   RNG::UniformInteger_functor rngf(rng_);
-  std::random_shuffle(availvec.begin(), availvec.end(), rngf);
+  RNG::random_shuffle(availvec.begin(), availvec.end(), rngf);
   for (int i = 0; i < nnode_requested; i++) {
     NodeId node = availvec[i];
     allocation.insert(node);

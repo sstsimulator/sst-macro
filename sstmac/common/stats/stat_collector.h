@@ -158,8 +158,8 @@ class StatisticFieldsOutput : public StatisticOutput
  public:
   StatisticFieldsOutput(SST::Params& params) :
     StatisticOutput(params),
-    active_group_(nullptr),
-    active_stat_(nullptr)
+    active_stat_(nullptr),
+    active_group_(nullptr)
   {
   }
 

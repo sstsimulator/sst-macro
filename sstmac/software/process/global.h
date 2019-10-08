@@ -47,20 +47,21 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/software/process/tls.h>
 #include <list>
+#include <map>
+#include <functional>
 #include <unordered_set>
 
 extern "C" int sstmac_global_stacksize;
 
 namespace sstmac {
 
-class CppGlobal;
 class GlobalVariableContext {
  public:
   void init();
 
   ~GlobalVariableContext();
 
-  int append(const int size, const char* name, const void* initData);
+  int append(const int size, const char* name);
 
   int globalsSize() {
     return stackOffset;
@@ -78,8 +79,6 @@ class GlobalVariableContext {
     return globalInits;
   }
 
-  void callCtors(void* globals);
-
   void addActiveSegment(void* globals){
     activeGlobalMaps_.insert(globals);
   }
@@ -90,55 +89,22 @@ class GlobalVariableContext {
 
   void initGlobalSpace(void* ptr, int size, int offset);
 
-  void relocatePointers(void* globals);
+  void callInitFxns(void* globals);
 
-  void registerRelocation(void* srcPtr, void* srcBasePtr, int& srcOffset,
-                                 void* dstPtr, void* dstBasePtr, int& dstOffset);
-
-  void dlopenRelocate();
-
-  void registerCtor(CppGlobal* g){
-    cppCtors.push_back(g);
+  void unregisterInitFxn(int offset){
+    initFxns.erase(offset);
   }
 
-  void unregisterCtor(CppGlobal* g);
+  void registerInitFxn(int offset, std::function<void(void*)>&& fxn);
 
  private:
   int stackOffset;
   char* globalInits;
   int allocSize_;
-  std::list<CppGlobal*> cppCtors;
-
-  struct relocation {
-    int srcOffset;
-    int dstOffset;
-    relocation(int src, int dst) :
-      srcOffset(src), dstOffset(dst) {}
-  };
-  std::list<relocation> relocations;
-
-  static inline void relocate(relocation& r, char* segment)
-  {
-    void* src = &segment[r.srcOffset];
-    void** dst = (void**) &segment[r.dstOffset];
-    *dst = src;
-  }
-
-  struct relocationCfg {
-    void* srcPtr;
-    void* srcBasePtr;
-    int& srcOffset;
-    void* dstPtr;
-    void* dstBasePtr;
-    int& dstOffset;
-    relocationCfg(void* s, void* bs, int& os,
-                 void* d, void* bd, int& od) :
-      srcPtr(s), srcBasePtr(bs), srcOffset(os),
-      dstPtr(d), dstBasePtr(bd), dstOffset(od)
-    {
-    }
-  };
-  std::list<relocationCfg> relocationCfgs;
+  //these should be ordered by the offset in the data segment
+  //this ensures as much as possible that global variables
+  //are initialized in the same order in SST/macro as they would be in the real app
+  std::map<int, std::function<void(void*)>> initFxns;
 
  private:
   std::unordered_set<void*> activeGlobalMaps_;
@@ -147,24 +113,11 @@ class GlobalVariableContext {
 
 class GlobalVariable {
  public:
-  static int init(const int size, const char* name, const void* initData, bool tls = false);
+  static int init(const int size, const char* name, bool tls = false);
 
   static GlobalVariableContext glblCtx;
   static GlobalVariableContext tlsCtx;
   static bool inited;
-};
-
-
-
-class RelocationPointer {
- public:
-  RelocationPointer(void* srcPtr, void* srcBasePtr, int& srcOffset,
-                    void* dstPtr, void* dstBasePtr, int& dstOffset){
-
-    GlobalVariableContext& ctx = GlobalVariable::glblCtx;
-    ctx.registerRelocation(srcPtr, srcBasePtr, srcOffset,
-                           dstPtr, dstBasePtr, dstOffset);
-  }
 };
 
 static inline void* get_special_at_offset(int offset, int map_offset)
@@ -203,12 +156,16 @@ struct global {};
 
 template <class T>
 struct global<T*,void> : public GlobalVariable {
-  explicit global(){ 
-    offset = GlobalVariable::init(sizeof(T*),"",nullptr);
+  explicit global(){
+    offset = GlobalVariable::init(sizeof(T*),"",false);
   }
 
   explicit global(T* t){
-    offset = GlobalVariable::init(sizeof(T*), "", &t);
+    offset = GlobalVariable::init(sizeof(T*),"",false);
+    GlobalVariable::glblCtx.registerInitFxn(offset, [=](void* ptr){
+      T** tPtr = (T**) ptr;
+      *tPtr = t;
+    });
   }
 
   T*& get() {
@@ -236,18 +193,23 @@ struct global<T*,void> : public GlobalVariable {
   int offset;
 };
 
+
 template <class T>
 struct global<T,typename std::enable_if<std::is_arithmetic<T>::value>::type> {
 
   explicit global()
   {
-    offset = GlobalVariable::init(sizeof(T), "", nullptr);
+    offset = GlobalVariable::init(sizeof(T), "", false);
   }
 
   explicit global(const T& t)
   {
-    offset = GlobalVariable::init(sizeof(T), "", &t);
-  } 
+    offset = GlobalVariable::init(sizeof(T), "", false);
+    GlobalVariable::glblCtx.registerInitFxn(offset, [=](void* ptr){
+      T* tPtr = (T*) ptr;
+      *tPtr = t;
+    });
+  }
 
   template <class U>
   T& operator=(const U& u){

@@ -53,6 +53,9 @@ extern "C" {
 #include <stdint.h>
 #endif
 
+/** Block and return the time when unblocked */
+double sstmac_block();
+
 /**
  * @brief sstmac_sleep SST virtual equivalent of Linux sleep
  * @param secs

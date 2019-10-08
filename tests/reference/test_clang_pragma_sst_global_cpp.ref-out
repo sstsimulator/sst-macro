@@ -1,0 +1,27 @@
+struct B {
+  void fxn();
+};
+
+template <class T>
+struct A{
+  void fxn();
+  static B x;static B& x_getter(){  char* data = get_sstmac_global_data();  void* offsetPtr = data + __offset_x;return *((B*)(offsetPtr));} public: static int __offset_x;
+};
+
+template <class T> B A<T>::x;struct UniqueTagAx{}; template <class T> int A<T>::__offset_x = sstmac::inplaceCppGlobal<UniqueTagAx,B,false>("x",[](void* ptr){     new (ptr) B{}; });
+
+template <class T>
+void
+A<T>::fxn(){
+
+  this->x_getter().fxn();
+  B var;
+}
+
+decltype(A<int>::x) var;extern int __offset_var; int __sizeof_var = sizeof(B);static std::function<void(void*)> init_var = [](void* ptr){ new (ptr) B{}; };sstmac::CppGlobalRegisterGuard var_sstmac_ctor(__offset_var, __sizeof_var, false, "var", std::move(init_var));
+#include <sstmac/software/process/cppglobal.h>
+#include <sstmac/software/process/memoize.h>
+
+extern int __sizeof_var;
+int __offset_var = 0;extern int __sizeof_x;
+int __offset_x = 0;

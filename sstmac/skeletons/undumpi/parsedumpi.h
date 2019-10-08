@@ -60,7 +60,7 @@ namespace sumi {
 class ParseDumpi : public sstmac::sw::App
 {
   friend class parsedumpi_unit_test;
-  friend class parsedumpi_callbacks;
+  friend class ParsedumpiCallbacks;
 
  public:
   SST_ELI_REGISTER_DERIVED(

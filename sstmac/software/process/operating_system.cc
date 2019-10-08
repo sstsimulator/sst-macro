@@ -313,11 +313,13 @@ std::unique_ptr<std::map<std::string,std::string>> OperatingSystem::memoize_init
 
 OperatingSystem::OperatingSystem(SST::Component* parent, SST::Params& params) :
   node_(safe_cast(hw::Node,parent)),
+  blocked_thread_(nullptr),
   active_thread_(nullptr),
   des_context_(nullptr),
   compute_sched_(nullptr),
   SubComponent("os", parent),
-  params_(params)
+  params_(params),
+  sync_tunnel_(nullptr)
 {
   my_addr_ = node_ ? node_->addr() : 0;
 
@@ -334,6 +336,11 @@ OperatingSystem::OperatingSystem(SST::Component* parent, SST::Params& params) :
   std::set<std::string> keys = env_params.getKeys();
   for (auto& key : keys){
     env_[key] = env_params.find<std::string>(key);
+  }
+
+  if (params.contains("tunnel")){
+    std::string name = params.find<std::string>("tunnel");
+    sync_tunnel_ = new IPCTunnel<ShadowPuppetSync>(name, true);
   }
 
   //sprockit::thread_stack_size<int>() = sw::StackAlloc::stacksize();
@@ -426,6 +433,8 @@ OperatingSystem::~OperatingSystem()
   //these are owned now by the stats system - don't delete here
   //if (callGraph_) delete callGraph_;
   //if (ftq_trace_) delete ftq_trace_;
+
+  if (sync_tunnel_) delete sync_tunnel_;
 }
 
 void
@@ -445,7 +454,7 @@ OperatingSystem::initThreading(SST::Params& params)
 #endif
 
   des_context_ = sprockit::create<ThreadContext>(
-     "macro", params.find<std::string>("content", ThreadContext::defaultThreading()));
+     "macro", params.find<std::string>("context", ThreadContext::defaultThreading()));
 
   des_context_->initContext();
 
@@ -584,6 +593,9 @@ OperatingSystem::switchToThread(Thread* tothread)
   }
 
   os_debug("switching to thread %d", tothread->threadId());
+  if (active_thread_ == blocked_thread_){
+    blocked_thread_ = nullptr;
+  }
   active_thread_ = tothread;
   activeOs() = this;
   tothread->context()->resumeContext(des_context_);
@@ -680,6 +692,7 @@ OperatingSystem::block()
   //reset the time flag
   active_thread_->setTimedOut(false);
   os_debug("pausing context on thread %d", active_thread_->threadId());
+  blocked_thread_ = active_thread_;
   active_thread_ = nullptr;
   old_context->pauseContext(des_context_);
 
@@ -699,6 +712,23 @@ OperatingSystem::block()
 
   if (elapsed.ticks()){
     active_thread_->collectStats(before, elapsed);
+  }
+}
+
+void
+OperatingSystem::unblockBlockedThread()
+{
+  if (blocked_thread_){
+    unblock(blocked_thread_);
+  }
+}
+
+void
+OperatingSystem::setIpcName(const std::string &name)
+{
+  if (sync_tunnel_){
+    ShadowPuppetSync* tunnel = sync_tunnel_->get();
+    tunnel->setTunnelName(name);
   }
 }
 
@@ -757,7 +787,6 @@ OperatingSystem::completeActiveThread()
   if (gdb_active_){
     all_threads_.erase(active_thread_->tid());
   }
-  compute_sched_->releaseCores(1, active_thread_);
   Thread* thr_todelete = active_thread_;
 
   //if any threads waiting on the join, unblock them

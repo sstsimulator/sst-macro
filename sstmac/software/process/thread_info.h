@@ -59,7 +59,8 @@ namespace sstmac {
 class ThreadInfo {
  public:
   static void registerUserSpaceVirtualThread(int phys_thread_id, void* stack,
-                                                 void* globalsMap, void* tlsMap);
+                                             void* globalsMap, void* tlsMap,
+                                             bool isAppStartup, bool isThreadStartup);
 
   static void deregisterUserSpaceVirtualThread(void* stack);
 

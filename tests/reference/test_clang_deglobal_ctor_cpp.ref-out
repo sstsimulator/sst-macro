@@ -1,0 +1,30 @@
+
+static int x = 10;extern int __offset_xyzx; int __sizeof_xyzx = sizeof(int);static std::function<void(void*)> init_xyzx = [](void* ptr){ new (ptr) int{10}; };static sstmac::CppGlobalRegisterGuard x_sstmac_ctor(__offset_xyzx, __sizeof_xyzx, false, "x", std::move(init_xyzx));
+
+struct A {
+ int y;
+ A() : y((*((int*)(get_sstmac_global_data() + __offset_xyzx)))) {}
+};
+
+struct B {
+ int z;
+ B(int x) : z(x) {}
+};
+
+B b(x);extern int __offset_b; int __sizeof_b = sizeof(B);static std::function<void(void*)> init_b = [](void* ptr){ new (ptr) B{(*((int*)(get_sstmac_global_data() + __offset_xyzx)))}; };sstmac::CppGlobalRegisterGuard b_sstmac_ctor(__offset_b, __sizeof_b, false, "b", std::move(init_b));
+B c(10);extern int __offset_c; int __sizeof_c = sizeof(B);static std::function<void(void*)> init_c = [](void* ptr){ new (ptr) B{10}; };sstmac::CppGlobalRegisterGuard c_sstmac_ctor(__offset_c, __sizeof_c, false, "c", std::move(init_c));
+
+struct C {
+  template <class... Args>
+  C(Args&&... args){}
+};
+
+C d(3,x,b,c,4.5);extern int __offset_d; int __sizeof_d = sizeof(C);static std::function<void(void*)> init_d = [](void* ptr){ new (ptr) C{3, (*((int*)(get_sstmac_global_data() + __offset_xyzx))), (*((B*)(get_sstmac_global_data() + __offset_b))), (*((B*)(get_sstmac_global_data() + __offset_c))), 4.5}; };sstmac::CppGlobalRegisterGuard d_sstmac_ctor(__offset_d, __sizeof_d, false, "d", std::move(init_d));
+#include <sstmac/software/process/cppglobal.h>
+#include <sstmac/software/process/memoize.h>
+
+extern int __sizeof_b;
+int __offset_b = 0;extern int __sizeof_c;
+int __offset_c = 0;extern int __sizeof_d;
+int __offset_d = 0;extern int __sizeof_xyzx;
+int __offset_xyzx = 0;

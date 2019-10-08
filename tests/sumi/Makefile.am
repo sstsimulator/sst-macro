@@ -15,6 +15,7 @@ check_PROGRAMS = \
 #  sst_failure_nack
 #  sst_saturation 
 
+AM_LDFLAGS = -lrt
 AM_CPPFLAGS = -I$(top_builddir) -I$(top_srcdir) 
 AM_CPPFLAGS += -I$(top_srcdir)/sumi -I$(top_builddir)/sumi
 AM_CPPFLAGS += -I$(top_srcdir)/sprockit -I$(top_builddir)/sprockit
@@ -27,7 +28,6 @@ exe_LDADD = \
   ../../sstmac/install/libsstmac.la \
   ../../sprockit/sprockit/libsprockit.la
 
-exe_FLAGS = 
 
 sst_deadlock_SOURCES = deadlock.cc
 sst_replica_SOURCES = replica.cc
@@ -48,8 +48,6 @@ sst_deadlock_LDADD = $(exe_LDADD)
 sst_replica_LDADD = $(exe_LDADD) 
 sst_collective_LDADD = $(exe_LDADD) 
 sst_box_domain_LDADD = $(exe_LDADD) 
-
-sst_collective_LDFLAGS = $(exe_FLAGS) 
 
 #sst_domain_LDADD = $(exe_LDADD)
 #sst_heartbeat_LDADD = $(exe_LDADD)

@@ -24,9 +24,9 @@ struct fcontext_stack_t
 
 typedef void (*pfn_fcontext)(fcontext_transfer_t);
 
-fcontext_transfer_t jump_fcontext(fcontext_t const to, void * vp);
+fcontext_transfer_t sstmac_jump_fcontext(fcontext_t const to, void * vp);
 
-fcontext_t make_fcontext(void * sp, size_t size, pfn_fcontext corofn);
+fcontext_t sstmac_make_fcontext(void * sp, size_t size, pfn_fcontext corofn);
 
 } //end extern C
 
@@ -70,23 +70,23 @@ class ThreadingFContext : public ThreadContext
       ThreadContext* from) override {
     fxn_ = func;
     void* stacktop = (char*) stack + sz;
-    ctx_ = make_fcontext(stacktop, sz, start_fcontext_thread);
+    ctx_ = sstmac_make_fcontext(stacktop, sz, start_fcontext_thread);
     args_ = args;
-    ctx_ = jump_fcontext(ctx_, this).ctx;
+    ctx_ = sstmac_jump_fcontext(ctx_, this).ctx;
   }
 
   void pauseContext(ThreadContext* to) override {
     ThreadingFContext* fctx = static_cast<ThreadingFContext*>(to);
-    transfer_ = jump_fcontext(transfer_, nullptr).ctx;
+    transfer_ = sstmac_jump_fcontext(transfer_, nullptr).ctx;
   }
 
   void resumeContext(ThreadContext* from) override {
-    auto newctx = jump_fcontext(ctx_, nullptr).ctx;
+    auto newctx = sstmac_jump_fcontext(ctx_, nullptr).ctx;
     ctx_ = newctx;
   }
 
   void completeContext(ThreadContext* to) override {
-    jump_fcontext(transfer_, nullptr);
+    sstmac_jump_fcontext(transfer_, nullptr);
   }
 
   void jumpContext(ThreadContext* to) override {

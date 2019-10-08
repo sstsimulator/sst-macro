@@ -79,13 +79,13 @@ Rank 55 = 5000.7021ms
 Rank 62 = 5000.7175ms
 Rank 63 = 5000.7255ms
 Aggregate time stats: state
-        Inactive:          0.06074 s
-      idle:intra:          0.00508 s
+        Inactive:          0.06073 s
+      idle:intra:          0.00507 s
     active:intra:          0.00947 s
    stalled:intra:          0.00177 s
-     idle:global:          0.00884 s
+     idle:global:          0.00883 s
    active:global:          0.00819 s
   stalled:global:          0.00505 s
-  idle:injection:          0.00993 s
+  idle:injection:          0.00992 s
 active:injection:          0.01248 s
-Estimated total runtime of           5.00073304 seconds
+Estimated total runtime of           5.00073277 seconds

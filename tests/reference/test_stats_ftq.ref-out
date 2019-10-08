@@ -4,5 +4,5 @@ Aggregate time stats: ftq
         Inactive:          0.00002 s
          Compute:          0.01601 s
            Sleep:          3.00000 s
-             MPI:         13.01756 s
+             MPI:         13.01755 s
 Estimated total runtime of     2.00 seconds

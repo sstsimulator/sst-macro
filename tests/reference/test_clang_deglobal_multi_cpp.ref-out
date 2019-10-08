@@ -1,0 +1,14 @@
+
+char *y, *z = 0;extern int __offset_y; int __sizeof_y = sizeof(char *);static std::function<void(void*)> init_y = [](void* ptr){ new (ptr) char *; };sstmac::CppGlobalRegisterGuard y_sstmac_ctor(__offset_y, __sizeof_y, false, "y", std::move(init_y));extern int __offset_z; int __sizeof_z = sizeof(char *);static std::function<void(void*)> init_z = [](void* ptr){ new (ptr) char *{0}; };sstmac::CppGlobalRegisterGuard z_sstmac_ctor(__offset_z, __sizeof_z, false, "z", std::move(init_z));
+
+void fxn()
+{ char* sstmac_global_data = get_sstmac_global_data();char ** sstmac_y=(char **)(sstmac_global_data + __offset_y); char ** sstmac_z=(char **)(sstmac_global_data + __offset_z); {
+  *(*sstmac_y) = 'a';
+  *(*sstmac_z) = 'b';
+ }}
+#include <sstmac/software/process/cppglobal.h>
+#include <sstmac/software/process/memoize.h>
+
+extern int __sizeof_y;
+int __offset_y = 0;extern int __sizeof_z;
+int __offset_z = 0;

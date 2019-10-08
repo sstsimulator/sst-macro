@@ -68,12 +68,12 @@ class ReplaceAction : public clang::ASTFrontendAction {
   CreateASTConsumer(clang::CompilerInstance& CI, clang::StringRef /* file */) override {
     rewriter_.setSourceMgr(CI.getSourceManager(), CI.getLangOpts());
     visitor_.setCompilerInstance(CI);
-    initPragmas(CI);
+    initPragmas(CI, ASTVisitorCmdLine::mode);
     return llvm::make_unique<SkeletonASTConsumer>(rewriter_, visitor_);
   }
 
  private:
-  void initPragmas(clang::CompilerInstance& CI);
+  void initPragmas(clang::CompilerInstance& CI, pragmas::Mode m);
 
   clang::Rewriter rewriter_;
   GlobalVarNamespace globalNs_;

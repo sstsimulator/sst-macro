@@ -102,10 +102,12 @@ parseOpts(int argc, char **argv, opts &oo)
   bool need_config_file = true;
   bool machine_configured = false;
   int app_exe_num = 1;
+  int use_app_rc = 0;
   option gopt[] = {
     { "help", no_argument, NULL, 'h' },
     { "benchmark", required_argument, NULL, 'b'},
     { "include", required_argument, NULL, 'i' },
+    { "use-app-rc", no_argument, &use_app_rc, 1 },
     { "debug", required_argument, NULL, 'd' },
     { "inf", no_argument, &infinite_network, 1},
     { "configfile", required_argument, NULL, 'f' },
@@ -222,6 +224,10 @@ parseOpts(int argc, char **argv, opts &oo)
   if (debugflags){
     sprockit::Debug::printAllDebugSlots(std::cout);
     return PARSE_OPT_EXIT_SUCCESS;
+  }
+
+  if (use_app_rc){
+    oo.use_app_rc = true;
   }
 
   if (infinite_network) {
