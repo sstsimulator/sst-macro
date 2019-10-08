@@ -9,6 +9,7 @@ clangLdFlagsStr="@CLANG_LDFLAGS@"
 clangLibtoolingCxxFlagsStr="@CLANG_LIBTOOLING_CXX_FLAGS@ @MACSDK_CXXFLAGS@"
 clangLibtoolingCFlagsStr="@CLANG_LIBTOOLING_C_FLAGS@ @MACSDK_CFLAGS@"
 defaultIncludePaths="@DEFAULT_INCLUDE_PATHS@"
+clangBin="@CLANG_INSTALL_DIR@"
 
 sstCppFlags = [
 "@SST_CPPFLAGS@",
@@ -37,7 +38,6 @@ cc="@CC@"
 cxx="@CXX@"
 spackcc="@SPACK_CC@"
 spackcxx="@SPACK_CXX@"
-
 
 # Configure the PYTHONPATH
 def setPythonPath():

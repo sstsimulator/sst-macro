@@ -243,7 +243,6 @@ AC_CONFIG_FILES([
  sstmac/backends/common/Makefile
  sstmac/backends/native/Makefile
  sstmac/backends/mpi/Makefile
- sstmac/llvm/Makefile
  sstmac/main/Makefile
  sstmac/common/Makefile
  sstmac/replacements/Makefile
