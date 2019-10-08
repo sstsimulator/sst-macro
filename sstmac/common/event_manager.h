@@ -45,7 +45,10 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef SSTMAC_COMMON_EVENTMANAGER_H_INCLUDED
 #define SSTMAC_COMMON_EVENTMANAGER_H_INCLUDED
 
+#ifndef __STDC_FORMAT_MACROS
 #define __STDC_FORMAT_MACROS
+#endif
+
 #include <sstmac/common/timestamp.h>
 #include <sstmac/common/event_location.h>
 

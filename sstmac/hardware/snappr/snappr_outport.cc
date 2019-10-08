@@ -28,6 +28,8 @@ SnapprOutPort::SnapprOutPort(SST::Params& params, const std::string &arb,
                              Component* parent)
   : arbitration_scheduled(false), inports(nullptr),
     portName_(subId), number_(number),
+    state_ftq(nullptr),
+    queue_depth_ftq(nullptr),
     byte_delay(byt_delay), congestion_(congestion), flow_control_(flow_control),
     parent_(parent), notifier_(nullptr)
 {
@@ -36,11 +38,12 @@ SnapprOutPort::SnapprOutPort(SST::Params& params, const std::string &arb,
   xmit_idle = parent->registerStatistic<uint64_t>(params, "xmit_idle", subId);
   xmit_stall = parent->registerStatistic<uint64_t>(params, "xmit_stall", subId);
   bytes_sent = parent->registerStatistic<uint64_t>(params, "bytes_sent", subId);
+#if !SSTMAC_INTEGRATED_SST_CORE
   state_ftq = dynamic_cast<FTQCalendar*>(
         parent->registerMultiStatistic<int,uint64_t,uint64_t>(params, "state", subId));
   queue_depth_ftq = dynamic_cast<FTQCalendar*>(
         parent->registerMultiStatistic<int,uint64_t,uint64_t>(params, "queue_depth", subId));
-
+#endif
 
   ftq_idle_state = FTQTag::allocateCategoryId("idle:" + portName);
   ftq_active_state = FTQTag::allocateCategoryId("active:" + portName);
@@ -84,32 +87,40 @@ SnapprOutPort::send(SnapprPacket* pkt, Timestamp now)
   if (!stall_start.empty()){
     TimeDelta stall_time = now - stall_start;
     xmit_stall->addData(stall_time.ticks());
+#if !SSTMAC_INTEGRATED_SST_CORE
     if (state_ftq){
       state_ftq->addData(ftq_stalled_state, stall_start.time.ticks(), stall_time.ticks());
     }
+#endif
     if (stall_start > next_free){
       //we also have idle time
       TimeDelta idle_time = stall_start -next_free;
       xmit_idle->addData(idle_time.ticks());
+#if !SSTMAC_INTEGRATED_SST_CORE
       if (state_ftq){
         state_ftq->addData(ftq_idle_state, next_free.time.ticks(), idle_time.ticks());
       }
+#endif
     }
     stall_start = Timestamp();
   } else if (now > next_free){
     TimeDelta idle_time = now - next_free;
     xmit_idle->addData(idle_time.ticks());
+#if !SSTMAC_INTEGRATED_SST_CORE
     if (state_ftq){
       state_ftq->addData(ftq_idle_state, next_free.time.ticks(), idle_time.ticks());
     }
+#endif
   }
 
   TimeDelta time_to_send = pkt->numBytes() * byte_delay;
   bytes_sent->addData(pkt->numBytes());
   xmit_active->addData(time_to_send.ticks());
+#if !SSTMAC_INTEGRATED_SST_CORE
   if (state_ftq){
     state_ftq->addData(ftq_active_state, now.time.ticks(), time_to_send.ticks());
   }
+#endif
   next_free = now + time_to_send;
   pkt->setTimeToSend(time_to_send);
   pkt->accumulateCongestionDelay(now);
@@ -122,11 +133,11 @@ SnapprOutPort::send(SnapprPacket* pkt, Timestamp now)
   link->send(pkt);
 
   if (flow_control_ && inports){
-    pkt_debug("sending credit to port=%d on vl=%d at t=%8.4e: %s",
-              pkt->inport(), pkt->inputVirtualLane(), next_free.sec(), pkt->toString().c_str());
     auto& inport = inports[pkt->inport()];
-    inport.link->send(time_to_send,
-                      new SnapprCredit(pkt->byteLength(), pkt->inputVirtualLane(), inport.src_outport));
+    auto* credit = new SnapprCredit(pkt->byteLength(), pkt->inputVirtualLane(), inport.src_outport);
+    pkt_debug("sending credit to port=%d on vl=%d at t=%8.4e: %s",
+              inport.src_outport, pkt->inputVirtualLane(), next_free.sec(), pkt->toString().c_str());
+    inport.link->send(time_to_send, credit);
   } else {
     //immediately add the credits back - we don't worry about credits here
     addCredits(pkt->virtualLane(), pkt->byteLength());
@@ -136,8 +147,8 @@ SnapprOutPort::send(SnapprPacket* pkt, Timestamp now)
     notifier_->notify(next_free, pkt);
   }
 
-  pkt_debug("packet leaving port %d at t=%8.4e: %s",
-            number_, next_free.sec(), pkt->toString().c_str());
+  pkt_debug("packet leaving port=%d vl=%d at t=%8.4e: %s",
+            number_, pkt->virtualLane(), next_free.sec(), pkt->toString().c_str());
   if (ready()){
     scheduleArbitration();
   }
@@ -216,20 +227,22 @@ SnapprOutPort::arbitrate()
 void
 SnapprOutPort::logQueueDepth()
 {
+#if !SSTMAC_INTEGRATED_SST_CORE
   if (queue_depth_ftq){
     Timestamp now = parent_->now();
     TimeDelta dt = now - last_queue_depth_collection;
     queue_depth_ftq->addData(queueLength(), last_queue_depth_collection.time.ticks(), dt.ticks());
     last_queue_depth_collection = now;
   }
+#endif
 }
 
 void
 SnapprOutPort::tryToSendPacket(SnapprPacket* pkt)
 {
-  pkt_debug("trying to send payload %s on inport %d:%d going to port %d:%d",
+  pkt_debug("trying to send payload %s on inport %d:%d going to port %d:%d:%d",
             pkt->toString().c_str(), pkt->inport(), pkt->inputVirtualLane(),
-            pkt->nextPort(), pkt->virtualLane());
+            pkt->nextPort(), pkt->virtualLane(), pkt->deadlockVC());
 
   Timestamp now = parent_->now();
   pkt->setArrival(now);

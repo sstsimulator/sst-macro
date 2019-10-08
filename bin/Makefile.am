@@ -35,7 +35,7 @@ bin_SCRIPTS = sstmacro-config sstccvars.py
 
 EXTRA_DIST = sstmacro-config.in sstccvars.py.in tools config_tools manifest uq plots
 
-AM_LDFLAGS += -ldl -lrt
+AM_LDFLAGS += -ldl
 
 AM_CPPFLAGS += \
  -I$(top_builddir)/bin \
@@ -98,7 +98,6 @@ sstmac_clang_CXXFLAGS = -fno-rtti $(AM_CXXFLAGS)
 sstmac_clang_CPPFLAGS = $(CLANG_CPPFLAGS) $(AM_CPPFLAGS)
 sstmac_clang_LDFLAGS = $(CLANG_LDFLAGS) \
  -Wl,-rpath,@CLANG_INSTALL_DIR@/lib \
- -lrt \
  -lclangFrontend \
  -lclangFrontendTool \
  -lclangTooling \

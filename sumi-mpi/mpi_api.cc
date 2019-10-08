@@ -142,9 +142,11 @@ MpiApi::MpiApi(SST::Params& params, sstmac::sw::App* app,
   double test_delay_s = params.find<SST::UnitAlgebra>("test_delay", "0s").getValue().toDouble();
   test_delay_us_ = test_delay_s * 1e6;
 
+#if !SSTMAC_INTEGRATED_SST_CORE
   std::string subname = sprockit::printf("app%d.rank%d", app->aid(), app->tid());
   delays_ = app->os()->node()->registerMultiStatistic<int,int,int,int,uint64_t,
       double,double,double,double,double,double>(params, "delays", subname);
+#endif
 
 #ifdef SSTMAC_OTF2_ENABLED
 #if !SSTMAC_INTEGRATED_SST_CORE
@@ -591,6 +593,7 @@ MpiApi::logMessageDelay(Message *msg, uint64_t bytes, int stage,
                         sstmac::TimeDelta sync_delay,
                         sstmac::TimeDelta active_delay)
 {
+#if !SSTMAC_INTEGRATED_SST_CORE
   current_call_.idle += sync_delay;
 
   if (crossed_comm_world_barrier_){
@@ -599,12 +602,13 @@ MpiApi::logMessageDelay(Message *msg, uint64_t bytes, int stage,
                      msg->congestionDelay().sec(), msg->minDelay().sec(),
                      sync_delay.sec(), active_delay.sec());
   }
-
+#endif
 }
 
 void
 MpiApi::finishCurrentMpiCall()
 {
+#if !SSTMAC_INTEGRATED_SST_CORE
   if (current_call_.idle.ticks()){
     auto* thr = parent_app_->os()->activeThread();
     if (thr->callGraph()){
@@ -614,6 +618,7 @@ MpiApi::finishCurrentMpiCall()
       current_call_.idle = sstmac::TimeDelta(); //zero for next guy
     }
   }
+#endif
 }
 
 #define enumcase(x) case x: return #x

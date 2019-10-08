@@ -11,7 +11,7 @@
 namespace sstmac {
 namespace hw {
 
-SnapprMemoryModel::SnapprMemoryModel(Component *nd, SST::Params &params) :
+SnapprMemoryModel::SnapprMemoryModel(SST::Component *nd, SST::Params &params) :
   channelInterleaver_(0), flowId_(0),
   MemoryModel(nd, params)
 {

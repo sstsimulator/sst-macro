@@ -15,7 +15,6 @@ check_PROGRAMS = test_cpuset
 
 test_cpuset_SOURCES = test_cpuset.cc
 
-AM_LDFLAGS += -lrt
 AM_CPPFLAGS += -I$(top_builddir)/sstmac/replacements \
  -I$(srcdir) \
  -I$(top_srcdir)/sstmac/replacements \

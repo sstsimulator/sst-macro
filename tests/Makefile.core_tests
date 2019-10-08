@@ -7,6 +7,10 @@ CORETESTS+= \
   test_sumi_collective \
   test_core_apps_ping_pong_snappr \
   test_core_apps_ping_pong_mem_thrash \
+  test_core_apps_ping_all_dfly_snappr \
+  test_core_apps_ping_all_dfly_snappr_rr \
+  test_core_apps_ping_all_dfly_plus_snappr \
+  test_core_apps_ping_all_hypercube_snappr \
   test_core_apps_mem_bandwidth_snappr1 \
   test_core_apps_mem_bandwidth_snappr4 \
   test_core_apps_mem_bandwidth_pisces1 \
@@ -46,6 +50,7 @@ CORETESTS+= \
   test_core_apps_ping_all_fattree4 \
   test_core_apps_ping_all_fattree_tapered
 
+#  test_core_apps_ping_all_fat_tree_snappr \
 #  test_core_apps_ping_pong_qos_25_75 \
 #  test_core_apps_distributed_service 
 

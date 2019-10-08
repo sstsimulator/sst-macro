@@ -15,7 +15,6 @@
 
 include $(top_srcdir)/Makefile.common
 
-AM_LDFLAGS += -lrt
 AM_CPPFLAGS += \
   -I$(top_builddir)/sst-dumpi \
 	-I$(top_srcdir)/sst-dumpi \

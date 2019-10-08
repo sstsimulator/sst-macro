@@ -49,40 +49,10 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/stats/stat_collector.h>
 #include <sstmac/software/process/thread_fwd.h>
 
-#define CallGraphCreateTag(name) \
-  struct graph_viz_##name : public sstmac::sw::CallGraphID<graph_viz_##name> {}; \
-  static sstmac::sw::CallGraphRegistration graph_viz_reg_##name(#name, graph_viz_##name::id)
-
-#define CallGraphTag(name) graph_viz_##name::id
-
 namespace sstmac {
 namespace sw {
 
-struct CallGraphRegistration {
-  CallGraphRegistration(const char* name, int id);
-
-  static int numIds() {
-    return id_count;
-  }
-
-  static const char* name(int id){
-    auto iter = names->find(id);
-    return iter->second;
-  }
-
-  static int id_count;
-
- private:
-  static std::unique_ptr<std::map<int,const char*>> names;
-};
-
-template <class T>
-struct CallGraphID {
- public:
-  static int id;
-};
-template <class T> int CallGraphID<T>::id = CallGraphRegistration::id_count++;
-
+#if !SSTMAC_INTEGRATED_SST_CORE
 class CallGraph : public SST::Statistics::CustomStatistic
 {
  public:
@@ -232,45 +202,14 @@ class CallGraphOutput : public sstmac::StatisticOutput
   std::ofstream csv_summary_;
 
 };
+#endif
+
 
 #define BACKTRACE_NFXN 50
 typedef int CallGraphTrace[BACKTRACE_NFXN];
 
 }
 }
-
-#if SSTMAC_HAVE_CALL_GRAPH
-#define CallGraphAppend(name) \
-  struct graph_viz_##name : public sstmac::sw::CallGraphID<graph_viz_##name> {}; \
-  static sstmac::sw::CallGraphRegistration __call_graph_register_variable__(#name, graph_viz_##name::id); \
-  ::sstmac::sw::CallGraphIncrementStack __call_graph_append_variable__(graph_viz_##name::id)
-
-namespace sstmac {
-namespace sw {
-
-class CallGraphIncrementStack
-{
- public:
-  /**
-   * @brief graph_viz_increment_stack
-   *        Should only ever be called from app threads, not the DES thread
-   * @param The name of the function currently being invoked
-   * @param Optional boolean to turn off collection.
-   *        There are certain cass where this might get called from
-   *        the DES thread, which is an error. This allows
-   *        the backtrace to be turned off on the DES thread
-   */
-  CallGraphIncrementStack(int id);
-
-  ~CallGraphIncrementStack();
-
-};
-
-}
-}
-#else
-#define CallGraphAppend(...) int __call_graph_append_variable__
-#endif
 
 
 #endif // GRAPHVIZ_H

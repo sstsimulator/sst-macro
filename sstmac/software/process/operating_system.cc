@@ -57,7 +57,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/logp/logp_switch.h>
 #include <sstmac/software/libraries/service.h>
 #include <sstmac/software/launch/app_launcher.h>
-#include <sstmac/software/process/graphviz.h>
+#include <sstmac/software/process/backtrace.h>
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/time.h>
 #include <sstmac/software/process/progress_queue.h>

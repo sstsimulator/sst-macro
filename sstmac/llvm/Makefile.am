@@ -34,6 +34,7 @@ libmemtrace_la_SOURCES = \
 	memtraceTools.cc 
 
 libmemtrace_la_CXXFLAGS = \
+  ${AM_CXXFLAGS} \
   -fno-rtti \
 	-fno-exceptions
 

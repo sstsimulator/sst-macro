@@ -50,7 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 
 #include <sstream>
-#include <sstmac/software/process/graphviz.h>
+#include <sstmac/software/process/backtrace.h>
 #include <sprockit/statics.h>
 #include <sprockit/basic_string_tokenizer.h>
 #include <sstmac/software/process/operating_system.h>
@@ -77,6 +77,16 @@ namespace sw {
 int CallGraphRegistration::id_count = 0;
 std::unique_ptr<std::map<int,const char*>> CallGraphRegistration::names;
 
+CallGraphRegistration::CallGraphRegistration(const char* name, int id)
+{
+  if (!names){
+    names = std::unique_ptr<std::map<int,const char*>>(new std::map<int,const char*>);
+  }
+  //*id = id_count++;
+  (*names)[id] = name;
+}
+
+#if !SSTMAC_INTEGRATED_SST_CORE
 #if SSTMAC_HAVE_CALL_GRAPH
 CallGraphIncrementStack::CallGraphIncrementStack(int id)
 {
@@ -125,15 +135,6 @@ CallGraph::FunctionTrace::summary(const char* fxn) const
     }
   }
   return sstr.str();
-}
-
-CallGraphRegistration::CallGraphRegistration(const char* name, int id)
-{
-  if (!names){
-    names = std::unique_ptr<std::map<int,const char*>>(new std::map<int,const char*>);
-  }
-  //*id = id_count++;
-  (*names)[id] = name;
 }
 
 CallGraph::CallGraph(SST::BaseComponent *comp, const std::string &name,
@@ -307,6 +308,8 @@ CallGraphOutput::stopOutputGroup()
 {
   csv_summary_.close();
 }
+
+#endif
 
 }
 }

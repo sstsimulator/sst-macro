@@ -81,8 +81,12 @@ class SimpleNode :
     {"recv_bytes", "number of bytes receive on a port", "bytes", 1},
     {"spy_bytes", "a spyplot of the bytes sent", "bytes", 1},
     {"otf2", "Write an OTF2 trace", "n/a", 1},
+    {"delays", "Statistic for tracking individual message delays", "n/a", 1},
+    {"xmit_stall", "congestion stalls", "cycles", 1},
+    {"xmit_active", "activity statistic", "cycles", 1}, // Name, Desc, Units, Enable Level
+    {"xmit_idle", "idle statistic", "cycles", 1}, // Name, Desc, Units, Enable Level
+    {"bytes_sent", "data sent on port", "bytes", 1}
   )
-
 
   SimpleNode(uint32_t id, SST::Params& params);
 

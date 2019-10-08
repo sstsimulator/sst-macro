@@ -10,7 +10,6 @@
 #
 include $(top_srcdir)/Makefile.common
 
-AM_LDFLAGS += -lrt
 AM_CPPFLAGS += \
  -I$(top_srcdir)/tests/mpi/include  \
  -I$(top_srcdir)/sumi \

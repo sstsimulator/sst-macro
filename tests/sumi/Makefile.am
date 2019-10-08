@@ -15,7 +15,6 @@ check_PROGRAMS = \
 #  sst_failure_nack
 #  sst_saturation 
 
-AM_LDFLAGS = -lrt
 AM_CPPFLAGS = -I$(top_builddir) -I$(top_srcdir) 
 AM_CPPFLAGS += -I$(top_srcdir)/sumi -I$(top_builddir)/sumi
 AM_CPPFLAGS += -I$(top_srcdir)/sprockit -I$(top_builddir)/sprockit

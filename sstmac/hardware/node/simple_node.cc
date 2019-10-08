@@ -121,7 +121,7 @@ SimpleNode::execute(ami::COMP_FUNC func, Event* data, ExecutionEvent* cb)
 void
 SimpleNode::unblock(Event *ev)
 {
-#if SSTMAC_INTEGRATED_SST_CORE
+#if SSTMAC_HAVE_SST_ELEMENTS
   auto* nev = dynamic_cast<SST::ArielComponent::NotifyEvent*>(ev);
   os_->unblockBlockedThread();
 #endif

@@ -93,7 +93,7 @@ SnapprNIC::SnapprNIC(SST::Component* parent, SST::Params& params) :
   for (int i=0; i < num_ports; ++i){
     std::string subId = sprockit::printf("NIC%d:%d", addr(), i);
     outports_.emplace_back(inj_params, arbtype, subId, "NIC_send", i, inj_byte_delay_,
-                           true/*always need congestion on NIC*/, flow_control_, parent);
+                           true/*always need congestion on NIC*/, flow_control_, NIC::parent());
     SnapprOutPort& p = outports_[i];
     p.setVirtualLanes(qosLevels, credits);
     p.addTailNotifier(this, &SnapprNIC::handleTailPacket);
@@ -159,8 +159,10 @@ SnapprNIC::connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link)
 void
 SnapprNIC::connectInput(int src_outport, int dst_inport, EventLink::ptr&& link)
 {
-  switch_outport_ = src_outport;
-  credit_link_ = std::move(link);
+  if (dst_inport == Injection){
+    switch_outport_ = src_outport;
+    credit_link_ = std::move(link);
+  }
 }
 
 void
@@ -260,7 +262,10 @@ SnapprNIC::eject(SnapprPacket* pkt)
 
   sendExecutionEvent(ej_next_free_, qev);
   if (flow_control_){
-    credit_link_->send(new SnapprCredit(pkt->byteLength(), pkt->virtualLane(), switch_outport_));
+    auto* credit = new SnapprCredit(pkt->byteLength(), pkt->virtualLane(), switch_outport_);
+    pkt_debug("crediting with switch port %d:%d for %" PRIu64 " offset=%" PRIu64,
+              switch_outport_, pkt->virtualLane(), pkt->flowId(), pkt->offset());
+    credit_link_->send(credit);
   }
 }
 
@@ -290,7 +295,7 @@ SnapprNIC::handleCredit(Event *ev)
   nic_debug("received %" PRIu32 " credits, buffer now %" PRIu64,
             credit->numBytes(), buffer_remaining_);
   copyToNicBuffer();
-  //this transfer ownership - don't delete here
+  //this transfers ownership - don't delete here
   outports_[credit->port()].handleCredit(credit);
 }
 
