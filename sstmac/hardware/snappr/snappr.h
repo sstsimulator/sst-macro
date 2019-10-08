@@ -130,6 +130,10 @@ class SnapprPacket :
     return congestion_delay_;
   }
 
+  void clearCongestionDelay(){
+    congestion_delay_ = TimeDelta();
+  }
+
   void accumulateCongestionDelay(TimeDelta delay){
     congestion_delay_ += delay;
   }

@@ -212,7 +212,7 @@ Topology::outputBox(std::ostream& os,
 void
 Topology::outputXYZ(const std::string& path)
 {
-  std::string output = get_outfile(path, dot_file_);
+  std::string output = get_outfile(path, xyz_file_);
   if (output.empty()) return;
 
   int nsw = numSwitches();

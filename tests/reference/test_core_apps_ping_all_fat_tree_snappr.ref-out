@@ -91,7 +91,7 @@ stalled:agg->leaf:          0.00351 s
   idle:agg->core:          0.02203 s
 active:agg->core:          0.00512 s
 stalled:agg->core:          0.00169 s
-  idle:core->agg:          0.02061 s
+  idle:core->agg:          0.02012 s
 active:core->agg:          0.00512 s
-stalled:core->agg:          0.00412 s
+stalled:core->agg:          0.00461 s
 Estimated total runtime of           5.00059642 seconds

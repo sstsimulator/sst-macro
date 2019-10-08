@@ -5,6 +5,7 @@
 #include <sstmac/skeleton.h>
 #include <sprockit/keyword_registration.h>
 #include <sprockit/errors.h>
+#include <algorithm>
 
 #define sstmac_app_name dfly_worst_case
 
@@ -97,6 +98,7 @@ int USER_MAIN(int argc, char** argv)
   }
 
   if (dst_group == -1){
+    MPI_Finalize();
     return 0; //no partner
   }
 
@@ -122,6 +124,10 @@ int USER_MAIN(int argc, char** argv)
   }
 
   int dst_rank = concentration * (dst_group * group_size + dst_intra_grp) + my_node_offset;
+  if (dst_rank >= size){
+    spkt_abort_printf("got bad dest rank for %d: %d,%d,%d", 
+                    rank, my_node_offset, dst_intra_grp, dst_group);
+  }
   static const int msize = 326144;
   static const int repeats = 4;
 

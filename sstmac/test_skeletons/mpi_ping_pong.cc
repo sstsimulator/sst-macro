@@ -28,6 +28,7 @@ int USER_MAIN(int argc, char** argv)
   std::vector<int> dst = sstmac::getArrayParam<int>("destinations");
   bool pong = sstmac::getParam<bool>("pong", true);
   bool ping = sstmac::getParam<bool>("ping", true);
+  bool barrier = sstmac::getParam<bool>("barrier", true);
 
   MPI_Init(&argc, &argv);
   int rank, size;
@@ -39,7 +40,7 @@ int USER_MAIN(int argc, char** argv)
       printf("ping-pong between %i and %i\n",src[i],dst[i]);
     for (int s : sizes) { 
       double begin,end;
-      MPI_Barrier(MPI_COMM_WORLD);
+      if (barrier) MPI_Barrier(MPI_COMM_WORLD);
       if (rank == src[i])
         begin = MPI_Wtime();
       if (ping) sendrecv(rank,src[i],dst[i],s);

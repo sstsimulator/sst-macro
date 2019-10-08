@@ -255,7 +255,6 @@ SnapprNIC::eject(SnapprPacket* pkt)
     TimeDelta min_delay = total_delay - netmsg->injectionDelay() 
                                       - pkt->congestionDelay() 
                                       - netmsg->congestionDelay();
-    sumi::MpiMessage* msg = dynamic_cast<sumi::MpiMessage*>(netmsg);
     netmsg->setMinDelay(min_delay);
   }
 
@@ -308,6 +307,8 @@ SnapprNIC::handleTailPacket(Timestamp done, SnapprPacket* pkt)
     auto* ev = newCallback(this, &NIC::sendToNode, ack);
     sendExecutionEvent(done, ev);
   }
+  //congestion delays on the NIC outport should not be added here
+  pkt->clearCongestionDelay();
 }
 
 void
