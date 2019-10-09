@@ -47,6 +47,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/common/sstmac_config.h>
 #include <map>
+#include <memory>
 
 #define CallGraphCreateTag(name) \
   struct graph_viz_##name : public sstmac::sw::CallGraphID<graph_viz_##name> {}; \
