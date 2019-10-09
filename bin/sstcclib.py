@@ -71,15 +71,16 @@ class TempFiles:
   def cleanUp(self):
     import os
     import sys
-    cmdall = "rm -f %s" % " ".join(self.files)
-    cmdobjects = "rm -f %s" % " ".join([f for f in self.files if f.endswith('.o')])
     import traceback
-    if self.doDeleteAll:
+    objects = [f for f in self.files if f.endswith('.o')]
+    if self.doDeleteAll and self.files:
+        cmdall = "rm -f %s" % " ".join(self.files)
         if self.verbose:
           sys.stderr.write("%s\n" % cmdall)
         os.system(cmdall)
         self.files = []
-    if self.doDeleteObjects:
+    if self.doDeleteObjects and objects:
+        cmdobjects = "rm -f %s" % " ".join(objects)
         if self.verbose:
           sys.stderr.write("%s\n" % cmdobjects)
         os.system(cmdobjects)

@@ -5,9 +5,9 @@ def addLink(ctx, ldTarget, args, cmds, objects, toExe=False):
   from sstccvars import soFlagsStr
   ldpathMaker = "-Wl,-rpath,%s/lib" % prefix
   linkCmdArr = [ctx.ld, ldpathMaker] 
+  linkCmdArr.extend(ctx.ldFlags)
   if not args.sst_component and not toExe:
     linkCmdArr.extend(soFlagsStr.split())
-  linkCmdArr.extend(ctx.ldFlags)
   linkCmdArr.extend(ctx.libs)
   linkCmdArr.extend(ctx.compilerFlags)
   linkCmdArr.extend(map(lambda x: "-W%s" % x, args.Wl)) #add all the -Wl flags for now
