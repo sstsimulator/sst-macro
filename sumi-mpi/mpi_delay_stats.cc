@@ -43,7 +43,7 @@ void
 DelayStatsOutput::startOutputGroup(sstmac::StatisticGroup *grp)
 {
   auto outfile = grp->name + ".csv";
-  out_ = std::ofstream(outfile);
+  out_.open(outfile);
   out_ << "component,src,dst,type,stage,size,sync,injection,network,min,active_sync,active_total";
 }
 
