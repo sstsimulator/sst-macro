@@ -169,5 +169,17 @@ def addComponentCompile(ctx, sourceFile, outputFile, args, cmds):
   cmds.append([None,buildArgs,[]])
 
 def addCompile(ctx, sourceFile, outputFile, args, cmds):
-  pass
+  ppArgs = [ctx.compiler]
+  for entry in ctx.directIncludes:
+    ppArgs.append("-include")
+    ppArgs.append(entry)
+  ppArgs.extend(map(lambda x: "-D%s" % x, ctx.defines))
+  ppArgs.extend(map(lambda x: "-I%s" % x, args.I))
+  ppArgs.extend(ctx.cppFlags)
+  ppArgs.extend(ctx.compilerFlags)
+  ppArgs.append("-c")
+  ppArgs.append(sourceFile)
+  ppArgs.append("-o")
+  ppArgs.append(outputFile)
+  cmds.append([outputFile,ppArgs,[]]) #pipe file, no extra temps
 
