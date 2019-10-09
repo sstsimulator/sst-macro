@@ -120,16 +120,23 @@ ThreadInfo::registerUserSpaceVirtualThread(int phys_thread_id, void *stack,
         sstmac_global_stacksize);
   }
 
-  
   configureStack(phys_thread_id, stack, globalsMap, tlsMap);
 
+#if SSTMAC_INTEGRATED_SST_CORE
+  //there is no parent user-space thread...
+  static std::vector<char> fake_globals(1e6);
+  static std::vector<char> fake_tls(1e6);
+  void** currentGlobalsPtr = (void**) &fake_globals[0];
+  void** currentTlsPtr = (void**) &fake_tls[0];
+#else
   int activeStack; int* activeStackPtr = &activeStack;
   intptr_t stackTopInt = sstmac_global_stacksize //avoid errors if this is zero
-        ? ((intptr_t)activeStackPtr/sstmac_global_stacksize)*sstmac_global_stacksize
-        : 0;
+      ? ((intptr_t)activeStackPtr/sstmac_global_stacksize)*sstmac_global_stacksize
+      : 0;
 
   void** currentGlobalsPtr = (void**)(stackTopInt + SSTMAC_TLS_GLOBAL_MAP);
   void** currentTlsPtr = (void**)(stackTopInt + SSTMAC_TLS_TLS_MAP);
+#endif
 
   globals_lock.lock();
   if (globalsMap && isAppStartup){
