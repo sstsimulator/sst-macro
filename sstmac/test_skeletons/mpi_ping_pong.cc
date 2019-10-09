@@ -12,7 +12,7 @@ RegisterKeywords(
  { "destinations", "ranks of recvers" },
 );
 
-void ping(int rank, int src, int dst, int msize) {
+static void sendrecv(int rank, int src, int dst, int msize) {
   if (rank == src) {
     MPI_Send(NULL, msize, MPI_INT, dst, 0, MPI_COMM_WORLD);
   } else if (rank == dst) {
@@ -26,6 +26,9 @@ int USER_MAIN(int argc, char** argv)
  
   std::vector<int> src = sstmac::getArrayParam<int>("sources");
   std::vector<int> dst = sstmac::getArrayParam<int>("destinations");
+  bool pong = sstmac::getParam<bool>("pong", true);
+  bool ping = sstmac::getParam<bool>("ping", true);
+  bool barrier = sstmac::getParam<bool>("barrier", true);
 
   MPI_Init(&argc, &argv);
   int rank, size;
@@ -37,15 +40,17 @@ int USER_MAIN(int argc, char** argv)
       printf("ping-pong between %i and %i\n",src[i],dst[i]);
     for (int s : sizes) { 
       double begin,end;
-      MPI_Barrier(MPI_COMM_WORLD);
+      if (barrier) MPI_Barrier(MPI_COMM_WORLD);
       if (rank == src[i])
         begin = MPI_Wtime();
-      ping(rank,src[i],dst[i],s);
-      ping(rank,dst[i],src[i],s);
+      if (ping) sendrecv(rank,src[i],dst[i],s);
+      if (pong) sendrecv(rank,dst[i],src[i],s);
       if (rank == src[i]) {
         end = MPI_Wtime();
-        double time = (end - begin)*10e3;
-        printf("%i: %8.4f ms\n", int(s * sizeof(int)), time);
+        double time = (end - begin);
+        int bytes = s * sizeof(int);
+        double bw = bytes / time / 1e9;
+        printf("%i: %8.4f GB/s\n", bytes, bw);
       }
     }
   }

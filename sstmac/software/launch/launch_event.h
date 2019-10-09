@@ -97,9 +97,9 @@ class LaunchRequest : public hw::NetworkMessage
                const std::string& libname) :
     ty_(ty), tid_(tid),
     unique_name_(unique_name),
-    NetworkMessage(flow_id, libname, aid, to, from,
-                    256, //use rough fixed size to avoid platform-dependent sizeof(...)
-                    false, nullptr, header{})
+    NetworkMessage(0/**qos**/, flow_id, libname, aid, to, from,
+                   256, //use rough fixed size to avoid platform-dependent sizeof(...)
+                   false, nullptr, header{})
   {
   }
 

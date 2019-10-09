@@ -95,6 +95,8 @@ class Interconnect
     return num_nodes_;
   }
 
+  void deadlockCheck();
+
   SwitchId nodeToLogpSwitch(NodeId nid) const;
 
  protected:

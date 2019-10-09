@@ -62,7 +62,7 @@ namespace sstmac {
 class StatisticOutput;
 class StatisticBase;
 class StatisticFieldsOutput;
-class StatisticGroup;
+struct StatisticGroup;
 template <class T> class Statistic;
 }
 namespace SST {

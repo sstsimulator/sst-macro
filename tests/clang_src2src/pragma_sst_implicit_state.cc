@@ -14,11 +14,11 @@ void memoFxn(int n){
   for (int i=0; i < n; ++i);
 }
 
-#pragma sst ImplicitState size(param) temp(param)
+#pragma sst implicit_state size(param) temp(param)
 void testFxn(int param){
 }
 
-#pragma sst ImplicitState size(param) temp(param)
+#pragma sst implicit_state size(param) temp(param)
 void anotherTestFxn(int param){
   param += 5;
 }
@@ -43,9 +43,9 @@ int fxn()
       mul *= x[idx[i]];
     }
   }
-#pragma sst ImplicitState temp(mul)
+#pragma sst implicit_state temp(mul)
   memoFxn(10);
-#pragma sst ImplicitState length(5)
+#pragma sst implicit_state length(5)
   memoFxn(i+12);
   return 0;
 }

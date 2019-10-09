@@ -69,7 +69,10 @@ class SimpleNode :
     "Basic processor that only does timed_message computes",
     COMPONENT_CATEGORY_NETWORK)
 
-  SST_ELI_DOCUMENT_PORTS(SSTMAC_VALID_PORTS)
+  SST_ELI_DOCUMENT_PORTS(
+    SSTMAC_VALID_PORTS,
+    {"unblock%(core)d", "receives unblock events from other components", {}}
+  )
 
   SST_ELI_DOCUMENT_STATISTICS(
     {"xmit_wait", "stalled cycles with data but no credits", "nanoseconds", 1},
@@ -78,8 +81,12 @@ class SimpleNode :
     {"recv_bytes", "number of bytes receive on a port", "bytes", 1},
     {"spy_bytes", "a spyplot of the bytes sent", "bytes", 1},
     {"otf2", "Write an OTF2 trace", "n/a", 1},
+    {"delays", "Statistic for tracking individual message delays", "n/a", 1},
+    {"xmit_stall", "congestion stalls", "cycles", 1},
+    {"xmit_active", "activity statistic", "cycles", 1}, // Name, Desc, Units, Enable Level
+    {"xmit_idle", "idle statistic", "cycles", 1}, // Name, Desc, Units, Enable Level
+    {"bytes_sent", "data sent on port", "bytes", 1}
   )
-
 
   SimpleNode(uint32_t id, SST::Params& params);
 
@@ -88,7 +95,13 @@ class SimpleNode :
   virtual void execute(ami::COMP_FUNC func,
          Event* data, ExecutionEvent* cb);
 
+  void unblock(Event* ev);
 
+  void init(unsigned int phase);
+ private:
+#if SSTMAC_HAVE_SST_ELEMENTS
+  std::vector<SST::Link*> unblock_links_;
+#endif
 };
 
 

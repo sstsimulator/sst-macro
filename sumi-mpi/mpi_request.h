@@ -45,13 +45,11 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef SSTMAC_SOFTWARE_LIBRARIES_MPI_MPIREQUEST_H_INCLUDED
 #define SSTMAC_SOFTWARE_LIBRARIES_MPI_MPIREQUEST_H_INCLUDED
 
-#include <sstmac/software/process/key.h>
 #include <sumi/collective.h>
 #include <sumi-mpi/mpi_status.h>
 #include <sumi-mpi/mpi_message.h>
 #include <sumi-mpi/mpi_comm/mpi_comm_fwd.h>
 #include <sstmac/common/sstmac_config.h>
-
 
 namespace sumi {
 
@@ -233,19 +231,17 @@ class MpiRequest :
     return optype_;
   }
 
-#if SSTMAC_COMM_DELAY_STATS
   sstmac::Timestamp waitStart() const {
     return wait_start_;
+  }
+
+  void setWaitStart(sstmac::Timestamp t){
+    wait_start_ = t;
   }
 
   bool activeWait() const {
     return !wait_start_.empty();
   }
-
-  void setWaitStart(sstmac::Timestamp t) {
-    wait_start_ = t;
-  }
-#endif
 
  private:
   MPI_Status stat_;
@@ -256,9 +252,7 @@ class MpiRequest :
   PersistentOp* persistent_op_;
   CollectiveOpBase::ptr collective_op_;
 
-#if SSTMAC_COMM_DELAY_STATS
   sstmac::Timestamp wait_start_;
-#endif
 
 };
 

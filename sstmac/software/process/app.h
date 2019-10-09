@@ -106,6 +106,10 @@ class App : public Thread
     return const_cast<App*>(this);
   }
 
+  bool isMainThread() const override {
+    return true;
+  }
+
   static void deleteStatics();
 
   void sleep(TimeDelta time);
@@ -227,6 +231,14 @@ class App : public Thread
 
   static void dlcloseCheck(int aid);
 
+  static void lockDlopen(int aid);
+
+  static void unlockDlopen(int aid);
+
+  static int appRC(){
+    return app_rc_;
+  }
+
  protected:
   friend class Thread;
 
@@ -273,13 +285,17 @@ class App : public Thread
   struct dlopen_entry {
     void* handle;
     int refcount;
+    bool loaded;
     std::string name;
-    dlopen_entry() : handle(nullptr), refcount(0){}
+    dlopen_entry() : handle(nullptr), refcount(0), loaded(false) {}
   };
 
   static std::map<int, dlopen_entry> dlopens_;
 
+  static int app_rc_;
+
 };
+
 
 class UserAppCxxFullMain : public App
 {

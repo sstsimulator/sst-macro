@@ -14,7 +14,6 @@ else
 if HAVE_CLANG
 #  memoize #not currently working TODO
 SKELETONCASES += \
-  relocation_ptr_test \
   openmp \
   overhead_test
 

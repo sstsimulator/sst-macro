@@ -1,0 +1,23 @@
+extern int y[][4];typedef int type_y[][4];extern int __offset_y; 
+
+int x[][2] = { {1,2}, {2,3} };typedef int array_type_x[2][2];extern int __offset_x; int __sizeof_x = sizeof(array_type_x);static std::function<void(void*)> init_x = [](void* ptr){ new (ptr) array_type_x{{1, 2}, {2, 3}}; };sstmac::CppGlobalRegisterGuard x_sstmac_ctor(__offset_x, __sizeof_x, false, "x", std::move(init_x));
+int y[3][4];typedef int array_type_y[3][4];extern int __offset_y; int __sizeof_y = sizeof(array_type_y);static std::function<void(void*)> init_y = [](void* ptr){ new (ptr) array_type_y; };sstmac::CppGlobalRegisterGuard y_sstmac_ctor(__offset_y, __sizeof_y, false, "y", std::move(init_y));
+extern int z[][2];typedef int type_z[][2];extern int __offset_z; 
+static int b[2][2];typedef int array_type_b[2][2];extern int __offset_xyzb; int __sizeof_xyzb = sizeof(array_type_b);static std::function<void(void*)> init_xyzb = [](void* ptr){ new (ptr) array_type_b; };static sstmac::CppGlobalRegisterGuard b_sstmac_ctor(__offset_xyzb, __sizeof_xyzb, false, "b", std::move(init_xyzb));
+
+void fxn()
+{ char* sstmac_global_data = get_sstmac_global_data();array_type_y* sstmac_y=(array_type_y*)(sstmac_global_data + __offset_y); array_type_x* sstmac_x=(array_type_x*)(sstmac_global_data + __offset_x); type_z* sstmac_z=(type_z*)(sstmac_global_data + __offset_z); array_type_b* sstmac_xyzb=(array_type_b*)(sstmac_global_data + __offset_xyzb); {
+
+
+  (*sstmac_x)[0][1] = 2;
+  (*sstmac_y)[1][1] = 3;
+  (*sstmac_z)[2][0] = 5;
+  (*sstmac_xyzb)[1][1] = 8;
+ }}
+#include <sstmac/software/process/cppglobal.h>
+#include <sstmac/software/process/memoize.h>
+
+extern int __sizeof_x;
+int __offset_x = 0;extern int __sizeof_xyzb;
+int __offset_xyzb = 0;extern int __sizeof_y;
+int __offset_y = 0;

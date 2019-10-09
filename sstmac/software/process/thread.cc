@@ -43,12 +43,11 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sstmac/common/thread_safe_int.h>
+#include <sstmac/common/stats/ftq.h>
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/software/process/thread.h>
 #include <sstmac/software/process/operating_system.h>
-#include <sstmac/software/process/key.h>
 #include <sstmac/software/process/app.h>
-#include <sstmac/software/process/ftq.h>
 #include <sstmac/software/libraries/library.h>
 #include <sstmac/software/libraries/compute/compute_event.h>
 #include <sstmac/software/api/api.h>
@@ -80,7 +79,8 @@ Thread::initThread(const SST::Params& params,
   int stacksize, void* globals_storage, void* tls_storage)
 {
   ThreadInfo::registerUserSpaceVirtualThread(physical_thread_id, stack,
-                                             globals_storage, tls_storage);
+                                             globals_storage, tls_storage,
+                                             isMainThread(), true);
   stack_ = stack;
 
   initId();
@@ -132,8 +132,13 @@ Thread::runRoutine(void* threadptr)
     self->state_ = ACTIVE;
     bool success = false;
     try {
-      sstmac::sw::OperatingSystem::CoreAllocateGuard guard(self->os(), self);
-      self->run();
+      {
+        //need to scope it here to force destructor of guard
+        //because of the way context switching works I might
+        //never leave this try block and closing the guard
+        sstmac::sw::OperatingSystem::CoreAllocateGuard guard(self->os(), self);
+        self->run();
+      }
       success = true;
       //this doesn't so much kill the thread as context switch it out
       //it is up to the above delete thread event to actually to do deletion/cleanup
@@ -180,9 +185,7 @@ Thread::Thread(SST::Params& params, SoftwareId sid, OperatingSystem* os) :
   timed_out_(false),
   block_counter_(0),
   pthread_concurrency_(0),
-#if SSTMAC_HAVE_CALL_GRAPH
   callGraph_(nullptr),
-#endif
   ftq_trace_(nullptr),
   sid_(sid),
   ftag_(FTQTag::null),
@@ -304,6 +307,7 @@ Thread::now()
 
 Thread::~Thread()
 {
+  active_cores_.clear();
   if (stack_) StackAlloc::free(stack_);
   if (context_) {
     context_->destroyContext();

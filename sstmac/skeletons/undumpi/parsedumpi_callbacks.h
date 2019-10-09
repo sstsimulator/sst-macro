@@ -60,7 +60,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sumi {
 
 /// Populate C-style callbacks for a libundumpi parser.
-class parsedumpi_callbacks
+class ParsedumpiCallbacks
 {
   friend class parsedumpi_unit_test;
   friend int pass(void* uarg, const dumpi_time *cpu,
@@ -105,18 +105,18 @@ class parsedumpi_callbacks
 
  public:
   /// Populate callbacks.
-  parsedumpi_callbacks(ParseDumpi *parent);
+  ParsedumpiCallbacks(ParseDumpi *parent);
 
-  ~parsedumpi_callbacks();
+  ~ParsedumpiCallbacks();
 
-  void increment_collective(dumpi_comm comm){
+  void incrementCollective(dumpi_comm comm){
     if (num_global_collectives_ == early_terminate_count_){
       throw ParseDumpi::early_termination();
     }
     if (comm == DUMPI_COMM_WORLD) ++num_global_collectives_;
   }
 
-  void set_initialized(bool flag) {
+  void setInitialized(bool flag) {
     initialized_ = flag;
   }
 
@@ -130,11 +130,11 @@ class parsedumpi_callbacks
    * @param print_progress Whether to print progress - usually only true for rank 0
    * @param percent_terminate -1 indicates run to end, otherwise terminate at some percent - only rank 0 shoudl cause termination
    */
-  void parse_stream(const std::string &filename, bool print_progress);
+  void parseStream(const std::string &filename, bool print_progress);
 
  private:
   /// Initialize maps (datatypes etc.).  Called at constrution.
-  void init_maps();
+  void initMaps();
 
   /// Indicate that we are starting an MPI call.
   void start_mpi(const dumpi_time *cpu, const dumpi_time *wall,
@@ -151,31 +151,31 @@ class parsedumpi_callbacks
 
   /// Get an mpiid.
   /// Special handling for MPI_ROOT and MPI_ANY_SOURCE.
-  int get_mpiid(dumpi_source id);
+  int getMpiid(dumpi_source id);
 
   /// Get an mpi tag.
   /// Special handling for MPI_ANY_TAG.
-  inline int get_mpitag(dumpi_tag tag) const {
+  inline int getMpitag(dumpi_tag tag) const {
     if(tag == DUMPI_ANY_TAG) return MPI_ANY_TAG;
     else return tag;
   }
 
   /// Add a new mpi type.
-  void add_mpitype(dumpi_datatype id, MPI_Datatype mpit);
+  void addMpitype(dumpi_datatype id, MPI_Datatype mpit);
 
   /// Erase the mapping for an mpi type.  Does not erase built-in mpi types.
-  void erase_mpitype(dumpi_datatype id);
+  void eraseMpitype(dumpi_datatype id);
 
   /// Access mpi type.
   /// \throw sprockit::value_error if no mapping exists for this datatype.
-  MPI_Datatype get_mpitype(dumpi_datatype id);
+  MPI_Datatype getMpitype(dumpi_datatype id);
 
   /// Access mpi type.
   /// \throw sprockit::value_error if no mapping exists for this datatype.
-  MPI_Datatype* get_mpitypes(int count, const dumpi_datatype* id);
+  MPI_Datatype* getMpitypes(int count, const dumpi_datatype* id);
 
   /// Define all callback routines.
-  void set_callbacks();
+  void setCallbacks();
 
   static int
   on_MPI_Send(const dumpi_send *prm, uint16_t thread,

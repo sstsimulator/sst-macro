@@ -422,16 +422,14 @@ ComputeVisitor::checkStmtPragmas(Stmt* s)
   auto matches = pragmas.getMatches(s);
   if (!matches.empty()){
     SSTPragma* prg = matches.front();
-    switch (prg->cls){
-    case SSTPragma::Replace: {
+    if (prg->classId == prg->id<SSTReplacePragma>()){
       SSTReplacePragma* rprg = static_cast<SSTReplacePragma*>(prg);
       std::list<const Expr*> replaced;
       rprg->run(s, replaced);
       for (auto e : replaced){
         repls.exprs[e] = rprg->replacement();
       }
-    } break;
-    case SSTPragma::LoopCount: {
+    } else if (prg->classId == prg->id<SSTLoopCountPragma>()){
       SSTLoopCountPragma* rprg = static_cast<SSTLoopCountPragma*>(prg);
       switch(s->getStmtClass()){
         case Stmt::ForStmtClass:
@@ -442,8 +440,7 @@ ComputeVisitor::checkStmtPragmas(Stmt* s)
           errorAbort(s, CI, "pragma loop_count not applied to for loop");
           break;
       }
-    } break;
-    default:
+    } else {
       errorAbort(s, CI, "invalid pragma applied to statement");
     }
   }
@@ -471,7 +468,7 @@ ComputeVisitor::visitBodyIfStmt(IfStmt *stmt, Loop::Body &body)
   }
 
   SSTPragma* prg = matches.front();
-  if (prg->cls == SSTPragma::BranchPredict){
+  if (prg->classId == prg->id<SSTBranchPredictPragma>()){
     SSTBranchPredictPragma* bprg = static_cast<SSTBranchPredictPragma*>(prg);
     if (bprg->prediction() == "true"){
       addOperations(stmt->getThen(), body);
@@ -522,7 +519,7 @@ ComputeVisitor::visitBodyDeclStmt(DeclStmt* stmt, Loop::Body& body)
     auto matches = pragmas.getMatches(stmt);
     if (!matches.empty()){
      SSTPragma* prg = matches.front();
-      if (prg->cls == SSTPragma::Replace){
+      if (prg->classId == prg->id<SSTReplacePragma>()){
         SSTReplacePragma* rprg = static_cast<SSTReplacePragma*>(prg);
         repls.decls[d] = rprg->replacement();
       }
@@ -810,7 +807,7 @@ ComputeVisitor::replaceStmt(Stmt* stmt, Rewriter& r, Loop& loop, PragmaConfig& c
     sstr << "readBytes=" << cfg.computeMemorySpec << ";";
   }
   if (nthread.empty()){
-    sstr << "sstmac_computeDetailed(flops,intops,readBytes); }";
+    sstr << "sstmac_compute_detailed(flops,intops,readBytes); }";
   } else {
     sstr << "sstmac_compute_detailed_nthr(flops,intops,readBytes,"
          << nthread << "); }";

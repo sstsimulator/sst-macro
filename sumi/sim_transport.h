@@ -50,7 +50,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/api/api.h>
 #include <sstmac/software/launch/task_mapping.h>
 #include <sstmac/software/libraries/service.h>
-#include <sstmac/software/process/key.h>
 #include <sstmac/software/process/progress_queue.h>
 #include <sstmac/hardware/network/network_message_fwd.h>
 #include <sstmac/hardware/node/node_fwd.h>
@@ -129,7 +128,7 @@ class SimTransport : public Transport, public sstmac::sw::API {
    * @param remote_cq
    * @return
    */
-  void smsgSendResponse(Message* m, uint64_t sz, void* loc_buffer, int local_cq, int remote_cq) override;
+  void smsgSendResponse(Message* m, uint64_t sz, void* loc_buffer, int local_cq, int remote_cq, int qos) override;
 
   /**
    * @brief rdma_get_response After receiving a short message payload coordinating an RDMA get,
@@ -142,9 +141,9 @@ class SimTransport : public Transport, public sstmac::sw::API {
    * @return
    */
   void rdmaGetRequestResponse(Message* m, uint64_t sz, void* loc_buffer, void* remote_buffer,
-                                 int local_cq, int remote_cq) override;
+                                 int local_cq, int remote_cq, int qos) override;
 
-  void rdmaGetResponse(Message* m, uint64_t sz, int local_cq, int remote_cq) override;
+  void rdmaGetResponse(Message* m, uint64_t sz, int local_cq, int remote_cq, int qos) override;
 
   /**
    * @brief rdma_put_response
@@ -156,7 +155,7 @@ class SimTransport : public Transport, public sstmac::sw::API {
    * @return
    */
   void rdmaPutResponse(Message* m, uint64_t payload_bytes,
-             void* loc_buffer, void* remote_buffer, int local_cq, int remote_cq) override;
+             void* loc_buffer, void* remote_buffer, int local_cq, int remote_cq, int qos) override;
 
   double wallTime() const override {
     return now().sec();
@@ -258,13 +257,15 @@ class SimTransport : public Transport, public sstmac::sw::API {
 
   std::vector<std::function<void(Message*)>> completion_queues_;
 
+  std::function<void(Message*)> null_completion_notify_;
+
   sstmac::TimeDelta post_rdma_delay_;
 
   sstmac::TimeDelta post_header_delay_;
 
   sstmac::TimeDelta poll_delay_;
 
-  sstmac::StatSpyplot<int,int,uint64_t>* spy_bytes_;
+  sstmac::StatSpyplot<int,uint64_t>* spy_bytes_;
 
   sstmac::TimeDelta rdma_pin_latency_;
   sstmac::TimeDelta rdma_page_delay_;
@@ -272,6 +273,10 @@ class SimTransport : public Transport, public sstmac::sw::API {
   bool pin_delay_;
 
  protected:
+  void registerNullHandler(std::function<void(Message*)> f){
+    null_completion_notify_ = f;
+  }
+
   bool smp_optimize_;
 
   std::map<int,std::list<Message*>> held_;
@@ -288,6 +293,8 @@ class SimTransport : public Transport, public sstmac::sw::API {
 
   QoSAnalysis* qos_analysis_;
 
+ private:
+  void drop(Message* m){}
 };
 
 

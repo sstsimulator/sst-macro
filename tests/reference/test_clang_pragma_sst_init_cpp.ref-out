@@ -1,0 +1,16 @@
+
+template <class T>
+T* allocate();
+
+void fxn1()
+{
+
+ int x = 5;
+
+ int* y = nullptr;
+
+ auto z = (int*)nullptr;
+}
+#include <sstmac/software/process/cppglobal.h>
+#include <sstmac/software/process/memoize.h>
+

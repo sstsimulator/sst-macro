@@ -48,7 +48,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi-mpi/mpi_queue/mpi_queue_probe_request.h>
 #include <sumi-mpi/mpi_status.h>
 #include <sumi-mpi/mpi_protocol/mpi_protocol.h>
-#include <sstmac/software/process/key.h>
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/thread.h>
@@ -91,11 +90,13 @@ MpiQueue::MpiQueue(SST::Params& params, int task_id,
 {
   max_vshort_msg_size_ = params.find<SST::UnitAlgebra>("max_vshort_msg_size", "512B").getRoundedValue();
   max_eager_msg_size_ = params.find<SST::UnitAlgebra>("max_eager_msg_size", "8192B").getRoundedValue();
+  use_put_window_ = params.find<bool>("use_put_window", false);
 
   protocols_.resize(MpiProtocol::NUM_PROTOCOLS);
   protocols_[MpiProtocol::EAGER0] = new Eager0(params, this);
   protocols_[MpiProtocol::EAGER1] = new Eager1(params, this);
   protocols_[MpiProtocol::RENDEZVOUS_GET] = new RendezvousGet(params, this);
+  protocols_[MpiProtocol::DIRECT_PUT] = new DirectPut(params, this);
 
   pt2pt_cq_ = api_->allocateCqId();
   coll_cq_ = api_->allocateCqId();
@@ -174,7 +175,9 @@ MpiQueue::send(MpiRequest *key, int count, MPI_Datatype type,
   uint64_t bytes = count * uint64_t(typeobj->packed_size());
 
   int prot_id = MpiProtocol::RENDEZVOUS_GET;
-  if (bytes <= max_vshort_msg_size_) {
+  if (use_put_window_) {
+    prot_id = MpiProtocol::DIRECT_PUT;
+  } else if (bytes <= max_vshort_msg_size_) {
     prot_id = MpiProtocol::EAGER0;
   } else if (bytes <= max_eager_msg_size_) {
     prot_id = MpiProtocol::EAGER1;
@@ -233,7 +236,7 @@ MpiQueue::recv(MpiRequest* key, int count,
         count, api_->typeStr(type).c_str(), api_->srcStr(source).c_str(),
         api_->tagStr(tag).c_str(), api_->commStr(comm).c_str(), buffer);
 
-  MpiQueueRecvRequest* req = new MpiQueueRecvRequest(key, this,
+  MpiQueueRecvRequest* req = new MpiQueueRecvRequest(api_->now(), key, this,
                             count, type, source, tag, comm->id(), buffer);
   MpiMessage* mess = findMatchingRecv(req);
   if (mess) {
@@ -246,11 +249,6 @@ void
 MpiQueue::finalizeRecv(MpiMessage* msg, MpiQueueRecvRequest* req)
 {
   req->key_->complete(msg);
-#if SSTMAC_COMM_DELAY_STATS
-  if (req->key_->activeWait()){
-    api_->logMessageDelay(req->key_->waitStart(), msg);
-  }
-#endif
   if (req->recv_buffer_ != req->final_buffer_){
     req->type_->unpack_recv(req->recv_buffer_, req->final_buffer_, msg->count());
     delete[] req->recv_buffer_;
@@ -315,7 +313,7 @@ MpiQueue::findMatchingRecv(MpiMessage* message)
   for (auto it = need_send_match_.begin(); it != end;) {
     auto* req = *it;
     auto tmp = it++;
-    if (req->is_cancelled()) {
+    if (req->isCancelled()) {
       need_send_match_.erase(tmp);
     } else if (req->matches(message)) {
       need_send_match_.erase(tmp);
@@ -459,9 +457,7 @@ MpiQueue::progressLoop(MpiRequest* req)
     if (!msg){
       spkt_abort_printf("polling returned null message");
     }
-#if SSTMAC_COMM_DELAY_STATS
     req->setWaitStart(wait_start);
-#endif
     incomingMessage(msg);
   }
 

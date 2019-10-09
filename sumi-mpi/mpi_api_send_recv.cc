@@ -47,6 +47,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi-mpi/otf2_output_stat.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/thread.h>
+#include <sstmac/software/process/ftq_scope.h>
 
 #define start_pt2pt_call(fxn, count, type, partner, tag, comm) \
   StartMPICall(fxn); \
@@ -197,8 +198,8 @@ MpiApi::startall(int count, MPI_Request* req)
 
 int
 MpiApi::sendInit(const void *buf, int count,
-                   MPI_Datatype datatype, int dest, int tag,
-                   MPI_Comm comm, MPI_Request *request)
+                 MPI_Datatype datatype, int dest, int tag,
+                 MPI_Comm comm, MPI_Request *request)
 {
   auto call_start_time = (uint64_t)now().usec();
 

@@ -142,6 +142,8 @@ class Dragonfly : public CartesianTopology
     return a_ + h_ + concentration();
   }
 
+  std::string portTypeName(SwitchId sid, int port) const override;
+
   VTKSwitchGeometry getVtkGeometry(SwitchId sid) const override;
 
   bool isCurvedVtkLink(SwitchId sid, int port) const override;
@@ -242,6 +244,9 @@ class Dragonfly : public CartesianTopology
   SwitchId randomIntermediate(Router* rtr, SwitchId current, SwitchId dest, uint32_t seed){
     return group_wiring_->randomIntermediate(rtr,current,dest,seed);
   }
+
+ private:
+  void portConfigDump(const std::string& dump_file) override;
 
  protected:
   int a_;

@@ -44,7 +44,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sumi-mpi/mpi_request.h>
 #include <sumi-mpi/mpi_comm/mpi_comm.h>
-#include <sstmac/software/process/key.h>
 
 namespace sumi {
 

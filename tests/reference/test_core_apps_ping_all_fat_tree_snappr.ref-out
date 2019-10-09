@@ -1,0 +1,97 @@
+Rank 11 = 5000.3083ms
+Rank 17 = 5000.3182ms
+Rank 16 = 5000.3197ms
+Rank 32 = 5000.3269ms
+Rank 24 = 5000.3302ms
+Rank 25 = 5000.3321ms
+Rank 33 = 5000.3342ms
+Rank 28 = 5000.3354ms
+Rank 36 = 5000.3381ms
+Rank 35 = 5000.3400ms
+Rank 37 = 5000.3406ms
+Rank 34 = 5000.3416ms
+Rank 44 = 5000.3438ms
+Rank 27 = 5000.3461ms
+Rank 29 = 5000.3467ms
+Rank 40 = 5000.3485ms
+Rank 41 = 5000.3500ms
+Rank 45 = 5000.3504ms
+Rank 18 = 5000.3504ms
+Rank 20 = 5000.3530ms
+Rank 8 = 5000.3539ms
+Rank 30 = 5000.3533ms
+Rank 19 = 5000.3535ms
+Rank 5 = 5000.3542ms
+Rank 26 = 5000.3545ms
+Rank 31 = 5000.3557ms
+Rank 3 = 5000.3570ms
+Rank 1 = 5000.3578ms
+Rank 47 = 5000.3597ms
+Rank 46 = 5000.3605ms
+Rank 2 = 5000.3620ms
+Rank 0 = 5000.3626ms
+Rank 38 = 5000.3625ms
+Rank 21 = 5000.3626ms
+Rank 12 = 5000.3646ms
+Rank 14 = 5000.3691ms
+Rank 43 = 5000.3689ms
+Rank 39 = 5000.3689ms
+Rank 9 = 5000.3704ms
+Rank 4 = 5000.3704ms
+Rank 42 = 5000.3737ms
+Rank 13 = 5000.3743ms
+Rank 6 = 5000.3743ms
+Rank 15 = 5000.3781ms
+Rank 7 = 5000.3824ms
+Rank 22 = 5000.3926ms
+Rank 23 = 5000.3983ms
+Rank 65 = 5000.4171ms
+Rank 64 = 5000.4195ms
+Rank 68 = 5000.4196ms
+Rank 10 = 5000.4232ms
+Rank 69 = 5000.4278ms
+Rank 72 = 5000.4361ms
+Rank 76 = 5000.4427ms
+Rank 49 = 5000.4474ms
+Rank 48 = 5000.4482ms
+Rank 73 = 5000.4501ms
+Rank 66 = 5000.4529ms
+Rank 52 = 5000.4539ms
+Rank 70 = 5000.4553ms
+Rank 74 = 5000.4574ms
+Rank 77 = 5000.4575ms
+Rank 71 = 5000.4584ms
+Rank 67 = 5000.4587ms
+Rank 50 = 5000.4614ms
+Rank 75 = 5000.4631ms
+Rank 53 = 5000.4630ms
+Rank 51 = 5000.4637ms
+Rank 54 = 5000.4878ms
+Rank 78 = 5000.4881ms
+Rank 79 = 5000.4945ms
+Rank 55 = 5000.4975ms
+Rank 57 = 5000.5317ms
+Rank 56 = 5000.5331ms
+Rank 58 = 5000.5431ms
+Rank 60 = 5000.5435ms
+Rank 59 = 5000.5472ms
+Rank 61 = 5000.5476ms
+Rank 63 = 5000.5855ms
+Rank 62 = 5000.5869ms
+Aggregate time stats: state
+        Inactive:          0.08623 s
+  idle:leaf->agg:          0.00524 s
+active:leaf->agg:          0.01152 s
+stalled:leaf->agg:          0.00577 s
+  idle:injection:          0.00492 s
+active:injection:          0.01248 s
+  idle:agg->leaf:          0.01193 s
+active:agg->leaf:          0.00960 s
+stalled:agg->leaf:          0.00351 s
+  idle:agg->core:          0.02203 s
+active:agg->core:          0.00512 s
+stalled:agg->core:          0.00169 s
+  idle:core->agg:          0.02012 s
+active:core->agg:          0.00512 s
+stalled:core->agg:          0.00461 s
+Estimated total runtime of           5.00059644 seconds

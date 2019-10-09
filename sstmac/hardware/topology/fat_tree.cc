@@ -228,6 +228,26 @@ FatTree::getVtkGeometry(SwitchId sid) const
   return geom;
 }
 
+std::string
+FatTree::portTypeName(SwitchId sid, int port) const
+{
+  if (sid < num_leaf_switches_){
+    if (port < up_ports_per_leaf_switch_){
+      return "leaf->agg";
+    } else {
+      return "injection";
+    }
+  } else if (sid < (num_leaf_switches_ + num_agg_switches_)){
+    if (port < down_ports_per_agg_switch_){
+      return "agg->leaf";
+    } else {
+      return "agg->core";
+    }
+  } else {
+    return "core->agg";
+  }
+}
+
 void
 FatTree::connectedOutports(SwitchId src, std::vector<Connection>& conns) const
 {

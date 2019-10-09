@@ -48,4 +48,3 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/libraries/compute/compute_api.h>
 
 #endif
-//COMPUTE_H

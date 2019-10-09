@@ -42,6 +42,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
+#ifndef __STDC_FORMAT_MACROS
+#define __STDC_FORMAT_MACROS
+#endif
+
+#include <inttypes.h>
+
+
 #include <sstmac/hardware/common/packet.h>
 #include <sstmac/hardware/common/recv_cq.h>
 #include <sstmac/hardware/common/flow.h>
@@ -71,7 +78,7 @@ RecvCQ::recv(uint64_t unique_id, uint32_t bytes, Flow* orig)
 #if SSTMAC_SANITY_CHECK
   if (incoming.msg && orig){
     spkt_abort_printf(
-        "RecvCQ::recv: only one message chunk should carry the parent payload for %lu: %s",
+        "RecvCQ::recv: only one message chunk should carry the parent payload for %" PRIu64 ": %s",
         unique_id, incoming.msg->toString().c_str());
   }
 #endif
@@ -94,7 +101,7 @@ RecvCQ::recv(uint64_t unique_id, uint32_t bytes, Flow* orig)
 Flow*
 RecvCQ::recv(Packet* pkt)
 {
-  Flow* payload = dynamic_cast<Flow*>(pkt->orig());
+  Flow* payload = dynamic_cast<Flow*>(pkt->flow());
   return recv(pkt->flowId(), pkt->byteLength(), payload);
 }
 

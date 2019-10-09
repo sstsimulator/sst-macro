@@ -71,6 +71,12 @@ EventLink::~EventLink()
 
 #if SSTMAC_INTEGRATED_SST_CORE
 SST::TimeConverter* EventScheduler::time_converter_ = nullptr;
+
+void
+EventScheduler::endSimulation()
+{
+  spkt_abort_printf("intgrated core does not support stopping");
+}
 #else
 uint64_t
 EventLink::allocateSelfLinkId()
@@ -78,6 +84,12 @@ EventLink::allocateSelfLinkId()
   uint64_t max = std::numeric_limits<uint64_t>::max();
   uint32_t offset = selfLinkIdCounter_++;
   return max - offset;
+}
+
+void
+EventScheduler::endSimulation()
+{
+  mgr_->stop();
 }
 
 void

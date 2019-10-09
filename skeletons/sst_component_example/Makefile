@@ -3,9 +3,9 @@ SRC := component.cc
 
 SST_CORE=$(HOME)/Programs/install/sst-core/clang
 
-CXX :=    libsst++
-CC :=     libsstcc
-CXXFLAGS := -fPIC
+CXX :=    sst++
+CC :=     sstcc
+CXXFLAGS := -fPIC --sst-component
 CPPFLAGS := -I. 
 
 #uncomment if integrated core

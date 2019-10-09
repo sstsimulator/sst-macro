@@ -25,10 +25,10 @@
  ****************************************************************************************/
 
 .text
-.globl jump_fcontext
-.type jump_fcontext,@function
+.globl sstmac_jump_fcontext
+.type sstmac_jump_fcontext,@function
 .align 16
-jump_fcontext:
+sstmac_jump_fcontext:
     pushq  %rbp  /* save RBP */
     pushq  %rbx  /* save RBX */
     pushq  %r15  /* save R15 */
@@ -61,7 +61,7 @@ jump_fcontext:
 
     /* indirect jump to context */
     jmp  *%r8
-.size jump_fcontext,.-jump_fcontext
+.size sstmac_jump_fcontext,.-sstmac_jump_fcontext
 
 /* Mark that we don't need executable stack.  */
 .section .note.GNU-stack,"",%progbits

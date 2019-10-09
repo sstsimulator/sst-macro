@@ -1,0 +1,17 @@
+
+void fxn(int x)
+{
+}
+
+static void (**fxn_list)(int);typedef void (*fxn_list_sstmac_fxn_typedef)(int);extern int __offset_xyzfxn_list; int __sizeof_xyzfxn_list = sizeof(fxn_list_sstmac_fxn_typedef*);static std::function<void(void*)> init_xyzfxn_list = [](void* ptr){ new (ptr) fxn_list_sstmac_fxn_typedef*; };static sstmac::CppGlobalRegisterGuard fxn_list_sstmac_ctor(__offset_xyzfxn_list, __sizeof_xyzfxn_list, false, "fxn_list", std::move(init_xyzfxn_list));
+
+void next_fxn()
+{ char* sstmac_global_data = get_sstmac_global_data();fxn_list_sstmac_fxn_typedef** sstmac_xyzfxn_list=(fxn_list_sstmac_fxn_typedef**)(sstmac_global_data + __offset_xyzfxn_list); {
+  (*sstmac_xyzfxn_list) = (void(**)(int)) new char[100*sizeof(*(*sstmac_xyzfxn_list))];
+  (*sstmac_xyzfxn_list)[0] = fxn;
+ }}
+#include <sstmac/software/process/cppglobal.h>
+#include <sstmac/software/process/memoize.h>
+
+extern int __sizeof_xyzfxn_list;
+int __offset_xyzfxn_list = 0;

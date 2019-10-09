@@ -79,6 +79,8 @@ class DragonflyPlus : public Dragonfly
 
   virtual ~DragonflyPlus() {}
 
+  std::string portTypeName(SwitchId sid, int port) const override;
+
   VTKSwitchGeometry getVtkGeometry(SwitchId sid) const override;
 
   int ndimensions() const {

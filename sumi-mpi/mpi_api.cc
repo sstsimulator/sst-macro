@@ -65,7 +65,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/thread.h>
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/operating_system.h>
+#include <sstmac/software/process/ftq_scope.h>
 #include <sstmac/software/launch/job_launcher.h>
+
 
 #include <sumi-mpi/mpi_protocol/mpi_protocol.h>
 #include <sumi-mpi/mpi_comm/mpi_comm_factory.h>
@@ -88,11 +90,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 
 MakeDebugSlot(mpi_sync)
-DeclareDebugSlot(mpi_check)
-RegisterDebugSlot(mpi_check,
-    "validation flag that performs various sanity checks to ensure MPI application"
-    " runs and terminates cleanly");
-
+MakeDebugSlot(mpi_finalize)
 RegisterKeywords(
 { "iprobe_delay", "the delay incurred each time MPI_Iprobe is called" },
 { "dump_comm_times", "dump communication time statistics" },
@@ -105,7 +103,7 @@ sprockit::StaticNamespaceRegister queue_ns_reg("queue");
 namespace sumi {
 
 static sprockit::NeedDeletestatics<MpiApi> del_statics;
-sstmac::sw::FTQTag MpiApi::mpi_tag("MPI", 1);
+sstmac::FTQTag MpiApi::mpi_tag("MPI", 1);
 
 MpiApi* sstmac_mpi()
 {
@@ -136,14 +134,19 @@ MpiApi::MpiApi(SST::Params& params, sstmac::sw::App* app,
 {
   if (!engine_) engine_ = new CollectiveEngine(params, this);
 
-  SST::Params queue_params = params.find_scoped_params("queue");
-  queue_ = new MpiQueue(queue_params, app->sid().task_, this, engine_);
+  queue_ = new MpiQueue(params, app->sid().task_, this, engine_);
 
   double probe_delay_s = params.find<SST::UnitAlgebra>("iprobe_delay", "0s").getValue().toDouble();
   iprobe_delay_us_ = probe_delay_s * 1e6;
 
   double test_delay_s = params.find<SST::UnitAlgebra>("test_delay", "0s").getValue().toDouble();
   test_delay_us_ = test_delay_s * 1e6;
+
+#if !SSTMAC_INTEGRATED_SST_CORE
+  std::string subname = sprockit::printf("app%d.rank%d", app->aid(), app->tid());
+  delays_ = app->os()->node()->registerMultiStatistic<int,int,int,int,uint64_t,
+      double,double,double,double,double,double>(params, "delays", subname);
+#endif
 
 #ifdef SSTMAC_OTF2_ENABLED
 #if !SSTMAC_INTEGRATED_SST_CORE
@@ -219,13 +222,6 @@ MpiApi::commRank(MPI_Comm comm, int *rank)
 int
 MpiApi::init(int* argc, char*** argv)
 {
-#if SSTMAC_COMM_SYNC_STATS
-#if SSTMAC_HAVE_CALL_GRAPH
-#else
-#error Synchronization stats require call graph feature to be activated
-#endif
-#endif
-
   auto start_clock = traceClock();
 
   if (status_ == is_initialized){
@@ -258,7 +254,7 @@ MpiApi::init(int* argc, char*** argv)
 
   queue_->init();
 
-  crossed_comm_world_barrier_ = false;
+  crossed_comm_world_barrier_ = true;
   endAPICall();
 
 #ifdef SSTMAC_OTF2_ENABLED
@@ -306,11 +302,8 @@ MpiApi::finalize()
 
   int rank = commWorld()->rank();
   if (rank == 0) {
-    debug_printf(sprockit::dbg::mpi_check,
-      "MPI application with ID %s passed barrier in finalize on Rank 0\n"
-      "at simulation time %10.6e seconds. This generally validates the \n"
-      "simulation meaning everyhing has cleanly terminated\n",
-      sid().toString().c_str(), now().sec());
+    debug_printf(sprockit::dbg::mpi_finalize,
+      "MPI_Finalize passed on app %d", sid().app_);
   }
 
   engine_->cleanUp();
@@ -592,107 +585,30 @@ MpiApi::errorString(int errorcode, char *str, int *resultlen)
   return MPI_SUCCESS;
 }
 
-#if SSTMAC_COMM_SYNC_STATS
 CallGraphCreateTag(idle);
 CallGraphCreateTag(active);
-#endif
-
-#if SSTMAC_COMM_DELAY_STATS
-void
-MpiApi::startCollectiveMessageLog()
-{
-  last_collection_ = now();
-}
 
 void
-MpiApi::logMessageDelay(sstmac::Timestamp wait_start, Message* msg)
+MpiApi::logMessageDelay(Message *msg, uint64_t bytes, int stage,
+                        sstmac::TimeDelta sync_delay,
+                        sstmac::TimeDelta active_delay)
 {
-  sstmac::Timestamp start = std::max(last_collection_, wait_start);
-#if SSTMAC_COMM_SYNC_STATS
-  mpi_api_debug(sprockit::dbg::mpi_sync,
-     "%s: starting with current_call=%llu",
-     (msg->sender() == rank() ? "Send" : "Recv"), current_call_.idle.ticks());
+#if !SSTMAC_INTEGRATED_SST_CORE
+  current_call_.idle += sync_delay;
 
-  //there are two possible sync delays
-  //#1: For sender (rendezvous only), synced - header_arrived on the recver side
-  //      this time is in the syncDelay
-  //#2: For recver, time_started - wait_start, if we started waiting
-  //      before
-
-  sstmac::TimeDelta sync_delay;
-  switch (msg->type()){
-  case Message::rdma_get_sent_ack: {
-    //the time gap between header arriving and being processed
-    //but only count the time we were actively waiting on it
-    if (start < msg->timeSynced()){
-      if (start < msg->timeSyncArrived()){
-        //we were waiting for all of the sync delay
-        sync_delay = msg->timeSynced() - msg->timeSyncArrived();
-      } else {
-        //we were waiting for some of the delay
-        sync_delay = msg->timeSynced() - start;
-      }
-    } else {
-      //sync_delay is zero, we were never waiting before the sync
-    }
-
-    current_call_.idle += sync_delay;
-    mpi_api_debug(sprockit::dbg::mpi_sync,
-       "Send: call_start=%llu, wait=%llu, last=%llu, arrived=%llu, synced=%llu, delay=%llu, total=%llu",
-       current_call_.start.time.ticks(),
-       wait_start.time.ticks(), last_collection_.time.ticks(),
-       msg->timeSyncArrived().time.ticks(), msg->timeSynced().time.ticks(),
-       sync_delay.ticks(), current_call_.idle.ticks());
-    break;
+  if (crossed_comm_world_barrier_){
+    delays_->addData(msg->sender(), msg->recver(), msg->classType(), stage, bytes,
+                     msg->recvSyncDelay().sec(), msg->injectionDelay().sec(),
+                     msg->congestionDelay().sec(), msg->minDelay().sec(),
+                     sync_delay.sec(), active_delay.sec());
   }
-  case Message::rdma_get_payload:
-  case Message::payload: {
-    if (start < msg->timeStarted()){
-      current_call_.idle += msg->timeStarted() - start;
-      sync_delay = msg->timeStarted() - start;
-    }
-    mpi_api_debug(sprockit::dbg::mpi_sync,
-       "Recv: call_start=%llu wait=%llu, last=%llu, started=%llu, delay=%llu, total=%llu",
-       current_call_.start.time.ticks(),
-       wait_start.time.ticks(), last_collection_.time.ticks(),
-       msg->timeStarted().time.ticks(),
-       sync_delay.ticks(), current_call_.idle.ticks());
-    break;
-  }
-  default:
-    break;
-  }
-
-  //sstmac::TimeDelta max_delta = now() - current_call_.start;
-  //if (current_call_.idle > max_delta){
-  //  spkt_abort_printf("eaccumulated too much time on sync stat - max is %llu",
-  //                    max_delta.ticks());
-  //}
 #endif
-
-#if SSTMAC_COMM_DELAY_STATS
-  //the message arrived after we started waiting for it
-  sstmac::TimeDelta delay;
-  if (msg->timeArrived() > start){
-    delay = msg->timeArrived() - msg->timeSent();
-  }
-  //std::cout << "Arrived=" << msg->timeArrived().sec()
-  //       << " Sent=" << msg->timeSent().sec()
-  //       << " Waited=" << start.sec()
-  //       << " Delay=" << delay.sec()
-  //       << " " << msg->toString() << std::endl;
-  //log the message
-  qos_analysis_->logDelay(delay, msg);
-#endif
-
-  last_collection_ = now();
 }
-#endif
 
 void
 MpiApi::finishCurrentMpiCall()
 {
-#if SSTMAC_COMM_SYNC_STATS
+#if !SSTMAC_INTEGRATED_SST_CORE
   if (current_call_.idle.ticks()){
     auto* thr = parent_app_->os()->activeThread();
     if (thr->callGraph()){

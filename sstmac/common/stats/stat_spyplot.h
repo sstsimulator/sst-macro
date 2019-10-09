@@ -61,10 +61,10 @@ namespace sstmac {
 /**
  * this stat_collector class keeps a spy plot
  */
-template <class Src, class Dst, class Count>
-class StatSpyplot : public SST::Statistics::MultiStatistic<Src,Dst,Count>
+template <class Dst, class Count>
+class StatSpyplot : public SST::Statistics::MultiStatistic<Dst,Count>
 {
-  using StatSpyplotParent = SST::Statistics::MultiStatistic<Src,Dst,Count>;
+  using StatSpyplotParent = SST::Statistics::MultiStatistic<Dst,Count>;
  public:
   SST_ELI_DECLARE_STATISTIC_TEMPLATE(
     StatSpyplot,
@@ -76,9 +76,8 @@ class StatSpyplot : public SST::Statistics::MultiStatistic<Src,Dst,Count>
 
   StatSpyplot(SST::BaseComponent* comp, const std::string& name,
               const std::string& statName, SST::Params& params)
-    : SST::Statistics::MultiStatistic<Src,Dst,Count>(comp, name, statName, params)
+    : SST::Statistics::MultiStatistic<Dst,Count>(comp, name, statName, params)
   {
-    n_src_ = params.find<Src>("nrows");
     n_dst_ = params.find<Dst>("ncols");
     vals_.resize(n_dst_);
     fields_.resize(n_dst_);
@@ -86,7 +85,7 @@ class StatSpyplot : public SST::Statistics::MultiStatistic<Src,Dst,Count>
 
   virtual ~StatSpyplot() {}
 
-  void addData_impl(int source, int dest, uint64_t num) override {
+  void addData_impl(int dest, uint64_t num) override {
     vals_[dest] += num;
   }
 
@@ -105,7 +104,6 @@ class StatSpyplot : public SST::Statistics::MultiStatistic<Src,Dst,Count>
 
  protected:
   std::vector<Count> vals_;
-  Src n_src_;
   Dst n_dst_;
   std::vector<SST::Statistics::StatisticOutput::fieldHandle_t> fields_;
 

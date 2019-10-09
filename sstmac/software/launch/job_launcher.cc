@@ -69,8 +69,7 @@ RegisterKeywords(
 namespace sstmac {
 namespace sw {
 
-JobLauncher::JobLauncher(SST::Params& params,
-                           OperatingSystem* os) :
+JobLauncher::JobLauncher(SST::Params& params, OperatingSystem* os) :
   Service(std::string("JobLauncher"), SoftwareId(0,0,0), os)
 {
   topology_ = sstmac::hw::Topology::staticTopology(params);
@@ -125,13 +124,17 @@ JobLauncher::addLaunchRequests(SST::Params& params)
     if (!app_params.empty()){
       SST::Params app_params = params.find_scoped_params(name);
       app_params.insert(all_app_params);
+      bool terminate_on_end = app_params.find<bool>("terminate", false);
+      if (terminate_on_end){
+        terminators_.insert(aid);
+      }
       AppLaunchRequest* mgr = new AppLaunchRequest(app_params, AppId(aid), name);
       initial_requests_.push_back(mgr);
       node_debug("adding app launch request %d", aid);
       keep_going = true;
       last_used_aid = aid;
 
-      App::dlopenCheck(aid, app_params, false/*no name check*/);
+      App::lockDlopen(aid);
     } else {
       keep_going = false;
     }
@@ -164,7 +167,8 @@ JobLauncher::addLaunchRequests(SST::Params& params)
 void
 JobLauncher::cleanupApp(JobStopRequest* ev)
 {
-  App::dlcloseCheck(ev->aid());
+  //the job launcher needs to cleanup
+  App::unlockDlopen(ev->aid());
 
   TaskMapping::ptr themap = TaskMapping::globalMapping(ev->aid());
   TaskMapping::removeGlobalMapping(ev->aid(), ev->uniqueName());
@@ -174,6 +178,10 @@ JobLauncher::cleanupApp(JobStopRequest* ev)
   for (int i=0; i < num_ranks; ++i){
     NodeId nid = rank_to_node[i];
     available_.insert(nid);
+  }
+
+  if (terminators_.find(ev->aid()) != terminators_.end()){
+    os_->endSimulation();
   }
 }
 

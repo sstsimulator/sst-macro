@@ -89,7 +89,6 @@ RegisterKeywords(
 #include <sumi/message.h>
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/operating_system.h>
-#include <sstmac/software/process/key.h>
 #include <sstmac/software/launch/job_launcher.h>
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/common/event_callback.h>
@@ -198,6 +197,31 @@ Transport::~Transport()
   if (engine_) delete engine_;
 }
 
+sstmac::TimeDelta
+Transport::activeDelay(sstmac::Timestamp start)
+{
+  sstmac::Timestamp wait_start = std::max(start, last_collection_);
+  sstmac::Timestamp _now = now();
+  last_collection_ = _now;
+  if (_now > wait_start){
+    return _now - wait_start;
+  } else {
+    return sstmac::TimeDelta();
+  }
+}
+
+void
+Transport::logMessageDelay(Message *msg, uint64_t bytes, int stage,
+                           sstmac::TimeDelta sync_delay, sstmac::TimeDelta active_delay)
+{
+}
+
+void
+Transport::startCollectiveMessageLog()
+{
+  last_collection_ = now();
+}
+
 SimTransport::SimTransport(SST::Params& params, sstmac::sw::App* parent, SST::Component* comp) :
   //the name of the transport itself should be mapped to a unique name
   API(params, parent, comp),
@@ -212,7 +236,7 @@ SimTransport::SimTransport(SST::Params& params, sstmac::sw::App* parent, SST::Co
 {
   completion_queues_[0] = std::bind(&DefaultProgressQueue::incoming,
                                     &default_progress_queue_, 0, std::placeholders::_1);
-
+  null_completion_notify_ = std::bind(&SimTransport::drop, this, std::placeholders::_1);
   rank_ = sid().task_;
   auto* server_lib = parent_->os()->lib(server_libname_);
   SumiServer* server;
@@ -244,8 +268,8 @@ SimTransport::SimTransport(SST::Params& params, sstmac::sw::App* parent, SST::Co
 
 #if !SSTMAC_INTEGRATED_SST_CORE
   std::string subname = sprockit::printf("app%d.rank%d", parent->aid(), parent->tid());
-  auto* spy = comp->registerMultiStatistic<int,int,uint64_t>(params, "spy_bytes", subname);
-  spy_bytes_ = dynamic_cast<sstmac::StatSpyplot<int,int,uint64_t>*>(spy);
+  auto* spy = comp->registerMultiStatistic<int,uint64_t>(params, "spy_bytes", subname);
+  spy_bytes_ = dynamic_cast<sstmac::StatSpyplot<int,uint64_t>*>(spy);
 #endif
 
   if (!engine_) engine_ = new CollectiveEngine(params, this);
@@ -345,16 +369,18 @@ SimTransport::send(Message* m)
 {
   int qos = qos_analysis_->selectQoS(m);
   m->setQoS(qos);
-  m->setTimeSent(parent_app_->now());
+  if (!m->started()){
+    m->setTimeStarted(parent_app_->now());
+  }
 
   if (spy_bytes_){
     switch(m->sstmac::hw::NetworkMessage::type()){
     case sstmac::hw::NetworkMessage::payload:
-      spy_bytes_->addData(m->sender(), m->recver(), m->byteLength());
+      spy_bytes_->addData(m->recver(), m->byteLength());
       break;
     case sstmac::hw::NetworkMessage::rdma_get_request:
     case sstmac::hw::NetworkMessage::rdma_put_payload:
-      spy_bytes_->addData(m->sender(), m->recver(), m->payloadBytes());
+      spy_bytes_->addData(m->recver(), m->payloadBytes());
       break;
     default:
       break;
@@ -395,7 +421,7 @@ SimTransport::send(Message* m)
 }
 
 void
-SimTransport::smsgSendResponse(Message* m, uint64_t size, void* buffer, int local_cq, int remote_cq)
+SimTransport::smsgSendResponse(Message* m, uint64_t size, void* buffer, int local_cq, int remote_cq, int qos)
 {
   //reverse both hardware and software info
   m->sstmac::hw::NetworkMessage::reverse();
@@ -403,6 +429,7 @@ SimTransport::smsgSendResponse(Message* m, uint64_t size, void* buffer, int loca
   m->setupSmsg(buffer, size);
   m->setSendCq(local_cq);
   m->setRecvCQ(remote_cq);
+  m->setQoS(qos);
   m->sstmac::hw::NetworkMessage::setType(Message::payload);
   send(m);
 }
@@ -410,32 +437,34 @@ SimTransport::smsgSendResponse(Message* m, uint64_t size, void* buffer, int loca
 void
 SimTransport::rdmaGetRequestResponse(Message* m, uint64_t size,
                                      void* local_buffer, void* remote_buffer,
-                                     int local_cq, int remote_cq)
+                                     int local_cq, int remote_cq, int qos)
 {
   //do not reverse send/recver - this is hardware reverse, not software reverse
   m->sstmac::hw::NetworkMessage::reverse();
   m->setupRdmaGet(local_buffer, remote_buffer, size);
   m->setSendCq(remote_cq);
   m->setRecvCQ(local_cq);
+  m->setQoS(qos);
   m->sstmac::hw::NetworkMessage::setType(Message::rdma_get_request);
   send(m);
 }
 
 void
-SimTransport::rdmaGetResponse(Message* m, uint64_t size, int local_cq, int remote_cq)
+SimTransport::rdmaGetResponse(Message* m, uint64_t size, int local_cq, int remote_cq, int qos)
 {
-  smsgSendResponse(m, size, nullptr, local_cq, remote_cq);
+  smsgSendResponse(m, size, nullptr, local_cq, remote_cq, qos);
 }
 
 void
 SimTransport::rdmaPutResponse(Message* m, uint64_t payload_bytes,
-                 void* loc_buffer, void* remote_buffer, int local_cq, int remote_cq)
+                 void* loc_buffer, void* remote_buffer, int local_cq, int remote_cq, int qos)
 {
   m->reverse();
   m->sstmac::hw::NetworkMessage::reverse();
   m->setupRdmaPut(loc_buffer, remote_buffer, payload_bytes);
   m->setSendCq(local_cq);
   m->setRecvCQ(remote_cq);
+  m->setQoS(qos);
   m->sstmac::hw::NetworkMessage::setType(Message::rdma_put_payload);
   send(m);
 }
@@ -454,17 +483,19 @@ SimTransport::incomingMessage(Message *msg)
     msg->setTimeArrived(parent_app_->now());
   }
 #endif
-
+  msg->writeSyncValue();
   int cq = msg->isNicAck() ? msg->sendCQ() : msg->recvCQ();
   if (cq != Message::no_ack){
     if (cq >= completion_queues_.size()){
       debug_printf(sprockit::dbg::sumi, "No CQ yet for %s", msg->toString().c_str());
       held_[cq].push_back(msg);
     } else {
+      debug_printf(sprockit::dbg::sumi, "CQ %d handle %s", cq, msg->toString().c_str());
       completion_queues_[cq](msg);
     }
   } else {
     debug_printf(sprockit::dbg::sumi, "Dropping message without CQ: %s", msg->toString().c_str());
+    null_completion_notify_(msg);
     delete msg;
   }
 }
@@ -487,6 +518,11 @@ CollectiveEngine::CollectiveEngine(SST::Params& params, Transport *tport) :
   use_put_protocol_ = params.find<bool>("use_put_protocol", false);
   alltoall_type_ = params.find<std::string>("alltoall", "bruck");
   allgather_type_ = params.find<std::string>("allgather", "bruck");
+
+  rdma_get_qos_ = params.find<int>("collective_rdma_get_qos", 0);
+  rdma_header_qos_ = params.find<int>("collective_rdma_header_qos", 0);
+  ack_qos_ = params.find<int>("collective_ack_qos", 0);
+  smsg_qos_ = params.find<int>("collective_smsg_qos", 0);
 }
 
 CollectiveEngine::~CollectiveEngine()
@@ -1007,7 +1043,7 @@ class NullQoSAnalysis : public QoSAnalysis
   }
 
   int selectQoS(Message *m) override {
-    return 0;
+    return m->qos();
   }
 
   void logDelay(sstmac::TimeDelta delay, Message *m) override {

@@ -50,6 +50,10 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/libraries/compute/compute_event.h>
 
+#if SSTMAC_HAVE_SST_ELEMENTS
+#include <sst/elements/ariel/arielnotify.h>
+#endif
+
 #include <sprockit/errors.h>
 #include <sprockit/util.h>
 
@@ -67,6 +71,30 @@ SimpleNode::SimpleNode(uint32_t id, SST::Params& params)
   : Node(id, params)
 {
   initLinks(params);
+
+#if SSTMAC_HAVE_SST_ELEMENTS
+  int ncores = proc_->ncores();
+  unblock_links_.resize(ncores);
+  for (int i=0; i < ncores; ++i){
+    std::string linkName = "unblock" + std::to_string(i);
+    unblock_links_[i] = configureLink(linkName, new Event::Handler<SimpleNode>(this, &SimpleNode::unblock));
+  }
+#endif
+}
+
+void
+SimpleNode::init(unsigned int phase)
+{
+#if SSTMAC_HAVE_SST_ELEMENTS
+  if (phase == 1){
+    SST::Link* link0 = unblock_links_[0];
+    if (link0){
+      Event* ev = link0->recvInitData();
+      auto* nev = dynamic_cast<SST::ArielComponent::NameEvent*>(ev);
+      os_->setIpcName(nev->name());
+    }
+  }
+#endif
 }
 
 void
@@ -88,6 +116,15 @@ SimpleNode::execute(ami::COMP_FUNC func, Event* data, ExecutionEvent* cb)
             "simplenode: cannot process kernel %s",
             ami::tostr(func));
   }
+}
+
+void
+SimpleNode::unblock(Event *ev)
+{
+#if SSTMAC_HAVE_SST_ELEMENTS
+  auto* nev = dynamic_cast<SST::ArielComponent::NotifyEvent*>(ev);
+  os_->unblockBlockedThread();
+#endif
 }
 
 }

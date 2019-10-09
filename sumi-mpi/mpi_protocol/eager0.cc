@@ -48,8 +48,15 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi-mpi/mpi_queue/mpi_queue_recv_request.h>
 #include <sstmac/software/process/backtrace.h>
 #include <sstmac/null_buffer.h>
+#include <sprockit/sim_parameters.h>
 
 namespace sumi {
+
+Eager0::Eager0(SST::Params &params, MpiQueue *queue) :
+  MpiProtocol(params, queue)
+{
+  qos_ = params.find<int>("eager0_qos", 0);
+}
 
 void
 Eager0::start(void* buffer, int src_rank, int dst_rank, sstmac::sw::TaskId tid, int count, MpiType* typeobj,
@@ -63,12 +70,10 @@ Eager0::start(void* buffer, int src_rank, int dst_rank, sstmac::sw::TaskId tid, 
   uint64_t payload_bytes = count*typeobj->packed_size();
   queue_->memcopy(payload_bytes);
   auto* msg = mpi_->smsgSend<MpiMessage>(tid, payload_bytes, temp_buf,
-                              queue_->pt2ptCqId(), queue_->pt2ptCqId(), sumi::Message::pt2pt,
+                              queue_->pt2ptCqId(), queue_->pt2ptCqId(), sumi::Message::pt2pt, qos_,
                               src_rank, dst_rank, typeobj->id,  tag, comm, seq_id,
                               count, typeobj->packed_size(), nullptr, EAGER0);
-#if SSTMAC_COMM_SYNC_STATS
-  msg->setTimeStarted(mpi_->now());
-#endif
+
   send_flows_[msg->flowId()] = temp_buf;
   req->complete();
 }
@@ -76,6 +81,7 @@ Eager0::start(void* buffer, int src_rank, int dst_rank, sstmac::sw::TaskId tid, 
 void
 Eager0::incoming(MpiMessage *msg, MpiQueueRecvRequest *req)
 {
+  logRecvDelay(1, msg, req);
   if (req->recv_buffer_){
 #if SSTMAC_SANITY_CHECK
     if (!msg->smsgBuffer()){
@@ -84,9 +90,6 @@ Eager0::incoming(MpiMessage *msg, MpiQueueRecvRequest *req)
 #endif
     ::memcpy(req->recv_buffer_, msg->smsgBuffer(), msg->byteLength());
   }
-#if SSTMAC_COMM_SYNC_STATS
-  msg->setTimeSynced(mpi_->now());
-#endif
   queue_->notifyProbes(msg);
   queue_->memcopy(msg->payloadBytes());
   queue_->finalizeRecv(msg, req);

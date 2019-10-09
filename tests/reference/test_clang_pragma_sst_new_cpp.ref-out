@@ -1,0 +1,18 @@
+
+void fxn1()
+{
+
+ double * x = nullptr;
+
+ int * idx = nullptr;
+}
+
+void fxn2()
+{
+
+ double * x = nullptr;
+  int* idx = new int[5];
+}
+#include <sstmac/software/process/cppglobal.h>
+#include <sstmac/software/process/memoize.h>
+

@@ -55,7 +55,11 @@ class ComputeVisitor  {
   //97 = 'a', for debug printing
   ComputeVisitor(clang::CompilerInstance& c, SSTPragmaList& plist, ComputeVisitor* par,
                  SkeletonASTVisitor* ctxt) :
-    CI(c), idCount(97), currentGeneration(1), pragmas(plist), parent(par),
+    idCount(97), 
+    currentGeneration(1), 
+    CI(c), 
+    pragmas(plist), 
+    parent(par),
     context(ctxt)
   {}
 

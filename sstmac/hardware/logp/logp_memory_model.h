@@ -83,11 +83,10 @@ class LogPMemoryModel : public MemoryModel
     return "logGP memory model";
   }
 
-  void access(uint64_t bytes, TimeDelta byte_delay, Callback* cb) override;
+  void accessFlow(uint64_t bytes, TimeDelta byte_delay, Callback* cb) override;
 
-  TimeDelta minFlowByteDelay() const override {
-    return min_byte_delay_;
-  }
+  void accessRequest(int linkId, Request* req) override;
+
 
  protected:
   class Link  {

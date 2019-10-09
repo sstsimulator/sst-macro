@@ -61,9 +61,9 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <vector>
 
-DeclareDebugSlot(NetworkSwitch)
+DeclareDebugSlot(network_switch)
 #define switch_debug(...) \
-  debug_printf(sprockit::dbg::NetworkSwitch, "Switch %d: %s", \
+  debug_printf(sprockit::dbg::network_switch, "Switch %d: %s", \
     int(addr()), sprockit::printf(__VA_ARGS__).c_str())
 
 namespace sstmac {
@@ -91,6 +91,8 @@ class NetworkSwitch :
   }
 
   virtual Router* router() const = 0;
+
+  virtual void deadlockCheck(){}
 
   /**
    * @brief queue_length

@@ -52,14 +52,13 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/util.h>
 #include <sprockit/keyword_registration.h>
 
-MakeDebugSlot(pisces_memory)
 RegisterKeywords(
 { "total_bandwidth", "the total, aggregate bandwidth of the memory" },
 { "max_single_bandwidth", "the max bandwidth of a single memory stream" },
 { "latency", "the latency of a single memory operations" },
 );
 
-#define debug(...) debug_printf(sprockit::dbg::pisces_memory, __VA_ARGS__)
+#define debug(...) debug_printf(sprockit::dbg::memory, __VA_ARGS__)
 
 namespace sstmac {
 namespace hw {
@@ -99,28 +98,29 @@ PiscesMemoryModel::~PiscesMemoryModel()
 }
 
 void
-PiscesMemoryModel::access(uint64_t bytes, TimeDelta byte_delay, Callback* cb)
+PiscesMemoryModel::accessFlow(uint64_t bytes, TimeDelta byte_request_delay, Callback* cb)
 {
   if (channels_available_.empty()){
-    stalled_requests_.emplace_back(bytes, byte_delay, cb);
+    stalled_requests_.emplace_back(bytes, byte_request_delay, cb);
   } else {
     int channel = channels_available_.back();
     channels_available_.pop_back();
-    start(channel, bytes, byte_delay, cb);
+    start(channel, bytes, byte_request_delay, cb);
   }
 }
 
 void
-PiscesMemoryModel::start(int channel, uint64_t bytes, TimeDelta byte_delay, Callback *cb)
+PiscesMemoryModel::start(int channel, uint64_t bytes, TimeDelta byte_request_delay, Callback *cb)
 {
-  debug("Node %d starting access on channnel %d of size %ld with bw %8.4e",
-        parent_node_->addr(), channel, bytes, 1.0/byte_delay.sec());
+  debug("Node %d starting access on channnel %d of size %ld with byte_request_delay=%8.4e",
+        parent_node_->addr(), channel, bytes, byte_request_delay.sec());
 
+  TimeDelta byte_delay = byte_request_delay + min_flow_byte_delay_;
   if (bytes <= packet_size_){
     Timestamp t = access(channel, bytes, byte_delay, cb);
     sendExecutionEvent(t, newCallback(this, &PiscesMemoryModel::channelFree, channel));
   } else {
-    Request& req = channel_requests_[channel];
+    ChannelRequest& req = channel_requests_[channel];
     req.bytes_arrived = 0;
     req.bytes_total = bytes;
     req.cb = cb;
@@ -128,14 +128,27 @@ PiscesMemoryModel::start(int channel, uint64_t bytes, TimeDelta byte_delay, Call
     access(channel, packet_size_, byte_delay,
            newCallback(this, &PiscesMemoryModel::dataArrived, channel, packet_size_));
   }
+}
 
+void
+PiscesMemoryModel::accessRequest(int linkId, Request *req)
+{
+  if (req->bytes > packet_size_){
+    spkt_abort_printf("PiscesMemoryModel: request size bigger than allow memory MTU");
+  }
+  PiscesPacket* pkt = new PiscesPacket(nullptr, req->bytes, -1, false, //doesn't matter
+                                       sstmac::NodeId(), sstmac::NodeId());
+
+  RequestHandlerBase* handler = rsp_handlers_[linkId];
+  auto* cb = newCallback(handler, &RequestHandlerBase::handle, req);
+  access(pkt, min_flow_byte_delay_, cb);
 }
 
 void
 PiscesMemoryModel::channelFree(int channel)
 {
   if (!stalled_requests_.empty()){
-    Request& req = stalled_requests_.front();
+    ChannelRequest& req = stalled_requests_.front();
     start(channel, req.bytes_total, req.byte_delay, req.cb);
     stalled_requests_.pop_front();
   } else {
@@ -146,7 +159,7 @@ PiscesMemoryModel::channelFree(int channel)
 void
 PiscesMemoryModel::dataArrived(int channel, uint32_t bytes)
 {
-  Request& ch = channel_requests_[channel];
+  ChannelRequest& ch = channel_requests_[channel];
   ch.bytes_arrived += bytes;
   debug("Node %d channel %d now has %lu bytes arrived of %lu total",
         addr(), channel, ch.bytes_arrived, ch.bytes_total);

@@ -44,7 +44,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/software/libraries/library.h>
 #include <sstmac/software/process/operating_system.h>
-#include <sstmac/software/process/key.h>
 #include <sstmac/common/sstmac_env.h>
 
 namespace sstmac {

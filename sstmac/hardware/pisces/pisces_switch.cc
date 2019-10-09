@@ -123,7 +123,7 @@ PiscesSwitch::PiscesSwitch(uint32_t id, SST::Params& params)
   for (int src_outport=0; src_outport < num_ports; ++src_outport){
     double scale_factor = top_->portScaleFactor(my_addr_, src_outport);
     std::string bufname = sprockit::printf(
-        "%s:buffer%d",top_->switchIdToName(my_addr_).c_str(), src_outport);
+        "%s:port%d",top_->switchIdToName(my_addr_).c_str(), src_outport);
     PiscesBuffer* out_buffer = new PiscesBuffer(link_params, bufname, componentId(),
               arbType_, link_bw_ * scale_factor, mtu_, this, router_->numVC());
     out_buffers_[src_outport] = out_buffer;

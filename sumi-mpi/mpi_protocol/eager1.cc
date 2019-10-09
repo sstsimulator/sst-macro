@@ -48,8 +48,17 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi-mpi/mpi_queue/mpi_queue_recv_request.h>
 #include <sstmac/software/process/backtrace.h>
 #include <sstmac/null_buffer.h>
+#include <sprockit/sim_parameters.h>
 
 namespace sumi {
+
+Eager1::Eager1(SST::Params &params, MpiQueue *queue) :
+  MpiProtocol(params, queue)
+{
+  header_qos_ = params.find<int>("eager1_header_qos", 0);
+  rdma_get_qos_ = params.find<int>("eager1_rdma_get_qos", 0);
+  ack_qos_ = params.find<int>("eager1_ack_qos", 0);
+}
 
 void
 Eager1::start(void* buffer, int src_rank, int dst_rank, sstmac::sw::TaskId tid, int count,
@@ -61,7 +70,7 @@ Eager1::start(void* buffer, int src_rank, int dst_rank, sstmac::sw::TaskId tid, 
   }
 
   mpi_->smsgSend<MpiMessage>(tid, 64/*metadata size - use fixed to avoid sizeof*/,
-                   nullptr, sumi::Message::no_ack, queue_->pt2ptCqId(), sumi::Message::pt2pt,
+                   nullptr, sumi::Message::no_ack, queue_->pt2ptCqId(), sumi::Message::pt2pt, header_qos_,
                    src_rank, dst_rank, typeobj->id, tag, comm, seq_id,
                    count, typeobj->packed_size(), eager_buf, EAGER1);
 
@@ -78,7 +87,8 @@ Eager1::incomingHeader(MpiMessage* msg)
   }
   msg->advanceStage();
   mpi_->rdmaGetRequestResponse(msg, msg->payloadSize(), recv_buf, send_buf,
-                                  queue_->pt2ptCqId(), queue_->pt2ptCqId());
+                               queue_->pt2ptCqId(), queue_->pt2ptCqId(),
+                               ack_qos_);
 }
 
 void
@@ -92,6 +102,7 @@ Eager1::incomingPayload(MpiMessage* msg)
 void
 Eager1::incoming(MpiMessage *msg, MpiQueueRecvRequest* req)
 {
+  logRecvDelay(1, msg, req);
   if (req->recv_buffer_){
     char* temp_recv_buf = (char*) msg->localBuffer();
 #if SSTMAC_SANITY_CHECK

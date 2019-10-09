@@ -45,21 +45,11 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef sstmac_software_process_TIME_H
 #define sstmac_software_process_TIME_H
 
-#include <sys/time.h>
-
-#ifndef SSTMAC_NO_REPLACEMENTS
-#define gettimeofday SSTMAC_gettimeofday
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int SSTMAC_gettimeofday(struct timeval* tv, struct timezone* tz);
-
-int sstmac_ts_nanosleep(const struct timespec *req, struct timespec *rem);
-
-double sstmac_virtual_time();
+double sstmacVirtualTime();
 
 double sstmacWallTime();
 

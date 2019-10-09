@@ -44,10 +44,13 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sumi-mpi/mpi_protocol/mpi_protocol.h>
 #include <sumi-mpi/mpi_queue/mpi_queue.h>
+#include <sumi-mpi/mpi_api.h>
+#include <sumi-mpi/mpi_queue/mpi_queue_recv_request.h>
+#include <sprockit/sim_parameters.h>
 
 namespace sumi {
 
-MpiProtocol::MpiProtocol(MpiQueue *queue) :
+MpiProtocol::MpiProtocol(SST::Params& params, MpiQueue *queue) :
   queue_(queue), mpi_(queue_->api())
 {
 }
@@ -64,5 +67,90 @@ MpiProtocol::fillSendBuffer(int count, void* buffer, MpiType* typeobj)
   }
   return eager_buf;
 }
+
+void
+MpiProtocol::logRecvDelay(int stage, MpiMessage* msg, MpiQueueRecvRequest* req)
+{
+  sstmac::TimeDelta active_delay;
+  sstmac::TimeDelta sync_delay;
+  if (req->req()->activeWait()){
+    sstmac::Timestamp wait_start = req->req()->waitStart();
+    active_delay = mpi_->activeDelay(wait_start);
+    if (stage == 0 && msg->timeArrived() > wait_start){
+      sync_delay = msg->timeArrived() - wait_start;
+    }
+  }
+  mpi_->logMessageDelay(msg, msg->payloadSize(), stage,
+                        sync_delay, active_delay);
+}
+
+DirectPut::~DirectPut()
+{
+}
+
+void
+DirectPut::start(void* buffer, int src_rank, int dst_rank, sstmac::sw::TaskId tid, int count, MpiType* type,
+                 int tag, MPI_Comm comm, int seq_id, MpiRequest* req)
+{
+  int qos = 0;
+  auto* msg = mpi_->rdmaPut<MpiMessage>(tid, count*type->packed_size(), nullptr, nullptr,
+                queue_->pt2ptCqId(), queue_->pt2ptCqId(), sumi::Message::pt2pt, qos,
+                src_rank, dst_rank, type->id, tag, comm, seq_id, count, type->packed_size(),
+                buffer, DIRECT_PUT);
+
+  send_flows_.emplace(std::piecewise_construct,
+                      std::forward_as_tuple(msg->flowId()),
+                      std::forward_as_tuple(req));
+}
+
+void
+DirectPut::incomingAck(MpiMessage *msg)
+{
+  mpi_queue_protocol_debug("RDMA get incoming ack %s", msg->toString().c_str());
+  auto iter = send_flows_.find(msg->flowId());
+  if (iter == send_flows_.end()){
+    spkt_abort_printf("could not find matching ack for %s", msg->toString().c_str());
+  }
+
+  MpiRequest* req = iter->second;
+  req->complete();
+  send_flows_.erase(iter);
+  delete msg;
+}
+
+void
+DirectPut::incoming(MpiMessage* msg)
+{
+  mpi_queue_protocol_debug("RDMA put incoming %s", msg->toString().c_str());
+  switch(msg->sstmac::hw::NetworkMessage::type()){
+  case sstmac::hw::NetworkMessage::rdma_put_sent_ack: {
+    incomingAck(msg);
+    break;
+  }
+  case sstmac::hw::NetworkMessage::rdma_put_payload: {
+    incomingPayload(msg);
+    break;
+  }
+  default:
+    spkt_abort_printf("Invalid message type %s to RDMA put protocol",
+                      sstmac::hw::NetworkMessage::tostr(msg->sstmac::hw::NetworkMessage::type()));
+  }
+}
+
+void
+DirectPut::incoming(MpiMessage *msg, MpiQueueRecvRequest *req)
+{
+  queue_->finalizeRecv(msg, req);
+  delete msg;
+}
+
+void
+DirectPut::incomingPayload(MpiMessage* msg)
+{
+  MpiQueueRecvRequest* req = queue_->findMatchingRecv(msg);
+  if (req) incoming(msg, req);
+
+}
+
 
 }

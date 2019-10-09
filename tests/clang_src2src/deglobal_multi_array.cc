@@ -7,8 +7,8 @@ static int b[2][2];
 
 void fxn()
 {
-  static int a[3][5];
-  a[0][0] = 1;
+  //static int a[3][5];
+  //a[0][0] = 1;
   x[0][1] = 2;
   y[1][1] = 3;
   z[2][0] = 5;
