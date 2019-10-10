@@ -5,12 +5,23 @@
 
 CORETESTS+= \
   test_sumi_collective \
+  test_core_apps_ping_pong_snappr \
+  test_core_apps_ping_pong_mem_thrash \
+  test_core_apps_ping_all_dfly_snappr \
+  test_core_apps_ping_all_dfly_snappr_rr \
+  test_core_apps_ping_all_dfly_plus_snappr \
+  test_core_apps_ping_all_hypercube_snappr \
+  test_core_apps_mem_bandwidth_snappr1 \
+  test_core_apps_mem_bandwidth_snappr4 \
+  test_core_apps_mem_bandwidth_pisces1 \
+  test_core_apps_mem_bandwidth_pisces4 \
   test_core_apps_smp_collectives_optimized \
   test_core_apps_smp_collectives_unoptimized \
   test_core_apps_direct_alltoall \
   test_core_apps_bruck_alltoall \
   test_core_apps_ring_allgather \
   test_core_apps_ping_all_dragonfly_par \
+  test_core_apps_ping_all_dragonfly_par_small \
   test_core_apps_ping_all_dragonfly_par_alltoall \
   test_core_apps_ping_all_dragonfly_par_single \
   test_core_apps_ping_all_dragonfly_par_single2 \
@@ -18,6 +29,7 @@ CORETESTS+= \
   test_core_apps_ping_all_dragonfly_valiant \
   test_core_apps_ping_all_dragonfly_plus \
   test_core_apps_ping_all_dragonfly_plus_par \
+  test_core_apps_ping_all_dragonfly_plus_par_small \
   test_core_apps_ping_all_dragonfly \
   test_core_apps_ping_all_dragonfly_minimal \
   test_core_apps_ping_all_file \
@@ -38,6 +50,8 @@ CORETESTS+= \
   test_core_apps_ping_all_fattree4 \
   test_core_apps_ping_all_fattree_tapered
 
+#  test_core_apps_ping_all_fat_tree_snappr \
+#  test_core_apps_ping_pong_qos_25_75 \
 #  test_core_apps_distributed_service 
 
 test_sumi_%.$(CHKSUF): sumi/sst_%
@@ -71,8 +85,15 @@ test_core_apps_host_compute.$(CHKSUF): $(CORE_TEST_DEPS)
 test_core_apps_ping_all_tiled_torus.$(CHKSUF): $(SSTMACEXEC)
 	$(PYRUNTEST) 15 $(top_srcdir) $@ True $(SSTMACEXEC) -f $(srcdir)/test_configs/test_ping_all_tiled_torus.ini --no-wall-time
 
+
 test_core_apps_ping_pong.$(CHKSUF): $(SSTMACEXEC)
 	$(PYRUNTEST) 15 $(top_srcdir) $@ True $(SSTMACEXEC) -f $(srcdir)/test_configs/test_ping_pong.ini --no-wall-time
+
+test_core_apps_ping_pong_snappr.$(CHKSUF): $(SSTMACEXEC)
+	$(PYRUNTEST) 15 $(top_srcdir) $@ True $(SSTMACEXEC) -f $(srcdir)/test_configs/test_ping_pong_snappr.ini --no-wall-time
+
+test_core_apps_ping_pong_mem_thrash.$(CHKSUF): $(SSTMACEXEC)
+	$(PYRUNTEST) 15 $(top_srcdir) $@ True $(SSTMACEXEC) -f $(srcdir)/test_configs/test_ping_pong_mem_thrash.ini --no-wall-time
 
 test_core_apps_ping_pong_slow.$(CHKSUF): $(SSTMACEXEC)
 	$(PYRUNTEST) 15 $(top_srcdir) $@ True $(SSTMACEXEC) -f $(srcdir)/test_configs/test_ping_pong_slow.ini --no-wall-time

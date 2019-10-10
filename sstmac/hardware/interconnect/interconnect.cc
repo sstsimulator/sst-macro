@@ -42,7 +42,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
+#ifndef __STDC_FORMAT_MACROS
 #define __STDC_FORMAT_MACROS
+#endif
 
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/hardware/topology/structured_topology.h>
@@ -118,6 +120,8 @@ Interconnect::Interconnect(SST::Params& params, EventManager *mgr,
 
 #if !SSTMAC_INTEGRATED_SST_CORE
   components_.resize(topology_->numNodes() + topology_->numSwitches());
+
+  topology_->dumpPorts();
 
   partition_ = part;
   rt_ = rt;
@@ -505,6 +509,14 @@ uint32_t
 Interconnect::nodeComponentId(NodeId nid) const
 {
   return nid;
+}
+
+void
+Interconnect::deadlockCheck()
+{
+  for (auto* sw : switches_){
+    if (sw) sw->deadlockCheck();
+  }
 }
 
 uint32_t

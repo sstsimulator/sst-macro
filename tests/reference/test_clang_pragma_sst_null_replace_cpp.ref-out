@@ -1,0 +1,15 @@
+
+
+void test(double* x){
+}
+
+int fxn()
+{
+
+ 
+  test(0);
+  return 0;
+}
+#include <sstmac/software/process/cppglobal.h>
+#include <sstmac/software/process/memoize.h>
+

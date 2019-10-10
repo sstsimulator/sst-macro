@@ -85,11 +85,9 @@ class PiscesMemoryModel : public MemoryModel
     return "packet flow memory model";
   }
 
-  void access(uint64_t bytes, TimeDelta min_byte_delay, Callback* cb) override;
+  void accessFlow(uint64_t bytes, TimeDelta min_byte_delay, Callback* cb) override;
 
-  TimeDelta minFlowByteDelay() const override {
-    return min_flow_byte_delay_;
-  }
+  void accessRequest(int linkId, Request* req) override;
 
  private:
   void start(int channel, uint64_t size, TimeDelta byte_delay, Callback* cb);
@@ -100,19 +98,19 @@ class PiscesMemoryModel : public MemoryModel
   void access(PiscesPacket* pkt, TimeDelta byte_delay, Callback* cb);
 
  private:
-  struct Request {
+  struct ChannelRequest {
     uint64_t bytes_total;
     uint64_t bytes_arrived;
     TimeDelta byte_delay;
     ExecutionEvent* cb;
     PiscesPacket* pkt;
 
-    Request(uint64_t bytes, TimeDelta byt_delay, Callback* c) :
+    ChannelRequest(uint64_t bytes, TimeDelta byt_delay, Callback* c) :
       bytes_total(bytes), bytes_arrived(0), byte_delay(byt_delay), cb(c), pkt(nullptr)
     {
     }
 
-    Request(TimeDelta byt_delay, Callback* c, PiscesPacket* p) :
+    ChannelRequest(TimeDelta byt_delay, Callback* c, PiscesPacket* p) :
       byte_delay(byt_delay), cb(c), pkt(p)
     {
     }
@@ -120,8 +118,8 @@ class PiscesMemoryModel : public MemoryModel
   };
 
   std::vector<int> channels_available_;
-  std::vector<Request> channel_requests_;
-  std::list<Request, sprockit::threadSafeAllocator<Request>> stalled_requests_;
+  std::vector<ChannelRequest> channel_requests_;
+  std::list<ChannelRequest, sprockit::threadSafeAllocator<ChannelRequest>> stalled_requests_;
 
   int nchannels_;
   TimeDelta min_agg_byte_delay_;

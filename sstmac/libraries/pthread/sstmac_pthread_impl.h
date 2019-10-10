@@ -174,6 +174,7 @@ int SSTMAC_pthread_cond_destroy(sstmac_pthread_cond_t * cond);
 int SSTMAC_pthread_cond_wait(sstmac_pthread_cond_t * cond,
                          sstmac_pthread_mutex_t * mutex);
 
+struct timespec;
 int SSTMAC_pthread_cond_timedwait(sstmac_pthread_cond_t * cond,
                               sstmac_pthread_mutex_t * mutex, const struct timespec * abstime);
 

@@ -334,7 +334,6 @@ Manager::stop()
 void
 Manager::finish()
 {
-  //interconnect_->deadlock_check();
   EventManager_->finishStats();
   EventManager::global = nullptr;
 }

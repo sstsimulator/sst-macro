@@ -52,6 +52,14 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/keyword_registration.h>
 #include <sprockit/sim_parameters.h>
 
+#define modulo(a,b) ((a)%(b) + (b))%(b)
+
+static inline int mod(int a, int b){
+  int rem = a % b;
+  return rem < 0 ? rem + b : rem;
+}
+
+
 RegisterKeywords(
 { "h", "the number inter-group connections per router" },
 { "group_connections", "the number of inter-group connections per router"},
@@ -130,6 +138,18 @@ Dragonfly::minimalDistance(SwitchId src, SwitchId dst) const
     return 2;
   } else {
     return 3;
+  }
+}
+
+std::string
+Dragonfly::portTypeName(SwitchId sid, int port) const
+{
+  if (port < a_){
+    return "intra";
+  } else if (port < (a_ + h_)){
+    return "global";
+  } else {
+    return "injection";
   }
 }
 
@@ -263,6 +283,47 @@ Dragonfly::getVtkGeometry(SwitchId sid) const
   return geom;
 }
 
+void
+Dragonfly::portConfigDump(const std::string &dump_file)
+{
+  std::ofstream ofs(dump_file);
+  int num_switches = numSwitches();
+  std::vector<Connection> net_ports;
+  std::vector<InjectionPort> inj_ports;
+
+  ofs << "component,port,destination,inport,level,type";
+  for (int i=0; i < num_switches; ++i){
+    connectedOutports(i, net_ports);
+    int srcG = computeG(i);
+    for (Connection& conn : net_ports){
+      ofs << "\n" << switchIdToName(i)
+          << "," << conn.src_outport
+          << "," << switchIdToName(conn.dst)
+          << "," << conn.dst_inport;
+      int dstG = computeG(conn.dst);
+      if (srcG == dstG){
+        ofs << ",1," << "intra";
+      } else {
+        ofs << ",2," << "global";
+      }
+    }
+    endpointsConnectedToInjectionSwitch(i, inj_ports);
+    for (InjectionPort& port : inj_ports){
+      ofs << "\n" << switchIdToName(i)
+          << "," << port.switch_port
+          << "," << nodeIdToName(port.nid)
+          << "," << port.ep_port
+          << ",0,ejection";
+      ofs << "\n" << nodeIdToName(port.nid)
+          << ",0"
+          << "," << switchIdToName(i)
+          << "," << port.switch_port
+          << ",0,injection";
+    }
+  }
+  ofs.close();
+}
+
 InterGroupWiring::InterGroupWiring(SST::Params& params, int a, int g, int h) :
   a_(a), g_(g), h_(h)
 {
@@ -293,11 +354,6 @@ InterGroupWiring::randomIntermediate(Router* rtr, SwitchId current_sw, SwitchId 
     }
     return interG*a_ + interA;
   }
-}
-
-static inline int mod(int a, int b){
-  int rem = a % b;
-  return rem < 0 ? rem + b : rem;
 }
 
 class SingleLinkGroupWiring : public InterGroupWiring
@@ -336,13 +392,15 @@ class SingleLinkGroupWiring : public InterGroupWiring
     int plusMinus = 1 - 2*(srcA%2);
     int deltaG = (1 + srcA/2)*plusMinus;
     int deltaA = plusMinus;
+    //if there is an odd number in the group, the "odd" router out
+    //connects to its equivalent in the other groups
     int aMax = a_ - 1;
     if ( (a_%2) && (srcA == aMax) ){
       deltaA = 0;
     }
     connected.resize(1);
-    int dstG = (srcG+g_+deltaG)%g_;
-    int dstA = (srcA+a_+deltaA)%a_;
+    int dstG = modulo(srcG + deltaG, g_); 
+    int dstA = modulo(srcA + deltaA, a_);
     SwitchId dst = dstG*a_ + dstA;
     connected[0] = dst;
   }
@@ -475,7 +533,7 @@ class AllToAllGroupWiring : public InterGroupWiring
   }
 
   int inputGroupPort(int srcA, int srcG, int srcH, int dstA, int dstG) const override {
-    int deltaA = (srcA + a_ - dstA) % a_; //mod arithmetic in case srcA < dstA
+    int deltaA = modulo(srcA - dstA,a_); //mod arithmetic in case srcA < dstA
     int offset = deltaA / stride_;
     if (srcG < dstG){
       return srcG*covering_ + offset;

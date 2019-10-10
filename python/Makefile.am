@@ -13,6 +13,7 @@ include $(top_srcdir)/Makefile.common
 
 python_includedir=$(includedir)/python
 EXTRA_DIST= \
+  arielShadowPuppet.py \
   jobScheduler.py \
   merlin.py \
   plotSwitches.py \

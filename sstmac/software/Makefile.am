@@ -26,11 +26,10 @@ libsstmac_sw_la_SOURCES = \
   process/compute_scheduler.cc \
   process/cpuset_compute_scheduler.cc \
   process/simple_compute_scheduler.cc \
+  process/ftq_scope.cc \
   process/gdb.cc \
-  process/key.cc \
   process/global.cc \
   process/graphviz.cc \
-  process/ftq.cc \
   process/memoize.cc \
   process/operating_system.cc \
   process/thread.cc \
@@ -57,6 +56,7 @@ libsstmac_sw_la_SOURCES = \
   launch/random_allocation.cc \
   launch/node_id_allocation.cc \
   launch/hostname_allocation.cc \
+  launch/stride_allocation.cc \
   launch/dumpi_allocation.cc \
   launch/first_available_allocation.cc \
   launch/task_mapper.cc \
@@ -86,12 +86,11 @@ nobase_library_include_HEADERS = \
   process/backtrace.h \
   process/graphviz.h \
   process/graphviz_fwd.h \
-  process/ftq.h \
-  process/ftq_fwd.h \
   process/app.h \
   process/app_fwd.h \
   process/app_id.h \
-  process/key.h \
+  process/ftq_scope.h \
+  process/ipc_tunnel.h \
   process/host_timer.h \
   process/operating_system.h \
   process/operating_system_fwd.h \

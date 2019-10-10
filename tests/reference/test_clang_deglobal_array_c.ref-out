@@ -1,0 +1,17 @@
+
+
+
+int x[] = {1,2,3};typedef int array_type_x[3];extern int __offset_x; void init_x(void* ptr){array_type_x initer = {1, 2, 3}; memcpy(ptr, (void*) &initer, sizeof(initer)); } int __sizeof_x = sizeof(array_type_x); 
+
+int __sizeof_xyz_fxnbb = sizeof(void*);  extern int __offset_xyz_fxnbb;  void init_xyz_fxnbb(void* ptr){    void** ptrptr = (void**) ptr;    *ptrptr = 0; }void fxn()
+{ char* sstmac_global_data = get_sstmac_global_data();array_type_x* sstmac_x=(array_type_x*)(sstmac_global_data + __offset_x); {
+  int* z = (*sstmac_x);
+  static struct a {
+    int x;
+  } bb[2] = { {0}, {2} };typedef struct a array_type_bb[2];void** ptrsstmac_xyz_fxnbb = ((void**)(sstmac_global_data + __offset_xyz_fxnbb));array_type_bb* sstmac_xyz_fxnbb = (array_type_bb*)(*ptrsstmac_xyz_fxnbb); if (sstmac_xyz_fxnbb == 0){   sstmac_xyz_fxnbb = (array_type_bb*) malloc(sizeof(array_type_bb));   *ptrsstmac_xyz_fxnbb = sstmac_xyz_fxnbb; }array_type_bb initer_xyz_fxnbb={{0}, {2}}; memcpy(*ptrsstmac_xyz_fxnbb, initer_xyz_fxnbb, sizeof(array_type_bb));
+ }}
+
+static struct b {
+  int x;
+  int y;
+} bb[2] = { {0,1}, {2,3} };typedef struct b array_type_bb[2];extern int __offset_xyzbb; void init_xyzbb(void* ptr){array_type_bb initer = {{0, 1}, {2, 3}}; memcpy(ptr, (void*) &initer, sizeof(initer)); } int __sizeof_xyzbb = sizeof(array_type_bb); 

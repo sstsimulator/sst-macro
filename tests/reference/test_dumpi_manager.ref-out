@@ -8,14 +8,14 @@ Rank 0 -> nid9 [ 1 2 0 ]
 Rank 1 -> nid9 [ 1 2 0 ]
 Rank 2 -> nid9 [ 1 2 0 ]
 Rank 3 -> nid9 [ 1 2 0 ]
+DUMPI trace   1 percent complete: testtrace-0000.bin
+DUMPI trace   3 percent complete: testtrace-0000.bin
+DUMPI trace   4 percent complete: testtrace-0000.bin
+DUMPI trace   5 percent complete: testtrace-0000.bin
+DUMPI trace   7 percent complete: testtrace-0000.bin
+DUMPI trace   8 percent complete: testtrace-0000.bin
+DUMPI trace  10 percent complete: testtrace-0000.bin
 DUMPI trace  11 percent complete: testtrace-0000.bin
-DUMPI trace  22 percent complete: testtrace-0000.bin
-DUMPI trace  33 percent complete: testtrace-0000.bin
-DUMPI trace  44 percent complete: testtrace-0000.bin
-DUMPI trace  55 percent complete: testtrace-0000.bin
-DUMPI trace  66 percent complete: testtrace-0000.bin
-DUMPI trace  77 percent complete: testtrace-0000.bin
-DUMPI trace  88 percent complete: testtrace-0000.bin
-DUMPI trace 100 percent complete: testtrace-0000.bin
+DUMPI trace  12 percent complete: testtrace-0000.bin
 Parsedumpi finalized on rank 0 - trace testtrace.meta successful!
-Estimated total runtime of           0.00010019 seconds
+Estimated total runtime of           0.00010026 seconds

@@ -24,8 +24,11 @@ libsstmac_test_skeletons_la_LDFLAGS =
 
 libsstmac_test_skeletons_la_SOURCES = \
   bw_test.cc \
+  mem_bandwidth.cc \
+  mem_thrash.cc \
   host_compute.cc \
   app_hello_world.cc \
+  dfly_worst_case.cc \
   compute.cc \
   global_test.cc \
   mpi_coverage_test.cc \
@@ -39,6 +42,9 @@ libsstmac_test_skeletons_la_SOURCES = \
   sstmac_mpi_test_all.cc 
 
 
+if HAVE_SST_ELEMENTS
+libsstmac_test_skeletons_la_SOURCES += ariel_test.cc
+endif
 
 
 

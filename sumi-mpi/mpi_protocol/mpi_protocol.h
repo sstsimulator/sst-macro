@@ -65,6 +65,7 @@ class MpiProtocol : public sprockit::printable {
     EAGER0=0,
     EAGER1=1,
     RENDEZVOUS_GET=2,
+    DIRECT_PUT=3,
     NUM_PROTOCOLS
   };
 
@@ -79,13 +80,15 @@ class MpiProtocol : public sprockit::printable {
   virtual ~MpiProtocol(){}
 
  protected:
-  MpiProtocol(MpiQueue* queue);
+  MpiProtocol(SST::Params& params, MpiQueue* queue);
 
   MpiQueue* queue_;
 
   MpiApi* mpi_;
 
   void* fillSendBuffer(int count, void *buffer, MpiType *typeobj);
+
+  void logRecvDelay(int stage, MpiMessage* msg, MpiQueueRecvRequest* req);
 };
 
 /**
@@ -97,8 +100,7 @@ class MpiProtocol : public sprockit::printable {
 class Eager0 final : public MpiProtocol
 {
  public:
-  Eager0(SST::Params& params, MpiQueue* queue) :
-    MpiProtocol(queue){}
+  Eager0(SST::Params& params, MpiQueue* queue);
 
   ~Eager0(){}
 
@@ -115,6 +117,7 @@ class Eager0 final : public MpiProtocol
 
  private:
   std::map<uint64_t,void*> send_flows_;
+  int qos_;
 
 };
 
@@ -132,8 +135,7 @@ class Eager0 final : public MpiProtocol
 class Eager1 final : public MpiProtocol
 {
  public:
-  Eager1(SST::Params& params, MpiQueue* queue)
-    : MpiProtocol(queue) {}
+  Eager1(SST::Params& params, MpiQueue* queue);
 
   virtual ~Eager1(){}
 
@@ -153,6 +155,10 @@ class Eager1 final : public MpiProtocol
   void incomingHeader(MpiMessage* msg);
   void incomingPayload(MpiMessage* msg);
 
+  int header_qos_;
+  int rdma_get_qos_;
+  int ack_qos_;
+
 };
 
 class RendezvousProtocol : public MpiProtocol
@@ -168,7 +174,9 @@ class RendezvousProtocol : public MpiProtocol
 
  protected:
   bool software_ack_;
-  bool pin_delay_;
+  int header_qos_;
+  int rdma_get_qos_;
+  int ack_qos_;
 
 };
 
@@ -217,6 +225,41 @@ class RendezvousGet final : public RendezvousProtocol
   std::map<uint64_t,MpiQueueRecvRequest*> recv_flows_;
 
   std::map<uint64_t,send> send_flows_;
+
+};
+
+/**
+ * @brief The rendezvous_get class
+ * Encapsulates a rendezvous protocol. On MPI_Send, the source sends an RDMA header
+ * to the destination. On MPI_Recv, the destination then posts an RDMA get.
+ * Hardware acks arrive at both dest/source signaling done.
+ */
+class DirectPut final : public MpiProtocol
+{
+ public:
+  DirectPut(SST::Params& params, MpiQueue* queue) :
+    MpiProtocol(params, queue)
+  {
+  }
+
+  ~DirectPut();
+
+  void start(void* buffer, int src_rank, int dst_rank, sstmac::sw::TaskId tid, int count, MpiType* type,
+             int tag, MPI_Comm comm, int seq_id, MpiRequest* req) override;
+
+  void incoming(MpiMessage *msg) override;
+
+  void incoming(MpiMessage *msg, MpiQueueRecvRequest* req) override;
+
+  std::string toString() const override {
+    return "direct rdma PUT";
+  }
+
+ private:
+  void incomingAck(MpiMessage* msg);
+  void incomingPayload(MpiMessage* msg);
+
+  std::map<uint64_t,MpiRequest*> send_flows_;
 };
 
 }

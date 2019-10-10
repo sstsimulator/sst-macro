@@ -28,6 +28,8 @@ libsstmac_common_la_SOURCES = \
   lodepng.cc \
   sstmac_env.cc \
   thread_lock.cc \
+  stats/ftq.cc \
+  stats/ftq_tag.cc \
   stats/stat_accumulator.cc \
   stats/stat_histogram.cc \
   stats/stat_collector.cc \
@@ -65,6 +67,9 @@ nobase_library_include_HEADERS = \
   thread_lock.h \
   sim_thread_lock.h \
   serializable.h \
+  stats/ftq_tag.h \
+  stats/ftq.h \
+  stats/ftq_fwd.h \
   stats/stat_accumulator.h \
   stats/stat_collector.h \
   stats/stat_collector_fwd.h \

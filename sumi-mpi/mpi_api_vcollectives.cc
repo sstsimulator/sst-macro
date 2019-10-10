@@ -47,6 +47,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi-mpi/otf2_output_stat.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/thread.h>
+#include <sstmac/software/process/ftq_scope.h>
 
 #define do_vcoll(coll, fxn, ...) \
   StartMPICall(fxn); \

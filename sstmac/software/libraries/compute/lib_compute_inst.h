@@ -50,7 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/software_id.h>
 #include <sstmac/common/sstmac_config.h>
 #include <stdint.h>
-#include <sstmac/software/process/key.h>
+#include <sstmac/common/stats/ftq_tag.h>
 
 //these are the default instruction labels
 

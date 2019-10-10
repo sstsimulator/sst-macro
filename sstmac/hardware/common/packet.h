@@ -68,7 +68,7 @@ class Packet :
     uint8_t deadlock_vc : 4; //the vc needed for routing deadlock (without QoS)
   };
 
-  serializable* orig() const {
+  Flow* flow() const {
     return payload_;
   }
 
@@ -154,7 +154,7 @@ class Packet :
 
   uint32_t num_bytes_;
 
-  serializable* payload_;
+  Flow* payload_;
 
   char rtr_metadata_[MAX_HEADER_BYTES];
 
@@ -165,7 +165,7 @@ class Packet :
  protected:
   Packet() : Packet(nullptr, 0, 0, false, 0, 0) {}
 
-  Packet(serializable* payload,
+  Packet(Flow* payload,
     uint32_t numBytes,
     uint64_t flowId,
     bool isTail,

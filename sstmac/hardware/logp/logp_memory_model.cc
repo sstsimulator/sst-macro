@@ -61,23 +61,34 @@ LogPMemoryModel::LogPMemoryModel(SST::Component* nd, SST::Params& params)
 {
 
   lat_ = TimeDelta(params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
-  min_byte_delay_ = TimeDelta(params.find<SST::UnitAlgebra>("bandwidth").getValue().inverse().toDouble());
+
+  auto bw = params.find<SST::UnitAlgebra>("bandwidth").getValue();
+  if (bw.toDouble() == 0){
+    spkt_abort_printf("Zero or missing memory.bandwidth parameter");
+  }
+  min_byte_delay_ = TimeDelta(bw.inverse().toDouble());
   link_ = new Link(min_byte_delay_, lat_);
 }
 
 void
-LogPMemoryModel::access(uint64_t bytes, TimeDelta byte_delay, Callback* cb)
+LogPMemoryModel::accessFlow(uint64_t bytes, TimeDelta byte_request_delay, Callback* cb)
 {
   mem_debug("simple model: doing access of %ld bytes", bytes);
 
-  TimeDelta delta_t = link_->newAccess(now(), bytes, byte_delay);
+  TimeDelta delta_t = link_->newAccess(now(), bytes, byte_request_delay);
   parent_node_->sendDelayedExecutionEvent(delta_t, cb);
 }
 
-TimeDelta
-LogPMemoryModel::Link::newAccess(Timestamp now, uint64_t size, TimeDelta byte_delay)
+void
+LogPMemoryModel::accessRequest(int linkId, Request *req)
 {
-  TimeDelta actual_byte_delay = std::max(byte_delay, byte_delay_);
+  spkt_abort_printf("LogP does not support single memory requests - only flow-level calls");
+}
+
+TimeDelta
+LogPMemoryModel::Link::newAccess(Timestamp now, uint64_t size, TimeDelta byte_request_delay)
+{
+  TimeDelta actual_byte_delay = byte_request_delay + byte_delay_;
   Timestamp base = std::max(now, last_access_);
   TimeDelta access = lat_ + actual_byte_delay * size;
   last_access_ = base + access;

@@ -27,7 +27,6 @@ exe_LDADD = \
   ../../sstmac/install/libsstmac.la \
   ../../sprockit/sprockit/libsprockit.la
 
-exe_FLAGS = 
 
 sst_deadlock_SOURCES = deadlock.cc
 sst_replica_SOURCES = replica.cc
@@ -48,8 +47,6 @@ sst_deadlock_LDADD = $(exe_LDADD)
 sst_replica_LDADD = $(exe_LDADD) 
 sst_collective_LDADD = $(exe_LDADD) 
 sst_box_domain_LDADD = $(exe_LDADD) 
-
-sst_collective_LDFLAGS = $(exe_FLAGS) 
 
 #sst_domain_LDADD = $(exe_LDADD)
 #sst_heartbeat_LDADD = $(exe_LDADD)

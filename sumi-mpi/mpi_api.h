@@ -48,6 +48,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/libraries/library.h>
 #include <sstmac/software/api/api.h>
 
+#include <sstmac/common/stats/ftq_tag.h>
+
 #include <sumi/message_fwd.h>
 
 #include <sumi-mpi/mpi_types.h>
@@ -61,12 +63,12 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi-mpi/mpi_comm/mpi_comm_factory.h>
 #include <sumi-mpi/mpi_debug.h>
 #include <sumi-mpi/mpi_queue/mpi_queue_fwd.h>
+#include <sumi-mpi/mpi_delay_stats.h>
 
 #include <sstmac/software/process/software_id.h>
 #include <sstmac/software/process/backtrace.h>
 #include <sstmac/software/process/operating_system_fwd.h>
 #include <sstmac/common/stats/stat_spyplot_fwd.h>
-#include <sstmac/software/process/ftq.h>
 
 #include <sprockit/sim_parameters_fwd.h>
 #include <unordered_map>
@@ -787,11 +789,9 @@ class MpiApi : public sumi::SimTransport
   void finishCurrentMpiCall();
 
   void setNewMpiCall(MPI_function func){
-#if SSTMAC_COMM_SYNC_STATS
     current_call_.ID = func;
     current_call_.start = last_collection_ = now();
     //update this to at least the beginning of this function
-#endif
   }
 
   bool test(MPI_Request *request, MPI_Status *status, int& tag, int& source);
@@ -824,7 +824,7 @@ class MpiApi : public sumi::SimTransport
   static const MPI_Op first_custom_op_id = 1000;
   MPI_Op next_op_id_;
 
-  static sstmac::sw::FTQTag mpi_tag;
+  static sstmac::FTQTag mpi_tag;
 
   MpiCommFactory comm_factory_;
 
@@ -856,6 +856,19 @@ class MpiApi : public sumi::SimTransport
   req_ptr_map req_map_;
   MPI_Request req_counter_;
 
+  SST::Statistics::MultiStatistic<int, //sender
+                                  int, //recver
+                                  int, //type
+                                  int, //stage
+                                  uint64_t, //byte length
+                                  double, //sync delay
+                                  double, //injection delay
+                                  double, //contention delay
+                                  double, //min delay in absence of contention
+                                  double, //active sync delay experienced by app
+                                  double  //active delay experienced by app
+                                 >* delays_;
+
   std::unordered_map<int, keyval*> keyvals_;
 
   bool generate_ids_;
@@ -866,19 +879,12 @@ class MpiApi : public sumi::SimTransport
   OTF2Writer* OTF2Writer_;
 #endif
 
-#if SSTMAC_COMM_DELAY_STATS
  public:
-  void logMessageDelay(sstmac::Timestamp wait_start, Message* msg) override;
-
-  void startCollectiveMessageLog() override;
+  void logMessageDelay(Message *msg, uint64_t bytes, int stage,
+                       sstmac::TimeDelta sync_delay, sstmac::TimeDelta active_delay) override;
 
  private:
-  sstmac::Timestamp last_collection_;
-#endif
-
-#if SSTMAC_COMM_SYNC_STATS
   MPI_Call current_call_;
-#endif
 
 };
 

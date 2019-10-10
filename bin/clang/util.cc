@@ -112,8 +112,9 @@ internalError(const Decl *decl, CompilerInstance &CI, const std::string &error){
 }
 
 void
-internalError(const Stmt *s, CompilerInstance &CI, const std::string &error){
-  internalError(getStart(s), CI, error);
+internalError(const std::string &error){
+	llvm::errs() << "Internal Error: " << error << "\n";
+  exit(EXIT_FAILURE);
 }
 
 
@@ -121,7 +122,12 @@ void
 internalError(SourceLocation loc, CompilerInstance &CI, const std::string &error)
 {
   std::string newError = "internal error: " + error;
-  errorAbort(loc, CI, newError);
+	 
+}
+
+void internalError(const clang::Stmt* s, clang::CompilerInstance& CI, const std::string& error)
+{
+  internalError(getStart(s), CI, error);
 }
 
 void

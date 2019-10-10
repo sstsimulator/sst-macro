@@ -46,7 +46,7 @@ HPCG_DEPS = build/CG.o \
 
 # These header files are included in many source files, so we recompile every file if one or more of these header is modified.
 PRIMARY_HEADERS = src/Geometry.hpp src/SparseMatrix.hpp src/Vector.hpp src/CGData.hpp \
-                  src/MGData.hpp src/hpcg.hpp sstmac_headers
+                  src/MGData.hpp src/hpcg.hpp 
 
 ALL_HEADERS = $(shell find src -name '*.hpp')
 
@@ -59,11 +59,8 @@ libhpcg.so: build/main.o $(HPCG_DEPS)
 	@echo "Linking SST core .so"
 	$(LINKER) $(LINKFLAGS) build/main.o $(HPCG_DEPS) $(HPCG_LIBS) -o $@
 
-sstmac_headers: $(ALL_HEADERS)
-	find `pwd` -name "*.hpp" > $@
-
 clean:
-	rm -f build/*.o hpcg-3.0 sstmac_headers libhpcg.so
+	rm -f build/*.o hpcg-3.0 libhpcg.so
 
 .PHONY: all clean
 

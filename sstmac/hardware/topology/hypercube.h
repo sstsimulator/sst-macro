@@ -70,6 +70,8 @@ class Hypercube :
 
   virtual ~Hypercube() {}
 
+  double portScaleFactor(uint32_t addr, int port) const override;
+
   void minimalRouteToSwitch(
     SwitchId src,
     SwitchId dst,
@@ -89,6 +91,8 @@ class Hypercube :
   inline int convertToPort(int dim, int dir) const {
     return dim_to_outport_[dim] + dir;
   }
+
+  std::string portTypeName(SwitchId sid, int port) const override;
 
   int minimalDistance(SwitchId src, SwitchId dst) const;
 

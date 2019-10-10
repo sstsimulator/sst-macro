@@ -96,14 +96,14 @@ int ParseDumpi::skeletonMain()
   mpi_ = getApi<MpiApi>("mpi");
 
   sstmac::sw::DumpiMeta* meta = new   sstmac::sw::DumpiMeta(fileroot_);
-  parsedumpi_callbacks cbacks(this);
+  ParsedumpiCallbacks cbacks(this);
   std::string fname = sstmac::sw::dumpiFileName(rank, meta->dirplusfileprefix_);
   // Ready to go.
   //only rank 0 should print progress
   bool print_my_progress = rank == 0 && print_progress_;
 
   try {
-    cbacks.parse_stream(fname.c_str(), print_my_progress);
+    cbacks.parseStream(fname.c_str(), print_my_progress);
   } catch (ParseDumpi::early_termination& e) {
     //do nothing - happily move on and finalize
     mpi_->finalize();

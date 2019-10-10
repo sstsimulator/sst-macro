@@ -18,6 +18,8 @@ CORETESTS+= \
   test_core_apps_ping_all_hypercube \
   test_core_apps_ping_all_cascade 
 
+#  test_core_apps_ping_all_big_dfly_snappr \
+#  test_core_apps_ping_all_dfly_plus_qos \
 #  test_core_apps_ping_all_cascade_valiant  
 #  test_core_apps_ping_all_cascade_pisces_ugal \
 #test_core_apps_ping_all_fully_connected \

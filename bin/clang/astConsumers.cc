@@ -105,6 +105,7 @@ SkeletonASTConsumer::run()
       visitor_.TraverseDecl(d);
       visitor_.setVisitingGlobal(false); //and reset
     }
+    visitor_.finalize();
   } catch (StmtDeleteException& e) {
     //e.deleted->dump();
     std::string error = std::string("unhandled delete exception on expression")

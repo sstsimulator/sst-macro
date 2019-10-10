@@ -60,6 +60,7 @@ RandomTaskMapper::RandomTaskMapper(SST::Params& params) :
   } else {
     rng_ = RNG::SimpleCombo::construct();
   }
+  smp_ = params.find<bool>("smp_allocation", false);
 }
 
 RandomTaskMapper::~RandomTaskMapper() throw ()
@@ -73,22 +74,36 @@ RandomTaskMapper::mapRanks(
   std::vector<NodeId> &result,
   int nproc)
 {
-  nproc = validateNproc(ppn, nodes.size(), nproc, "randomindexing");
-
-  ordered_node_set::iterator iter = nodes.begin();
-  for(long i = 0; i < nproc / ppn; i++) {
-    iter++;
-  }
-
-  // result = nodes;
-  for (int i = 0; i < ppn; ++i) {
-    result.insert(result.end(), nodes.begin(), iter);
-  }
-
-  RNG::UniformInteger_functor rngf(rng_);
-  RNG::random_shuffle(result.begin(), result.end(), rngf);
-
+  nproc = validateNproc(ppn, nodes.size(), nproc, "RandomTaskMapper");
   result.resize(nproc);
+  RNG::UniformInteger_functor rngf(rng_);
+  if (smp_){
+    //keep contigous ranks on the same node for SMP
+    //but randomize the nodes themselves
+    std::vector<NodeId> smp_nodes(nodes.begin(), nodes.end());
+    std::random_shuffle(smp_nodes.begin(), smp_nodes.end(), rngf);
+    for (int nodeIdx=0; nodeIdx < smp_nodes.size(); ++nodeIdx){
+      int rankOffset = nodeIdx * ppn;
+      int rankStop = std::min(rankOffset+ppn,nproc);
+      for (int rank=rankOffset; rank < rankStop; ++rank){
+        result[rank] = smp_nodes[nodeIdx];
+      }
+    }
+  } else {
+    //totally random - even if there are multiple ranks
+    //per node, scramble them anywhere
+    int nodeIdx = 0;
+    for (auto nid : nodes){
+      int rankOffset = nodeIdx * ppn;
+      int rankStop = std::min(rankOffset+ppn, nproc);
+      for (int rank=rankOffset; rank < rankStop; ++rank){
+        result[rank] = nid;
+      }
+      ++nodeIdx;
+    }
+
+    std::random_shuffle(result.begin(), result.end(), rngf);
+  }
 }
 
 }

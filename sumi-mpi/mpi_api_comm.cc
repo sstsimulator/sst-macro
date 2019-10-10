@@ -48,6 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/stl_string.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/thread.h>
+#include <sstmac/software/process/ftq_scope.h>
 
 #define StartCommCall(fxn,comm) \
   auto call_start_time = (uint64_t)now().usec(); \

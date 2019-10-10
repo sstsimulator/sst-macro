@@ -48,6 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <iosfwd>
 #include <stdint.h>
 #include <iostream>
+#include <limits>
 #include <sstmac/common/serializable.h>
 #include <sprockit/errors.h>
 
@@ -67,7 +68,7 @@ namespace sstmac {
 class TimeDelta
 {
  public:
-  friend class Timestamp;
+  friend struct Timestamp;
 
   /// The type that holds a timestamp.
   typedef uint64_t tick_t;
@@ -199,6 +200,10 @@ struct Timestamp
   {
   }
 
+  static Timestamp max(){
+    return Timestamp(0, std::numeric_limits<uint64_t>::max());
+  }
+
   bool empty() const {
     return time.ticks() == 0;
   }
@@ -222,6 +227,10 @@ struct Timestamp
 
   uint64_t usecRounded() const {
     return time.ticks() / time.one_microsecond;
+  }
+
+  uint64_t nsecRounded() const {
+    return time.ticks() / time.one_nanosecond;
   }
 
   Timestamp& operator+=(const TimeDelta& t);

@@ -221,60 +221,28 @@ class Message : public sstmac::hw::NetworkMessage
   int send_cq_;
   int recv_cq_;
 
-#if SSTMAC_COMM_DELAY_STATS
  public:
-  sstmac::Timestamp timeSent() const {
-    return sent_;
-  }
-
   sstmac::Timestamp timeArrived() const {
     return arrived_;
-  }
-
-  void setTimeSent(sstmac::Timestamp now){
-    sent_ = now;
   }
 
   void setTimeArrived(sstmac::Timestamp now){
     arrived_ = now;
   }
 
- private:
-  sstmac::Timestamp sent_;
+  sstmac::TimeDelta recvSyncDelay() const {
+    return recv_sync_delay_;
+  }
 
+  void addRecvSyncDelay(sstmac::TimeDelta delay) {
+    recv_sync_delay_ += delay;
+  }
+
+ private:
   sstmac::Timestamp arrived_;
-#endif
 
-#if SSTMAC_COMM_SYNC_STATS
- public:
-  sstmac::Timestamp timeStarted() const {
-    return started_;
-  }
+  sstmac::TimeDelta recv_sync_delay_;
 
-  sstmac::Timestamp timeSynced() const {
-    return synced_;
-  }
-
-  sstmac::Timestamp timeSyncArrived() const {
-    return sync_arrived_;
-  }
-
-  void setTimeStarted(sstmac::Timestamp now){
-    started_ = now;
-  }
-
-  void setTimeSynced(sstmac::Timestamp now){
-    synced_ = now;
-    sync_arrived_ = arrived_;
-  }
-
- private:
-  sstmac::Timestamp started_;
-
-  sstmac::Timestamp synced_;
-
-  sstmac::Timestamp sync_arrived_;
-#endif
 
 };
 

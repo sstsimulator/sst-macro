@@ -82,7 +82,6 @@ InstructionProcessor(SST::Params& params,
   tintop_ = tflop_;
   tmemseq_ = TimeDelta(1.0 / mem_freq_);
   tmemrnd_ = tmemseq_;
-  min_flow_byte_delay_ = mem_->minFlowByteDelay();
 }
 
 
@@ -106,14 +105,12 @@ InstructionProcessor::compute(Event* ev, ExecutionEvent* cb)
   TimeDelta instr_time = instructionTime(bev) / nthread;
   // now count the number of bytes
   uint64_t bytes = st.mem_sequential;
-  // max_single_mem_bw is the bandwidth achievable if ZERO instructions are executed
-  TimeDelta best_possible_time = instr_time + bytes * min_flow_byte_delay_;
   if (bytes <= negligible_bytes_) {
     node_->sendDelayedExecutionEvent(instr_time, cb);
   } else {
     //do the full memory modeling
-    TimeDelta best_possible_byte_delay = best_possible_time / bytes;
-    mem_->access(bytes, best_possible_byte_delay, cb);
+    TimeDelta byte_request_delay = instr_time / bytes;
+    mem_->accessFlow(bytes, byte_request_delay, cb);
   }
 }
 

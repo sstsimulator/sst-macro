@@ -60,7 +60,7 @@ namespace hw {
 const double PiscesPacket::uninitialized_bw = -1;
 
 PiscesPacket::PiscesPacket(
-  serializable* msg,
+  Flow* msg,
   uint32_t num_bytes,
   uint64_t flow_id,
   bool is_tail,
@@ -87,7 +87,7 @@ PiscesPacket::toString() const
                    isTail() ? " tail" : "",
                    byteLength(), byte_delay_.sec(),
                    int(fromaddr()), int(toaddr()),
-                   orig() ? "with payload" : "no payload");
+                   flow() ? "with payload" : "no payload");
 }
 
 std::string

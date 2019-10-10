@@ -47,14 +47,15 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/common/node_address.h>
 #include <sstmac/common/timestamp.h>
+#include <sstmac/common/stats/ftq_tag.h>
+#include <sstmac/common/stats/ftq_fwd.h>
 #include <sstmac/software/process/process_context.h>
 #include <sstmac/software/process/software_id.h>
 #include <sstmac/software/api/api.h>
 #include <sprockit/errors.h>
 
+#include <sstmac/software/process/graphviz_fwd.h>
 #include <sstmac/software/process/graphviz.h>
-#include <sstmac/software/process/ftq_fwd.h>
-#include <sstmac/software/process/key.h>
 #include <sstmac/software/process/app_fwd.h>
 #include <sstmac/software/process/operating_system_fwd.h>
 #include <sstmac/software/process/thread_fwd.h>
@@ -209,12 +210,13 @@ class Thread
 
   void collectStats(Timestamp start, TimeDelta elapsed);
 
-#if SSTMAC_HAVE_CALL_GRAPH
   const int* backtrace() const {
     return backtrace_;
   }
-#endif
 
+  virtual bool isMainThread() const {
+    return false;
+  }
 
   int lastBacktraceNumFxn() const {
     return last_bt_collect_nfxn_;
@@ -379,11 +381,9 @@ class Thread
 
   void spawnOmpParallel();
 
-#if SSTMAC_HAVE_CALL_GRAPH
   CallGraph* callGraph() const {
     return callGraph_;
   }
-#endif
 
  protected:
   Thread(SST::Params& params,
@@ -438,9 +438,9 @@ class Thread
  private:
   API* getAppApi(const std::string& name) const;
 
-#if SSTMAC_HAVE_CALL_GRAPH
   CallGraphTrace backtrace_; //each function is labeled by unique integer
-#endif
+
+  int last_bt_collect_nfxn_;
 
   int bt_nfxn_;
 
@@ -449,8 +449,6 @@ class Thread
   std::map<int, void*> tls_values_;
 
   std::vector<int> active_cores_;
-
-  int last_bt_collect_nfxn_;
 
   void* stack_;
 
@@ -472,9 +470,7 @@ class Thread
 
   std::list<omp_context> omp_contexts_;
 
-#if SSTMAC_HAVE_CALL_GRAPH
   CallGraph* callGraph_;
-#endif
 
   FTQCalendar* ftq_trace_;
 

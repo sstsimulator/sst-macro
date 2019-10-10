@@ -138,7 +138,9 @@ class EventLink {
 
  protected:
   EventLink(uint64_t linkId, TimeDelta latency) :
-    linkId_(linkId), latency_(latency), seqnum_(0)
+    seqnum_(0),
+    linkId_(linkId), 
+    latency_(latency)
   {
   }
 
@@ -198,6 +200,8 @@ class EventScheduler : public sprockit::printable
     SST::SimTime_t delay = arrival.time.ticks() - getCurrentSimTime(time_converter_);
     self_link_->send(delay, time_converter_, ev);
   }
+
+  void endSimulation();
 #else
   Component* getTrueComponent() const {
     return comp_;
@@ -245,6 +249,8 @@ class EventScheduler : public sprockit::printable
   }
 
   void sendExecutionEvent(Timestamp arrival, ExecutionEvent* ev);
+
+  void endSimulation();
 #endif
 
  public:
@@ -304,9 +310,15 @@ class EventScheduler : public sprockit::printable
 
   EventScheduler(const std::string& selfname, uint32_t id, SST::Component* base) :
 #if !SSTMAC_INTEGRATED_SST_CORE
-   seqnum_(0), mgr_(nullptr), now_(nullptr), selfLinkId_(EventLink::allocateSelfLinkId()),
+    mgr_(nullptr), 
+    seqnum_(0), 
+    selfLinkId_(EventLink::allocateSelfLinkId()),
+    now_(nullptr), 
 #endif
-   comp_(base), id_(id), nthread_(1), thread_id_(0)
+    id_(id), 
+    thread_id_(0),
+    nthread_(1),
+    comp_(base)
   {
 #if SSTMAC_INTEGRATED_SST_CORE
     if (!time_converter_){
@@ -325,9 +337,6 @@ class EventScheduler : public sprockit::printable
   }
 
  private:
-  uint32_t id_;
-  int thread_id_;
-  int nthread_;
 
 #if SSTMAC_INTEGRATED_SST_CORE
   SST::Link* self_link_;
@@ -346,6 +355,10 @@ class EventScheduler : public sprockit::printable
 #endif
 
  private:
+  uint32_t id_;
+  int thread_id_;
+  int nthread_;
+
   void statNotFound(SST::Params& params, const std::string& name, const std::string& type);
 
   static SST::Params& getEmptyParams();

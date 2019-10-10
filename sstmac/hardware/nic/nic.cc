@@ -106,8 +106,8 @@ NIC::NIC(SST::Component* parent, SST::Params& params) :
   top_ = Topology::staticTopology(params);
 
   std::string subname = sprockit::printf("NIC.%d", my_addr_);
-  auto* spy = parent->registerMultiStatistic<int,int,uint64_t>(params, "spy_bytes", subname);
-  spy_bytes_ = dynamic_cast<StatSpyplot<int,int,uint64_t>*>(spy);
+  auto* spy = parent->registerMultiStatistic<int,uint64_t>(params, "spy_bytes", subname);
+  spy_bytes_ = dynamic_cast<StatSpyplot<int,uint64_t>*>(spy);
 
   xmit_flows_ = parent->registerStatistic<uint64_t>(params, "xmit_flows", subname);
 }
@@ -166,7 +166,7 @@ NIC::injectSend(NetworkMessage* netmsg)
 void
 NIC::recvMessage(NetworkMessage* netmsg)
 {
-  nic_debug("handling message %s:%lu of type %s from node %d while running",
+  nic_debug("handling %s:%lu of type %s from node %d while running",
     netmsg->toString().c_str(),
     netmsg->flowId(),
     NetworkMessage::tostr(netmsg->type()),
@@ -216,8 +216,7 @@ NIC::ackSend(NetworkMessage* payload)
 {
   if (payload->needsAck()){
     NetworkMessage* ack = payload->cloneInjectionAck();
-    nic_debug("acking payload %s with ack %p",
-      payload->toString().c_str(), ack);
+    nic_debug("acking payload %s", payload->toString().c_str());
     sendToNode(ack);
   }
 }
@@ -243,8 +242,8 @@ NIC::intranodeSend(NetworkMessage* payload)
   //use 64 as a negligible number of compute bytes
   uint64_t byte_length = payload->byteLength();
   if (byte_length > 64){
-    mem->access(payload->byteLength(),
-                mem->minFlowByteDelay(),
+    mem->accessFlow(payload->byteLength(),
+                TimeDelta(), //assume NIC can issue mem requests without delay
                 newCallback(this, &NIC::finishMemcpy, payload));
   } else {
     finishMemcpy(payload);
@@ -276,7 +275,7 @@ NIC::recordMessage(NetworkMessage* netmsg)
   }
 
   if (spy_bytes_){
-    spy_bytes_->addData(netmsg->fromaddr(), netmsg->toaddr(), netmsg->byteLength());
+    spy_bytes_->addData(netmsg->toaddr(), netmsg->byteLength());
   }
   xmit_flows_->addData(netmsg->byteLength());
 }
@@ -298,13 +297,17 @@ NIC::internodeSend(NetworkMessage* netmsg)
 void 
 NIC::sendManagerMsg(NetworkMessage* msg)
 {
+  if (msg->toaddr() == my_addr_){
+    intranodeSend(msg);
+  } else {
 #if SSTMAC_SANITY_CHECK
-  if (!logp_link_){
-    spkt_abort_printf("NIC %d does not have LogP link", addr());
-  }
+    if (!logp_link_){
+      spkt_abort_printf("NIC %d does not have LogP link", addr());
+    }
 #endif
-  logp_link_->send(new NicEvent(msg));
-  ackSend(msg);
+    logp_link_->send(new NicEvent(msg));
+    ackSend(msg);
+  }
 }
 
 void

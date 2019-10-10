@@ -54,9 +54,12 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sumi {
 
 RendezvousProtocol::RendezvousProtocol(SST::Params& params, MpiQueue* queue) :
-  MpiProtocol(queue)
+  MpiProtocol(params, queue)
 {
   software_ack_ = params.find<bool>("software_ack", true);
+  header_qos_ = params.find<int>("rendezvous_header_qos", 0);
+  rdma_get_qos_ = params.find<int>("rendezvous_rdma_get_qos", 0);
+  ack_qos_ = params.find<int>("rendezvous_ack_qos", 0);
 }
 
 RendezvousGet::~RendezvousGet()
@@ -86,12 +89,9 @@ RendezvousGet::start(void* buffer, int src_rank, int dst_rank, sstmac::sw::TaskI
 {
   void* send_buf = configureSendBuffer(count, buffer, type);
   auto* msg = mpi_->smsgSend<MpiMessage>(tid, 64/*fixed size, not sizeof()*/, nullptr,
-                           sumi::Message::no_ack, queue_->pt2ptCqId(), sumi::Message::pt2pt,
+                           sumi::Message::no_ack, queue_->pt2ptCqId(), sumi::Message::pt2pt, header_qos_,
                            src_rank, dst_rank, type->id,  tag, comm, seq_id,
                            count, type->packed_size(), send_buf, RENDEZVOUS_GET);
-#if SSTMAC_COMM_SYNC_STATS
-  msg->setTimeStarted(mpi_->now());
-#endif
   send_flows_.emplace(std::piecewise_construct,
                       std::forward_as_tuple(msg->flowId()),
                       std::forward_as_tuple(req, buffer, send_buf));
@@ -108,16 +108,17 @@ RendezvousGet::incomingAck(MpiMessage *msg)
   }
 
   auto& s = iter->second;
+  if (s.req->activeWait()){
+    sstmac::TimeDelta active_delay = mpi_->activeDelay(s.req->waitStart());
+    mpi_->logMessageDelay(msg, msg->payloadSize(), 2,
+                          msg->recvSyncDelay(), active_delay);
+  }
+
   if (s.original && s.original != s.temporary){
     //temp got allocated for some reason
     delete[] (char*) s.temporary;
   }
   s.req->complete();
-#if SSTMAC_COMM_DELAY_STATS
-  if (s.req->activeWait()){
-    mpi_->logMessageDelay(s.req->waitStart(), msg);
-  }
-#endif
   send_flows_.erase(iter);
   delete msg;
 }
@@ -154,7 +155,9 @@ RendezvousGet::incomingHeader(MpiMessage* msg)
   mpi_queue_protocol_debug("RDMA get incoming header %s", msg->toString().c_str());
   CallGraphAppend(MPIRendezvousProtocol_RDMA_Handle_Header);
   MpiQueueRecvRequest* req = queue_->findMatchingRecv(msg);
-  if (req) incoming(msg, req);
+  if (req){
+    incoming(msg, req);
+  }
 
   queue_->notifyProbes(msg);
 }
@@ -163,10 +166,14 @@ void
 RendezvousGet::incoming(MpiMessage *msg, MpiQueueRecvRequest* req)
 {
   mpi_queue_protocol_debug("RDMA get matched payload %s", msg->toString().c_str());
-#if SSTMAC_COMM_SYNC_STATS
-  //this is a bit of a hack
-  msg->setTimeSynced(mpi_->now());
-#endif
+
+  logRecvDelay(0, msg, req);
+  sstmac::Timestamp now = mpi_->now();
+  if (now > msg->timeArrived()){
+    sstmac::TimeDelta sync_delay = now - msg->timeArrived();
+    msg->addRecvSyncDelay(sync_delay);
+  }
+
   mpi_->pinRdma(msg->payloadBytes());
   mpi_queue_action_debug(
     queue_->api()->commWorld()->rank(),
@@ -176,7 +183,8 @@ RendezvousGet::incoming(MpiMessage *msg, MpiQueueRecvRequest* req)
   recv_flows_[msg->flowId()] = req;
   msg->advanceStage();
   mpi_->rdmaGetRequestResponse(msg, msg->payloadSize(), req->recv_buffer_, msg->partnerBuffer(),
-                   queue_->pt2ptCqId(), software_ack_ ? sumi::Message::no_ack : queue_->pt2ptCqId());
+                   queue_->pt2ptCqId(), software_ack_ ? sumi::Message::no_ack : queue_->pt2ptCqId(),
+                   rdma_get_qos_);
 
 }
 
@@ -191,11 +199,19 @@ RendezvousGet::incomingPayload(MpiMessage* msg)
   MpiQueueRecvRequest* req = iter->second;
   recv_flows_.erase(iter);
 
+  logRecvDelay(1, msg, req);
+  sstmac::Timestamp now = mpi_->now();
+  if (now > msg->timeArrived()){
+    sstmac::TimeDelta sync_delay = now - msg->timeArrived();
+    msg->addRecvSyncDelay(sync_delay);
+  }
+
   queue_->finalizeRecv(msg, req);
   if (software_ack_){
     msg->advanceStage();
     mpi_->smsgSendResponse(msg, 64/*more sizeof(...) fixes*/, nullptr,
-                             sumi::Message::no_ack, queue_->pt2ptCqId());
+                           sumi::Message::no_ack, queue_->pt2ptCqId(),
+                           ack_qos_);
   } else {
     delete msg;
   }

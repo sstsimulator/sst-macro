@@ -75,6 +75,9 @@ Processor::Processor(SST::Params& params, MemoryModel* mem, Node* nd) :
   mem_(mem), node_(nd)
 {
   freq_ = params.find<SST::UnitAlgebra>("frequency").getValue().toDouble();
+  if (freq_ == 0){
+    spkt_abort_printf("Zero or missing proc.frequency parameter");
+  }
   mem_freq_ = freq_;
   ncores_ = params.find<int>("ncores", 1);
 }

@@ -1,0 +1,12 @@
+
+int x = 10;extern int __offset_x; int __sizeof_x = sizeof(int);static std::function<void(void*)> init_x = [](void* ptr){ new (ptr) int{10}; };sstmac::CppGlobalRegisterGuard x_sstmac_ctor(__offset_x, __sizeof_x, false, "x", std::move(init_x));
+
+void fxn()
+{ char* sstmac_global_data = get_sstmac_global_data();int* sstmac_x=(int*)(sstmac_global_data + __offset_x); {
+  (*sstmac_x) += 5;
+ }}
+#include <sstmac/software/process/cppglobal.h>
+#include <sstmac/software/process/memoize.h>
+
+extern int __sizeof_x;
+int __offset_x = 0;

@@ -116,6 +116,10 @@ Topology::Topology(SST::Params& params)
 
   dot_file_ = params.find<std::string>("output_graph", "");
   xyz_file_ = params.find<std::string>("outputXYZ", "");
+
+  if (params.contains("dump_file")){
+    dump_file_ = params.find<std::string>("dump_file");
+  }
 }
 
 Topology::~Topology()
@@ -127,8 +131,11 @@ Topology::staticTopology(SST::Params& params)
 {
   if (!staticTopology_){
     SST::Params top_params = params.find_scoped_params("topology");
-    staticTopology_ = sprockit::create<Topology>(
-      "macro", top_params.find<std::string>("name"), top_params);
+    std::string name = top_params.find<std::string>("name");
+    if (name.empty()){
+      spkt_abort_printf("no topology.name parameter in namespace");
+    }
+    staticTopology_ = sprockit::create<Topology>("macro", name, top_params);
   }
   return staticTopology_;
 }
@@ -208,7 +215,7 @@ Topology::outputBox(std::ostream& os,
 void
 Topology::outputXYZ(const std::string& path)
 {
-  std::string output = get_outfile(path, dot_file_);
+  std::string output = get_outfile(path, xyz_file_);
   if (output.empty()) return;
 
   int nsw = numSwitches();
@@ -310,6 +317,21 @@ Topology::initHostnameMap(SST::Params& params)
     idmap_[name] = i;
     hostmap_[i] = name;
   }
+}
+
+void
+Topology::dumpPorts()
+{
+  if (!dump_file_.empty()){
+    std::cout << "Dumping topology port configuration to " << dump_file_ << std::endl;
+    portConfigDump(dump_file_);
+  }
+}
+
+void
+Topology::portConfigDump(const std::string &dumpFile)
+{
+  spkt_abort_printf("Topology chosen does not support port dump");
 }
 
 class MerlinTopology : public Topology {

@@ -108,11 +108,6 @@ Node::Node(uint32_t id, SST::Params& params)
     spkt_abort_printf("Missing node.nic.name parameter");
   }
 
-  nic_ = loadSub<NIC>(nic_name, nic_params, "nic");
-
-  //nic_ = sprockit::create<NIC>("macro", nic_name, nic_params, this);
-  //sstmac::loadSubComponent<NIC>(nic_name, this, nic_params);
-
   SST::Params mem_params = params.find_scoped_params("memory");
   auto mem_name = mem_params.find<std::string>("name");
   if (mem_name.empty()){
@@ -139,6 +134,11 @@ Node::Node(uint32_t id, SST::Params& params)
     job_launcher_ = sprockit::create<JobLauncher>(
       "macro", params.find<std::string>("job_launcher", "default"), params, os_);
   }
+
+  nic_ = loadSub<NIC>(nic_name, nic_params, "nic");
+
+  //nic_ = sprockit::create<NIC>("macro", nic_name, nic_params, this);
+  //sstmac::loadSubComponent<NIC>(nic_name, this, nic_params);
 }
 
 LinkHandler*

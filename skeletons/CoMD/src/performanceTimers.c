@@ -89,6 +89,11 @@ typedef struct TimerGlobalSt
 static Timers perfTimer[numberOfTimers];
 static TimerGlobal perfGlobal;
 
+void initTimers()
+{
+  memset(perfTimer, 0, sizeof(Timers)*numberOfTimers);
+}
+
 void profileStart(const enum TimerHandle handle)
 {
    perfTimer[handle].start = getTime();

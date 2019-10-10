@@ -51,14 +51,14 @@ namespace sstmac {
 namespace hw {
 
 Packet::Packet(
-  serializable* orig,
+  Flow* flow,
   uint32_t num_bytes,
   uint64_t flow_id,
   bool is_tail,
   NodeId fromaddr,
   NodeId toaddr) :
  num_bytes_(num_bytes),
- payload_(orig),
+ payload_(flow),
  flow_id_(flow_id),
  fromaddr_(fromaddr),
  toaddr_(toaddr)

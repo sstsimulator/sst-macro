@@ -88,6 +88,7 @@ extern FILE* yamlFile;
 int main(int argc, char** argv)
 {
    // Prolog
+   initTimers();
    initParallel(&argc, &argv);
    profileStart(totalTimer);
    initSubsystems();
@@ -345,15 +346,16 @@ void sumAtoms(SimFlat* s)
    stopTimer(commReduceTimer);
 }
 
+// keep track previous value of iStep so we can calculate number of steps.
+static int iStepPrev = -1;
+static int firstCall = 1;
+
 /// Prints current time, energy, performance etc to monitor the state of
 /// the running simulation.  Performance per atom is scaled by the
 /// number of local atoms per process this should give consistent timing
 /// assuming reasonable load balance
 void printThings(SimFlat* s, int iStep, double elapsedTime)
 {
-   // keep track previous value of iStep so we can calculate number of steps.
-   static int iStepPrev = -1;
-   static int firstCall = 1;
 
    int nEval = iStep - iStepPrev; // gives nEval = 1 for zeroth step.
    iStepPrev = iStep;

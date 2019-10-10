@@ -80,6 +80,7 @@ class MpiQueue
   friend class Eager0;
   friend class Eager1;
   friend class RendezvousGet;
+  friend class DirectPut;
   friend class MpiQueueRecvRequest;
 
   using progress_queue = sstmac::sw::MultiProgressQueue<Message>;
@@ -209,6 +210,7 @@ class MpiQueue
 
   int max_vshort_msg_size_;
   int max_eager_msg_size_;
+  bool use_put_window_;
 
   int pt2pt_cq_;
   int coll_cq_;

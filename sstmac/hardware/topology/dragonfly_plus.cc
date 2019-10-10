@@ -111,6 +111,25 @@ DragonflyPlus::minimalDistance(SwitchId src, SwitchId dst) const
   }
 }
 
+std::string
+DragonflyPlus::portTypeName(SwitchId sid, int port) const
+{
+  int row = computeRow(sid);
+  if (row == 0){
+    if (port < a_){
+      return "intra-up";
+    } else {
+      return "injection";
+    }
+  } else {
+    if (port < a_){
+      return "intra-down";
+    } else {
+      return "global";
+    }
+  }
+}
+
 void
 DragonflyPlus::connectedOutports(SwitchId src, std::vector<Connection>& conns) const
 {

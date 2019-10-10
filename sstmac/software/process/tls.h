@@ -45,7 +45,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef sstmac_software_process_tls_H
 #define sstmac_software_process_tls_H
 
-//start at 64 to avoid conflicts with other libs
+/* start at 64 to avoid conflicts with other libs */
 #define SSTMAC_TLS_OFFSET 64
 #define SSTMAC_TLS_THREAD_ID SSTMAC_TLS_OFFSET
 #define SSTMAC_TLS_GLOBAL_MAP SSTMAC_TLS_THREAD_ID + sizeof(int)

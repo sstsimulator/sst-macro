@@ -49,6 +49,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/network/network_id.h>
 #include <sstmac/software/process/task_id.h>
 #include <sstmac/software/process/app_id.h>
+#include <sstmac/common/timestamp.h>
 
 namespace sstmac {
 namespace hw {
@@ -84,6 +85,7 @@ class NetworkMessage : public Flow
 
  public:
   NetworkMessage(
+   int qos,
    uint64_t flow_id,
    const std::string& libname,
    sw::AppId aid,
@@ -93,13 +95,14 @@ class NetworkMessage : public Flow
    bool needs_ack,
    void* buf,
    header ctor_tag) :
-    NetworkMessage(flow_id, libname, aid, to, from,
+    NetworkMessage(qos, flow_id, libname, aid, to, from,
                     size, size, needs_ack, nullptr, nullptr, buf,
                     payload)
   {
   }
 
   NetworkMessage(
+   int qos,
    uint64_t flow_id,
    const std::string& libname,
    sw::AppId aid,
@@ -110,7 +113,7 @@ class NetworkMessage : public Flow
    void* local_buf,
    void* remote_buf,
    rdma_get ctor_tag) :
-    NetworkMessage(flow_id, libname, aid, to, from,
+    NetworkMessage(qos, flow_id, libname, aid, to, from,
                     64/*default to 64 bytes for now*/,
                     payload_size, needs_ack, local_buf, remote_buf, nullptr,
                     rdma_get_request)
@@ -118,6 +121,7 @@ class NetworkMessage : public Flow
   }
 
   NetworkMessage(
+   int qos,
    uint64_t flow_id,
    const std::string& libname,
    sw::AppId aid,
@@ -128,7 +132,7 @@ class NetworkMessage : public Flow
    void* local_buf,
    void* remote_buf,
    rdma_put ctor_tag) :
-    NetworkMessage(flow_id, libname, aid, to, from,
+    NetworkMessage(qos, flow_id, libname, aid, to, from,
                     payload_size, payload_size, needs_ack, local_buf, remote_buf, nullptr,
                     rdma_put_payload)
   {
@@ -157,6 +161,10 @@ class NetworkMessage : public Flow
   void nicReverse(type_t newtype);
 
   bool isNicAck() const;
+
+  int qos() const {
+    return qos_;
+  }
 
   uint64_t payloadBytes() const {
     return payload_bytes_;
@@ -243,13 +251,56 @@ class NetworkMessage : public Flow
     qos_ = qos;
   }
 
- protected:
-  //void clone_into(NetworkMessage* cln) const;
+  bool started() const {
+    return !time_started_.empty();
+  }
 
+  void setTimeStarted(Timestamp start){
+    time_started_ = start;
+  }
+
+  Timestamp timeStarted() const {
+    return time_started_;
+  }
+
+  void addInjectionDelay(TimeDelta delay){
+    injection_delay_ += delay;
+  }
+
+  TimeDelta injectionDelay() const {
+    return injection_delay_;
+  }
+
+  void setMinDelay(TimeDelta delay){
+    min_delay_ = delay;
+  }
+
+  TimeDelta minDelay() const {
+    return min_delay_;
+  }
+
+  void setCongestionDelay(TimeDelta delay){
+    congestion_delay_ = delay;
+  }
+
+  TimeDelta congestionDelay() const {
+    return congestion_delay_;
+  }
+
+  Timestamp injectionStarted() const {
+    return injection_started_;
+  }
+
+  void setInjectionStarted(Timestamp now){
+    injection_started_ = now;
+  }
+
+ protected:
   void convertToAck();
 
   NetworkMessage() : //for serialization
    Flow(-1, 0),
+   qos_(0),
    needs_ack_(true),
    payload_bytes_(0),
    type_(null_netmsg_type)
@@ -258,6 +309,7 @@ class NetworkMessage : public Flow
 
  private:
   NetworkMessage(
+   int qos,
    uint64_t flow_id,
    const std::string& libname,
    sw::AppId aid,
@@ -271,6 +323,7 @@ class NetworkMessage : public Flow
    void* smsg_buf,
    type_t ty) :
     Flow(flow_id, size, libname),
+    qos_(qos),
     smsg_buffer_(smsg_buf),
     local_buffer_(local_buf),
     remote_buffer_(remote_buf),
@@ -280,8 +333,7 @@ class NetworkMessage : public Flow
     payload_bytes_(payload_bytes),
     toaddr_(to),
     fromaddr_(from),
-    type_(ty),
-    qos_(0)
+    type_(ty)
   {
   }
 
@@ -313,6 +365,16 @@ class NetworkMessage : public Flow
   type_t type_;
 
   int qos_;
+
+  Timestamp time_started_;
+
+  Timestamp injection_started_;
+
+  TimeDelta injection_delay_;
+
+  TimeDelta min_delay_;
+
+  TimeDelta congestion_delay_;
 
 };
 

@@ -46,6 +46,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi-mpi/mpi_queue/mpi_queue.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/thread.h>
+#include <sstmac/software/process/ftq_scope.h>
 
 #define start_probe_call(fxn,comm,src,tag) \
   StartMPICall(fxn); \

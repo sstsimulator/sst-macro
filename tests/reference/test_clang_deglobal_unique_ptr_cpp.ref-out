@@ -1,0 +1,22 @@
+
+template <class T>
+class unique_ptr {
+};
+
+template <class T, class... Args>
+unique_ptr<T> make_unique(Args&&... args){
+  return unique_ptr<T>();
+}
+
+struct A {
+ template <class... Args>
+ A(){}
+};
+
+
+static unique_ptr<A> myA = make_unique<A>(1,2,3,4,"I declare a thumb war");extern int __offset_xyzmyA; int __sizeof_xyzmyA = sizeof(unique_ptr<struct A>);static std::function<void(void*)> init_xyzmyA = [](void* ptr){ new (ptr) unique_ptr<  A>{make_unique<A>(1, 2, 3, 4, "I declare a thumb war")}; };static sstmac::CppGlobalRegisterGuard myA_sstmac_ctor(__offset_xyzmyA, __sizeof_xyzmyA, false, "myA", std::move(init_xyzmyA));
+#include <sstmac/software/process/cppglobal.h>
+#include <sstmac/software/process/memoize.h>
+
+extern int __sizeof_xyzmyA;
+int __offset_xyzmyA = 0;
