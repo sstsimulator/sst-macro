@@ -5,7 +5,7 @@ category: SSTDocumentation
 ---
 
 
-# SST/macro 8.0 User's Manual
+# SST/macro 9.1 User's Manual
 
 ![](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/sstlogo.png) 
 
@@ -49,41 +49,40 @@ category: SSTDocumentation
          - [2.6.3: Warnings for Parallel Simulation](#subsec:parallelwarn)
       - [Section 2.7: Debug Output](#sec:dbgoutput)
    - [Chapter 3: Basic Tutorials](#chapter:tutorials)
-      - [Section 3.1: SST/macro Parameter files](#sec:parameters)
-         - [3.1.1: Parameter Namespace Rules](#subsec:parameterNamespace)
-         - [3.1.2: Initial Example](#subsec:initialExample)
-      - [Section 3.2: SST Python Files](#sec:pythonFiles)
-      - [Section 3.3: Network Topologies and Routing](#sec:tutorial:topology)
-         - [3.3.1: Topology](#subsec:tutorial:topology)
-         - [3.3.2: Routing](#subsec:tutorial:routing)
-      - [Section 3.4: Network Model](#sec:tutorial:networkmodel)
-         - [3.4.1: Analytic Models: MACRELS](#subsec:tutorial:macrels)
-         - [3.4.2: Packet Models: PISCES](#subsec:tutorial:pisces)
+         - [3.0.1: Parameter Namespace Rules](#subsec:parameterNamespace)
+         - [3.0.2: Initial Example](#subsec:initialExample)
+      - [Section 3.1: SST Python Files](#sec:pythonFiles)
+      - [Section 3.2: Network Topologies and Routing](#sec:tutorial:topology)
+         - [3.2.1: Topology](#subsec:tutorial:topology)
+         - [3.2.2: Routing](#subsec:tutorial:routing)
+      - [Section 3.3: Network Model](#sec:tutorial:networkmodel)
+         - [3.3.1: Analytic Models: MACRELS](#subsec:tutorial:macrels)
+         - [3.3.2: Packet Models: PISCES](#subsec:tutorial:pisces)
             - [PISCES simple model](#subsubsec:tutorial:simplePisces)
             - [PISCES cut-through model](#subsubsec:tutorial:cutThroughPisces)
-         - [3.4.3: Flow](#subsec:tutorial:flow)
-      - [Section 3.5: Basic MPI Program](#sec:tutorial:basicmpi)
-      - [Section 3.6: Launching, Allocation, and Indexing](#sec:tutorial:launchetc)
-         - [3.6.1: Launch Commands](#subsec:tutorial:launch)
-         - [3.6.2: Allocation Schemes](#subsec:tutorial:allocation)
+         - [3.3.3: Flow](#subsec:tutorial:flow)
+      - [Section 3.4: Basic MPI Program](#sec:tutorial:basicmpi)
+      - [Section 3.5: Launching, Allocation, and Indexing](#sec:tutorial:launchetc)
+         - [3.5.1: Launch Commands](#subsec:tutorial:launch)
+         - [3.5.2: Allocation Schemes](#subsec:tutorial:allocation)
             - [Indexing Schemes](#subsec:tutorial:indexing)
-      - [Section 3.7: Discrete Event Simulation](#sec:tutorial:des)
-      - [Section 3.8: Using DUMPI](#sec:tutorial:dumpi)
-         - [3.8.1: Building DUMPI](#subset:dump:build)
-         - [3.8.2: Trace Collection](#subsec:dumpi:tracecollection)
-         - [3.8.3: Trace Replay](#subsec:dumpi:tracereplay)
-      - [Section 3.9: Using Score-P and OTF2](#sec:tutorial:otf)
-         - [3.9.1: Trace Collection](#subsec:otf:traceCollection)
-         - [3.9.2: Trace Replay](#subsec:otf:traceReplay)
-         - [3.9.3: Custom Statistics](#subsec:customStats)
-      - [Section 3.10: OTF2 Trace Creation](#sec:otf:traceEmission)
-      - [Section 3.11: Call Graph Visualization](#sec:tutorials:callgraph)
-      - [Section 3.12: Spyplot Diagrams](#sec:tutorials:spyplot)
-      - [Section 3.13: Fixed-Time Quanta Charts](#sec:tutorials:ftq)
-      - [Section 3.14: Network Statistics](#sec:tutorials:packetStats)
-         - [3.14.1: XmitBytes](#subsec:xmitbytes)
-         - [3.14.2: XmitWait](#subsec:xmitwait)
-         - [3.14.3: XmitFlows](#subsec:xmitflows)
+      - [Section 3.6: Discrete Event Simulation](#sec:tutorial:des)
+      - [Section 3.7: Using DUMPI](#sec:tutorial:dumpi)
+         - [3.7.1: Building DUMPI](#subset:dump:build)
+         - [3.7.2: Trace Collection](#subsec:dumpi:tracecollection)
+         - [3.7.3: Trace Replay](#subsec:dumpi:tracereplay)
+      - [Section 3.8: Using Score-P and OTF2](#sec:tutorial:otf)
+         - [3.8.1: Trace Collection](#subsec:otf:traceCollection)
+         - [3.8.2: Trace Replay](#subsec:otf:traceReplay)
+         - [3.8.3: Custom Statistics](#subsec:customStats)
+      - [Section 3.9: OTF2 Trace Creation](#sec:otf:traceEmission)
+      - [Section 3.10: Call Graph Visualization](#sec:tutorials:callgraph)
+      - [Section 3.11: Spyplot Diagrams](#sec:tutorials:spyplot)
+      - [Section 3.12: Fixed-Time Quanta Charts](#sec:tutorials:ftq)
+      - [Section 3.13: Network Statistics](#sec:tutorials:packetStats)
+         - [3.13.1: XmitBytes](#subsec:xmitbytes)
+         - [3.13.2: XmitWait](#subsec:xmitwait)
+         - [3.13.3: XmitFlows](#subsec:xmitflows)
    - [Chapter 4: Topologies](#chapter:topologies)
       - [Section 4.1: Torus](#subsec:tutorial:hypercube)
       - [Section 4.2: Hypercube](#subsec:tutorial:hypercube)
@@ -143,7 +142,7 @@ Off-line simulators typically first run a full parallel application on a real ma
 recording certain communication and computation events to a simulation trace.
 This event trace can then be replayed post-mortem in the simulator.
 Most common are MPI traces which record all MPI events, and
-SST-macro provides the DUMPI utility ([3.8](#sec:tutorial:dumpi)) for collecting and replaying MPI traces. 
+SST-macro provides the DUMPI utility ([3.7](#sec:tutorial:dumpi)) for collecting and replaying MPI traces. 
 Trace extrapolation can extend the usefulness of off-line simulation by estimating large or untraceable system scales without   
 having to collect a trace, but it is limited.
 
@@ -635,7 +634,7 @@ since there is no Python setup involved.
 
 
 To demonstrate how an external skeleton application is run in SST-macro, we'll use a very simple send-recv program located in `skeletons/sendrecv`.
-We will take a closer look at the actual code in Section [3.5](#sec:tutorial:basicmpi).
+We will take a closer look at the actual code in Section [3.4](#sec:tutorial:basicmpi).
 After SST-macro has been installed and your PATH variable set correctly, for standalone core users can run:
 
 ````
@@ -793,9 +792,11 @@ listing all flags you want separated by spaces.
 
 
 
-### Section 3.1: SST/macro Parameter files<a name="sec:parameters"></a>
+\section{SST/macro Parameter files}
 
+There are parameter files for the main network models (MACRELS, PISCES, SCULPIN, SNAPPR) in the top-level examples directory.
 
+\label{sec:parameters}
 A minimal parameter file setting up a 2D-torus topology is shown below. 
 An equivalent Python input file that reads an ini file is also shown.
 A detailed listing of parameter namespaces and keywords is given in Section [7](#chapter:parameters).
@@ -851,7 +852,7 @@ The input file follows a basic syntax of `parameter = value`.
 Parameter names follow C++ variable rules (letters, numbers, underscore) while parameter values can contain spaces.  Trailing and leading whitespaces are stripped from parameters.
 Comments can be included on lines starting with \#.
 
-#### 3.1.1: Parameter Namespace Rules<a name="subsec:parameterNamespace"></a>
+#### 3.0.1: Parameter Namespace Rules<a name="subsec:parameterNamespace"></a>
 
 
 Periods denote nesting of parameter namespaces.
@@ -876,7 +877,7 @@ A line containing only a closing \} ends the innermost namespace.
 The syntax is not as flexible as C++ since the opening \{ must appear on the same line as the namespace and the closing \} must be on a line of its own.
 A detailed listing of parameter namespaces and keywords is given in Section [7](#chapter:parameters).
 
-#### 3.1.2: Initial Example<a name="subsec:initialExample"></a>
+#### 3.0.2: Initial Example<a name="subsec:initialExample"></a>
 
 
 Continuing with the example above, we see the input file is broken into namespace sections. 
@@ -890,7 +891,7 @@ SST-macro can simulate command line parameters by giving a value for `node.app1.
 A network must also be chosen.  
 In the simplest possible case, the network is modeled via a simple latency/bandwidth formula.  
 For more complicated network models, many more than two parameters will be required. 
-See [3.4](#sec:tutorial:networkmodel) for a brief explanation of SST-macro network congestion models. 
+See [3.3](#sec:tutorial:networkmodel) for a brief explanation of SST-macro network congestion models. 
 A topology is also needed for constructing the network.  
 In this case we choose a 2-D 4X4 torus (16 switches).  The `topology.geometry` 
 parameter takes an arbitrarily long list of numbers as the dimensions to the torus.
@@ -924,7 +925,7 @@ Alternatively, multiple machines could be linked to the same application by crea
 
 
 
-### Section 3.2: SST Python Files<a name="sec:pythonFiles"></a>
+### Section 3.1: SST Python Files<a name="sec:pythonFiles"></a>
 
 
 For SST core, SST/macro provides a Python translator for the ini files to a Python input deck.
@@ -1046,7 +1047,7 @@ Again, to see all the details of creating and linking components, refer to the `
 
 
 
-### Section 3.3: Network Topologies and Routing<a name="sec:tutorial:topology"></a>
+### Section 3.2: Network Topologies and Routing<a name="sec:tutorial:topology"></a>
 
 
 We here give a brief introduction to specifying different topologies and routing strategies.  
@@ -1054,7 +1055,7 @@ We will only discuss one basic example (torus).
 A more thorough introduction covering all topologies is planned for future releases.
 Excellent resources are "Principles and Practices of Interconnection Networks" by Brian Towles and William Dally published by Morgan Kaufman and "High Performance Datacenter Networks" by Dennis Abts and John Kim published by Morgan and Claypool.
 
-#### 3.3.1: Topology<a name="subsec:tutorial:topology"></a>
+#### 3.2.1: Topology<a name="subsec:tutorial:topology"></a>
 
 
 
@@ -1131,7 +1132,7 @@ For some coarse-grained models, these two networks are exactly equivalent.
 In more fine-grained models, however, these are actually two different networks.  
 The first network has ONE link carrying 2 GB/s. The second network has TWO links each carrying 1 GB/s.
 
-#### 3.3.2: Routing<a name="subsec:tutorial:routing"></a>
+#### 3.2.2: Routing<a name="subsec:tutorial:routing"></a>
 
 
 By default, SST-macro uses the simplest possible routing algorithm: dimension-order minimal routing (Figure [4](#fig:torus:basicrouting)).
@@ -1169,18 +1170,19 @@ For now, we direct users to existing resources such as "High Performance Datacen
 
 
 
-### Section 3.4: Network Model<a name="sec:tutorial:networkmodel"></a>
+### Section 3.3: Network Model<a name="sec:tutorial:networkmodel"></a>
 
 
 
 Network models can be divided into several categories.  SST/macro supports analytic models, which estimate network delays via basic latency/bandwidth formulas, and packet models, which model step-by-step the transit of individuals through the interconnect.
 A third class of models (flow models), was previously supported but are now discontinued due to the much better scalability of packet models.
 
-#### 3.4.1: Analytic Models: MACRELS<a name="subsec:tutorial:macrels"></a>
+#### 3.3.1: Analytic Models: MACRELS<a name="subsec:tutorial:macrels"></a>
 
 
 
 The analytic models in SST/macro are colloqiually referred to as MACRELS (MTL for AnalytiC REally Lightweight Simulation).
+An example file running a simple application can be found in the top-level examples folder.
 The MTL (message transfer layer) moves entire network flows from point-to-point without packetizing them into smaller chunks.
 Thus an entire 1 MB MPI message is transported as a single chunk of data.  
 The majority of MACRELS models are based on the LogP set of approximations:
@@ -1210,16 +1212,12 @@ Modeling occurs on entire flows, rather than individual packets.
 
 
 
-#### 3.4.2: Packet Models: PISCES<a name="subsec:tutorial:pisces"></a>
+#### 3.3.2: Packet Models: PISCES<a name="subsec:tutorial:pisces"></a>
 
 
 
 PISCES (Packet-flow Interconnect Simulation for Congestion at Extreme Scale) breaks network flows (MPI messages) into individual packets and models each packet individually.
-In abstract machine models, PISCES can be selected as:
-
-````
-congestion_model = pisces
-````
+An example file running a simple application can be found in the top-level examples folder.
 In reality, packets are further subdivided into flits (flow-control units).
 Flit-level detail would be way too computationally intense for large-scale simulation.
 All routing decisions are made on packets as a while. 
@@ -1342,6 +1340,7 @@ We have H=3.0, T=4.38, and O=0.73.
 
 \subsection{SCULPIN}
 Under current architectural trends, switches have ample buffer space and crossbar bandwidth, making the mostly likely bottleneck edge bandwidth through the output ports.
+An example file running a simple application can be found in the top-level examples folder.
 SCULPIN (Simple Congestion Unbuffered Latency Packet Interconnection Network) models the main source of contention in today's networks occurring on the output port ser/des. Unlike PISCES, individual flits are not able to wormhole route across links interspersed with flits from other packets.
 \begin{enumerate}
 \item A message (flow) is broken up into packets. Each packet waits in the queue to send based on link availability and QoS.
@@ -1358,14 +1357,19 @@ SCULPIN (Simple Congestion Unbuffered Latency Packet Interconnection Network) mo
 
 
 
-#### 3.4.3: Flow<a name="subsec:tutorial:flow"></a>
+\subsection{SNAPPR}
+Because of the coarse-grained mechanisms used in PISCES and SCULPIN, it can be difficult to model more advanced mechanisms like QoS or congestion control. 
+SNAPPR (Simulator Network for Adaptive Priority Packet Routing) uses a coarse-grained cycle-based simulation that allows priority queues based on QoS or restricting injection rate for congestion control. The model is configured in much the same way as the other models.  SNAPPR is slightly more expensive than the other models, but provides by far the most flexibility and most detailed statistics.
+An example file running a simple application can be found in the top-level examples folder.
+
+#### 3.3.3: Flow<a name="subsec:tutorial:flow"></a>
 
 
 The flow model, in simple cases, corrects the most severe problems of the packet model.
 Instead of discrete chunks, messages are modeled as fluid flows moving through the network.
 Congestion is treated as a fluid dynamics problem, sharing bandwidth between competing flows.
 In contrast to LogP models, flow models can account fairly well for congestion.
-Without congestion, a flow only requires a FLOW START and FLOW STOP event to be modeled (see tutorial on discrete event simulation in [3.7](#sec:tutorial:des)).
+Without congestion, a flow only requires a FLOW START and FLOW STOP event to be modeled (see tutorial on discrete event simulation in [3.6](#sec:tutorial:des)).
 While the packet model would require many, many events to simulate a 1 MB message, the flow model might only require two.
 With congestion, flow update events must be scheduled whenever congestion changes on a network link.  
 For limited congestion, only a few update events must occur.
@@ -1382,7 +1386,7 @@ For large systems or heavy congestion, the flow model is actually much slower th
 
 
 
-### Section 3.5: Basic MPI Program<a name="sec:tutorial:basicmpi"></a>
+### Section 3.4: Basic MPI Program<a name="sec:tutorial:basicmpi"></a>
 
 
 Let us go back to the simple send/recv skeleton and actually look at the code.  
@@ -1482,11 +1486,11 @@ node {
 
 
 
-### Section 3.6: Launching, Allocation, and Indexing<a name="sec:tutorial:launchetc"></a>
+### Section 3.5: Launching, Allocation, and Indexing<a name="sec:tutorial:launchetc"></a>
 
 
 
-#### 3.6.1: Launch Commands<a name="subsec:tutorial:launch"></a>
+#### 3.5.1: Launch Commands<a name="subsec:tutorial:launch"></a>
 
 
 Just as jobs must be launched on a shared supercomputer using Slurm or aprun, 
@@ -1505,7 +1509,7 @@ node {
 which launches an external user C++ application with eight ranks and two ranks per node.
 The aprun command has many command line options (see online documentation), some of which may be supported in future versions of SST/macro.  In particular, we are in the process of adding support for thread affinity, OpenMP thread allocation, and NUMA containment flags.  Most flags, if included, will simply be ignored.
 
-#### 3.6.2: Allocation Schemes<a name="subsec:tutorial:allocation"></a>
+#### 3.5.2: Allocation Schemes<a name="subsec:tutorial:allocation"></a>
 
 
 In order for a job to launch, it must first allocate nodes to run on. Here we choose a simple 2D torus
@@ -1667,7 +1671,7 @@ A random allocation (unless allocating the whole machine) will not give a contig
 
 
 
-### Section 3.7: Discrete Event Simulation<a name="sec:tutorial:des"></a>
+### Section 3.6: Discrete Event Simulation<a name="sec:tutorial:des"></a>
 
 
 Although not necessary for using the simulator, a basic understanding of discrete event simulation can be helpful in giving users an intuition for network models and parameters.
@@ -1727,11 +1731,11 @@ The DES thread will run out of events, bringing the simulation to an end.
 
 
 
-### Section 3.8: Using DUMPI<a name="sec:tutorial:dumpi"></a>
+### Section 3.7: Using DUMPI<a name="sec:tutorial:dumpi"></a>
 
 
 
-#### 3.8.1: Building DUMPI<a name="subset:dump:build"></a>
+#### 3.7.1: Building DUMPI<a name="subset:dump:build"></a>
 
 
 As noted in the introduction, SST-macro is primarily intended to be an on-line simulator. Real application code runs, but SST-macro  intercepts calls to communication (MPI) and computation functions to simulate time passing.  However, SST-macro can also run off-line, replaying application traces collected from real production runs.  This trace collection and trace replay library is called DUMPI.
@@ -1759,7 +1763,7 @@ your_project/build> ../configure CC=mpicc CXX=mpicxx \
                                   LDFLAGS="-L$DUMPI_PATH/lib -ldumpi"
 ````
 
-#### 3.8.2: Trace Collection<a name="subsec:dumpi:tracecollection"></a>
+#### 3.7.2: Trace Collection<a name="subsec:dumpi:tracecollection"></a>
 
 
 DUMPI works by overriding weak symbols in the MPI library.
@@ -1834,7 +1838,7 @@ subversion=1
 subsubversion=0
 ````
 
-#### 3.8.3: Trace Replay<a name="subsec:dumpi:tracereplay"></a>
+#### 3.7.3: Trace Replay<a name="subsec:dumpi:tracereplay"></a>
 
 
 It is often useful to validate the correctness of a trace.  Sometimes there can be problems with trace collection. 
@@ -1843,7 +1847,7 @@ To validate the trace, you can run in a special debug mode that runs the simulat
 to ensure as quickly as possible that all functions execute correctly.
 This can be done straightforwardly by running the executable with the dumpi flag: `sstmac --dumpi`.
 
-To replay a trace in the simulator, a small modification is required to the example input file in [3.1](#sec:parameters).
+To replay a trace in the simulator, a small modification is required to the example input file in .
 We have two choices for the trace replay.  First, we can attempt to exactly replay the trace as it ran on the host machine.
 Second, we could replay the trace on a new machine or different layout.
 
@@ -1971,7 +1975,7 @@ The MPI ranks are mapped to physical nodes entirely independent of the trace.
 
 
 
-### Section 3.9: Using Score-P and OTF2<a name="sec:tutorial:otf"></a>
+### Section 3.8: Using Score-P and OTF2<a name="sec:tutorial:otf"></a>
 
 
 
@@ -1984,7 +1988,7 @@ http://www.vi-hps.org/projects/score-p
 Trace collection requires both Score-P and OTF2 installations. Trace replay with SST/macro requires only OTF2.
 
 
-#### 3.9.1: Trace Collection<a name="subsec:otf:traceCollection"></a>
+#### 3.8.1: Trace Collection<a name="subsec:otf:traceCollection"></a>
 
 
 Score-P's default collection strategy will include every function call in the trace, making even small programs produce untenably large traces. Score-P supports collection filters, which can restrict collection at a minimum to MPI and OMP function calls. At the end of the program's runtime, traces from each rank are put in a common directory.  An MPI program must be compiled with Score-P to produce traces:
@@ -2018,7 +2022,7 @@ To view a plain-text representation of the trace after running, use the otf2-pri
 otf2-print scorep-*/traces.otf2
 ````
 
-#### 3.9.2: Trace Replay<a name="subsec:otf:traceReplay"></a>
+#### 3.8.2: Trace Replay<a name="subsec:otf:traceReplay"></a>
 
 
 SST/macro will use a trace replay skeleton for OTF2 in much the same way as it does for dumpi. SST/macro trace replays configured using *.ini files. 
@@ -2135,7 +2139,7 @@ xmit_bytes,nid1,5,1000,870,439,322,11,1292
 xmit_bytes,nid2,5,1000,838,396,279,11,1551
 ````
 
-#### 3.9.3: Custom Statistics<a name="subsec:customStats"></a>
+#### 3.8.3: Custom Statistics<a name="subsec:customStats"></a>
 
 
 Certain statistics (examples below) do not fit into the model of row/column tables and require special `addData` functions.
@@ -2146,7 +2150,7 @@ Here, the statistic can only have a single type and works with a specific output
 
 
 
-### Section 3.10: OTF2 Trace Creation<a name="sec:otf:traceEmission"></a>
+### Section 3.9: OTF2 Trace Creation<a name="sec:otf:traceEmission"></a>
 
 
 SST/macro can emit OTF2 traces from MPI simulations, if compiled with:
@@ -2155,7 +2159,7 @@ SST/macro can emit OTF2 traces from MPI simulations, if compiled with:
 build> ../configure --enable-otf2=$PATH_TO_OTF2
 ````
 
-This is an example of a custom statistic, discussed in [3.9.3](#subsec:customStats).
+This is an example of a custom statistic, discussed in [3.8.3](#subsec:customStats).
 This gets activated by:
 
 ````
@@ -2181,7 +2185,7 @@ Good practice is generally to name the group after the app.
 
 
 
-### Section 3.11: Call Graph Visualization<a name="sec:tutorials:callgraph"></a>
+### Section 3.10: Call Graph Visualization<a name="sec:tutorials:callgraph"></a>
 
 
 Generating call graphs requires a special build of SST-macro.
@@ -2273,7 +2277,7 @@ app1.rank0.thread0,MPI_Allgather,memcopy,3034190336
 
 
 
-### Section 3.12: Spyplot Diagrams<a name="sec:tutorials:spyplot"></a>
+### Section 3.11: Spyplot Diagrams<a name="sec:tutorials:spyplot"></a>
 
 
 
@@ -2313,7 +2317,7 @@ The type of the statistic must be spyplot, but the output can be other formats (
 
 
 
-### Section 3.13: Fixed-Time Quanta Charts<a name="sec:tutorials:ftq"></a>
+### Section 3.12: Fixed-Time Quanta Charts<a name="sec:tutorials:ftq"></a>
 
 
 
@@ -2374,7 +2378,7 @@ where the `fileroot` a path and a file name prefix.
 
 
 
-### Section 3.14: Network Statistics<a name="sec:tutorials:packetStats"></a>
+### Section 3.13: Network Statistics<a name="sec:tutorials:packetStats"></a>
 
 
 
@@ -2383,7 +2387,7 @@ These statistics are usually collected on either the NIC, switch crossbar, or sw
 These are based on the XmitWait and XmitBytes performance counters from OmniPath,
 and aim to provide similar statistics as those from production systems.
 
-#### 3.14.1: XmitBytes<a name="subsec:xmitbytes"></a>
+#### 3.13.1: XmitBytes<a name="subsec:xmitbytes"></a>
 
 
 To active a message size histogram on the NIC or the switches to determine the data sent by individual packets, the parameter file should include, for example:
@@ -2404,7 +2408,7 @@ node {
 In contrast the custom statistics above, this is a row-table statistic that can have different types and outputs.
 The same stat can be activated in both the `node.nic.injection` and `switch` namespaces.
 
-#### 3.14.2: XmitWait<a name="subsec:xmitwait"></a>
+#### 3.13.2: XmitWait<a name="subsec:xmitwait"></a>
 
 
 To estimate congestion, SST/macro provides an `xmit_wait` statistic.
@@ -2426,7 +2430,7 @@ node {
 ````
 The same stat can be activated in both the `node.nic.injection` and `switch` namespaces.
 
-#### 3.14.3: XmitFlows<a name="subsec:xmitflows"></a>
+#### 3.13.3: XmitFlows<a name="subsec:xmitflows"></a>
 
 
 The previous statistics track the bytes sent by packets and as such are agnostic to the messages (or flows) sending them.
@@ -2459,7 +2463,7 @@ node {
 The torus topology is straightforward and easy to understand.
 Here we introduce the basics of other topologies within SST that are more complex and require extra documentation to configure properly.
 These are generally higher-radix or path-diverse topologies like fat tree, dragonfly, and flattened butterfly.  
-As noted in [3.3](#sec:tutorial:topology), a more thorough and excellent discussions of these topologies is given in "High Performance Datacenter Networks" by Dennis Abts and John Kim.
+As noted in [3.2](#sec:tutorial:topology), a more thorough and excellent discussions of these topologies is given in "High Performance Datacenter Networks" by Dennis Abts and John Kim.
 
 
 
@@ -3166,9 +3170,9 @@ This does not deactivate global variable redirection.
 Thus, with `SSTMAC_SRC2SRC=1` and `SSTMAC_SKELETONIZE=0`,
 SST-macro will act as an MPI emulator executing a full code but with global variables refactored to maintain correctness.
 
-\subsubsection{SSTMAC\_MEMOIZE: Default 0}
-If set to nonzero, activates memoization hooks. 
-This deactivates all global variable refactoring, all symbol interception, and all skeletonization.
+
+
+
 
 \subsubsection{SSTMAC\_HEADERS: No default}
 The compiler wrapper will only redirect global variables that it knows should definitely be modified.
@@ -3554,6 +3558,7 @@ A library of standard implicit state implementations is planned for future relea
 
 
 
+
 \chapter{Issues and Limitations}
 \section{Polling in applications}
 
@@ -3788,7 +3793,7 @@ This is a series of namespaces `app1`, `app2`, and so on for each of the launche
 
 | Name (type) | Default | Allowed | Description |
 |-------------|---------|---------|-------------|
-| name (string) | No default | parsedumpi, cxx\_full\_main, cxx\_empty\_main | The name of the application to launch. Very few applications are built-in. Registration of external apps is shown starting in Section [3.5](#sec:tutorial:basicmpi). |
+| name (string) | No default | parsedumpi, cxx\_full\_main, cxx\_empty\_main | The name of the application to launch. Very few applications are built-in. Registration of external apps is shown starting in Section [3.4](#sec:tutorial:basicmpi). |
 | size (int) | No default | Positive int | The number of procs (MPI ranks) to launch. If launch\_cmd given, this parameter is not required. |
 | start (int) | 0 |  | The time at which a launch request for the application will be made |
 | concentration (int) | 1 | Positive int | The number of procs (MPI ranks) per compute node |
