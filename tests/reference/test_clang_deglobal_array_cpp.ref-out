@@ -1,12 +1,25 @@
 
 int x[] = {1,2,3};typedef int array_type_x[3];extern int __offset_x; int __sizeof_x = sizeof(array_type_x);static std::function<void(void*)> init_x = [](void* ptr){ new (ptr) array_type_x{1, 2, 3}; };sstmac::CppGlobalRegisterGuard x_sstmac_ctor(__offset_x, __sizeof_x, false, "x", std::move(init_x));
+int xx[42];typedef int array_type_xx[42];extern int __offset_xx; int __sizeof_xx = sizeof(array_type_xx);static std::function<void(void*)> init_xx = [](void* ptr){ new (ptr) array_type_xx; };sstmac::CppGlobalRegisterGuard xx_sstmac_ctor(__offset_xx, __sizeof_xx, false, "xx", std::move(init_xx));
+
+namespace y {
+  int x[] = {1,2};typedef int array_type_x[2];extern int __offset_x; int __sizeof_x = sizeof(::y::array_type_x);static std::function<void(void*)> init_x = [](void* ptr){ new (ptr) ::y::array_type_x{1, 2}; };sstmac::CppGlobalRegisterGuard x_sstmac_ctor(__offset_x, __sizeof_x, false, "x", std::move(init_x));
+  int xx[42];typedef int array_type_xx[42];extern int __offset_xx; int __sizeof_xx = sizeof(::y::array_type_xx);static std::function<void(void*)> init_xx = [](void* ptr){ new (ptr) ::y::array_type_xx; };sstmac::CppGlobalRegisterGuard xx_sstmac_ctor(__offset_xx, __sizeof_xx, false, "xx", std::move(init_xx));
+}
 
 void fxn()
-{ char* sstmac_global_data = get_sstmac_global_data();array_type_x* sstmac_x=(array_type_x*)(sstmac_global_data + __offset_x); {
+{ char* sstmac_global_data = get_sstmac_global_data();array_type_x* sstmac_x=(array_type_x*)(sstmac_global_data + __offset_x); array_type_xx* sstmac_xx=(array_type_xx*)(sstmac_global_data + __offset_xx); ::y::array_type_x* __y__sstmac_x=(::y::array_type_x*)(sstmac_global_data + ::y::__offset_x); ::y::array_type_xx* __y__sstmac_xx=(::y::array_type_xx*)(sstmac_global_data + ::y::__offset_xx); {
   int* z = (*sstmac_x);
+  int* zz = (*__y__sstmac_x);
+  (*__y__sstmac_xx)[0] = 0;
+  (*sstmac_xx)[0] = 0;
  }}
 #include <sstmac/software/process/cppglobal.h>
 #include <sstmac/software/process/memoize.h>
 
 extern int __sizeof_x;
-int __offset_x = 0;
+int __offset_x = 0;extern int __sizeof_xx;
+int __offset_xx = 0;namespace y {
+ extern int __sizeof_x;
+ int __offset_x = 0; extern int __sizeof_xx;
+ int __offset_xx = 0;}

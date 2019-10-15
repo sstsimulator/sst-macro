@@ -1343,6 +1343,7 @@ SkeletonASTVisitor::checkArray(VarDecl* D)
   if (isConstC99array){
     ArrayInfo* info = new ArrayInfo;
     info->typedefName = "array_type_" + D->getNameAsString();
+    info->fqTypedefName = currentNs_->nsPrefix() + info->typedefName;
     //something of the form type x[N][M];
     //we possible need to first: typedef type tx[N][M];
     //replacement global will be tx* xRepl = &(sstmac_global_data + offset)
@@ -1364,7 +1365,7 @@ SkeletonASTVisitor::checkArray(VarDecl* D)
     }
 
     info->typedefDeclString = sstr.str();
-    info->retType = info->typedefName + "*";
+    info->retType = info->fqTypedefName + "*";
     info->needsDeref = false;
     return info;
   } else if (isC99array){
@@ -1377,6 +1378,7 @@ SkeletonASTVisitor::checkArray(VarDecl* D)
       //we need to first: typedef type tx[][M];
       //replacement global will be tx* xRepl = &(sstmac_global_data + offset)
       info->typedefName = "type_" + D->getNameAsString();
+      info->fqTypedefName = currentNs_->nsPrefix() + info->typedefName;
       std::stringstream sstr;
       cArrayConfig cfg;
       getArrayType(ety.getTypePtr(), cfg);
@@ -1393,12 +1395,13 @@ SkeletonASTVisitor::checkArray(VarDecl* D)
              << cfg.arrayIndices.str();
       }
       info->typedefDeclString = sstr.str();
-      info->retType = info->typedefName + "*";
+      info->retType = info->fqTypedefName + "*";
       info->needsDeref = false;
     } else {
       //something of the form type x[]
       //replacement global will type* xRepl;
       info->typedefName = "type_" + D->getNameAsString();
+      info->fqTypedefName = currentNs_->nsPrefix() + info->typedefName;
       std::stringstream sstr;
       QualType ety = aty->getElementType();
       if (isFxnPointerForm(ety)){
@@ -1408,7 +1411,7 @@ SkeletonASTVisitor::checkArray(VarDecl* D)
              << " " << info->typedefName << "[]";
       }
       info->typedefDeclString = sstr.str();
-      info->retType = info->typedefName + "*";
+      info->retType = info->fqTypedefName + "*";
       info->needsDeref = false;
     }
     return info;

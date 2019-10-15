@@ -161,6 +161,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
 
     std::string typedefDeclString;
     std::string typedefName;
+    std::string fqTypedefName;
     std::string retType;
     bool isFxnStatic;
     bool needsDeref;
