@@ -9,10 +9,9 @@ ALLOCTESTS = \
   test_allocation_coordinate \
   test_allocation_coordinate \
   test_allocation_greedy_dfly \
-  test_allocation_node_id
-
-#  test_allocation_random 
-#  test_allocation_random_smp 
+  test_allocation_node_id \
+  test_allocation_random \
+  test_allocation_random_smp 
 
 test_allocation_%.$(CHKSUF): $(SSTMACEXEC)
 	$(PYRUNTEST) 5 $(top_srcdir) $@ 't > 5 and t < 5.2' \

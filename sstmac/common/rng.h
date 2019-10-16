@@ -56,6 +56,8 @@ namespace RNG {
 namespace detail {
 // This is a deterministic shuffle taken from
 // https://en.cppreference.com/w/cpp/algorithm/random_shuffle on 06/20/2019
+//
+// edit: Turns out there was a silly bug, that is now fixed on 10/15/2019
 // 
 // The following function is under the following license:
 // https://en.cppreference.com/w/Cppreference:Copyright/CC-BY-SA
@@ -75,7 +77,7 @@ void deterministic_shuffle(IT begin, IT end, RandomFunc&& r) {
   n = end - begin;
   for (i = n - 1; i > 0; --i) {
     using std::swap;
-    swap(begin[i], end[r(i + 1)]);
+    swap(begin[i], begin[r(i + 1)]);
   }
 }
 }  // namespace detail
