@@ -51,6 +51,7 @@ Questions? Contact sst-macro-help@sandia.gov
 RegisterKeywords(
 { "random_allocation_seed", "seed for random number generator" },
 { "random_indexer_seed", "seed for random number generator" },
+{ "dump_random_dist_state", "Whether to dump the state of the random number generator on construction" }
 );
 
 namespace sstmac {
@@ -68,6 +69,14 @@ RandomAllocation::RandomAllocation(SST::Params& params) :
     seed = time(NULL);
   }
   rng_ = RNG::SimpleCombo::construct(seed);
+
+  if(params.find<bool>("dump_random_dist_state", false)){
+    std::cout << "Initial state of generator: ";
+    for(auto state_int : rng_->dump_state()){
+      std::cout << state_int << " ";
+    }
+    std::cout << "\n";
+  }
 }
 
 bool

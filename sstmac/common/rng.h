@@ -108,6 +108,10 @@ class UniformInteger
 
   virtual int nseed()= 0;
 
+  // Generators can choose not to dump state in which case the vector will be
+  // empty;
+  virtual std::vector<rngint_t> dump_state() const { return {}; };
+
  /**
   * @param include_zero
   * @param include_one
@@ -168,6 +172,7 @@ class MWC : public UniformInteger
   rngint_t wnew() {
     return ((w = 18000 * (w & 65535) + (w >> 16)) & 65535);
   }
+  
 
  protected:
   MWC();
@@ -190,6 +195,10 @@ class MWC : public UniformInteger
   void vec_reseed(const std::vector<rngint_t> &seeds) override;
 
   int nseed() override;
+
+  std::vector<rngint_t> dump_state() const override {
+    return {z, w};
+  }
 
  private:
   void mwc_reseed(rngint_t z_, rngint_t w_){
@@ -235,6 +244,10 @@ class SHR3 : public UniformInteger
   void vec_reseed(const std::vector<rngint_t> &seeds) override;
 
   int nseed() override;
+
+  std::vector<rngint_t> dump_state() const override {
+    return {jsr};
+  }
 };
 
 class ExponentialDistribution
@@ -312,6 +325,10 @@ class CONG : public UniformInteger
 
   int nseed() override;
 
+  std::vector<rngint_t> dump_state() const override {
+    return {jcong};
+  }
+
  protected:
   CONG();
 
@@ -357,6 +374,17 @@ class SimpleCombo : public UniformInteger
   // the MWC, CONG, and SHR3 value calls.
   rngint_t value() override {
     return (mwc_->MWC::value() ^ cong_->CONG::value()) + shr3_->SHR3::value();
+  }
+
+  std::vector<rngint_t> dump_state() const override {
+    std::vector<rngint_t> outstate = mwc_->dump_state();
+    auto cong_state = cong_->dump_state();
+    auto shr3_state = shr3_->dump_state();
+
+    outstate.insert(outstate.end(), cong_state.begin(), cong_state.end());
+    outstate.insert(outstate.end(), shr3_state.begin(), shr3_state.end());
+
+    return outstate;
   }
 
   void vec_reseed(const std::vector<rngint_t> &seeds) override;
