@@ -81,7 +81,7 @@ RandomTaskMapper::mapRanks(
     //keep contigous ranks on the same node for SMP
     //but randomize the nodes themselves
     std::vector<NodeId> smp_nodes(nodes.begin(), nodes.end());
-    std::random_shuffle(smp_nodes.begin(), smp_nodes.end(), rngf);
+    RNG::random_shuffle(smp_nodes.begin(), smp_nodes.end(), rngf);
     for (int nodeIdx=0; nodeIdx < smp_nodes.size(); ++nodeIdx){
       int rankOffset = nodeIdx * ppn;
       int rankStop = std::min(rankOffset+ppn,nproc);
@@ -102,7 +102,7 @@ RandomTaskMapper::mapRanks(
       ++nodeIdx;
     }
 
-    std::random_shuffle(result.begin(), result.end(), rngf);
+    RNG::random_shuffle(result.begin(), result.end(), rngf);
   }
 }
 

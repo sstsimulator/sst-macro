@@ -1,82 +1,82 @@
 Allocated and indexed 40 nodes
-Rank 0 -> nid65 [ 0 3 1 1 ]
-Rank 1 -> nid65 [ 0 3 1 1 ]
-Rank 2 -> nid33 [ 0 4 0 1 ]
-Rank 3 -> nid33 [ 0 4 0 1 ]
-Rank 4 -> nid57 [ 0 2 1 1 ]
-Rank 5 -> nid57 [ 0 2 1 1 ]
-Rank 6 -> nid55 [ 3 1 1 1 ]
-Rank 7 -> nid55 [ 3 1 1 1 ]
-Rank 8 -> nid50 [ 1 1 1 0 ]
-Rank 9 -> nid50 [ 1 1 1 0 ]
-Rank 10 -> nid61 [ 2 2 1 1 ]
-Rank 11 -> nid61 [ 2 2 1 1 ]
-Rank 12 -> nid74 [ 1 4 1 0 ]
-Rank 13 -> nid74 [ 1 4 1 0 ]
-Rank 14 -> nid56 [ 0 2 1 0 ]
-Rank 15 -> nid56 [ 0 2 1 0 ]
-Rank 16 -> nid68 [ 2 3 1 0 ]
-Rank 17 -> nid68 [ 2 3 1 0 ]
-Rank 18 -> nid25 [ 0 3 0 1 ]
-Rank 19 -> nid25 [ 0 3 0 1 ]
-Rank 20 -> nid78 [ 3 4 1 0 ]
-Rank 21 -> nid78 [ 3 4 1 0 ]
-Rank 22 -> nid18 [ 1 2 0 0 ]
-Rank 23 -> nid18 [ 1 2 0 0 ]
+Rank 0 -> nid29 [ 2 3 0 1 ]
+Rank 1 -> nid29 [ 2 3 0 1 ]
+Rank 2 -> nid56 [ 0 2 1 0 ]
+Rank 3 -> nid56 [ 0 2 1 0 ]
+Rank 4 -> nid55 [ 3 1 1 1 ]
+Rank 5 -> nid55 [ 3 1 1 1 ]
+Rank 6 -> nid33 [ 0 4 0 1 ]
+Rank 7 -> nid33 [ 0 4 0 1 ]
+Rank 8 -> nid57 [ 0 2 1 1 ]
+Rank 9 -> nid57 [ 0 2 1 1 ]
+Rank 10 -> nid25 [ 0 3 0 1 ]
+Rank 11 -> nid25 [ 0 3 0 1 ]
+Rank 12 -> nid50 [ 1 1 1 0 ]
+Rank 13 -> nid50 [ 1 1 1 0 ]
+Rank 14 -> nid61 [ 2 2 1 1 ]
+Rank 15 -> nid61 [ 2 2 1 1 ]
+Rank 16 -> nid30 [ 3 3 0 0 ]
+Rank 17 -> nid30 [ 3 3 0 0 ]
+Rank 18 -> nid74 [ 1 4 1 0 ]
+Rank 19 -> nid74 [ 1 4 1 0 ]
+Rank 20 -> nid68 [ 2 3 1 0 ]
+Rank 21 -> nid68 [ 2 3 1 0 ]
+Rank 22 -> nid46 [ 3 0 1 0 ]
+Rank 23 -> nid46 [ 3 0 1 0 ]
 Rank 24 -> nid47 [ 3 0 1 1 ]
 Rank 25 -> nid47 [ 3 0 1 1 ]
-Rank 26 -> nid32 [ 0 4 0 0 ]
-Rank 27 -> nid32 [ 0 4 0 0 ]
-Rank 28 -> nid6 [ 3 0 0 0 ]
-Rank 29 -> nid6 [ 3 0 0 0 ]
-Rank 30 -> nid30 [ 3 3 0 0 ]
-Rank 31 -> nid30 [ 3 3 0 0 ]
-Rank 32 -> nid43 [ 1 0 1 1 ]
-Rank 33 -> nid43 [ 1 0 1 1 ]
-Rank 34 -> nid35 [ 1 4 0 1 ]
-Rank 35 -> nid35 [ 1 4 0 1 ]
-Rank 36 -> nid46 [ 3 0 1 0 ]
-Rank 37 -> nid46 [ 3 0 1 0 ]
-Rank 38 -> nid29 [ 2 3 0 1 ]
-Rank 39 -> nid29 [ 2 3 0 1 ]
-Rank 6 = 5000.0058ms
+Rank 26 -> nid78 [ 3 4 1 0 ]
+Rank 27 -> nid78 [ 3 4 1 0 ]
+Rank 28 -> nid32 [ 0 4 0 0 ]
+Rank 29 -> nid32 [ 0 4 0 0 ]
+Rank 30 -> nid35 [ 1 4 0 1 ]
+Rank 31 -> nid35 [ 1 4 0 1 ]
+Rank 32 -> nid6 [ 3 0 0 0 ]
+Rank 33 -> nid6 [ 3 0 0 0 ]
+Rank 34 -> nid43 [ 1 0 1 1 ]
+Rank 35 -> nid43 [ 1 0 1 1 ]
+Rank 36 -> nid18 [ 1 2 0 0 ]
+Rank 37 -> nid18 [ 1 2 0 0 ]
+Rank 38 -> nid65 [ 0 3 1 1 ]
+Rank 39 -> nid65 [ 0 3 1 1 ]
 Rank 4 = 5000.0058ms
-Rank 7 = 5000.0058ms
 Rank 5 = 5000.0058ms
-Rank 14 = 5000.0058ms
 Rank 12 = 5000.0058ms
-Rank 15 = 5000.0058ms
-Rank 10 = 5000.0058ms
-Rank 2 = 5000.0058ms
 Rank 13 = 5000.0058ms
-Rank 11 = 5000.0058ms
-Rank 3 = 5000.0058ms
-Rank 8 = 5000.0058ms
-Rank 23 = 5000.0058ms
-Rank 9 = 5000.0058ms
-Rank 22 = 5000.0058ms
-Rank 18 = 5000.0058ms
-Rank 20 = 5000.0058ms
 Rank 0 = 5000.0058ms
-Rank 36 = 5000.0058ms
-Rank 19 = 5000.0058ms
-Rank 21 = 5000.0058ms
+Rank 14 = 5000.0058ms
 Rank 1 = 5000.0058ms
-Rank 37 = 5000.0058ms
-Rank 16 = 5000.0058ms
-Rank 32 = 5000.0058ms
-Rank 17 = 5000.0058ms
+Rank 6 = 5000.0058ms
+Rank 20 = 5000.0058ms
+Rank 15 = 5000.0058ms
+Rank 7 = 5000.0058ms
+Rank 32 = 5000.0057ms
+Rank 21 = 5000.0058ms
 Rank 33 = 5000.0058ms
-Rank 28 = 5000.0058ms
+Rank 8 = 5000.0058ms
+Rank 2 = 5000.0058ms
+Rank 22 = 5000.0058ms
+Rank 9 = 5000.0058ms
+Rank 36 = 5000.0057ms
+Rank 3 = 5000.0058ms
+Rank 10 = 5000.0058ms
+Rank 23 = 5000.0058ms
+Rank 37 = 5000.0058ms
+Rank 11 = 5000.0058ms
+Rank 24 = 5000.0058ms
+Rank 25 = 5000.0058ms
+Rank 16 = 5000.0058ms
+Rank 17 = 5000.0058ms
+Rank 26 = 5000.0057ms
+Rank 34 = 5000.0058ms
+Rank 27 = 5000.0058ms
+Rank 35 = 5000.0058ms
+Rank 18 = 5000.0057ms
+Rank 19 = 5000.0057ms
+Rank 28 = 5000.0057ms
 Rank 38 = 5000.0058ms
 Rank 29 = 5000.0058ms
 Rank 39 = 5000.0058ms
-Rank 34 = 5000.0057ms
-Rank 30 = 5000.0057ms
-Rank 35 = 5000.0058ms
+Rank 30 = 5000.0058ms
 Rank 31 = 5000.0058ms
-Rank 24 = 5000.0058ms
-Rank 25 = 5000.0058ms
-Rank 26 = 5000.0058ms
-Rank 27 = 5000.0058ms
-Estimated total runtime of           5.00001054 seconds
+Estimated total runtime of           5.00001050 seconds
