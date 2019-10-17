@@ -488,7 +488,8 @@ def run(typ, extraLibs="", makeLibrary=False, redefineSymbols=True, runClang=Tru
   allObjects = generatedObjects[:]
   allObjects.extend(givenObjects)
   if runLinker:
-    addLink(ctx, ldTarget, args, cmds, allObjects)
+    shouldMakeExe = memoizing
+    addLink(ctx, ldTarget, args, cmds, allObjects, shouldMakeExe)
     if makeBashExe:
       objects = allObjects[:]
       objects.append("-lsstmac_main")

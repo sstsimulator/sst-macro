@@ -51,20 +51,10 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace memoize {
 #if __cplusplus >= 201703L
 
-namespace detail {
-template <typename... T, std::size_t... I>
-void print_types(std::tuple<T...> const &tup, std::index_sequence<I...>) {
-  std::cout << "Types:\n";
-  (..., (std::cout << std::get<I>(tup) << "\n"));
-}
-} // namespace detail
-
-template <typename... T> void print_types(std::tuple<T...> const &tup) {
-  detail::print_types(tup, std::make_index_sequence<sizeof...(T)>());
-}
-
 template <typename... Args> void print_types(Args &&... args) {
-  print_types(std::make_tuple(std::forward<Args>(args)...));
+  std::cout << "Types: ";
+  (..., (std::cout << args << " "));
+  std::cout << "\n";
 }
 
 #else // Not c++17 or greater
