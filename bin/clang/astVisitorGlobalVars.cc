@@ -79,7 +79,7 @@ SkeletonASTVisitor::setupGlobalReplacement(VarDecl *D, const std::string& namePr
   var.arrayInfo = checkArray(D);
   if (var.arrayInfo) {
     var.retType = var.arrayInfo->retType;
-    var.typeStr = var.arrayInfo->typedefName;
+    var.typeStr = var.arrayInfo->fqTypedefName;
     delayedInsertAfter(D, var.arrayInfo->typedefDeclString + ";");
   } else if (var.anonRecord){
     var.retType = var.anonRecord->retType;

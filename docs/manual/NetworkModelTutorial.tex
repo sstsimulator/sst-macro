@@ -10,6 +10,7 @@ A third class of models (flow models), was previously supported but are now disc
 \label{subsec:tutorial:macrels}
 
 The analytic models in SST/macro are colloqiually referred to as MACRELS (MTL for AnalytiC REally Lightweight Simulation).
+An example file running a simple application can be found in the top-level examples folder.
 The MTL (message transfer layer) moves entire network flows from point-to-point without packetizing them into smaller chunks.
 Thus an entire 1 MB MPI message is transported as a single chunk of data.  
 The majority of MACRELS models are based on the LogP set of approximations:
@@ -43,11 +44,7 @@ Modeling occurs on entire flows, rather than individual packets.
 \label{subsec:tutorial:pisces}
 
 PISCES (Packet-flow Interconnect Simulation for Congestion at Extreme Scale) breaks network flows (MPI messages) into individual packets and models each packet individually.
-In abstract machine models, PISCES can be selected as:
-
-\begin{ViFile}
-congestion_model = pisces
-\end{ViFile}
+An example file running a simple application can be found in the top-level examples folder.
 In reality, packets are further subdivided into flits (flow-control units).
 Flit-level detail would be way too computationally intense for large-scale simulation.
 All routing decisions are made on packets as a while. 
@@ -168,6 +165,7 @@ We have $H$=3.0, $T$=4.38, and $O$=0.73.
 
 \subsection{SCULPIN}
 Under current architectural trends, switches have ample buffer space and crossbar bandwidth, making the mostly likely bottleneck edge bandwidth through the output ports.
+An example file running a simple application can be found in the top-level examples folder.
 SCULPIN (Simple Congestion Unbuffered Latency Packet Interconnection Network) models the main source of contention in today's networks occurring on the output port ser/des. Unlike PISCES, individual flits are not able to wormhole route across links interspersed with flits from other packets.
 \begin{enumerate}
 \item A message (flow) is broken up into packets. Each packet waits in the queue to send based on link availability and QoS.
@@ -183,6 +181,11 @@ SCULPIN (Simple Congestion Unbuffered Latency Packet Interconnection Network) mo
 \caption[SCULPIN model]{SCULPIN (Simple Congestion Unbuffered Latency Packet Interconnection Network) models the main source of contention in today's networks occurring on the output port ser/des. For details on numbered steps, see text.}
 \label{fig:sculpin}
 \end{figure}
+
+\subsection{SNAPPR}
+Because of the coarse-grained mechanisms used in PISCES and SCULPIN, it can be difficult to model more advanced mechanisms like QoS or congestion control. 
+SNAPPR (Simulator Network for Adaptive Priority Packet Routing) uses a coarse-grained cycle-based simulation that allows priority queues based on QoS or restricting injection rate for congestion control. The model is configured in much the same way as the other models.  SNAPPR is slightly more expensive than the other models, but provides by far the most flexibility and most detailed statistics.
+An example file running a simple application can be found in the top-level examples folder.
 
 \subsection{Flow}
 \label{subsec:tutorial:flow}
