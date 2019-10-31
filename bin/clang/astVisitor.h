@@ -78,6 +78,10 @@ struct ASTVisitorCmdLine {
     return modeMask & mask;
   }
 
+  static int getActiveMode(){
+    return mode;
+  }
+
   static llvm::cl::OptionCategory sstmacCategoryOpt;
   static llvm::cl::opt<bool> memoizeOpt;
   static llvm::cl::opt<bool> skeletonizeOpt;
@@ -1123,7 +1127,7 @@ struct PragmaActivateGuard {
 
   void reactivate(clang::Decl* d, SSTPragma* prg){
     ++pragmaConfig_.pragmaDepth;
-    activePragmas_.push_back(prg);
+    myPragmas_.push_back(prg);
     prg->activate(d, rewriter_, pragmaConfig_);
   }
 
@@ -1147,29 +1151,48 @@ struct PragmaActivateGuard {
     pragmas_(pragmas)
   {
     ++pragmaConfig_.pragmaDepth;
-    myPragmas_ = pragmas_.getMatches<T>(t, firstPass);
-    //this removes all inactivate pragmas from myPragmas_
-    for (SSTPragma* prg : myPragmas_){
-      if (doVisit){
-        //pragma takes precedence - must occur in pre-visit
-        activePragmas_.push_back(prg);
-        if (prg->deleteOnUse){
-          deletePragmaText(prg, ci);
-        }
-        prg->activate(t, rewriter_, pragmaConfig_);
-        if (pragmaConfig_.makeNoChanges){
-          skipVisit_ = true;
-          pragmaConfig_.makeNoChanges = false;
+
+    myPragmas_ = [this, t, firstPass, doVisit]{
+      auto tmp = pragmas_.getMatches<T>(t, firstPass);
+      if(doVisit){
+        return tmp;
+      } else {
+        return decltype(tmp){};
+      }
+    }();
+
+    auto &activePragmas = pragmaConfig_.activePragmas;
+    // Register the current set of pragmas with their parents
+    if(!activePragmas.empty()){
+      // Loop over parent pragmas
+      for(auto &p : *activePragmas.back()){
+        for(auto &c : myPragmas_){
+          p->children.push_back(c);
         }
       }
     }
+     
+    // Then we become the active pragmas
+    pragmaConfig_.activePragmas.push_back(&myPragmas_);
+
+    //this removes all inactivate pragmas from myPragmas_
+    for (SSTPragma* prg : myPragmas_){
+      if (prg->deleteOnUse){
+        deletePragmaText(prg, ci);
+      }
+      prg->activate(t, rewriter_, pragmaConfig_);
+      if (pragmaConfig_.makeNoChanges){
+        skipVisit_ = true;
+        pragmaConfig_.makeNoChanges = false;
+      }
+    }
+
   }
 
   void deletePragmaText(SSTPragma* prg, clang::CompilerInstance& ci);
 
   bool skipVisit_;
   std::list<SSTPragma*> myPragmas_;
-  std::list<SSTPragma*> activePragmas_;
   PragmaConfig& pragmaConfig_;
   clang::Rewriter& rewriter_;
   SSTPragmaList& pragmas_;

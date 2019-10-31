@@ -197,6 +197,10 @@ ReplaceAction::EndSourceFileAction()
            << "\"" << appname << "\",sstmac_user_main_" << appname << ");\n\n"
            << "extern \"C\" const char exe_main_name[] = \"" << appname << "\";\n";
     }
+
+    for(auto const& pair : prgConfig_.globalCppFunctionsToWrite){
+      ofs << pair.second << "\n";
+    }
   } else {
     llvm::errs() << "Failed opening " << sstGlobalFile << "\n";
     exit(EXIT_FAILURE);

@@ -21,8 +21,9 @@ class bcolors:
 tmpFile = sys.argv[1]
 srcdir = sys.argv[2]
 chkFile = tmpFile.replace("tmp", "chk")
+diffFile = tmpFile.replace("tmp-out", "diff")
 refFile = os.path.join(srcdir, "tests", "reference", tmpFile.replace("tmp","ref"))
-rc, output = getstatusoutput("diff -b %s %s" % (refFile, tmpFile))
+rc, output = getstatusoutput("diff -bu %s %s" % (refFile, tmpFile))
 text = ""
 if not os.path.isfile(refFile):
   text = "FAILED: %s: no ref file" % (refFile)
@@ -33,5 +34,6 @@ elif rc == 0:
 else:
   text = "FAILED: %s: files are different" % (chkFile)
   print (bcolors.FAIL + text + bcolors.ENDC)
+  open(diffFile,"w").write(output)
 open(chkFile,"w").write(text)
 

@@ -124,7 +124,7 @@ def runAllCmds(cmds, verbose, doDeleteTemps, doDeleteObjects, clangBin):
     stdout=None
     if outfile:
       stdout = open(outfile,"w")
-    child = Popen(cmdArr,stdout=stdout)
+    child = Popen([x.strip() for x in cmdArr],stdout=stdout)
     result = child.communicate()
     if outfile:
       stdout.close()

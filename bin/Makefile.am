@@ -89,13 +89,37 @@ sstmac_clang_SOURCES = \
   clang/computePragma.cc \
   clang/computeVisitor.cc \
   clang/replacePragma.cc \
-  clang/annotatePragma.cc \
   clang/astConsumers.cc \
   clang/frontendActions.cc \
   clang/astVisitor.cc 
 
+
 sstmac_clang_CXXFLAGS = -fno-rtti $(AM_CXXFLAGS)
 sstmac_clang_CPPFLAGS = $(CLANG_CPPFLAGS) $(AM_CPPFLAGS)
+
+if HAVE_CLANG17
+noinst_LIBRARIES=libclang17.a
+libclang17_a_SOURCES = \
+	clang/annotatePragma.cc \
+	clang/memoizePragma.cc \
+	clang/ompPuppetizePragma.cc \
+	clang/memoizeVariable.cc
+
+old_standards=-std=c++11 -std=c++0x -std=c++1y -std=c++14 -std=c++1z
+libclang17_a_CXXFLAGS = $(filter-out $(old_standards), $(sstmac_clang_CXXFLAGS))
+libclang17_a_CXXFLAGS += -std=c++17
+libclang17_a_CPPFLAGS = $(sstmac_clang_CPPFLAGS)
+
+EXTRA_sstmac_clang_DEPENDENCIES = libclang17.a
+
+library_includedir=$(includedir)/memoization
+library_include_HEADERS = clang/memoization/capture.h
+endif
+
+
+# We will fix this when I have better autotools knowledge, but making this work
+# correctly is hard, I can't figure out how to wrap it with HAVE_CLANG17 and += 
+if HAVE_CLANG17
 sstmac_clang_LDFLAGS = $(CLANG_LDFLAGS) \
  -Wl,-rpath,@CLANG_INSTALL_DIR@/lib \
  -lclangFrontend \
@@ -117,12 +141,44 @@ sstmac_clang_LDFLAGS = $(CLANG_LDFLAGS) \
  -lclangLex \
  -lclangBasic \
  @CLANG_LIBTOOLING_LIBS@ \
- @CLANG_LIBTOOLING_SYSTEM_LIBS@ 
+ @CLANG_LIBTOOLING_SYSTEM_LIBS@ \
+ -Wl,--whole-archive,libclang17.a,--no-whole-archive
+else
+sstmac_clang_LDFLAGS = $(CLANG_LDFLAGS) \
+ -Wl,-rpath,@CLANG_INSTALL_DIR@/lib \
+ -lclangFrontend \
+ -lclangFrontendTool \
+ -lclangTooling \
+ -lclangBasic \
+ -lclangASTMatchers \
+ -lclangFormat \
+ -lclangFrontend \
+ -lclangDriver \
+ -lclangParse \
+ -lclangSerialization \
+ -lclangSema \
+ -lclangEdit \
+ -lclangAnalysis \
+ -lclangToolingCore \
+ -lclangAST \
+ -lclangRewrite \
+ -lclangLex \
+ -lclangBasic \
+ @CLANG_LIBTOOLING_LIBS@ \
+ @CLANG_LIBTOOLING_SYSTEM_LIBS@
 endif
+
+
+
+endif
+
+
+
 
 if HAVE_SST_ELEMENTS
 bin_PROGRAMS += ariel_test
 ariel_test_SOURCES = ariel_test.cc
+ariel_test_LDADD = -lrt
 ariel_test_CPPFLAGS = $(SST_ELEMENTS_CPPFLAGS) $(SST_CPPFLAGS)
 endif
 
