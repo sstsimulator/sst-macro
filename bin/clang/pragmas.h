@@ -73,7 +73,6 @@ struct PragmaConfig {
   std::string computeMemorySpec;
   std::list<std::pair<SSTNullVariablePragma*,clang::TypedefDecl*>> pendingTypedefs;
 
-  std::list<std::list<SSTPragma *>*> activePragmas;
   int pragmaDepth = 0;
 
   bool makeNoChanges = false;
@@ -369,18 +368,19 @@ class SSTPragmaHandlerInstance : public SSTPragmaHandler
    * @param args Keys are parameter names, the list of string arguments passed to each one
    * @return the pragma object
    */
-  SSTPragma* allocatePragma(const std::list<clang::Token>& tokens) const override {
-    auto ptr = new T(pragmaLoc_, ci_, tokens);
-    ptr->classId = SSTPragma::id<T>();
-    return ptr;
-  }
+   SSTPragma *
+   allocatePragma(const std::list<clang::Token> &tokens) const override {
+     return new T(pragmaLoc_, ci_, tokens);
+   }
 };
 
 template <class T> struct SSTNoArgsPragmaShim : public T
 {
   SSTNoArgsPragmaShim(clang::SourceLocation loc, clang::CompilerInstance& CI,
                   const std::list<clang::Token>& tokens) :
-    T() { }
+    T() {
+      this->classId = pragmaID<T>();
+    }
 };
 
 template <class T> struct SSTStringPragmaShim : public T
@@ -390,6 +390,7 @@ template <class T> struct SSTStringPragmaShim : public T
                   const std::list<clang::Token>& tokens) :
     T(getSingleString(tokens,CI)) //just a single string gets passed up
   {
+      this->classId = pragmaID<T>();
   }
 
 };
@@ -398,7 +399,9 @@ template <class T> struct SSTTokenListPragmaShim : public T
 {
   SSTTokenListPragmaShim(clang::SourceLocation loc, clang::CompilerInstance& CI,
                      const std::list<clang::Token>& tokens) :
-    T(loc, CI, tokens) { }
+    T(loc, CI, tokens) { 
+      this->classId = pragmaID<T>();
+    }
 };
 
 template <class T> struct SSTArgMapPragmaShim : public T
@@ -407,7 +410,9 @@ template <class T> struct SSTArgMapPragmaShim : public T
   SSTArgMapPragmaShim(clang::SourceLocation loc, clang::CompilerInstance& CI,
                   const std::list<clang::Token>& tokens) :
     T(loc, CI, getMap(loc, CI, tokens))
-  { }
+  { 
+      this->classId = pragmaID<T>();
+  }
 };
 
 class SSTStackAllocPragma : public SSTPragma

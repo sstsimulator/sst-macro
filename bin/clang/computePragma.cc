@@ -559,5 +559,5 @@ static PragmaRegister<SSTArgMapPragmaShim, SSTImplicitStatePragma, true> implict
     "sst", "implicit_state", MEMOIZE | SKELETONIZE);
 static PragmaRegister<SSTTokenListPragmaShim, SSTOpenMPParallelPragma, true> ompPragmaSkel(
     "omp", "parallel", SKELETONIZE);
-// static PragmaRegister<SSTTokenListPragmaShim, SSTOpenMPParallelPragma, false> ompPragmaPup(
-//     "omp", "parallel", PUPPETIZE);
+static PragmaRegister<SSTTokenListPragmaShim, SSTOpenMPParallelPragma, false> ompPragmaPup(
+    "omp", "parallel", PUPPETIZE);

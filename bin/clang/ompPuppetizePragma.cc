@@ -11,11 +11,11 @@ struct OmpPuppetInfo {
 };
 } // namespace
 
-static PragmaRegister<SSTArgMapPragmaShim, SSTOmpPuppetPragma, false>
-    ompPuppetPragma("omp", "parallel", pragmas::PUPPETIZE);
-
-static PragmaRegister<SSTArgMapPragmaShim, SSTOmpPuppetPragma, true>
-    ompPuppetPragmaShadow("omp", "parallel", pragmas::SHADOWIZE);
-
-static PragmaRegister<SSTArgMapPragmaShim, SSTOmpPuppetPragma, false>
-    ompPuppetPragmaMemoize("omp", "parallel", pragmas::MEMOIZE);
+// static PragmaRegister<SSTArgMapPragmaShim, SSTOmpPuppetPragma, false>
+//     ompPuppetPragma("omp", "parallel", pragmas::PUPPETIZE);
+// 
+// static PragmaRegister<SSTArgMapPragmaShim, SSTOmpPuppetPragma, true>
+//     ompPuppetPragmaShadow("omp", "parallel", pragmas::SHADOWIZE);
+// 
+// static PragmaRegister<SSTArgMapPragmaShim, SSTOmpPuppetPragma, false>
+//     ompPuppetPragmaMemoize("omp", "parallel", pragmas::MEMOIZE);

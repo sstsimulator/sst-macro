@@ -53,7 +53,6 @@ T const *
 getFirst(llvm::SmallVector<clang::ast_matchers::BoundNodes, N> const &Nodes,
          std::string const &ID) {
 
-  llvm::errs() << "Num matches: " << Nodes.size() << "\n";
   for (auto const &Node : Nodes) {
     if (auto match = Node.template getNodeAs<T>(ID)) {
       return match;

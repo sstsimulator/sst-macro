@@ -504,4 +504,3 @@ def run(typ, extraLibs="", makeLibrary=False, redefineSymbols=True, runClang=Tru
 
   return 0
 
-

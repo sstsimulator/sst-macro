@@ -77,7 +77,8 @@ template <typename Container> std::string makeNameRegex(Container const &C) {
 } // namespace detail
 
 template <typename StmtDecl>
-auto matchNonLocalUsedVariables(StmtDecl const *SD, clang::ASTContext &Ctx) {
+auto matchNonLocalUsedVariables(StmtDecl const *SD, clang::ASTContext &Ctx,
+                                std::string nameRegex = " ") {
   using namespace clang::ast_matchers;
   // clang-format off
   return detail::toPtrSet<clang::VarDecl>(
@@ -92,10 +93,7 @@ auto matchNonLocalUsedVariables(StmtDecl const *SD, clang::ASTContext &Ctx) {
                   )
                 ),
                 unless( // or are blacklisted
-                  anyOf( 
-                    hasName("endl"),
-                    hasName("cout")
-                  )
+                  matchesName(nameRegex)
                 )
               ).bind("varDecls") // and bind them to BindId
             )
@@ -150,5 +148,7 @@ inline clang::NamedDecl const *getParentDecl(clang::Stmt const *S,
         ), *S, Ctx));
   // clang-format on
 }
+
+void memoizationAutoMatcher(clang::Stmt const *S);
 
 #endif //  bin_clang_memoizeVariableCaputreAnalyzer_H

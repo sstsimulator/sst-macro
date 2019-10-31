@@ -43,6 +43,7 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include "memoizePragma.h"
+#include "clangGlobals.h"
 #include "memoizeVariableCaptureAnalyzer.h"
 
 namespace {
@@ -55,38 +56,6 @@ template <typename T> T getNonNull(T t) {
 
   return t;
 }
-
-struct Current {
-  Current(clang::CompilerInstance *CI) {
-    CI_ = CI;
-    Ctx_ = &CI->getASTContext();
-    SM_ = &CI->getSourceManager();
-    LO_ = &CI->getLangOpts();
-  }
-
-  ~Current() {
-    CI_ = nullptr;
-    Ctx_ = nullptr;
-    SM_ = nullptr;
-    LO_ = nullptr;
-  }
-
-  static clang::CompilerInstance *getCI() { return getNonNull(CI_); };
-  static clang::ASTContext *getCTX() { return getNonNull(Ctx_); };
-  static clang::SourceManager *getSM() { return getNonNull(SM_); };
-  static clang::LangOptions *getLO() { return getNonNull(LO_); };
-
-private:
-  static clang::CompilerInstance *CI_;
-  static clang::ASTContext *Ctx_;
-  static clang::SourceManager *SM_;
-  static clang::LangOptions *LO_;
-};
-
-clang::CompilerInstance *Current::CI_ = nullptr;
-clang::ASTContext *Current::Ctx_ = nullptr;
-clang::SourceManager *Current::SM_ = nullptr;
-clang::LangOptions *Current::LO_ = nullptr;
 
 std::string cleanPath(std::string const &p) {
   // Don't care if it doesn't work on Windows
@@ -108,7 +77,7 @@ std::string generateUniqueFunctionName(clang::SourceLocation const &Loc,
   Prefix += (Prefix.empty() ? "f" : "") + std::to_string(counter++);
   Prefix += "_" + Decl->getNameAsString() + "_";
 
-  auto &SM = *Current::getSM();
+  auto &SM = *sst::activeSourceManger;
   std::string path = SM.getFilename(Loc).str();
   Prefix += cleanPath(path) + std::to_string(SM.getPresumedLineNumber(Loc));
 
@@ -135,13 +104,16 @@ auto getAllRequestedVarDecls(
     std::optional<Container> const &MetaVariableNames) {
 
   // Always match some variables
-  auto &Ctx = *Current::getCTX();
+  memoizationAutoMatcher(SD);
+
   auto FoundVariables =
-      VariableNames ? matchNamedUsedVariables(SD, Ctx, VariableNames.value())
-                    : matchNonLocalUsedVariables(SD, Ctx);
+      VariableNames ? matchNamedUsedVariables(SD, *sst::activeASTContext,
+                                              VariableNames.value())
+                    : matchNonLocalUsedVariables(SD, *sst::activeASTContext);
 
   if (MetaVariableNames) { // Maybe empty
-    matchNamedMetaVariables(SD, Ctx, MetaVariableNames.value());
+    matchNamedMetaVariables(SD, *sst::activeASTContext,
+                            MetaVariableNames.value());
   }
 
   return FoundVariables;
@@ -178,7 +150,7 @@ getFuncBodyGenerator(StmtDecl const *SD,
     return printCaptureBody;
   }
 
-  errorAbort(SD, *Current::getCI(),
+  errorAbort(SD, *sst::activeCompiler,
              "Memoize Type(" + type +
                  ") was not reconized in SSTMemoizePragma.\n");
 
@@ -186,7 +158,7 @@ getFuncBodyGenerator(StmtDecl const *SD,
 }
 
 clang::NamedDecl const *getNonNullParentDecl(clang::Stmt const *S) {
-  return getNonNull(getParentDecl(S, *Current::getCTX()));
+  return getNonNull(getParentDecl(S, *sst::activeASTContext));
 }
 
 } // namespace
@@ -196,7 +168,7 @@ MemoizationStrings::MemoizationStrings(
     std::string const &name, std::vector<Variable> const &Variables,
     std::function<std::string(std::vector<Variable> const &)> fn) {
 
-  std::string externC = Current::getLO()->CPlusPlus ? "extern \"C\" " : "";
+  std::string externC = sst::activeLangOpts->CPlusPlus ? "extern \"C\" " : "";
 
   decleration_ =
       externC + "void " + name + "(" +
@@ -225,9 +197,6 @@ SSTMemoizePragma::SSTMemoizePragma(clang::SourceLocation Loc,
 
 void SSTMemoizePragma::activate(clang::Stmt *S, clang::Rewriter &R,
                                 PragmaConfig &Cfg) {
-  // TODO factor this out in to real globals
-  Current current(CI);
-
   // Since we are a statement we will need to find the decl in which we were
   // declared, if it doesn't have a name then this throws.  Usually that would
   // mean it was the translation unit decl.
@@ -238,7 +207,7 @@ void SSTMemoizePragma::activate(clang::Stmt *S, clang::Rewriter &R,
   std::vector<Variable> Variables;
   for (auto Var :
        getAllRequestedVarDecls(S, VariableNames_, MetaVariableNames_)) {
-    Variables.emplace_back(Var, *Current::getCTX());
+    Variables.emplace_back(Var, *sst::activeASTContext);
   }
 
   // Name for the new memoization function we are going to write.
@@ -251,10 +220,7 @@ void SSTMemoizePragma::activate(clang::Stmt *S, clang::Rewriter &R,
 } // namespace memoize
 
 void SSTMemoizePragma::activate(clang::Decl *D, clang::Rewriter &R,
-                                PragmaConfig &Cfg) {
-  // TODO factor this out in to real globals
-  Current current(CI);
-}
+                                PragmaConfig &Cfg) { }
 
 void SSTMemoizePragma::deactivate(PragmaConfig &cfg) {
   auto &vec = cfg.globalCppFunctionsToWrite;

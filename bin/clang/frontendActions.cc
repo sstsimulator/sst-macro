@@ -42,6 +42,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
+#include "clangGlobals.h"
+
 #include "frontendActions.h"
 #include "globalVarNamespace.h"
 #include "pragmas.h"

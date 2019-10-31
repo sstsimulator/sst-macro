@@ -1152,7 +1152,7 @@ struct PragmaActivateGuard {
   {
     ++pragmaConfig_.pragmaDepth;
 
-    myPragmas_ = [this, t, firstPass, doVisit]{
+    myPragmas_ = [&]{
       auto tmp = pragmas_.getMatches<T>(t, firstPass);
       if(doVisit){
         return tmp;
@@ -1160,20 +1160,6 @@ struct PragmaActivateGuard {
         return decltype(tmp){};
       }
     }();
-
-    auto &activePragmas = pragmaConfig_.activePragmas;
-    // Register the current set of pragmas with their parents
-    if(!activePragmas.empty()){
-      // Loop over parent pragmas
-      for(auto &p : *activePragmas.back()){
-        for(auto &c : myPragmas_){
-          p->children.push_back(c);
-        }
-      }
-    }
-     
-    // Then we become the active pragmas
-    pragmaConfig_.activePragmas.push_back(&myPragmas_);
 
     //this removes all inactivate pragmas from myPragmas_
     for (SSTPragma* prg : myPragmas_){

@@ -102,6 +102,7 @@ noinst_LIBRARIES=libclang17.a
 libclang17_a_SOURCES = \
 	clang/annotatePragma.cc \
 	clang/memoizePragma.cc \
+	clang/memoizeVariableCaptureAnalyzer.cc \
 	clang/ompPuppetizePragma.cc \
 	clang/memoizeVariable.cc
 
