@@ -172,7 +172,7 @@ class SSTOpenMPParallelPragma : public SSTComputePragma
                          clang::CompilerInstance& CI,
                          const std::list<clang::Token>& tokens);
  private:
-  static std::string numThreads(clang::SourceLocation loc, clang::CompilerInstance& CI,
+  std::string numThreads(clang::SourceLocation loc, clang::CompilerInstance& CI,
                          const std::list<clang::Token>& tokens);
 };
 

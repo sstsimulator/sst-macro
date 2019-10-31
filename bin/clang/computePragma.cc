@@ -469,7 +469,8 @@ SSTOpenMPParallelPragma::numThreads(SourceLocation loc, CompilerInstance &CI, co
 SSTOpenMPParallelPragma::SSTOpenMPParallelPragma(SourceLocation loc, CompilerInstance& ci,
                                                  const std::list<Token> &tokens)
   : SSTComputePragma(numThreads(loc,ci,tokens))
-{ }
+{ 
+}
 
 SSTMemoizeComputePragma::SSTMemoizeComputePragma(clang::SourceLocation loc, clang::CompilerInstance& CI,
                                                  std::map<std::string, std::list<std::string>>&& in_args)

@@ -119,8 +119,6 @@ struct SSTPragma {
   SkeletonASTVisitor* visitor = nullptr;
   SSTPragmaList* pragmaList = nullptr;
 
-  llvm::TinyPtrVector<SSTPragma const*> children;
-
   int depth;
   bool deleteOnUse;
   std::uintptr_t classId;
@@ -135,16 +133,6 @@ struct SSTPragma {
   template <class T>
   bool matches(T* s){
     return startPragmaLoc < getStart(s) && getStart(s) <= targetLoc;
-  }
-
-  // It's nice and pure, only optimize if really needed
-  llvm::TinyPtrVector<SSTPragma const*> 
-  allDecendents(llvm::TinyPtrVector<SSTPragma const*> result = {}) const {
-    result.insert(result.end(), children.begin(), children.end());
-    for(auto child : children){
-      result = child->allDecendents(std::move(result));
-    }
-    return result;
   }
 
   virtual bool reusable() const {
@@ -177,7 +165,6 @@ struct SSTPragma {
       clang::SourceLocation loc, clang::CompilerInstance& CI, const std::list<clang::Token>& tokens);
 
   SSTPragma() = default;
-  
   int getActiveMode() const;
 
   virtual void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg) = 0;
@@ -190,15 +177,6 @@ struct SSTPragma {
       std::ostream& os, clang::CompilerInstance& CI);
 
 };
-
-// TODO potentially make this more robust, but it should work for now
-template <typename T>
-T* pragmaCast(SSTPragma *p){
-  if(p->classId == pragmaID<T>()){
-    return static_cast<T*>(p);
-  }
-  return nullptr;
-}
 
 struct SSTPragmaList {
   void push_back(SSTPragma* p){
@@ -368,8 +346,7 @@ class SSTPragmaHandlerInstance : public SSTPragmaHandler
    * @param args Keys are parameter names, the list of string arguments passed to each one
    * @return the pragma object
    */
-   SSTPragma *
-   allocatePragma(const std::list<clang::Token> &tokens) const override {
+   SSTPragma * allocatePragma(const std::list<clang::Token> &tokens) const override {
      return new T(pragmaLoc_, ci_, tokens);
    }
 };
