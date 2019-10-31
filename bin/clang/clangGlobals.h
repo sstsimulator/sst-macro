@@ -47,6 +47,7 @@ namespace clang {
   class ASTContext;
   class SourceManager;
   class LangOptions;
+  class Sema;
 }
 
 namespace sst {
@@ -54,4 +55,5 @@ namespace sst {
   extern clang::ASTContext *activeASTContext;
   extern clang::SourceManager *activeSourceManger;
   extern clang::LangOptions *activeLangOpts;
+  extern clang::Sema *activeSema;
 }

@@ -58,6 +58,12 @@ using namespace clang;
 using namespace clang::driver;
 using namespace clang::tooling;
 
+clang::CompilerInstance* sst::activeCompiler = nullptr;
+clang::ASTContext* sst::activeASTContext = nullptr;
+clang::SourceManager* sst::activeSourceManger = nullptr;
+clang::LangOptions* sst::activeLangOpts = nullptr;
+clang::Sema* sst::activeSema = nullptr;
+
 ReplaceAction::ReplaceAction() :
   visitor_(rewriter_, globalNs_, prgConfig_)
 {
@@ -81,6 +87,14 @@ class DeleteOpenMPPragma : public PragmaHandler
   void HandlePragma(Preprocessor &PP, PragmaIntroducerKind Introducer, Token &FirstToken) override {}
 };
 
+std::unique_ptr<clang::ASTConsumer>
+ReplaceAction::CreateASTConsumer(clang::CompilerInstance& CI, clang::StringRef /* file */) {
+  rewriter_.setSourceMgr(CI.getSourceManager(), CI.getLangOpts());
+  visitor_.setCompilerInstance(CI);
+  initPragmas(CI, ASTVisitorCmdLine::mode);
+  return llvm::make_unique<SkeletonASTConsumer>(rewriter_, visitor_);
+}
+
 void
 ReplaceAction::ExecuteAction()
 {
@@ -92,6 +106,11 @@ ReplaceAction::ExecuteAction()
   ASTConsumer& Consumer = ci_->getASTConsumer();
   Sema& S = ci_->getSema();
 
+  sst::activeCompiler = ci_;
+  sst::activeASTContext = &Ctx;
+  sst::activeSourceManger = &ci_->getSourceManager();
+  sst::activeLangOpts = &ci_->getLangOpts();
+  sst::activeSema = &S;
 
   //bool PrintStats = false;
   // Also turn on collection of stats inside of the Sema object.
