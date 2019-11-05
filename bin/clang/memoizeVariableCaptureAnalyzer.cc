@@ -43,7 +43,7 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include "memoizeVariableCaptureAnalyzer.h"
-#include "clang/Analysis/Analyses/ExprMutationAnalyzer.h"
+//#include "clang/Analysis/Analyses/ExprMutationAnalyzer.h"
 
 #include "clangGlobals.h"
 #include "util.h"

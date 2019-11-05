@@ -146,10 +146,8 @@ AC_CHECK_HEADERS([mpi.h],
   have_mpi_header=no
 )
 
-if test "X$have_integrated_core" = "Xyes"; then
-ac_configure_args="$ac_configure_args --with-cxxflags='$CXXFLAGS'"
-else
-CHECK_CPP11()
+CHECK_CXX_STD()
+if test "X$have_integrated_core" != "Xyes"; then
 CHECK_MPI_PARALLEL()
 fi
 
@@ -283,7 +281,7 @@ echo "OS                 $os"
 echo "C compiler         $CC"
 echo "C++ compiler       $CXX"
 echo "CFLAGS             $CFLAGS"
-echo "CXXFLAGS           $CXXFLAGS $SST_CXXFLAGS"
+echo "CXXFLAGS           $CXXFLAGS $SST_CXXFLAGS $STD_CXXFLAGS"
 echo "CPPFLAGS           $CPPFLAGS"
 echo "LDFLAGS            $LDFLAGS"
 echo

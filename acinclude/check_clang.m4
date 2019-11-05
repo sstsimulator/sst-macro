@@ -2,7 +2,7 @@
 
 AC_DEFUN([CHECK_CLANG], [
 
-  AC_MSG_CHECKING("Checking for Clang flags")
+  AC_MSG_CHECKING([Clang flags])
   have_clang=`$srcdir/bin/config_tools/get_clang $CXX`
   AC_MSG_RESULT([$have_clang])
 
@@ -48,7 +48,7 @@ AC_DEFUN([CHECK_CLANG_LLVM], [
       CPPFLAGS="$CPPFLAGS $CLANG_CPPFLAGS"
     fi
 
-    CXXFLAGS="$CXXFLAGS $SST_CXXFLAGS"
+    CXXFLAGS="$CXXFLAGS $SST_CXXFLAGS $STD_CXXFLAGS"
 
     AC_CHECK_HEADER([clang/AST/AST.h],
       found_clang=yes
@@ -72,7 +72,7 @@ AC_DEFUN([CHECK_CLANG_LLVM], [
   else
     AM_CONDITIONAL(HAVE_CLANG, true)
     offset=`$srcdir/bin/config_tools/get_offsetof_macro $CXX`
-    AC_MSG_CHECKING([Checking for offsetof macro definition])
+    AC_MSG_CHECKING([offsetof macro definition])
     AC_MSG_RESULT([$offset])
     AC_DEFINE_UNQUOTED([OFFSET_OF_MACRO], [$offset], "the definition of the offsetof macro")
 
@@ -86,7 +86,7 @@ AC_DEFUN([CHECK_CLANG_LLVM], [
     LLVM_CPPFLAGS="$CLANG_CPPFLAGS"
     LLVM_LDFLAGS="$CLANG_LDFLAGS"
 
-    clang_compatibility=`$srcdir/bin/config_tools/check_clang_compatibility $CXX $clang $srcdir/bin/config_tools/clang_version_test.cc $CXXFLAGS $SST_CXXFLAGS`
+    clang_compatibility=`$srcdir/bin/config_tools/check_clang_compatibility $CXX $clang $srcdir/bin/config_tools/clang_version_test.cc $CXXFLAGS $SST_CXXFLAGS $STD_CXXFLAGS`
 
     if test "X$clang_compatibility" != "X"; then
       AC_MSG_ERROR([$clang_compatibility])
@@ -109,17 +109,5 @@ AC_DEFUN([CHECK_CLANG_LLVM], [
   AC_SUBST([LLVM_SYSTEM_LIBS])
   AC_SUBST([LLVM_CPPFLAGS])
   AC_SUBST([LLVM_LDFLAGS])
-
-  clang_has_cpp17=`$srcdir/bin/config_tools/check_clang_cpp17 $CXX $clang $srcdir/bin/config_tools/clang_cpp17_support_test.cc $CXXFLAGS $SST_CXXFLAGS -std=c++17`
-  AC_MSG_CHECKING([Checking for c++17 availability])
-  if test "X$clang_has_cpp17" != "X"; then
-    AM_CONDITIONAL(HAVE_CLANG17, false)
-    found_clang17=no
-    AC_MSG_RESULT([$found_clang17])
-    AC_MSG_ERROR([$clang_has_cpp17])
-  else
-    AM_CONDITIONAL(HAVE_CLANG17, true)
-    found_clang17=yes
-    AC_MSG_RESULT([$found_clang17])
-  fi
 ])
+

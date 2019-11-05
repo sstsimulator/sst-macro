@@ -61,6 +61,7 @@ def addSrc2SrcCompile(ctx, sourceFile, outputFile, args, cmds):
   from sstccvars import clangCppFlagsStr, clangLdFlagsStr
   from sstccvars import clangLibtoolingCxxFlagsStr, clangLibtoolingCFlagsStr
   from sstccvars import haveFloat128
+  from sstccvars import sstStdFlag
   import os
 
   #First we must pre-process the file to get it read for source-to-source
@@ -90,7 +91,7 @@ def addSrc2SrcCompile(ctx, sourceFile, outputFile, args, cmds):
   if args.std:
     clangCmdArr.append("-std=%s" % args.std)
   elif ctx.typ == "c++": #make sure we have something for C++
-    clangCmdArr.append("-std=c++1y")
+    clangCmdArr.append(sstStdFlag)
   if not haveFloat128:
     clangCmdArr.append("-D__float128=clangFloat128Fix")
   if ctx.typ == "c++":

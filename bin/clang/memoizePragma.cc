@@ -108,12 +108,12 @@ auto getAllRequestedVarDecls(
 
   auto FoundVariables =
       VariableNames ? matchNamedUsedVariables(SD, *sst::activeASTContext,
-                                              VariableNames.value())
+                                              *VariableNames)
                     : matchNonLocalUsedVariables(SD, *sst::activeASTContext);
 
   if (MetaVariableNames) { // Maybe empty
     matchNamedMetaVariables(SD, *sst::activeASTContext,
-                            MetaVariableNames.value());
+                            *MetaVariableNames);
   }
 
   return FoundVariables;

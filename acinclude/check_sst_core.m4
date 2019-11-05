@@ -56,6 +56,7 @@ if test "X$have_integrated_core" = "Xyes"; then
   SUMI_CPPFLAGS="$SST_INCLUDES"
   AC_SUBST(SST_CPPFLAGS)
   CPPFLAGS="$SAVE_CPPFLAGS"
+  SST_CXXFLAGS=`echo "$SST_CXXFLAGS" | sed s/-std=c++11//g | sed s/-std=c++14//g | sed s/-std=c++1y//g | sed s/-std=c++1z//g`
   AC_SUBST(SST_CXXFLAGS)
   AC_SUBST(SST_LDFLAGS)
   CXXFLAGS="$SAVE_CXXFLAGS"

@@ -22,7 +22,7 @@
 #   endif
 # endif
 
-# if __clang_major__ >= 9
+# if CLANG_VERSION_MAJOR >= 9
 #   error LLVM/Clang compiler >= 9 cannot be used with sstmac
 # endif
 

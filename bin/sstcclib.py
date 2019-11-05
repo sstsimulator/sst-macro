@@ -95,7 +95,7 @@ class TempFiles:
             for path in os.environ["PATH"].split(os.pathsep):
                 exe = os.path.join(path, clang_format_prog)
                 if os.path.isfile(exe) and os.access(exe, os.X_OK):
-                    has_clang_format = true
+                    has_clang_format = True
                     clang_format = exe
                     break
 

@@ -46,9 +46,10 @@ CLANGTESTS = \
 #  pragma_sst_implicit_state_cpp 
 #  pragma_sst_memoize_compute_cpp 
 
-if HAVE_CPP14
-  deglobal_cxx_template_static 
-endif
+#if HAVE_CXX14
+#CLANGTESTS += \
+#  deglobal_cxx_template_static
+#endif
 
 #  deglobal_fxn_template_static_cpp \
 #  deglobal_cxx_template_member  #C++14, not required yet

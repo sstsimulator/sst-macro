@@ -21,6 +21,7 @@ AM_CPPFLAGS += -I$(top_srcdir)/sprockit -I$(top_builddir)/sprockit
 AM_CPPFLAGS += -I$(top_srcdir)/sstmac/install -DSSTMAC=1
 AM_CPPFLAGS += -I$(top_builddir)/sstmac/replacements -I$(top_srcdir)/sstmac/replacements 
 AM_CPPFLAGS += -Dmain=USER_MAIN -DSSTMAC=1
+AM_CXXFLAGS = $(STD_CXXFLAGS)
 
 exe_LDADD = \
   ../../sstmac/main/libsstmac_main.la \
