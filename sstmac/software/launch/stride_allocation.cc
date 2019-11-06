@@ -86,7 +86,7 @@ class StrideAllocation : public NodeAllocator {
     const ordered_node_set& available,
     ordered_node_set& allocation) const override
   {
-    int toSkip = stride_ - 1;
+    // TODODELETE int toSkip = stride_ - 1;
     auto iter = available.begin();
     int idx = 0;
     while (iter != available.end() && allocation.size() < nnode_requested){

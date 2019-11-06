@@ -869,7 +869,7 @@ struct DragonflyScatterRouter : public Router {
   }
 
   void followPathHelper(int sid, int num_hops, int num_group_hops, int port){
-    int a = dfly_->computeA(sid);
+    // TODODELETE int a = dfly_->computeA(sid);
     int g = dfly_->computeG(sid);
     if (port < dfly_->a() || g != my_g_){
       //don't follow inter-grp ports for intra-grp sends

@@ -235,7 +235,7 @@ PiscesTiledSwitch::handlePayload(Event *ev)
   router_->route(payload);
 
   int edge_port = payload->edgeOutport();
-  int dst_inport = dst_inports_[edge_port];
+  // TODODELETE int dst_inport = dst_inports_[edge_port];
 
   payload->resetStages(getCol(edge_port), getRow(edge_port));
 

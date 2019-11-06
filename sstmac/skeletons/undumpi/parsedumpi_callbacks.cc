@@ -1230,14 +1230,14 @@ on_MPI_Type_vector(const dumpi_type_vector *prm, uint16_t thread,
   MPI_Datatype oldtype = cb->getMpitype(prm->oldtype);
   MpiType* old_type_obj = cb->getmpi()->typeFromId(oldtype);
 
-  //this is to account for some crazy bug that I don't remember
-  int size = prm->count * prm->blocklength * old_type_obj->packed_size();
-  if(prm->newtype < cb->datatype_sizes_.count) {
-    if(size != cb->datatype_sizes_.size[prm->newtype])
-    {
-      size = cb->datatype_sizes_.size[prm->newtype];
-    }
-  }
+  // TODODELETE //this is to account for some crazy bug that I don't remember
+  // TODODELETE int size = prm->count * prm->blocklength * old_type_obj->packed_size();
+  // TODODELETE if(prm->newtype < cb->datatype_sizes_.count) {
+  // TODODELETE   if(size != cb->datatype_sizes_.size[prm->newtype])
+  // TODODELETE   {
+  // TODODELETE     size = cb->datatype_sizes_.size[prm->newtype];
+  // TODODELETE   }
+  // TODODELETE }
   MPI_Datatype newtype;
   cb->getmpi()->typeVector(prm->count, prm->blocklength, 0, oldtype, &newtype);
   cb->addMpitype(prm->newtype, newtype);

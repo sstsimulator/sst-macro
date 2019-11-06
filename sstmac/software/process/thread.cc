@@ -323,13 +323,13 @@ Thread::spawnOmpParallel()
   spkt_abort_printf("unimplemented: spawn_omp_parallel");
   omp_context& active = omp_contexts_.back();
   active.subthreads.resize(active.requested_num_subthreads);
-  App* parent = parentApp();
-  for (int i=1; i < active.requested_num_subthreads; ++i){
-    //thread* thr = new thread(params, parent->sid(), os_);
-    //thr->setOmpParentContext(active);
-    //startThread(thr);
-    //active.subthreads[i] = thr;
-  }
+  // App* parent = parentApp();
+  // for (int i=1; i < active.requested_num_subthreads; ++i){
+  //   thread* thr = new thread(params, parent->sid(), os_);
+  //   thr->setOmpParentContext(active);
+  //   startThread(thr);
+  //   active.subthreads[i] = thr;
+  // }
   //and finally have this thread enter the region as thread 0
   setOmpParentContext(0, active);
 }
