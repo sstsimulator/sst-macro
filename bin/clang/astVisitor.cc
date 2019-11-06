@@ -690,7 +690,6 @@ SkeletonASTVisitor::visitNullVariable(Expr* expr, NamedDecl* nd)
     nullDereferenceError(expr, nd->getNameAsString());
   }
 
-  bool nullSafeFunctionCall = false;
   if (!nullVarPrg->deleteAll() && haveActiveFxnParam()){
     //we have "IPA" to deal with here
     //a null variable MUST map into a null variable - otherwise this is an error
@@ -718,7 +717,6 @@ SkeletonASTVisitor::visitNullVariable(Expr* expr, NamedDecl* nd)
         errorAbort(expr, *ci_, sstr.str());
       }
     }
-    nullSafeFunctionCall = true;
   }
 
   bool hasRepl = nullVarPrg->hasReplacement();
@@ -1494,7 +1492,6 @@ SkeletonASTVisitor::TraverseLambdaExpr(LambdaExpr* expr)
 bool
 SkeletonASTVisitor::doTraverseLambda(LambdaExpr* expr)
 {
-  LambdaCaptureDefault def = expr->getCaptureDefault();
   switch (expr->getCaptureDefault()){
     case LCD_None: {
       EmplaceGuard<std::set<const clang::Decl*>> eg(globalsTouched_);

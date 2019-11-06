@@ -256,7 +256,6 @@ SkeletonASTVisitor::setupClassStaticVarDecl(VarDecl* D)
 
     registerGlobalReplacement(D, &repl);
   } else {
-    CXXRecordDecl* outerCls = classContexts_.front();
     std::stringstream varname_scope_sstr; varname_scope_sstr << "_";
     std::stringstream cls_scope_sstr;
     for (CXXRecordDecl* decl : classContexts_){
