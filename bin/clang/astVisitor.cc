@@ -2634,6 +2634,7 @@ SkeletonASTVisitor::VisitTypedefDecl(TypedefDecl* D)
     if (!str_ty){
       errorAbort(D, *ci_,
                  "structure type did not return a record declaration");
+      return false;
     }
     typedefStructs_[str_ty->getDecl()] = D;
   } else if (ty->isUnionType()){
@@ -2641,6 +2642,7 @@ SkeletonASTVisitor::VisitTypedefDecl(TypedefDecl* D)
     if (!un_ty){
       errorAbort(D, *ci_,
                  "union type did not return a record declaration");
+      return false;
     }
     typedefStructs_[un_ty->getDecl()] = D;
   }

@@ -115,6 +115,9 @@ static inline std::string GetAsString(clang::QualType qty){
 }
 
 static inline clang::SourceLocation getStart(const clang::Stmt* s){
+  if(s == nullptr){
+    return clang::SourceLocation();
+  }
 #if CLANG_VERSION_MAJOR >= 8
   return s->getBeginLoc();
 #else
