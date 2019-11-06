@@ -1,21 +1,16 @@
 #include "llvm/ADT/APInt.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringMap.h"
-#include "llvm/ADT/StringSet.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DebugInfo.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Function.h"
-#include "llvm/IR/InstIterator.h"
 #include "llvm/IR/InstrTypes.h"
-#include "llvm/IR/Instructions.h"
 #include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/Module.h"
-#include "llvm/Pass.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Transforms/Utils/Cloning.h"
 
-#include <algorithm>
 #include <sstream>
 
 #include "memtraceTools.h"
@@ -177,7 +172,7 @@ AnnotationMap parseAnnotations(Module &M) {
   AnnotationMap MyMap;
   for (auto const &I : M.globals()) {
     if (I.getName() == "llvm.global.annotations") {
-      ConstantArray *CA = dyn_cast<ConstantArray>(I.getOperand(0));
+      auto CA = dyn_cast<ConstantArray>(I.getOperand(0));
 
       for (auto OI = CA->op_begin(), End = CA->op_end(); OI != End; ++OI) {
         auto CS = dyn_cast<ConstantStruct>(OI->get());

@@ -87,11 +87,16 @@ errorAbort(SourceLocation loc, CompilerInstance &CI, const std::string &error)
 
 void
 errorAbort(const Decl *decl, CompilerInstance &CI, const std::string &error){
+  std::string errorStr;
+  llvm::raw_string_ostream os(errorStr);
+  decl->print(os);
+  std::cerr << os.str() << std::endl;
   errorAbort(getStart(decl), CI, error);
 }
 
 void
 errorAbort(const Stmt *s, CompilerInstance &CI, const std::string &error){
+  s->dumpPretty(CI.getASTContext());
   errorAbort(getStart(s), CI, error);
 }
 

@@ -332,18 +332,18 @@ SSTReplacePragma::SSTReplacePragma(SourceLocation loc, CompilerInstance& CI,
 
 using namespace pragmas;
 
-static PragmaRegister<SSTStringPragma, SSTInsteadPragma, true> insteadPragma(
+static PragmaRegister<SSTStringPragmaShim, SSTInsteadPragma, true> insteadPragma(
     "sst", "instead", SKELETONIZE | PUPPETIZE | SHADOWIZE);
 
-static PragmaRegister<SSTStringPragma, SSTInitPragma, true> initPragma(
+static PragmaRegister<SSTStringPragmaShim, SSTInitPragma, true> initPragma(
     "sst", "init", SKELETONIZE | PUPPETIZE | SHADOWIZE);
 
-static PragmaRegister<SSTTokenListPragma, SSTStartReplacePragma, true> startReplacePragma(
+static PragmaRegister<SSTTokenListPragmaShim, SSTStartReplacePragma, true> startReplacePragma(
     "sst", "start_replace", SKELETONIZE | PUPPETIZE | SHADOWIZE);
 
-static PragmaRegister<SSTStringPragma, SSTStopReplacePragma, true> stopReplacePragma(
+static PragmaRegister<SSTStringPragmaShim, SSTStopReplacePragma, true> stopReplacePragma(
     "sst", "stop_replace", SKELETONIZE | PUPPETIZE | SHADOWIZE);
 
-static PragmaRegister<SSTTokenListPragma, SSTReplacePragma, true> replacePragma(
+static PragmaRegister<SSTTokenListPragmaShim, SSTReplacePragma, true> replacePragma(
     "sst", "replace", SKELETONIZE | PUPPETIZE | SHADOWIZE);
 

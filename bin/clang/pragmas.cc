@@ -56,8 +56,6 @@ using namespace pragmas;
   if (x.getKind() == tok::identifier) std::cout << " " << x.getIdentifierInfo()->getNameStart(); \
   std::cout << std::endl;
 
-int SSTPragmaHandler::idCounter_ = 0;
-
 SourceLocation SSTPragmaHandler::pragmaDirectiveLoc;
 std::map<std::string, SSTPragmaNamespace*>* PragmaRegisterMap::namespaces_ = nullptr;
 
@@ -176,6 +174,9 @@ static void tokenToString(const Token& tok, std::ostream& os,
   case tok::kw_nullptr:
     os << "nullptr";
     break;
+  case tok::kw_for:
+    os << "for";
+    break;
   case tok::string_literal:
   case tok::numeric_constant:
   {
@@ -187,6 +188,10 @@ static void tokenToString(const Token& tok, std::ostream& os,
     errorAbort(tok.getLocation(), CI, "invalid token in pragma");
     break;
   }
+}
+
+int SSTPragma::getActiveMode() const {
+  return ASTVisitorCmdLine::getActiveMode();
 }
 
 void
@@ -217,7 +222,7 @@ SSTPragmaNamespace::getFactory(Mode m, const std::string &name)
   auto& map = factories_[m];
   auto iter = map.find(name);
   if (iter == map.end()){
-    auto* handler = new PragmaHandlerFactory<SSTNoArgsPragma<SSTDoNothingPragma>, true>(name);
+    auto* handler = new PragmaHandlerFactory<SSTNoArgsPragmaShim<SSTDoNothingPragma>, true>(name);
     map[name] = handler;
     return handler;
   } else {
@@ -239,12 +244,6 @@ PragmaRegisterMap::getNamespace(const std::string &ns)
   } else {
     return iter->second;
   }
-}
-
-int
-SSTPragmaHandler::allocateUniqueId()
-{
-  return idCounter_++;
 }
 
 void
@@ -1109,43 +1108,43 @@ SSTStackAllocPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
 
 static constexpr int ALL_MODES = SKELETONIZE | PUPPETIZE | SHADOWIZE | MEMOIZE | ENCAPSULATE;
 
-static PragmaRegister<SSTNoArgsPragma, SSTDeletePragma, true> delPragma(
+static PragmaRegister<SSTNoArgsPragmaShim, SSTDeletePragma, true> delPragma(
     "sst", "delete", SKELETONIZE | SHADOWIZE);
-static PragmaRegister<SSTNoArgsPragma, SSTMallocPragma, true> mallocPragma(
+static PragmaRegister<SSTNoArgsPragmaShim, SSTMallocPragma, true> mallocPragma(
     "sst", "malloc", SKELETONIZE | SHADOWIZE);
-static PragmaRegister<SSTNoArgsPragma, SSTNewPragma, true> newPragma(
+static PragmaRegister<SSTNoArgsPragmaShim, SSTNewPragma, true> newPragma(
     "sst", "new", SKELETONIZE | SHADOWIZE);
-static PragmaRegister<SSTNoArgsPragma, SSTKeepPragma, true> keepPragma(
+static PragmaRegister<SSTNoArgsPragmaShim, SSTKeepPragma, true> keepPragma(
     "sst", "keep", ALL_MODES);
-static PragmaRegister<SSTStringPragma, SSTKeepIfPragma, true> keepIfPragma(
+static PragmaRegister<SSTStringPragmaShim, SSTKeepIfPragma, true> keepIfPragma(
     "sst", "keep_if", ALL_MODES);
-static PragmaRegister<SSTTokenListPragma, SSTNullTypePragma, true> nullTypePragma(
+static PragmaRegister<SSTTokenListPragmaShim, SSTNullTypePragma, true> nullTypePragma(
     "sst", "null_type", SKELETONIZE | SHADOWIZE);
-static PragmaRegister<SSTTokenListPragma, SSTNullVariablePragma, true> nullVariablePragma(
+static PragmaRegister<SSTTokenListPragmaShim, SSTNullVariablePragma, true> nullVariablePragma(
     "sst", "null_variable", SKELETONIZE | SHADOWIZE);
-static PragmaRegister<SSTTokenListPragma, SSTNullVariableGeneratorPragma, true> nullVariableGenPragma(
+static PragmaRegister<SSTTokenListPragmaShim, SSTNullVariableGeneratorPragma, true> nullVariableGenPragma(
     "sst", "start_null_variable", SKELETONIZE | SHADOWIZE);
-static PragmaRegister<SSTNoArgsPragma, SSTNullVariableStopPragma, true> nullVarStopPragma(
+static PragmaRegister<SSTNoArgsPragmaShim, SSTNullVariableStopPragma, true> nullVarStopPragma(
     "sst", "stop_null_variable", SKELETONIZE | SHADOWIZE);
-static PragmaRegister<SSTStringPragma, SSTEmptyPragma, true> emptyPragma(
+static PragmaRegister<SSTStringPragmaShim, SSTEmptyPragma, true> emptyPragma(
     "sst", "empty", SKELETONIZE | SHADOWIZE);
-static PragmaRegister<SSTStringPragma, SSTGlobalVariablePragma, true> globalPragma(
+static PragmaRegister<SSTStringPragmaShim, SSTGlobalVariablePragma, true> globalPragma(
     "sst", "global", ALL_MODES);
-static PragmaRegister<SSTStringPragma, SSTReturnPragma, true> returnPragma(
+static PragmaRegister<SSTStringPragmaShim, SSTReturnPragma, true> returnPragma(
     "sst", "return", SKELETONIZE | SHADOWIZE | PUPPETIZE);
-static PragmaRegister<SSTStringPragma, SSTBranchPredictPragma, true> branchPredictPragma(
+static PragmaRegister<SSTStringPragmaShim, SSTBranchPredictPragma, true> branchPredictPragma(
     "sst", "branch_predict", SKELETONIZE | SHADOWIZE | PUPPETIZE);
-static PragmaRegister<SSTTokenListPragma, SSTAdvanceTimePragma, true> advanceTimePragma(
+static PragmaRegister<SSTTokenListPragmaShim, SSTAdvanceTimePragma, true> advanceTimePragma(
     "sst", "advance_time", SKELETONIZE | SHADOWIZE | ENCAPSULATE);
-static PragmaRegister<SSTTokenListPragma, SSTCallFunctionPragma, true> callFunctionPragma(
+static PragmaRegister<SSTTokenListPragmaShim, SSTCallFunctionPragma, true> callFunctionPragma(
     "sst", "call", SKELETONIZE | SHADOWIZE | PUPPETIZE);
-static PragmaRegister<SSTStringPragma, SSTOverheadPragma, true> overheadPragma(
+static PragmaRegister<SSTStringPragmaShim, SSTOverheadPragma, true> overheadPragma(
     "sst", "overhead", SKELETONIZE | SHADOWIZE | ENCAPSULATE);
-static PragmaRegister<SSTTokenListPragma, SSTNonnullFieldsPragma, true> nonnullFieldPragma(
+static PragmaRegister<SSTTokenListPragmaShim, SSTNonnullFieldsPragma, true> nonnullFieldPragma(
     "sst", "nonnull_fields", SKELETONIZE | SHADOWIZE);
-static PragmaRegister<SSTTokenListPragma, SSTNullFieldsPragma, true> nullFieldPragma(
+static PragmaRegister<SSTTokenListPragmaShim, SSTNullFieldsPragma, true> nullFieldPragma(
     "sst", "null_fields", SKELETONIZE | SHADOWIZE);
-static PragmaRegister<SSTArgMapPragma, SSTStackAllocPragma, true> stackAllocPragma(
+static PragmaRegister<SSTArgMapPragmaShim, SSTStackAllocPragma, true> stackAllocPragma(
     "sst", "stack_alloc", ALL_MODES);
 
 

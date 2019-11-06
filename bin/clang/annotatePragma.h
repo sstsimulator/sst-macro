@@ -47,20 +47,84 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include "pragmas.h"
 
-class SSTAnnotatePragma : public SSTPragma {
+namespace annotate {
+
+class ToolInfo {
 public:
-  SSTAnnotatePragma(
-      clang::SourceLocation Loc, clang::CompilerInstance &CI,
-      std::map<std::string, std::list<std::string>> &&PragmaStrings);
+  ToolInfo(std::string T, std::vector<std::string> A)
+      : ToolName_(std::move(T)), ToolArgs_(std::move(A)) {}
+
+  ToolInfo() = default;
+
+  std::string const &Name() const { return ToolName_; }
+  std::vector<std::string> const &Args() const { return ToolArgs_; }
+
+private:
+  std::string ToolName_;
+  std::vector<std::string> ToolArgs_;
+};
+
+namespace detail {
+ToolInfo
+getToolInfo(clang::SourceLocation Loc, clang::CompilerInstance &CI,
+            std::map<std::string, std::list<std::string>> &&PragmaStrings);
+}
+
+class SSTAnnotatePragmaImpl : public SSTPragma {
+public:
+  SSTAnnotatePragmaImpl(clang::CompilerInstance &CI, annotate::ToolInfo &&Ti)
+      : Sm(CI.getSourceManager()), Ctx(CI.getASTContext()), Ti_(std::move(Ti)) {
+  }
 
   void activate(clang::Stmt *S, clang::Rewriter &R, PragmaConfig &Cfg) override;
   void activate(clang::Decl *D, clang::Rewriter &R, PragmaConfig &Cfg) override;
 
+  clang::SourceManager &getSourceManager() { return Sm; }
+  clang::ASTContext &getAstContext() { return Ctx; }
+
+  clang::SourceManager const &getSourceManager() const { return Sm; }
+  clang::ASTContext const &getAstContext() const { return Ctx; }
+
 private:
-  std::string Tool;
-  std::vector<std::string> Args;
+  void activatePuppetize(clang::Stmt *S, clang::Rewriter &R, PragmaConfig &Cfg);
+  void activateShadowize(clang::Stmt *S, clang::Rewriter &R, PragmaConfig &Cfg);
+
+  void activatePuppetize(clang::Decl *D, clang::Rewriter &R, PragmaConfig &Cfg);
+  void activateShadowize(clang::Decl *D, clang::Rewriter &R, PragmaConfig &Cfg);
+
   clang::SourceManager &Sm;
   clang::ASTContext &Ctx;
+  ToolInfo Ti_;
+};
+
+template <typename Derived>
+class SSTAnnotatePragmaBase : public SSTAnnotatePragmaImpl {
+public:
+  SSTAnnotatePragmaBase(
+      clang::SourceLocation Loc, clang::CompilerInstance &CI,
+      std::map<std::string, std::list<std::string>> &&PragmaStrings)
+      : SSTAnnotatePragmaImpl(CI,
+                              Derived::getToolInfo(std::move(Loc), CI,
+                                                   std::move(PragmaStrings))) {}
+};
+
+} // namespace annotate
+
+class SSTAnnotatePragma
+    : public annotate::SSTAnnotatePragmaBase<SSTAnnotatePragma> {
+public:
+  SSTAnnotatePragma(
+      clang::SourceLocation Loc, clang::CompilerInstance &CI,
+      std::map<std::string, std::list<std::string>> &&PragmaStrings)
+      : SSTAnnotatePragmaBase<SSTAnnotatePragma>(std::move(Loc), CI,
+                                                 std::move(PragmaStrings)) {}
+
+  static annotate::ToolInfo
+  getToolInfo(clang::SourceLocation Loc, clang::CompilerInstance &CI,
+              std::map<std::string, std::list<std::string>> &&PragmaStrings) {
+    return annotate::detail::getToolInfo(std::move(Loc), CI,
+                                         std::move(PragmaStrings));
+  }
 };
 
 #endif // bin_clang_annotatePragma_h

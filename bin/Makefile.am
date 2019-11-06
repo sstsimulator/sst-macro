@@ -89,13 +89,29 @@ sstmac_clang_SOURCES = \
   clang/computePragma.cc \
   clang/computeVisitor.cc \
   clang/replacePragma.cc \
-  clang/annotatePragma.cc \
   clang/astConsumers.cc \
   clang/frontendActions.cc \
   clang/astVisitor.cc 
 
+
 sstmac_clang_CXXFLAGS = -fno-rtti $(AM_CXXFLAGS)
 sstmac_clang_CPPFLAGS = $(CLANG_CPPFLAGS) $(AM_CPPFLAGS)
+
+if HAVE_CXX17
+sstmac_clang_SOURCES += \
+	clang/annotatePragma.cc \
+	clang/memoizePragma.cc \
+	clang/memoizeVariableCaptureAnalyzer.cc \
+	clang/ompPuppetizePragma.cc \
+	clang/memoizeVariable.cc
+
+old_standards=-std=c++11 -std=c++0x -std=c++1y -std=c++14 -std=c++1z
+libclang17_a_CXXFLAGS = $(filter-out $(old_standards), $(sstmac_clang_CXXFLAGS))
+
+library_includedir=$(includedir)/memoization
+library_include_HEADERS = clang/memoization/capture.h
+endif
+
 sstmac_clang_LDFLAGS = $(CLANG_LDFLAGS) \
  -Wl,-rpath,@CLANG_INSTALL_DIR@/lib \
  -lclangFrontend \
@@ -117,12 +133,16 @@ sstmac_clang_LDFLAGS = $(CLANG_LDFLAGS) \
  -lclangLex \
  -lclangBasic \
  @CLANG_LIBTOOLING_LIBS@ \
- @CLANG_LIBTOOLING_SYSTEM_LIBS@ 
+ @CLANG_LIBTOOLING_SYSTEM_LIBS@
 endif
+
+
+
 
 if HAVE_SST_ELEMENTS
 bin_PROGRAMS += ariel_test
 ariel_test_SOURCES = ariel_test.cc
+ariel_test_LDADD = -lrt
 ariel_test_CPPFLAGS = $(SST_ELEMENTS_CPPFLAGS) $(SST_CPPFLAGS)
 endif
 

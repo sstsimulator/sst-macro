@@ -46,9 +46,10 @@ CLANGTESTS = \
 #  pragma_sst_implicit_state_cpp 
 #  pragma_sst_memoize_compute_cpp 
 
-if HAVE_CPP14
-  deglobal_cxx_template_static 
-endif
+#if HAVE_CXX14
+#CLANGTESTS += \
+#  deglobal_cxx_template_static
+#endif
 
 #  deglobal_fxn_template_static_cpp \
 #  deglobal_cxx_template_member  #C++14, not required yet
@@ -78,8 +79,8 @@ test_clang_%_c.tmp-out: sst.pp.%.c $(SSTMAC_DEGLOBAL)
     -I$(top_srcdir)/sprockit -I$(top_builddir)/sprockit \
     -include sstmac/compute.h -include sstmac/skeleton.h 2>&1 /dev/null | grep error >& $@
 	-cat $< | grep -v '^#' >> $@
-	-cat sstGlobals.pp.$*.cc.cpp >> $@
-	rm -f sstGlobals.pp.$*.cc.cpp tmp.o sst.pp.$*.c pp.$*.c
+	-cat sstGlobals.pp.$*.c.cpp >> $@
+	rm -f sstGlobals.pp.$*.c.cpp tmp.o sst.pp.$*.c pp.$*.c
 
 sst.pp.pragma_sst_memoize.cc: pp.pragma_sst_memoize.cc $(SSTMAC_DEGLOBAL)
 	-SSTMAC_CLANG_TEST_PREFIX=xyz SSTMAC_MEMOIZE=1 SSTMAC_DELETE_TEMPS=0 \

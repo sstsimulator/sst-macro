@@ -27,3 +27,17 @@ static struct {
 
 static struct   a_anonymous_type{
 } a;extern int __offset_xyza; void init_xyza(void* ptr){ } int __sizeof_xyza = sizeof(struct a_anonymous_type); 
+#include <sstmac/software/process/cppglobal.h>
+#include <sstmac/software/process/memoize.h>
+
+extern int __sizeof_aa;
+int __offset_aa = 0;extern "C" void init_aa(void*);
+sstmac::CppGlobalRegisterGuard aa_sstmac_ctor(__offset_aa, __sizeof_aa, false, "aa", init_aa);extern int __sizeof_b;
+int __offset_b = 0;extern "C" void init_b(void*);
+sstmac::CppGlobalRegisterGuard b_sstmac_ctor(__offset_b, __sizeof_b, false, "b", init_b);extern int __sizeof_cc;
+int __offset_cc = 0;extern "C" void init_cc(void*);
+sstmac::CppGlobalRegisterGuard cc_sstmac_ctor(__offset_cc, __sizeof_cc, false, "cc", init_cc);extern int __sizeof_x;
+int __offset_x = 0;extern "C" void init_x(void*);
+sstmac::CppGlobalRegisterGuard x_sstmac_ctor(__offset_x, __sizeof_x, false, "x", init_x);extern int __sizeof_xyza;
+int __offset_xyza = 0;extern "C" void init_xyza(void*);
+sstmac::CppGlobalRegisterGuard xyza_sstmac_ctor(__offset_xyza, __sizeof_xyza, false, "xyza", init_xyza);

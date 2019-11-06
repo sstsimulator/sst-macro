@@ -17,10 +17,10 @@
 // because a function might be marked ignore, but an instruction inlined into
 // that function might be marked Memtrace | OpCount.
 enum AnnotationKind {
-  None = 1 << 0,
-  Ignore = 1 << 1,
-  Memtrace = 1 << 2,
-  OpCount = 1 << 3
+  None = 1u << 0u,
+  Ignore = 1u << 1u,
+  Memtrace = 1u << 2u,
+  OpCount = 1u << 3u
 };
 
 class AnnotationMap {

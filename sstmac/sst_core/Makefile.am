@@ -44,6 +44,11 @@ BUILT_SOURCES = sstmacro.inc
 
 libsstmac_sst_core_la_LDFLAGS = 
 
+#python tags register variables, which breaks 17
+if HAVE_CXX17
+AM_CPPFLAGS += -Dregister=''
+endif
+
 # micro pieces, baseclasses, etc needed for linking in the rest of sstmac
 libsstmac_sst_core_la_SOURCES =  \
   partitioner.cc \
