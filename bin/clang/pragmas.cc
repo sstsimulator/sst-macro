@@ -59,6 +59,7 @@ using namespace pragmas;
 SourceLocation SSTPragmaHandler::pragmaDirectiveLoc;
 std::map<std::string, SSTPragmaNamespace*>* PragmaRegisterMap::namespaces_ = nullptr;
 
+/* TODODELETE
 static std::string getStringToken(const Token& next, clang::CompilerInstance& ci)
 {
   //the next token should be a string naming the argument
@@ -78,7 +79,9 @@ static std::string getStringToken(const Token& next, clang::CompilerInstance& ci
   }
   return argName;
 }
+*/
 
+/* TODODELETE
 static void assertToken(const Token& tok, tok::TokenKind kind, clang::CompilerInstance& ci)
 {
   if (tok.getKind() != kind){
@@ -87,6 +90,7 @@ static void assertToken(const Token& tok, tok::TokenKind kind, clang::CompilerIn
     errorAbort(tok.getLocation(), ci, error);
   }
 }
+*/
 
 void getLiteralDataAsString(const Token &tok, std::ostream &os)
 {

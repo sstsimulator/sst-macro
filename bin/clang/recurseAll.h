@@ -70,6 +70,7 @@ enum class ExprRole {
   ReturnValue
 };
 
+/* TODODELETE
 static const char* tostr(ExprRole role)
 {
 #define enum_case(x) case ExprRole::x: return #x
@@ -95,6 +96,7 @@ static const char* tostr(ExprRole role)
   }
 #undef enum_case
 }
+*/
 
 namespace pvt {
 

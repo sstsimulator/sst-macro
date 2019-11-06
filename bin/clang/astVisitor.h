@@ -1189,8 +1189,8 @@ class GlobalVariableVisitor : public clang::RecursiveASTVisitor<GlobalVariableVi
  public:
   GlobalVariableVisitor(clang::VarDecl* D, SkeletonASTVisitor* parent) :
     visitedGlobals_(false),
-    parent_(parent), 
-    decl_(D) 
+    parent_(parent)
+    // TODODELETE ,decl_(D) 
   {
   }
 
@@ -1205,7 +1205,7 @@ class GlobalVariableVisitor : public clang::RecursiveASTVisitor<GlobalVariableVi
  private:
   bool visitedGlobals_;
   SkeletonASTVisitor* parent_;
-  clang::VarDecl* decl_;
+  // TODODELETE clang::VarDecl* decl_;
 };
 
 

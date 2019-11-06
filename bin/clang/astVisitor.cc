@@ -1638,10 +1638,12 @@ SkeletonASTVisitor::deleteStmt(Stmt *s)
   ::replace(s, rewriter_, "", *ci_);
 }
 
+/* TODODELETE
 static bool isCombinedDecl(VarDecl* vD, RecordDecl* rD)
 {
   return getStart(vD) <= getStart(rD) && getEnd(rD) <= getEnd(vD);
 }
+*/
 
 NamespaceDecl*
 SkeletonASTVisitor::getOuterNamespace(Decl *D)

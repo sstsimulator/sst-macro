@@ -59,7 +59,7 @@ class ComputeVisitor  {
     currentGeneration(1), 
     CI(c), 
     pragmas(plist), 
-    parent(par),
+    // TODODELETE parent(par),
     context(ctxt)
   {}
 
@@ -88,7 +88,7 @@ class ComputeVisitor  {
   SSTPragmaList& pragmas;
   Replacements repls;
   clang::SourceLocation scopeStartLine;
-  ComputeVisitor* parent;
+  // TODODELETE ComputeVisitor* parent;
   SkeletonASTVisitor* context;
 
   Variable& getVariable(clang::NamedDecl* decl){
