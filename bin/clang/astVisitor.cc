@@ -1729,12 +1729,12 @@ std::string
 SkeletonASTVisitor::getCleanName(const std::string& name)
 {
   auto pos = name.find("struct ");
-  if (pos != std::string::npos && pos == 0){
+  if (pos == 0){
     return name.substr(7);
   }
 
   pos = name.find("class ");
-  if (pos != std::string::npos && pos == 0){
+  if (pos == 0){
     return name.substr(6);
   }
 
