@@ -229,6 +229,9 @@ PiscesTiledSwitch::handlePayload(Event *ev)
                "tiled switch %d: incoming payload %s",
                int(my_addr_), payload->toString().c_str());
 
+  spkt_abort_printf(
+      "PiscesTiledSwitch::handlePayload, is currently unable to proceed.");
+#if 0
   int row;// = get_row(hdr->arrival_port);
   PiscesDemuxer* demuxer = row_input_demuxers_[row];
   //now figure out the new port I am routing to
@@ -245,6 +248,7 @@ PiscesTiledSwitch::handlePayload(Event *ev)
                payload->edgeOutport(), payload->nextVC(),
                getRow(edge_port), getCol(edge_port));
   demuxer->handlePayload(payload);
+#endif
 }
 
 std::string

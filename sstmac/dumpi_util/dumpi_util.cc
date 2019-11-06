@@ -94,8 +94,8 @@ getnumprocs(DumpiMeta* dmeta_)
   int nrank = 0;
   try {
     while (true) {
-      std::string fname = dumpiFileName(nrank,
-                                dmeta_->dirplusfileprefix_);
+      std::string fname = dumpiFileName(nrank, "");
+                                // TODODELETE dmeta_->dirplusfileprefix_);
       nrank++;
     }
   }

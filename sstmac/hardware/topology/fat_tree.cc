@@ -254,7 +254,7 @@ FatTree::connectedOutports(SwitchId src, std::vector<Connection>& conns) const
   conns.clear();
 
   // find row
-  int row;
+  int row = -1;
   int num_non_core = num_leaf_switches_ + num_agg_switches_;
   if (src < num_leaf_switches_)
     row = 0;
@@ -262,6 +262,9 @@ FatTree::connectedOutports(SwitchId src, std::vector<Connection>& conns) const
     row = 1;
   else if (num_non_core <= src)
     row = 2;
+  else {
+    spkt_abort_printf("Could not initialize row in FatTree connectedOutports\n");
+  }
 
   // leaf switch
   if (row == 0){
