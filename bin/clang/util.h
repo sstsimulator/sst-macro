@@ -95,19 +95,27 @@ struct PrettyPrinter
 bool isCxx(const std::string& filename);
 bool isValidSrc(const std::string& filename);
 
+__attribute__((analyzer_noreturn))
 void internalError(const std::string& error);
 
+__attribute__((analyzer_noreturn))
 void internalError(clang::SourceLocation loc, clang::CompilerInstance& CI, const std::string& error);
+__attribute__((analyzer_noreturn))
 void errorAbort(clang::SourceLocation loc, clang::CompilerInstance& CI, const std::string& error);
+
 void warn(clang::SourceLocation loc, clang::CompilerInstance& CI, const std::string& warning);
 
 void warn(const clang::Stmt* s, clang::CompilerInstance& CI, const std::string& error);
 void warn(const clang::Decl* decl, clang::CompilerInstance& CI, const std::string& error);
 
+__attribute__((analyzer_noreturn))
 void errorAbort(const clang::Stmt* s, clang::CompilerInstance& CI, const std::string& error);
+__attribute__((analyzer_noreturn))
 void errorAbort(const clang::Decl* decl, clang::CompilerInstance& CI, const std::string& error);
 
+__attribute__((analyzer_noreturn))
 void internalError(const clang::Stmt* s, clang::CompilerInstance& CI, const std::string& error);
+__attribute__((analyzer_noreturn))
 void internalError(const clang::Decl* decl, clang::CompilerInstance& CI, const std::string& error);
 
 void insertBefore(const clang::Stmt* s, clang::Rewriter& r, const std::string& text);
