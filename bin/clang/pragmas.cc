@@ -333,6 +333,7 @@ SSTPragma::getMap(SourceLocation loc, CompilerInstance& CI, const std::list<clan
         argList.push_back(sstr.str());
         sstr.str("");
         allArgs[argName] = std::move(argList);
+        argList = {};
       } else {
         tokenToString(t, sstr, CI);
       }

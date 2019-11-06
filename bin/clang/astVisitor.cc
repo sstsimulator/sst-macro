@@ -588,21 +588,12 @@ SkeletonASTVisitor::replaceNullVariableConnectedContext(Expr* expr, const std::s
     auto& pair = binOps_[activeBinOpIdx_];
     BinaryOperator* binOp = pair.first;
     BinOpSide side = pair.second;
-    Expr* toDel = nullptr;
-    if (binOp->getOpcode() == BO_Assign){
-      if (side == LHS){
-        //replace the whole thing - don't ever assign to null value
-        toDel = binOp;
-      } else if (!repl.empty()){
-        //it is the right hand side that needs replacing and I have a repl
-        //this should have happened already - propagateNullness(binOp, nd);
+
+    Expr* toDel = binOp;
+    if(binOp->getOpcode() == BO_Assign && side != LHS && !repl.empty()){
         toDel = getUnderlyingExpr(binOp->getRHS());
-      } else {
-        toDel = binOp;
-      }
-    } else {
-      toDel = binOp;
     }
+
     ::replace(toDel, rewriter_, repl, *ci_);
     //pass the delete up to the owner
     throw StmtDeleteException(toDel);
@@ -2165,11 +2156,10 @@ SkeletonASTVisitor::traverseFunctionBody(clang::Stmt* s)
 bool
 SkeletonASTVisitor::TraverseFunctionDecl(clang::FunctionDecl* D)
 {
-  if (D->isMain() && opts_.refactorMain){
+  if (D->isMain() && opts_.refactorMain)  {
     replaceMain(D);
-  } else if (D->isTemplateInstantiation()){
-    return true; //do not visit implicitly instantiated template stuff
-  } else if (!D->isThisDeclarationADefinition()){
+  } else if (D->isTemplateInstantiation()   
+           || !D->isThisDeclarationADefinition()){
     return true;
   }
 
