@@ -24,7 +24,7 @@ static std::string
 getFxnTypedef(clang::SourceLocation loc, const Type* ty, const std::string& name, clang::CompilerInstance* ci){
   std::string typeName = GetAsString(ty);
   //this is horrible... but the only way I know
-  auto pos = typeName.find(")");
+  auto pos = typeName.find(')');
   if (pos == std::string::npos){
     internalError(loc, *ci, "failed typedef on " + typeName);
   }

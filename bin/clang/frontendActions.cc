@@ -182,7 +182,7 @@ ReplaceAction::EndSourceFileAction()
   SourceManager &SM = rewriter_.getSourceMgr();
   std::string sourceFile = SM.getFileEntryForID(SM.getMainFileID())->getName().str();
   std::string sstSourceFile, sstGlobalFile;
-  std::size_t lastSlashPos = sourceFile.find_last_of("/");
+  std::size_t lastSlashPos = sourceFile.find_last_of('/');
   if (lastSlashPos == std::string::npos){
     sstSourceFile = "sst." + sourceFile;
     sstGlobalFile = "sstGlobals." + sourceFile + ".cpp";

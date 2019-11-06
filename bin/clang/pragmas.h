@@ -458,7 +458,7 @@ struct PragmaRegisterMap {
 
 struct SSTPragmaNamespace {
 
-  SSTPragmaNamespace(const std::string name) :
+  SSTPragmaNamespace(const std::string &name) :
     name_(name)
   {
   }
