@@ -469,7 +469,7 @@ SSTOpenMPParallelPragma::numThreads(SourceLocation loc, CompilerInstance &CI, co
 SSTOpenMPParallelPragma::SSTOpenMPParallelPragma(SourceLocation loc, CompilerInstance& ci,
                                                  const std::list<Token> &tokens)
   : SSTComputePragma(numThreads(loc,ci,tokens))
-{
+{ 
 }
 
 SSTMemoizeComputePragma::SSTMemoizeComputePragma(clang::SourceLocation loc, clang::CompilerInstance& CI,
@@ -504,7 +504,6 @@ SSTMemoizeComputePragma::SSTMemoizeComputePragma(clang::SourceLocation loc, clan
   }
 
   std::string name;
-  bool givenName = false;
   iter = args.find("name");
   if (iter != args.end()){
     token_ = iter->second.front();
@@ -547,19 +546,19 @@ SSTImplicitStatePragma::SSTImplicitStatePragma(clang::SourceLocation loc, clang:
 
 using namespace pragmas;
 
-static PragmaRegister<SSTStringPragma, SSTLoopCountPragma, true> loopCountPragma(
+static PragmaRegister<SSTStringPragmaShim, SSTLoopCountPragma, true> loopCountPragma(
     "sst", "loop_count", SKELETONIZE | PUPPETIZE | SHADOWIZE);
-static PragmaRegister<SSTStringPragma, SSTMemoryPragma, true> memoryPragma(
+static PragmaRegister<SSTStringPragmaShim, SSTMemoryPragma, true> memoryPragma(
     "sst", "memory", SKELETONIZE | SHADOWIZE);
-static PragmaRegister<SSTNoArgsPragma, SSTComputePragma, true> computePragma(
+static PragmaRegister<SSTNoArgsPragmaShim, SSTComputePragma, true> computePragma(
     "sst", "compute", SKELETONIZE | SHADOWIZE);
-static PragmaRegister<SSTNoArgsPragma, SSTComputePragma, true> alwaysComputePragma(
+static PragmaRegister<SSTNoArgsPragmaShim, SSTComputePragma, true> alwaysComputePragma(
     "sst", "always_compute", SKELETONIZE | SHADOWIZE | ENCAPSULATE);
-static PragmaRegister<SSTArgMapPragma, SSTMemoizeComputePragma, true> memoizePragma(
-    "sst", "memoize", MEMOIZE | SKELETONIZE);
-static PragmaRegister<SSTArgMapPragma, SSTImplicitStatePragma, true> implictPragma(
+// static PragmaRegister<SSTArgMapPragmaShim, SSTMemoizeComputePragma, true> memoizePragma(
+//     "sst", "memoize", MEMOIZE | SKELETONIZE);
+static PragmaRegister<SSTArgMapPragmaShim, SSTImplicitStatePragma, true> implictPragma(
     "sst", "implicit_state", MEMOIZE | SKELETONIZE);
-static PragmaRegister<SSTTokenListPragma, SSTOpenMPParallelPragma, true> ompPragmaSkel(
-    "omp", "parallel", SKELETONIZE | SHADOWIZE);
-static PragmaRegister<SSTTokenListPragma, SSTOpenMPParallelPragma, false> ompPragmaPup(
+static PragmaRegister<SSTTokenListPragmaShim, SSTOpenMPParallelPragma, true> ompPragmaSkel(
+    "omp", "parallel", SKELETONIZE);
+static PragmaRegister<SSTTokenListPragmaShim, SSTOpenMPParallelPragma, false> ompPragmaPup(
     "omp", "parallel", PUPPETIZE);

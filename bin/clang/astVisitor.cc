@@ -2678,9 +2678,10 @@ SkeletonASTVisitor::TraverseDecl(Decl *D)
 
 PragmaActivateGuard::~PragmaActivateGuard()
 {
-  for (SSTPragma* prg : activePragmas_){
+  for (SSTPragma* prg : myPragmas_){
     prg->deactivate(pragmaConfig_);
   }
+
   pragmaConfig_.pragmaDepth--;
 }
 

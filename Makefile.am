@@ -27,15 +27,6 @@ dist_bin_SCRIPTS = sstmacro-libtool
 
 ACLOCAL_AMFLAGS = -I acinclude
 
-AM_FFLAGS = $(FFLAG_INT)
-AM_CPPFLAGS += $(SCALAPACK_CPPFLAGS)
-AM_CPPFLAGS += $(LAPACK_CPPFLAGS)
-AM_CPPFLAGS += $(BLAS_CPPFLAGS)
-
-AM_LDFLAGS += $(SCALAPACK_LDFLAGS)
-AM_LDFLAGS += $(LAPACK_LDFLAGS)
-AM_LDFLAGS += $(BLAS_LDFLAGS)
-
 .PHONY: doc superclean gui
 doc:
 	cd docs && doxygen doxygen.cfg

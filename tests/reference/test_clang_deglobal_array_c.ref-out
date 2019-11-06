@@ -15,3 +15,13 @@ static struct b {
   int x;
   int y;
 } bb[2] = { {0,1}, {2,3} };typedef struct b array_type_bb[2];extern int __offset_xyzbb; void init_xyzbb(void* ptr){array_type_bb initer = {{0, 1}, {2, 3}}; memcpy(ptr, (void*) &initer, sizeof(initer)); } int __sizeof_xyzbb = sizeof(array_type_bb); 
+#include <sstmac/software/process/cppglobal.h>
+#include <sstmac/software/process/memoize.h>
+
+extern int __sizeof_x;
+int __offset_x = 0;extern "C" void init_x(void*);
+sstmac::CppGlobalRegisterGuard x_sstmac_ctor(__offset_x, __sizeof_x, false, "x", init_x);extern int __sizeof_xyz_fxnbb;
+int __offset_xyz_fxnbb = 0;extern "C" void init_xyz_fxnbb(void*);
+sstmac::CppGlobalRegisterGuard xyz_fxnbb_sstmac_ctor(__offset_xyz_fxnbb, __sizeof_xyz_fxnbb, false, "xyz_fxnbb", init_xyz_fxnbb);extern int __sizeof_xyzbb;
+int __offset_xyzbb = 0;extern "C" void init_xyzbb(void*);
+sstmac::CppGlobalRegisterGuard xyzbb_sstmac_ctor(__offset_xyzbb, __sizeof_xyzbb, false, "xyzbb", init_xyzbb);

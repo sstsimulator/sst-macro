@@ -95,7 +95,7 @@ class TempFiles:
             for path in os.environ["PATH"].split(os.pathsep):
                 exe = os.path.join(path, clang_format_prog)
                 if os.path.isfile(exe) and os.access(exe, os.X_OK):
-                    has_clang_format = true
+                    has_clang_format = True
                     clang_format = exe
                     break
 
@@ -124,7 +124,7 @@ def runAllCmds(cmds, verbose, doDeleteTemps, doDeleteObjects, clangBin):
     stdout=None
     if outfile:
       stdout = open(outfile,"w")
-    child = Popen(cmdArr,stdout=stdout)
+    child = Popen([x.strip() for x in cmdArr],stdout=stdout)
     result = child.communicate()
     if outfile:
       stdout.close()
@@ -488,7 +488,8 @@ def run(typ, extraLibs="", makeLibrary=False, redefineSymbols=True, runClang=Tru
   allObjects = generatedObjects[:]
   allObjects.extend(givenObjects)
   if runLinker:
-    addLink(ctx, ldTarget, args, cmds, allObjects)
+    shouldMakeExe = memoizing
+    addLink(ctx, ldTarget, args, cmds, allObjects, shouldMakeExe)
     if makeBashExe:
       objects = allObjects[:]
       objects.append("-lsstmac_main")
@@ -503,5 +504,4 @@ def run(typ, extraLibs="", makeLibrary=False, redefineSymbols=True, runClang=Tru
     if not rc == 0: return rc
 
   return 0
-
 

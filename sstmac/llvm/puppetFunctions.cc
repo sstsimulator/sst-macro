@@ -23,7 +23,7 @@ std::unique_ptr<IPCType> IPCTunnel = nullptr;
 // Will just be a reference to the IPCTunnel memeber
 SPSync *SPTunnel = nullptr;
 
-std::atomic_int32_t RegionRefCount{0};
+std::atomic<std::int32_t> RegionRefCount{0};
 
 Ariel::ArielCommand getArielControlMessage(Ariel::ArielShmemCmd_t cmd,
                                            void *addr, int size) {

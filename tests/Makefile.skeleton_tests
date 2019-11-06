@@ -19,12 +19,12 @@ SKELETONCASES += \
 
 #  memoize 
 
-if HAVE_CPP14
-SKELETONCASES += \
-  unique_ptr_test \
-  template_global_test 
-endif
-#end cpp14
+#if HAVE_CXX14
+#SKELETONCASES += \
+#  unique_ptr_test \
+#  template_global_test
+#endif
+#end cxx14
 
 SKELETONCASES += lulesh2.0.3 hpcg-3.0 CoMD pic
 endif

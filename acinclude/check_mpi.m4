@@ -11,7 +11,7 @@ if test "X$have_mpi_header" = "Xyes"; then
 fi
 
 
-AC_MSG_CHECKING([Checking for MPI])
+AC_MSG_CHECKING([MPI])
 if test "X$found_mpi" = "Xyes"; then
   AC_MSG_RESULT([yes])
   AC_DEFINE_UNQUOTED([HAVE_VALID_MPI], 1, "working MPI found")

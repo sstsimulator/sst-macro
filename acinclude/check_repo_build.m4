@@ -1,6 +1,6 @@
 
 AC_DEFUN([CHECK_REPO_BUILD], [
-  AC_MSG_CHECKING([checking whether building from repo])
+  AC_MSG_CHECKING([whether building from repo])
   gitBranch=`cd $srcdir ; bin/config_tools/check_repo_build`
 if test "X$gitBranch" = "X"; then
   AC_MSG_RESULT([no])

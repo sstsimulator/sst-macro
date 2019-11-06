@@ -1,18 +1,18 @@
 /**
-Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
-LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
+Copyright 2009-2019 National Technology and Engineering Solutions of Sandia,
+LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government
 retains certain rights in this software.
 
 Sandia National Laboratories is a multimission laboratory managed and operated
-by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
-owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
+by National Technology and Engineering Solutions of Sandia, LLC., a wholly
+owned subsidiary of Honeywell International, Inc., for the U.S. Department of
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2018, NTESS
+Copyright (c) 2009-2019, NTESS
 
 All rights reserved.
 
-Redistribution and use in source and binary forms, with or without modification, 
+Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
 
     * Redistributions of source code must retain the above copyright
@@ -42,39 +42,38 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef bin_clang_frontendactions_h
-#define bin_clang_frontendactions_h
+#ifndef bin_clang_memoizeVariable_h
+#define bin_clang_memoizeVariable_h
 
 #include "clangHeaders.h"
-#include "astConsumers.h"
-#include "globalVarNamespace.h"
 
+namespace memoize {
 
-class ReplaceAction : public clang::ASTFrontendAction {
- public:
-  ReplaceAction();
+class Variable {
+public:
+  Variable(clang::VarDecl const *VD, clang::ASTContext &Ctx);
+  Variable() = default;
 
-#if CLANG_VERSION_MAJOR <= 4
-  bool BeginSourceFileAction(clang::CompilerInstance &CI, llvm::StringRef Filename) override;
-#else
-  bool BeginSourceFileAction(clang::CompilerInstance &CI) override;
-#endif
+  std::string const &getName() const { return Name_; }
+  std::string const &getQualifiedName() const { return QualifiedName_; }
+  std::string const &getType() const { return Type_; }
 
-  void ExecuteAction() override;
+  std::string const &getDeclType() const { return declType_; }
+  std::string const &getCallName() const { return callName_; }
+  std::string const &getDefName_() const { return defName_; }
 
-  void EndSourceFileAction() override;
+  clang::VarDecl const *getVarDecl() const { return Var_; }
 
-  std::unique_ptr<clang::ASTConsumer>
-  CreateASTConsumer(clang::CompilerInstance& CI, clang::StringRef /* file */) override; 
+private:
+  std::string Name_;
+  std::string QualifiedName_;
+  std::string Type_;
 
- private:
-  void initPragmas(clang::CompilerInstance& CI, pragmas::Mode m);
-
-  clang::Rewriter rewriter_;
-  GlobalVarNamespace globalNs_;
-  clang::CompilerInstance* ci_ = nullptr;
-  PragmaConfig prgConfig_;
-  SkeletonASTVisitor visitor_;
+  std::string declType_; // Type to put in a memoize function decl
+  std::string callName_; // Name to put in a memoize function call
+  std::string defName_; // Name to put in a memoize function definition
+  clang::VarDecl const *Var_;
 };
 
-#endif
+} // namespace memoize
+#endif // bin_clang_memoizeVariable_h

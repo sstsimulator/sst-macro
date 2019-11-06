@@ -49,12 +49,12 @@ Questions? Contact sst-macro-help@sandia.gov
 #include "clangHeaders.h"
 #include "util.h"
 #include <set>
+#include <cstdint>
+#include <functional>
 
 
 std::string getLiteralDataAsString(const clang::Token& tok);
-
 void getLiteralDataAsString(const clang::Token &tok, std::ostream& os);
-
 
 class SkeletonASTVisitor;
 struct SSTPragma;
@@ -66,6 +66,7 @@ struct PragmaConfig {
   std::map<clang::Decl*,SSTNullVariablePragma*> nullVariables;
   std::map<clang::FunctionDecl*,std::set<SSTPragma*>> functionPragmas;
   std::map<const clang::DeclContext*,SSTNullVariablePragma*> nullSafeFunctions;
+  std::vector<std::pair<SSTPragma*, std::string>> globalCppFunctionsToWrite;
   std::set<const clang::DeclRefExpr*> deletedRefs;
   std::set<std::string> newParams;
   std::string dependentScopeGlobal;
@@ -73,6 +74,7 @@ struct PragmaConfig {
   std::list<std::pair<SSTNullVariablePragma*,clang::TypedefDecl*>> pendingTypedefs;
 
   int pragmaDepth = 0;
+
   bool makeNoChanges = false;
   SkeletonASTVisitor* astVisitor = nullptr;
   SSTNullVariableGeneratorPragma* nullifyDeclarationsPragma = nullptr;
@@ -80,6 +82,32 @@ struct PragmaConfig {
   PragmaConfig() = default; 
 };
 
+template <typename T>             
+std::uintptr_t pragmaID() noexcept {
+  static const char pragmaID = 0; 
+  return std::uintptr_t(&pragmaID);               
+}  
+
+namespace pragmas {
+  enum ModeMask {
+    ENCAPSULATE = 1 << 0,
+    MEMOIZE = 1 << 1,
+    SKELETONIZE = 1 << 2,
+    SHADOWIZE = 1 << 3,
+    PUPPETIZE = 1 << 4
+  };
+
+  enum Mode {
+    ENCAPSULATE_MODE = 0,
+    MEMOIZE_MODE = 1,
+    SKELETONIZE_MODE = 2,
+    SHADOWIZE_MODE = 3,
+    PUPPETIZE_MODE = 4,
+    NUM_MODES
+  };
+}
+
+using PragmaArgMap = std::map<std::string, std::list<std::string>>;
 struct SSTPragmaList;
 struct SSTPragma {
   clang::StringRef name;
@@ -87,12 +115,13 @@ struct SSTPragma {
   clang::SourceLocation startPragmaLoc;
   clang::SourceLocation endPragmaLoc;
   clang::SourceLocation targetLoc;
-  clang::CompilerInstance* CI;
-  SkeletonASTVisitor* visitor;
-  SSTPragmaList* pragmaList;
+  clang::CompilerInstance* CI = nullptr;
+  SkeletonASTVisitor* visitor = nullptr;
+  SSTPragmaList* pragmaList = nullptr;
+
   int depth;
   bool deleteOnUse;
-  int classId;
+  std::uintptr_t classId;
 
   void print(){
     std::cout << "pragma " << name.str() << " from "
@@ -110,7 +139,9 @@ struct SSTPragma {
     return false;
   }
 
-  template <class T> static int id();
+  template <class T> static std::uintptr_t id() {
+    return pragmaID<T>();
+  }
 
   /**
    * @brief firstPass AST gets visited twice - once in a first pass to fill
@@ -128,11 +159,13 @@ struct SSTPragma {
   }
 
   static std::string getSingleString(const std::list<clang::Token>& tokens, clang::CompilerInstance& CI);
-  using PragmaArgMap = std::map<std::string, std::list<std::string>>;
+
+  //TODO this could really use some documentation, what does it parse and return
   static PragmaArgMap getMap(
       clang::SourceLocation loc, clang::CompilerInstance& CI, const std::list<clang::Token>& tokens);
 
-  SSTPragma(){}
+  SSTPragma() = default;
+  int getActiveMode() const;
 
   virtual void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg) = 0;
   virtual void activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig &cfg){} //not required
@@ -243,7 +276,6 @@ class SSTPragmaHandler : public clang::PragmaHandler {
     return deleteOnUse_;
   }
 
-  static int allocateUniqueId();
 
  protected:
   SSTPragmaHandler(const std::string& name,
@@ -286,9 +318,6 @@ class SSTPragmaHandler : public clang::PragmaHandler {
    * when it does get invoked */
   friend struct PragmaPPCallback;
   static clang::SourceLocation pragmaDirectiveLoc;
-
-  static int idCounter_;
-
 };
 
 template <class T>
@@ -309,10 +338,6 @@ class SSTPragmaHandlerInstance : public SSTPragmaHandler
     SSTPragmaHandler(name, deleteOnUse, plist, CI, visitor)
   {}
 
-  static int id(){
-    return id_;
-  }
-
  private:
   /**
    * For standard pragmas of the form #pragma sst myPragma arg1(x) arg2(y,z)
@@ -321,65 +346,51 @@ class SSTPragmaHandlerInstance : public SSTPragmaHandler
    * @param args Keys are parameter names, the list of string arguments passed to each one
    * @return the pragma object
    */
-  SSTPragma* allocatePragma(const std::list<clang::Token>& tokens) const override {
-    return new T(pragmaLoc_, ci_, tokens);
-  }
-
-  static int id_;
+   SSTPragma * allocatePragma(const std::list<clang::Token> &tokens) const override {
+     return new T(pragmaLoc_, ci_, tokens);
+   }
 };
 
-template <class T> int SSTPragmaHandlerInstance<T>::id_ = SSTPragmaHandler::allocateUniqueId();
-
-template <class T> struct SSTNoArgsPragma : public T
+template <class T> struct SSTNoArgsPragmaShim : public T
 {
-  using T::classId;
-  SSTNoArgsPragma(clang::SourceLocation loc, clang::CompilerInstance& CI,
+  SSTNoArgsPragmaShim(clang::SourceLocation loc, clang::CompilerInstance& CI,
                   const std::list<clang::Token>& tokens) :
-    T()
-  {
-    classId = SSTPragma::id<T>();
-  }
+    T() {
+      this->classId = pragmaID<T>();
+    }
 };
 
-template <class T> struct SSTStringPragma : public T
+template <class T> struct SSTStringPragmaShim : public T
 {
-  using T::classId;
   using T::getSingleString;
-  SSTStringPragma(clang::SourceLocation loc, clang::CompilerInstance& CI,
+  SSTStringPragmaShim(clang::SourceLocation loc, clang::CompilerInstance& CI,
                   const std::list<clang::Token>& tokens) :
     T(getSingleString(tokens,CI)) //just a single string gets passed up
   {
-    classId = SSTPragma::id<T>();
+      this->classId = pragmaID<T>();
   }
 
 };
 
-template <class T> struct SSTTokenListPragma : public T
+template <class T> struct SSTTokenListPragmaShim : public T
 {
-  using T::classId;
-  using T::id;
-  SSTTokenListPragma(clang::SourceLocation loc, clang::CompilerInstance& CI,
+  SSTTokenListPragmaShim(clang::SourceLocation loc, clang::CompilerInstance& CI,
                      const std::list<clang::Token>& tokens) :
-    T(loc, CI, tokens) //just a single string gets passed up
-  {
-    classId = SSTPragma::id<T>();
-  }
+    T(loc, CI, tokens) { 
+      this->classId = pragmaID<T>();
+    }
 };
 
-template <class T> struct SSTArgMapPragma : public T
+template <class T> struct SSTArgMapPragmaShim : public T
 {
   using T::getMap;
-  using T::classId;
-  using T::id;
-  SSTArgMapPragma(clang::SourceLocation loc, clang::CompilerInstance& CI,
+  SSTArgMapPragmaShim(clang::SourceLocation loc, clang::CompilerInstance& CI,
                   const std::list<clang::Token>& tokens) :
-    T(loc, CI, getMap(loc, CI, tokens)) //just a single string gets passed up
-  {
-    classId = SSTPragma::id<T>();
+    T(loc, CI, getMap(loc, CI, tokens))
+  { 
+      this->classId = pragmaID<T>();
   }
-
 };
-
 
 class SSTStackAllocPragma : public SSTPragma
 {
@@ -427,27 +438,8 @@ struct PragmaHandlerFactory : public PragmaHandlerFactoryBase {
     return new SSTPragmaHandlerInstance<T>(name(), deleteOnUse,
                                            plist, CI, visitor);
   }
-
 };
 
-namespace pragmas {
-  enum ModeMask {
-    ENCAPSULATE = 1 << 0,
-    MEMOIZE = 1 << 1,
-    SKELETONIZE = 1 << 2,
-    SHADOWIZE = 1 << 3,
-    PUPPETIZE = 1 << 4
-  };
-
-  enum Mode {
-    ENCAPSULATE_MODE = 0,
-    MEMOIZE_MODE = 1,
-    SKELETONIZE_MODE = 2,
-    SHADOWIZE_MODE = 3,
-    PUPPETIZE_MODE = 4,
-    NUM_MODES
-  };
-}
 
 struct SSTPragmaNamespace;
 struct PragmaRegisterMap {
@@ -491,21 +483,18 @@ struct SSTPragmaNamespace {
 
 };
 
-template <template <class U> class PragmaType, class T, bool deleteOnUse>
+template <template <class U, typename...> class PragmaType, class T, bool deleteOnUse, 
+         typename ...PragmaTypeArgs>
 struct PragmaRegister {
 
   PragmaRegister(const std::string& ns, const std::string& name, int modeMask){
     SSTPragmaNamespace* nsObj = PragmaRegisterMap::getNamespace(ns);
     nsObj->addFactory(modeMask, name, deleteOnUse,
-                      new PragmaHandlerFactory<PragmaType<T>,deleteOnUse>(name));
+                      new PragmaHandlerFactory<PragmaType<T, PragmaTypeArgs...>
+                      ,deleteOnUse>(name));
   }
 
 };
-
-template <class T>
-int SSTPragma::id(){
-  return SSTPragmaHandlerInstance<T>::id();
-}
 
 /**
  * @brief The SSTDoNothingPragma struct

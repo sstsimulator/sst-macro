@@ -146,10 +146,8 @@ AC_CHECK_HEADERS([mpi.h],
   have_mpi_header=no
 )
 
-if test "X$have_integrated_core" = "Xyes"; then
-ac_configure_args="$ac_configure_args --with-cxxflags='$CXXFLAGS'"
-else
-CHECK_CPP11()
+CHECK_CXX_STD()
+if test "X$have_integrated_core" != "Xyes"; then
 CHECK_MPI_PARALLEL()
 fi
 
@@ -283,7 +281,7 @@ echo "OS                 $os"
 echo "C compiler         $CC"
 echo "C++ compiler       $CXX"
 echo "CFLAGS             $CFLAGS"
-echo "CXXFLAGS           $CXXFLAGS $SST_CXXFLAGS"
+echo "CXXFLAGS           $CXXFLAGS $SST_CXXFLAGS $STD_CXXFLAGS"
 echo "CPPFLAGS           $CPPFLAGS"
 echo "LDFLAGS            $LDFLAGS"
 echo
@@ -306,6 +304,7 @@ echo "MAC SDK            $enable_sdk"
 echo "SUMI MPI           $install_sumi_mpi"
 echo "SST Core           $have_integrated_core"
 echo "Clang Autoskeleton $found_clang"
+echo "Clang c++17        $found_clang17"
 echo "OTF2 Replay        $build_otf2"
 echo "MPI Timeline Stats $enable_mpi_timeline"
 echo "MPI Sync Stats     $with_comm_sync_stats"
