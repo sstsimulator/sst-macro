@@ -91,17 +91,20 @@ getnumprocs(DumpiMeta* dmeta_)
   if (dmeta_) {
     return dmeta_->getnumprocs();
   }
+
   int nrank = 0;
+// This entire block doesn't make a lot of sense, illegal dereference of dmeta_
+#if 0 
   try {
     while (true) {
-      std::string fname = dumpiFileName(nrank, "");
-                                // TODODELETE dmeta_->dirplusfileprefix_);
+      std::string fname = dumpiFileName(nrank, dmeta_->dirplusfileprefix_);
       nrank++;
     }
   }
   catch (sprockit::IOError&) {
     //ioerror is thrown when no more trace files can be found
   }
+#endif
   return nrank;
 }
 

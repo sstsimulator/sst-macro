@@ -145,7 +145,6 @@ FatTree::FatTree(SST::Params& params) :
 
   int leaf_ports = concentration() + up_ports_per_leaf_switch_;
   int agg_ports = down_ports_per_agg_switch_ +  up_ports_per_agg_switch_;
-  // TODODELETE int la_ports = std::max(leaf_ports,agg_ports);
 
   // check for errors
   checkInput();

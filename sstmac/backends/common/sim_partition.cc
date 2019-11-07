@@ -208,7 +208,6 @@ OccupiedBlockPartition::partitionSwitches()
   
   // then place empty switches
   int unoccupied_per_worker = unoccupied_switches_ / nworker;
-  // TODODELETE remainder = unoccupied_switches_ % nworker;
 
   for (int i=0; i < unoccupied_switches_; ++i){
     int worker = i / unoccupied_per_worker;

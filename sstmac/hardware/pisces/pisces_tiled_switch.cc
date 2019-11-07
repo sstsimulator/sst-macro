@@ -231,6 +231,7 @@ PiscesTiledSwitch::handlePayload(Event *ev)
 
   spkt_abort_printf(
       "PiscesTiledSwitch::handlePayload, is currently unable to proceed.");
+// TODO fix this block
 #if 0
   int row;// = get_row(hdr->arrival_port);
   PiscesDemuxer* demuxer = row_input_demuxers_[row];
@@ -238,7 +239,7 @@ PiscesTiledSwitch::handlePayload(Event *ev)
   router_->route(payload);
 
   int edge_port = payload->edgeOutport();
-  // TODODELETE int dst_inport = dst_inports_[edge_port];
+  int dst_inport = dst_inports_[edge_port];
 
   payload->resetStages(getCol(edge_port), getRow(edge_port));
 

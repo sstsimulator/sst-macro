@@ -213,9 +213,6 @@ SnapprNIC::doSend(NetworkMessage* payload)
   payload->setInjectionStarted(now());
   inject_queue_->insert(0, payload);
   copyToNicBuffer();
-
-  // TODODELETE int vl = payload->qos();
-
 }
 
 void

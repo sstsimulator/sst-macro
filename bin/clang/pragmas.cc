@@ -59,38 +59,7 @@ using namespace pragmas;
 SourceLocation SSTPragmaHandler::pragmaDirectiveLoc;
 std::map<std::string, SSTPragmaNamespace*>* PragmaRegisterMap::namespaces_ = nullptr;
 
-/* TODODELETE
-static std::string getStringToken(const Token& next, clang::CompilerInstance& ci)
-{
-  //the next token should be a string naming the argument
-  std::string argName;
-  switch (next.getKind()){
-    case tok::string_literal:
-      argName = next.getLiteralData();
-      break;
-    case tok::identifier:
-      argName = next.getIdentifierInfo()->getName().str();
-      break;
-    default: {
-      std::string error = std::string("invalid pragma token of type ") + next.getName()
-         + " - expected string literal argument name";
-      errorAbort(next.getLocation(), ci, error);
-    }
-  }
-  return argName;
-}
-*/
 
-/* TODODELETE
-static void assertToken(const Token& tok, tok::TokenKind kind, clang::CompilerInstance& ci)
-{
-  if (tok.getKind() != kind){
-    std::string error = std::string("invalid pragma token of type ") + tok.getName()
-       + " - expected " + tok::getTokenName(kind);
-    errorAbort(tok.getLocation(), ci, error);
-  }
-}
-*/
 
 void getLiteralDataAsString(const Token &tok, std::ostream &os)
 {
