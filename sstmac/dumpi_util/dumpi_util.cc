@@ -92,9 +92,12 @@ getnumprocs(DumpiMeta* dmeta_)
     return dmeta_->getnumprocs();
   }
 
-  int nrank = 0;
+  spkt_throw_printf(sprockit::IllformedError, 
+      "Argument passed to getnumprocs was null");
+
 // This entire block doesn't make a lot of sense, illegal dereference of dmeta_
 #if 0 
+  int nrank = 0;
   try {
     while (true) {
       std::string fname = dumpiFileName(nrank, dmeta_->dirplusfileprefix_);
@@ -104,8 +107,8 @@ getnumprocs(DumpiMeta* dmeta_)
   catch (sprockit::IOError&) {
     //ioerror is thrown when no more trace files can be found
   }
-#endif
   return nrank;
+#endif
 }
 
 }

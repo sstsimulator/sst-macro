@@ -2149,7 +2149,7 @@ SkeletonASTVisitor::traverseFunctionBody(clang::Stmt* s)
 bool
 SkeletonASTVisitor::TraverseFunctionDecl(clang::FunctionDecl* D)
 {
-  if (D->isMain() && opts_.refactorMain)  {
+  if (D->isMain() && opts_.refactorMain){
     replaceMain(D);
   } else if (D->isTemplateInstantiation()   
            || !D->isThisDeclarationADefinition()){
@@ -2630,7 +2630,6 @@ SkeletonASTVisitor::VisitTypedefDecl(TypedefDecl* D)
     if (!str_ty){
       errorAbort(D, *ci_,
                  "structure type did not return a record declaration");
-      return false;
     }
     typedefStructs_[str_ty->getDecl()] = D;
   } else if (ty->isUnionType()){
@@ -2638,7 +2637,6 @@ SkeletonASTVisitor::VisitTypedefDecl(TypedefDecl* D)
     if (!un_ty){
       errorAbort(D, *ci_,
                  "union type did not return a record declaration");
-      return false;
     }
     typedefStructs_[un_ty->getDecl()] = D;
   }
