@@ -55,9 +55,10 @@ namespace sumi {
 Eager1::Eager1(SST::Params &params, MpiQueue *queue) :
   MpiProtocol(params, queue)
 {
-  header_qos_ = params.find<int>("eager1_header_qos", 0);
-  rdma_get_qos_ = params.find<int>("eager1_rdma_get_qos", 0);
-  ack_qos_ = params.find<int>("eager1_ack_qos", 0);
+  int default_qos = params.find<int>("default_qos", 0);
+  header_qos_ = params.find<int>("eager1_header_qos", default_qos);
+  rdma_get_qos_ = params.find<int>("eager1_rdma_get_qos", default_qos);
+  ack_qos_ = params.find<int>("eager1_ack_qos", default_qos);
 }
 
 void

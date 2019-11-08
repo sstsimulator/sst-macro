@@ -411,6 +411,93 @@ struct ScatterPortArbitrator : public SnapprPortArbitrator
 
 struct WRR_PortArbitrator : public SnapprPortArbitrator
 {
+ private:
+  struct VirtualLane {
+
+   typedef enum {
+     QosBandwidthMin,
+     QosBandwidthMax,
+     QosNone
+   } SelectionType;
+
+   VirtualLane(int num, SelectionType s, int prior, uint64_t delay) :
+     number(num),
+     sel_type(s),
+     priority(prior),
+     byte_delay(delay),
+     next_free(0),
+     stalled(false),
+     credits(0)
+   {
+   }
+
+   VirtualLane(int num, SelectionType s, int prior) :
+     VirtualLane(num, s, prior, std::numeric_limits<uint64_t>::max())
+   {
+   }
+
+   SelectionType sel_type;
+
+   std::queue<SnapprPacket*> pending;
+
+   /** For bandwidth minimum, this is the max amount a byte can be delayed
+    *  on a switch and still preserve the minimum.
+    *  For bandwidth maximum, this is the min amount a byte must be delayed
+    *  after the previous byte and still stay under the cap.
+    *  For no QoS, this has no meaning.
+    */
+   uint64_t byte_delay;
+
+
+   bool stalled;
+
+   /** For bandwidth minimum, this is
+    *  the cycle after which a VL will go below its bandwidth minimum.
+    *  For bandwidth maximum, this is
+    *  the cycle a VL has to wait until in order to stay below its bandwidth cap
+    *  For no Qos, this has no meaning.
+    *
+    *  All strategies use this as a flag to indicate a stalled VL.
+    *  Zero indicates no stalled packets. Non-zero indicates stalled packets.
+    */
+
+   uint64_t next_free;
+
+   uint32_t credits;
+
+   int priority;
+
+   int number;
+ };
+
+ struct blockedUntilCompare {
+   bool operator()(const VirtualLane* l,
+                   const VirtualLane* r) const {
+     return l->next_free > r->next_free;
+   }
+ };
+
+ std::priority_queue<VirtualLane*, std::vector<VirtualLane*>,
+                     blockedUntilCompare> bw_cap_queue_;
+
+ struct priorityDeadlineCompare {
+   bool operator()(const VirtualLane* l,
+                   const VirtualLane* r) const {
+     if (l->priority == r->priority){
+       //those with an earlier next free come later (higher priority)
+       return l->next_free > r->next_free;
+     } else {
+       return l->priority < r->priority;
+     }
+   }
+ };
+
+ std::priority_queue<VirtualLane*, std::vector<VirtualLane*>,
+     priorityDeadlineCompare> port_queue_;
+ std::vector<VirtualLane> vls_;
+
+ uint64_t link_byte_delay_;
+
  public:
   SPKT_REGISTER_DERIVED(
     SnapprPortArbitrator,
@@ -419,23 +506,73 @@ struct WRR_PortArbitrator : public SnapprPortArbitrator
     "wrr",
     "implements a WRR strategy for queuing packets with bandwidth sharing weights")
 
-  WRR_PortArbitrator(TimeDelta link_byte_delay, SST::Params& params){
+  WRR_PortArbitrator(TimeDelta link_byte_delay, SST::Params& params) :
+    link_byte_delay_(link_byte_delay.ticks())
+  {
     std::vector<double> weights;
     params.find_array("vl_weights", weights);
-    // Set W = BW weight for VL
-    // Set D = max delay until send starts
-    // Set T = time to send
-    // T / (T + D) = W
-    // T = W*T + W*D
-    // (1-W)*T = W*D
-    // D = (1-W) * T / W
-    vls_.resize(weights.size());
-    for (int vl=0; vl < weights.size(); ++vl){
+
+    std::vector<std::string> types;
+    const std::map<std::string, VirtualLane::SelectionType> sel_type_map;
+    if (params.contains("vl_types")){
+      params.find_array("vl_types", types);
+    } else {
+      types.resize(weights.size(), std::string("min"));
+    }
+    if (weights.size() != types.size()){
+      spkt_abort_printf("Given %d VL weights, but %d VL types",
+                        int(weights.size()), int(types.size()));
+    }
+
+
+    std::vector<int> priorities;
+    if (params.contains("vl_priorities")){
+      params.find_array("vl_priorities", priorities);
+    } else {
+      //just give everything priority zero
+      priorities.resize(weights.size(), 0);
+    }
+    if (weights.size() != priorities.size()){
+      spkt_abort_printf("Given %d VL weights, but %d VL priorities",
+                        int(weights.size()), int(priorities.size()));
+    }
+
+    const std::map<std::string, VirtualLane::SelectionType> type_map {
+      {"min", VirtualLane::QosBandwidthMin},
+      {"max", VirtualLane::QosBandwidthMax},
+      {"none", VirtualLane::QosNone},
+    };
+
+    vls_.reserve(weights.size());
+    for (int vl=0; vl < types.size(); ++vl){
+      if (types[vl] == "min"){
+        // Set W = BW weight for VL
+        // Set D = max delay until send starts
+        // Set T = time to send
+        // T / (T + D) = W
+        // T = W*T + W*D
+        // (1-W)*T = W*D
+        // D = (1-W) * T / W
+        double weight = weights[vl];
+        double weight_factor = (1 - weight) / weight;
+        vls_.emplace_back(vl, VirtualLane::QosBandwidthMin,
+          priorities[vl],
+          weight_factor * link_byte_delay.ticks());
+      } else if (types[vl] == "max"){
+        double bandwidth_cap = weights[vl];
+        double gap_needed = 1.0 / bandwidth_cap - 1.0;
+        uint64_t extra_byte_delay = link_byte_delay.ticks() * gap_needed;
+        vls_.emplace_back(vl, VirtualLane::QosBandwidthMax,
+                          priorities[vl], extra_byte_delay);
+      } else if (types[vl] == "none"){
+        vls_.emplace_back(vl, VirtualLane::QosNone,
+                          priorities[vl]);
+      } else {
+        spkt_abort_printf("Bad virtual lane type %s given", types[vl].c_str());
+      }
+
+
       VirtualLane& v = vls_[vl];
-      double weight = weights[vl];
-      double weight_factor = (1 - weight) / weight;
-      v.max_byte_delay = weight_factor * link_byte_delay.ticks();
-      v.blocked_deadline = 0;
     }
   }
 
@@ -458,95 +595,242 @@ struct WRR_PortArbitrator : public SnapprPortArbitrator
     for (VirtualLane& vl : vls_){
       vl.credits *= factor;
       //if bandwidth is scaled up, shrink my max delay
-      vl.max_byte_delay /= factor;
+      vl.byte_delay /= factor;
+    }
+  }
+
+  void insertNoQoS(uint64_t cycle, SnapprPacket *pkt) {
+    int vl= pkt->virtualLane();
+    VirtualLane& v = vls_[vl];
+    v.next_free = cycle;
+    //there is no special packet deadline here
+    port_queue_.emplace(&v);
+  }
+
+  void insertBandwidthMin(uint64_t cycle, SnapprPacket *pkt) {
+    VirtualLane& v = vls_[pkt->virtualLane()];
+    uint64_t deadline = cycle + pkt->numBytes() * v.byte_delay;
+    v.next_free = deadline;
+    port_debug("WRR %p VL %d is empty and emplacing at deadline=%" PRIu64 " on cycle=%" PRIu64 ": %s",
+               this, pkt->virtualLane(), deadline, cycle, pkt->toString().c_str());
+    port_queue_.emplace(&v);
+  }
+
+  void insertBandwidthMax(uint64_t cycle, SnapprPacket* pkt) {
+    //there might be a bandwidth cap here to negotiate
+    VirtualLane& v = vls_[pkt->virtualLane()];
+    if (v.next_free > cycle){
+      port_debug("WRR %p VL %d is empty and emplacing in cap queue at next_free=%" PRIu64 " on cycle=%" PRIu64 ": %s",
+                 this, pkt->virtualLane(), v.next_free, cycle, pkt->toString().c_str());
+      bw_cap_queue_.emplace(&v);
+    } else {
+      port_debug("WRR %p VL %d is empty and emplacing in port queue at next_free=%" PRIu64 " on cycle=%" PRIu64 ": %s",
+                 this, pkt->virtualLane(), v.next_free, cycle, pkt->toString().c_str());
+      v.next_free = cycle;
+      port_queue_.emplace(&v);
     }
   }
 
   void insert(uint64_t cycle, SnapprPacket *pkt) override {
     int vl = pkt->virtualLane();
     VirtualLane& v = vls_[vl];
-    if (v.pending.empty()){ //always enough credits when empty - better be
-      uint64_t deadline = cycle + pkt->numBytes() * v.max_byte_delay;
-      port_debug("WRR %p VL %d is empty and emplacing at deadline=%" PRIu64 " on cycle=%" PRIu64 ": %s",
-                 this, vl, deadline, cycle, pkt->toString().c_str());
-      port_queue_.emplace(deadline, vl);
+    if (v.pending.empty()){
+      switch(v.sel_type){
+        case VirtualLane::QosBandwidthMax:
+          insertBandwidthMax(cycle, pkt);
+          break;
+        case VirtualLane::QosBandwidthMin:
+          insertBandwidthMin(cycle, pkt);
+          break;
+        case VirtualLane::QosNone:
+          insertNoQoS(cycle, pkt);
+          break;
+      }
     }
-    vls_[vl].pending.push(pkt);
+    v.pending.push(pkt);
+  }
+
+  void popNextNoQos(uint64_t cycle, VirtualLane* vl){
+    SnapprPacket* pkt = vl->pending.front();
+    if (vl->credits >= pkt->numBytes()){
+      //the deadline can be whatever we set
+      vl->next_free = cycle;
+      port_queue_.emplace(vl);
+    } else {
+      vl->stalled = true;
+    }
+  }
+
+  void advanceBandwidthMax(uint64_t cycle, SnapprPacket* prev, VirtualLane* vl){
+    //if we waited longer than we minimimally needed to on the last packet
+    //cycle is guaranteed to be past last deadline
+    //suppose our bandwidth cap is 0.8 and a packet takes 800 cycles
+    //we would usually need to wait an extra 200 cycles after each packet to not violate
+    //our bandwidth cap. If we waited 300 cycles, we accrued a 100 cycle deficit
+    //of waiting longer than we needed to
+    uint64_t deficit = cycle > vl->next_free ? cycle - vl->next_free : 0;
+    //normally we would have to wait this long after each packet to stay within our cap
+    uint64_t normal_waiting_period = prev->numBytes() * vl->byte_delay;
+    //if we have a bandwidth deficit, our actual waiting period is shorter
+    //continuing the example above, if our normal period is 200 cycles
+    //but we have a 100 cycle deficit, then we actually only need to wait 100 cycles
+    uint64_t prev_pkt_delay = prev->numBytes() * link_byte_delay_;
+    vl->next_free = deficit >= normal_waiting_period
+        ? cycle + prev_pkt_delay
+        : cycle + prev_pkt_delay + normal_waiting_period - deficit;
+    port_debug("WRR %p VL %d advance to next_free=%" PRIu64 " on cycle=%" PRIu64 ,
+               this, vl->number, vl->next_free, cycle, vl->credits);
+  }
+
+  void popNextBandwidthMax(uint64_t cycle, VirtualLane* vl){
+    SnapprPacket* next = vl->pending.front();
+    if (vl->credits >= next->numBytes()){
+      //and if I have enough credits, put me in for arbitration
+      bw_cap_queue_.emplace(vl);
+      port_debug("WRR %p VL %d has enough credits=%u to emplace in cap queue at next_free=%" PRIu64
+                 " on cycle=%" PRIu64 ": %s",
+                 this, vl->number, vl->next_free, cycle, vl->credits, next->toString().c_str());
+    } else {
+      //otherwise
+      vl->stalled = true;
+      port_debug("WRR %p VL %d has insufficient credits=%u for next_free=%" PRIu64
+                 " on cycle=%" PRIu64 ": %s",
+                 this, vl->number, vl->credits, vl->next_free, cycle, next->toString().c_str());
+    }
+  }
+
+  void popNextBandwidthMin(uint64_t cycle, VirtualLane* vl){
+    SnapprPacket* pkt = vl->pending.front();
+    uint64_t deadline = cycle + pkt->numBytes() * vl->byte_delay;
+    if (vl->credits >= pkt->numBytes()){
+      port_debug("WRR %p VL %d has enough credits=%u to emplace at deadline=%" PRIu64
+                 " on cycle=%" PRIu64 ": %s",
+                 this, vl->number, deadline, cycle, vl->credits, pkt->toString().c_str());
+      vl->next_free = deadline;
+      port_queue_.emplace(vl);
+    } else {
+      port_debug("WRR %p VL %d has insufficient credits=%u for deadline=%" PRIu64
+                 " on cycle=%" PRIu64 ": %s",
+                 this, vl->number, vl->credits, deadline, cycle, pkt->toString().c_str());
+      vl->stalled = true;
+      vl->next_free = deadline;
+    }
   }
 
   SnapprPacket* pop(uint64_t cycle) override {
 #if SSTMAC_SANITY_CHECK
-    if (port_queue_.empty()){
-      spkt_abort_printf("pulling snappr packet from empty queue");
+    if (bw_cap_queue_.empty() && port_queue_.empty()){
+      spkt_abort_printf("WRR %p pulling snappr packet from empty queue", this);
     }
 #endif
-    int next_vl = port_queue_.top().second;
-    port_queue_.pop();
+    while (!bw_cap_queue_.empty() && bw_cap_queue_.top()->next_free <= cycle){
+      VirtualLane* vl = bw_cap_queue_.top();
+      port_queue_.emplace(vl);
+      bw_cap_queue_.pop();
+    }
 
-    VirtualLane& vl = vls_[next_vl];
-    SnapprPacket* pkt = vl.pending.front();
-    vl.pending.pop();
-    vl.credits -= pkt->numBytes();
+    VirtualLane* vl = nullptr;
+    if (port_queue_.empty()){
+      //just take the top packet from the bw_cap_queue
+      vl = bw_cap_queue_.top();
+      //port_queue_.emplace(vl);
+      bw_cap_queue_.pop();
+    } else {
+      vl = port_queue_.top();
+      port_queue_.pop();
+    }
+
+#if SSTMAC_SANITY_CHECK
+    if (vl->pending.empty()){
+      spkt_abort_printf("WRR %p VL %d is popping next, but pending queue is empty",
+                       this, vl->number);
+    }
+#endif
+
+    SnapprPacket* pkt = vl->pending.front();
+    vl->pending.pop();
+    vl->credits -= pkt->numBytes();
 
     port_debug("WRR %p VL %d sending on cycle=%" PRIu64 ": %s",
-               this, next_vl, cycle, pkt->toString().c_str());
+               this, vl->number, cycle, pkt->toString().c_str());
 
-    if (!vl.pending.empty()){
-      SnapprPacket* pkt = vl.pending.front();
-      uint64_t deadline = cycle + pkt->numBytes() * vl.max_byte_delay;
-      if (vl.credits >= pkt->numBytes()){
-        port_debug("WRR %p VL %d has enough credits=%u to emplace at deadline=%" PRIu64
-                   " on cycle=%" PRIu64 ": %s",
-                   this, next_vl, deadline, cycle, vl.credits, pkt->toString().c_str());
-        port_queue_.emplace(deadline, next_vl);
-      } else {
-        port_debug("WRR %p VL %d has insufficient credits=%u for deadline=%" PRIu64
-                   " on cycle=%" PRIu64 ": %s",
-                   this, next_vl, vl.credits, deadline, cycle, pkt->toString().c_str(), deadline);
-        vl.blocked_deadline = deadline;
+    switch(vl->sel_type){
+    case VirtualLane::QosBandwidthMax:
+      advanceBandwidthMax(cycle, pkt, vl);
+      break;
+    default:
+      break;
+    }
+
+    if (!vl->pending.empty()){
+      switch (vl->sel_type){
+      case VirtualLane::QosNone:
+        popNextNoQos(cycle, vl);
+        break;
+      case VirtualLane::QosBandwidthMin:
+        popNextBandwidthMin(cycle, vl);
+        break;
+      case VirtualLane::QosBandwidthMax:
+        popNextBandwidthMax(cycle, vl);
+        break;
       }
     }
     return pkt;
   }
 
+  /**
+   * @brief unstallVLNone Do the actions need to free a virtual channel to send again.
+   *                      after a credit stall for a virtual lane that is not configured
+   *                      with a bandwidth cap or a bandwidth minimum
+   * @param vl
+   */
+  void unstallNoQoS(VirtualLane* vl){
+    port_queue_.emplace(vl);
+  }
+
+  void unstallBandwidthMax(VirtualLane* vl){
+    port_debug("WRR %p VL %d now has enough credits for next_free %" PRIu64,
+               this, vl->number, vl->next_free);
+    bw_cap_queue_.emplace(vl);
+  }
+
+  void unstallBandwidthMin(VirtualLane* vl){
+    port_debug("WRR %p VL %d now has enough credits for deadline %" PRIu64,
+               this, vl->number, vl->next_free);
+    port_queue_.emplace(vl);
+  }
+
   void addCredits(int vl, uint32_t credits) override {
     VirtualLane& v = vls_[vl];
     v.credits += credits;
-    if (v.blocked_deadline){
+    if (v.stalled){
+#if SSTMAC_SANITY_CHECK
+      if (v.pending.empty()){
+        spkt_abort_printf("WRR %p VL %d is stalled, but pending queue is empty",
+                          this, vl);
+      }
+#endif
       SnapprPacket* pkt = v.pending.front();
       if (pkt->numBytes() <= v.credits){
-        port_debug("WRR %p VL %d now has enough credits to emplace %s for deadline %" PRIu64,
-                   this, vl, pkt->toString().c_str(), v.blocked_deadline);
-        port_queue_.emplace(v.blocked_deadline, vl);
-        v.blocked_deadline = 0;
+       switch(v.sel_type){
+        case VirtualLane::QosNone:
+          unstallNoQoS(&v);
+          break;
+        case VirtualLane::QosBandwidthMin:
+          unstallBandwidthMin(&v);
+          break;
+        case VirtualLane::QosBandwidthMax:
+          unstallBandwidthMax(&v);
+          break;
+       }
+       v.stalled = false;
       }
     }
   }
 
   bool empty() const override {
-    return port_queue_.empty();
+    return port_queue_.empty() && bw_cap_queue_.empty();
   }
-
-
- private:
-  struct VirtualLane {
-    std::queue<SnapprPacket*> pending;
-    uint64_t max_byte_delay;
-    uint32_t credits;
-    uint64_t blocked_deadline;
-  };
-
-  struct priority_is_lower {
-    bool operator()(const std::pair<uint64_t,int>& l,
-                    const std::pair<uint64_t,int>& r) const {
-      return l.first > r.first;
-    }
-  };
-
-  std::priority_queue<std::pair<uint64_t,int>,
-      std::vector<std::pair<uint64_t,int>>,
-      priority_is_lower> port_queue_;
-  std::vector<VirtualLane> vls_;
 };
 
 }

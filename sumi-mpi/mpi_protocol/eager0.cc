@@ -57,7 +57,8 @@ namespace sumi {
 Eager0::Eager0(SST::Params &params, MpiQueue *queue) :
   MpiProtocol(params, queue)
 {
-  qos_ = params.find<int>("eager0_qos", 0);
+  int default_qos = params.find<int>("default_qos", 0);
+  qos_ = params.find<int>("eager0_qos", default_qos);
 }
 
 void
