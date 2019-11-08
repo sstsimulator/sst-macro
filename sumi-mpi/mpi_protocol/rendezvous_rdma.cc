@@ -56,10 +56,11 @@ namespace sumi {
 RendezvousProtocol::RendezvousProtocol(SST::Params& params, MpiQueue* queue) :
   MpiProtocol(params, queue)
 {
+  int default_qos = params.find<int>("default_qos", 0);
   software_ack_ = params.find<bool>("software_ack", true);
-  header_qos_ = params.find<int>("rendezvous_header_qos", 0);
-  rdma_get_qos_ = params.find<int>("rendezvous_rdma_get_qos", 0);
-  ack_qos_ = params.find<int>("rendezvous_ack_qos", 0);
+  header_qos_ = params.find<int>("rendezvous_header_qos", default_qos);
+  rdma_get_qos_ = params.find<int>("rendezvous_rdma_get_qos", default_qos);
+  ack_qos_ = params.find<int>("rendezvous_ack_qos", default_qos);
 }
 
 RendezvousGet::~RendezvousGet()

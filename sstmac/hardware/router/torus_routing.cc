@@ -349,6 +349,75 @@ class TorusUGALRouter : public TorusValiantRouter {
 
 };
 
+/**
+ * @brief The TorusPositiveRouter class
+ * Simple router that routes all traffic in the same direction, making
+ * it easier to create specific congestion scenarios
+ */
+class TorusNoWrapRouter : public Router {
+ public:
+  struct header : public Packet::Header {};
+
+  SST_ELI_REGISTER_DERIVED(
+   Router,
+   TorusNoWrapRouter,
+   "macro",
+   "torus_no_wrap",
+   SST_ELI_ELEMENT_VERSION(1,0,0),
+   "a routing algorithm that routes all traffic in the +direction")
+
+  TorusNoWrapRouter(SST::Params& params,
+                      Topology* top, NetworkSwitch* netsw)
+   : Router(params, top, netsw)
+  {
+    torus_ = safe_cast(Torus, top);
+    inj_port_offset_ = 2*torus_->ndimensions();
+  }
+
+  std::string toString() const override {
+    return "torus no wrap router";
+  }
+
+  int numVC() const override {
+    return 1;
+  }
+
+ void minimalRoute(SwitchId dst, header* hdr){
+   SwitchId src = my_addr_;
+   auto& dimensions_ = torus_->dimensions();
+   int div = 1;
+   int ndim = dimensions_.size();
+   hdr->deadlock_vc = 0;
+   for (int i=0; i < ndim; ++i){
+     int srcX = (src / div) % dimensions_[i];
+     int dstX = (dst / div) % dimensions_[i];
+     if (srcX < dstX){
+       hdr->edge_port = torus_->convertToPort(i, Torus::pos);
+       return;
+     } else if (dstX < srcX){
+       hdr->edge_port = torus_->convertToPort(i, Torus::neg);
+       return;
+     } //else skip to the next dim
+     div *= dimensions_[i];
+   }
+   sprockit::abort("torus: failed to route correctly on torus");
+ }
+
+  void route(Packet* pkt) override {
+    auto* hdr = pkt->rtrHeader<header>();
+    SwitchId ej_addr = pkt->toaddr() / torus_->concentration();
+    if (ej_addr == my_addr_){
+      hdr->edge_port = pkt->toaddr() % torus_->concentration() + inj_port_offset_;
+      hdr->deadlock_vc = 0;
+      return;
+    }
+    minimalRoute(ej_addr, hdr);
+  }
+
+ protected:
+  Torus* torus_;
+  int inj_port_offset_;
+};
 
 }
 }

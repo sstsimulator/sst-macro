@@ -42,75 +42,51 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sstmac/backends/common/parallel_runtime.h>
-#include <sstmac/software/launch/hostname_allocation.h>
-#include <sstmac/software/launch/node_allocator.h>
-#include <sstmac/common/sstmac_config.h>
-#include <sstmac/hardware/interconnect/interconnect.h>
-#include <sstmac/hardware/topology/cartesian_topology.h>
+#include <sprockit/test/test.h>
+#include <sstmac/util.h>
+#include <sstmac/replacements/mpi.h>
+#include <sstmac/common/runtime.h>
+#include <sstmac/software/process/backtrace.h>
+#include <sstmac/replacements/mpi.h>
+#include <sstmac/skeleton.h>
+#include <sstmac/compute.h>
 #include <sprockit/keyword_registration.h>
-#include <sprockit/util.h>
-#include <sprockit/fileio.h>
-#include <sprockit/sim_parameters.h>
-#include <sstream>
 
-RegisterKeywords(
-{ "hostfile", "a file containing a line-by-line list of hostnames for each node in system" },
-);
+#define sstmac_app_name partner_stride
 
-namespace sstmac {
-namespace sw {
+int USER_MAIN(int argc, char** argv)
+{
+  MPI_Init(&argc, &argv);
 
-class StrideAllocation : public NodeAllocator {
- public:
-  SST_ELI_REGISTER_DERIVED(
-    NodeAllocator,
-    StrideAllocation,
-    "macro",
-    "stride",
-    SST_ELI_ELEMENT_VERSION(1,0,0),
-    "Return nodes at regular strided intervals")
+  int me, nproc;
+  MPI_Comm_rank(MPI_COMM_WORLD, &me);
+  MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 
-  StrideAllocation(SST::Params& params) :
-    NodeAllocator(params)
-  {
-    stride_ = params.find<int>("allocation_stride");
-  }
-
-  std::string toString() const override {
-    return "stride allocation";
-  }
-
-  bool allocate(
-    int nnode_requested,
-    const ordered_node_set& available,
-    ordered_node_set& allocation) const override
-  {
-    auto iter = available.begin();
-    int idx = 0;
-    while (iter != available.end() && allocation.size() < nnode_requested){
-      if (idx % stride_ == 0){
-        debug_printf(sprockit::dbg::allocation,
-            "stride_allocation: node[%d]=%d",
-            int(allocation.size()), *iter);
-        allocation.insert(*iter);
-
-      }
-      ++idx;
-      ++iter;
+  //send/recv from all the other procs
+  void* null_buffer = nullptr;
+  int count = sstmac::getUnitParam<int>("message_size", "1MB");
+  int stride = sstmac::getParam<int>("stride");
+  int nrepeat = sstmac::getParam<int>("repeat", 5);
+  int send_partner = (me + stride) % nproc;
+  int recv_partner = (me - stride + nproc) % nproc;
+  double t_start = MPI_Wtime();
+  int tag = 42;
+  MPI_Request reqs[2];
+  for (int i=0; i < nrepeat; ++i){
+    int reqidx = 0;
+    if (me < send_partner){
+      MPI_Isend(null_buffer, count, MPI_BYTE, send_partner, tag, MPI_COMM_WORLD, &reqs[reqidx++]);
+    } 
+    if (me > recv_partner){
+      MPI_Irecv(null_buffer, count, MPI_BYTE, recv_partner, tag, MPI_COMM_WORLD, &reqs[reqidx++]);
     }
-
-    if  (allocation.size() != nnode_requested){
-      allocation.clear();
-      return false;
-    } else {
-      return true;
-    }
+    MPI_Waitall(reqidx, reqs, MPI_STATUSES_IGNORE);
   }
-
- private:
-  int stride_;
-};
-
-}
+  double t_stop = MPI_Wtime();
+  if (me < send_partner){
+    double tput = count*nrepeat/(t_stop-t_start);
+    printf("Rank %2d->%2d: %12.8f GB/s\n", me, send_partner, tput/1e9);
+  }
+  MPI_Finalize();
+  return 0;
 }

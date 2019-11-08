@@ -520,10 +520,11 @@ CollectiveEngine::CollectiveEngine(SST::Params& params, Transport *tport) :
   alltoall_type_ = params.find<std::string>("alltoall", "bruck");
   allgather_type_ = params.find<std::string>("allgather", "bruck");
 
-  rdma_get_qos_ = params.find<int>("collective_rdma_get_qos", 0);
-  rdma_header_qos_ = params.find<int>("collective_rdma_header_qos", 0);
-  ack_qos_ = params.find<int>("collective_ack_qos", 0);
-  smsg_qos_ = params.find<int>("collective_smsg_qos", 0);
+  int default_qos = params.find<int>("default_qos", 0);
+  rdma_get_qos_ = params.find<int>("collective_rdma_get_qos", default_qos);
+  rdma_header_qos_ = params.find<int>("collective_rdma_header_qos", default_qos);
+  ack_qos_ = params.find<int>("collective_ack_qos", default_qos);
+  smsg_qos_ = params.find<int>("collective_smsg_qos", default_qos);
 }
 
 CollectiveEngine::~CollectiveEngine()
