@@ -45,177 +45,98 @@ Questions? Contact sst-macro-help@sandia.gov
 #include "recurseAll.h"
 #include "astVisitor.h"
 #include <sstream>
+#include <list>
 
 using namespace clang;
 using namespace clang::driver;
 using namespace clang::tooling;
 
-struct ReplacementConfig
+class ReplacementPragmaVisitor : public RecursiveASTVisitor<ReplacementPragmaVisitor>
 {
-  ReplacementConfig(const std::string& match, const std::string& repl,
-                    std::list<const Expr*>& replaced) :
-    replacedExprs(replaced),
-    matchText(match), 
-    replacementText(repl) 
-  {}
-  std::list<const Expr*> parents;
-  std::list<const Expr*>& replacedExprs;
-  const std::string& matchText;
-  const std::string& replacementText;
-};
-
-/**
- * @brief The ReplaceStatementPreVisit struct
- *
- * The replace pragma tells us to change expressions matching a string
- * This applies to functions, variables, or array exprs.
- * Consider an #sst pragma replace A
- * For simple variables, this is easy.
- * For arrays, this is harder
- *    For A[i] or A[i][j], we need to drop everything not just the "A" part
- * For functions, also annoying
- *    For A(args), we also need to drop everthing
- * Thus, we need to determine if the "base" or "lhs" of an expr
- * is a DeclRefExpr matching the replace pragma
- * Then we need to replace the entire parent expression
- */
-template <bool PreVisit> //whether pre or post visit
-struct ReplaceStatementVisit {
-  template <class T, class... Args>
-  bool operator()(T*  /*t*/, ExprRole  /*role*/,
-                  CompilerInstance&  /*CI*/,
-                  ReplacementConfig&  /*cfg*/) {
-    return false;
-  }
-
-  void visit(const Expr* expr, const std::string& name, ExprRole role,
-             CompilerInstance&  /*CI*/, ReplacementConfig& cfg){
-    if (PreVisit && name == cfg.matchText){
-      switch (role){
-        case ExprRole::ArrayBase:
-        case ExprRole::CallFxn:
-          cfg.replacedExprs.push_back(cfg.parents.back());
-          break;
-        default:
-          //any other use, means this variable is not "connected" to anything else
-          cfg.replacedExprs.push_back(expr);
-          break;
-      }
-    }
-  }
-
-  void visit(const Expr* expr, ExprRole role,
-             CompilerInstance&  /*CI*/,
-             ReplacementConfig& cfg)
+  using Parent=RecursiveASTVisitor<ReplacementPragmaVisitor>;
+ public:
+  ReplacementPragmaVisitor(const std::string& match, CompilerInstance& CI) :
+    matchText_(match), ci_(CI)
   {
-    switch(role){
-      case ExprRole::ArrayBase:
-      case ExprRole::CallFxn:
-        //this is connected to the parent
-        //current parent remains the parent
-        break;
-      default:
-        if (PreVisit){
-          //break the connection to prev parent
-          cfg.parents.push_back(expr);
-        } else { //restore the original parent
-          cfg.parents.pop_back();
+  }
+
+  bool TraverseDeclStmt(DeclStmt* stmt, DataRecursionQueue* queue = nullptr){
+    const Decl* d = stmt->getSingleDecl();
+    if (d && d->getKind() == Decl::Var){
+      const VarDecl* vd = cast<const VarDecl>(d);
+      if (vd->getNameAsString() == matchText_){
+        if (vd->hasInit()) {
+          replaced_.push_back(vd->getInit());
+        } else {
+          errorAbort(getStart(stmt), ci_,
+            "replace pragma applied to declaration with no initializer");
         }
+      }
     }
+    return Parent::TraverseDeclStmt(stmt);
   }
 
-  bool operator()(const ArraySubscriptExpr* expr, ExprRole role,
-                  CompilerInstance& CI,
-                  ReplacementConfig& cfg){
-    visit(expr, role, CI, cfg);
-    return false;
-  }
-
-  bool operator()(const CXXMemberCallExpr* expr, ExprRole role,
-                  CompilerInstance& CI,
-                  ReplacementConfig& cfg){
-    visit(expr, role, CI, cfg);
-    return false;
-  }
-
-  bool operator()(const CallExpr* expr, ExprRole role,
-                  CompilerInstance& CI,
-                  ReplacementConfig& cfg){
-    visit(expr, role, CI, cfg);
-    return false;
-  }
-
-  bool operator()(const DeclRefExpr* expr, ExprRole role,
-                  CompilerInstance& CI, ReplacementConfig& cfg){
-    visit(expr, expr->getFoundDecl()->getNameAsString(), role, CI, cfg);
-    return false;
-  }
-
-  bool operator()(const MemberExpr* expr, ExprRole role,
-                  CompilerInstance& CI, ReplacementConfig& cfg){
-    visit(expr, expr->getFoundDecl()->getNameAsString(), role, CI, cfg);
-    return false;
-  }
-
-  bool operator()(const DeclStmt* stmt, ExprRole  /*role*/,
-                  CompilerInstance& CI, ReplacementConfig& cfg){
-    if (PreVisit){
-      const Decl* d = stmt->getSingleDecl();
-      if (d && d->getKind() == Decl::Var){
-        const VarDecl* vd = cast<const VarDecl>(d);
-        if (vd->getNameAsString() == cfg.matchText){
-          if (vd->hasInit()) {
-            cfg.replacedExprs.push_back(vd->getInit());
-          } else {
-            errorAbort(getStart(stmt), CI,
-              "replace pragma applied to declaration with no initializer");
-          }
-        }
+  bool matchingDeclRef(Expr* expr){
+    auto* underlying = SkeletonASTVisitor::getUnderlyingExpr(expr);
+    if (underlying->getStmtClass() == Stmt::DeclRefExprClass){
+      DeclRefExpr* dref = cast<DeclRefExpr>(underlying);
+      NamedDecl* nd = dref->getFoundDecl();
+      if (nd->getNameAsString() == matchText_){
+        return true;
       }
     }
     return false;
   }
 
+  bool TraverseArraySubscriptExpr(ArraySubscriptExpr* expr, DataRecursionQueue* queue = nullptr){
+    if (matchingDeclRef(expr->getBase())){
+      replaced_.push_back(expr);
+      return true;
+    } else {
+      return Parent::TraverseArraySubscriptExpr(expr);
+    }
+  }
+
+  bool TraverseCallExpr(CallExpr* expr, DataRecursionQueue* queue = nullptr){
+    if (matchingDeclRef(expr->getCallee())){
+      replaced_.push_back(expr);
+      return true;
+    } else {
+      return Parent::TraverseCallExpr(expr);
+    }
+  }
+
+  const std::list<const Expr*> replaced() const {
+    return replaced_;
+  }
+
+ private:
+  std::string matchText_;
+  std::list<const Expr*> replaced_;
+  clang::CompilerInstance& ci_;
+
 };
 
-void
-SSTReplacePragma::run(Stmt *s, std::list<const Expr*>& replacedExprs)
+std::list<const Expr*>
+SSTReplacePragma::run(Stmt *s)
 {
-  using PreVisit=ReplaceStatementVisit<true>;
-  using PostVisit=ReplaceStatementVisit<false>;
-  ReplacementConfig rcfg(fxn_, replacement_, replacedExprs);
-  recurseAll<PreVisit,PostVisit>(s, *CI, rcfg);
-  if (replacedExprs.size() == 0){
-    std::string error = "replace pragma '" + fxn_ + "' did not match anything";
-    errorAbort(s, *CI, error);
-  }
-}
-
-void
-SSTReplacePragma::run(Stmt *s, Rewriter& r, std::list<const Expr *> &replaced)
-{
-  run(s,replaced);
-  for (const Expr* e: replaced){
-    replace(e,r,replacement_,*CI);
-  }
+  ReplacementPragmaVisitor visitor(match_, *CI);
+  visitor.TraverseStmt(s);
+  return visitor.replaced();
 }
 
 void
 SSTReplacePragma::run(Stmt *s, Rewriter &r)
 {
-  std::list<const Expr*> replaced;
-  run(s,r,replaced);
+
 }
 
 void
 SSTReplacePragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
 {
-  std::list<const Expr*> replaced;
-  run(s,r,replaced);
+  std::list<const Expr*> replaced = run(s);
   for (const Expr* e: replaced){
-    if (e->getStmtClass() == Stmt::DeclRefExprClass){
-      cfg.deletedRefs.insert(cast<const DeclRefExpr>(e));
-    }
+    replace(e,r,replacement_,*CI);
   }
 }
 
@@ -326,7 +247,7 @@ SSTReplacePragma::SSTReplacePragma(SourceLocation loc, CompilerInstance& CI,
     const std::list<Token> &tokens)
 {
   std::stringstream sstr;
-  fxn_ = parse(loc, CI, tokens, sstr);
+  match_ = parse(loc, CI, tokens, sstr);
   replacement_ = sstr.str();
 }
 

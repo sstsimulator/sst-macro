@@ -177,22 +177,13 @@ void
 ComputeVisitor::visitLoop(ForStmt* stmt, Loop& loop)
 {
   ForLoopSpec spec;
-  auto iter = explicitLoopCounts_.find(stmt);
-  if (iter != explicitLoopCounts_.end()){
-    //the number of loop iterations is given explicitly
-    spec.init = nullptr;
-    spec.predicateMax = nullptr;
-    spec.stride = nullptr;
-    loop.tripCount = iter->second;
-  } else {
-    getInitialVariables(stmt->getInit(), &spec);
-    getPredicateVariables(stmt->getCond(), &spec);
-    getStride(stmt->getInc(), &spec);
-    //validate that the static analysis succeeded
-    validateLoopControlExpr(spec.init);
-    validateLoopControlExpr(spec.predicateMax);
-    loop.tripCount = getTripCount(&spec);
-  }
+  getInitialVariables(stmt->getInit(), &spec);
+  getPredicateVariables(stmt->getCond(), &spec);
+  getStride(stmt->getInc(), &spec);
+  //validate that the static analysis succeeded
+  validateLoopControlExpr(spec.init);
+  validateLoopControlExpr(spec.predicateMax);
+  loop.tripCount = getTripCount(&spec);
 
   //now lets examine the body
   addOperations(stmt->getBody(), loop.body);
@@ -201,7 +192,6 @@ ComputeVisitor::visitLoop(ForStmt* stmt, Loop& loop)
 void
 ComputeVisitor::visitBodyForStmt(ForStmt* stmt, Loop::Body& body)
 {
-  checkStmtPragmas(stmt);
   body.subLoops.emplace_back(body.depth+1);
   visitLoop(stmt, body.subLoops.back());
 }
@@ -209,23 +199,12 @@ ComputeVisitor::visitBodyForStmt(ForStmt* stmt, Loop::Body& body)
 void
 ComputeVisitor::visitBodyWhileStmt(WhileStmt *stmt, Loop::Body &body)
 {
-  checkStmtPragmas(stmt);
-  //treat this as a for loop with a certain trip count
-  auto iter = explicitLoopCounts_.find(stmt);
-  if (iter == explicitLoopCounts_.end()){
-    errorAbort(stmt, CI, "skeletonized while loop has unknown count - use pragma sst loop_count");
-  }
-  //the number of loop iterations is given explicitly
-  body.subLoops.emplace_back(body.depth+1);
-  auto& loop = body.subLoops.back();
-  loop.tripCount = iter->second;
-  addOperations(stmt->getBody(), loop.body);
+  errorAbort(stmt, CI, "skeletonized while loop has unknown count - use pragma sst loop_count");
 }
 
 void
 ComputeVisitor::visitBodyCompoundStmt(CompoundStmt* stmt, Loop::Body& body)
 {
-  checkStmtPragmas(stmt);
   auto end = stmt->child_end();
   for (auto iter=stmt->child_begin(); iter != end; ++iter){
     addOperations(*iter, body);
@@ -417,62 +396,19 @@ ComputeVisitor::visitBodyCallExpr(CallExpr* expr, Loop::Body& body)
 }
 
 void
-ComputeVisitor::checkStmtPragmas(Stmt* s)
-{
-  auto matches = pragmas.getMatches(s);
-  if (!matches.empty()){
-    SSTPragma* prg = matches.front();
-    if (prg->classId == prg->id<SSTReplacePragma>()){
-      SSTReplacePragma* rprg = static_cast<SSTReplacePragma*>(prg);
-      std::list<const Expr*> replaced;
-      rprg->run(s, replaced);
-      for (auto e : replaced){
-        repls.exprs[e] = rprg->replacement();
-      }
-    } else if (prg->classId == prg->id<SSTLoopCountPragma>()){
-      SSTLoopCountPragma* rprg = static_cast<SSTLoopCountPragma*>(prg);
-      switch(s->getStmtClass()){
-        case Stmt::ForStmtClass:
-        case Stmt::WhileStmtClass:
-          explicitLoopCounts_[s] = rprg->count();
-          break;
-        default:
-          errorAbort(s, CI, "pragma loop_count not applied to for loop");
-          break;
-      }
-    } else {
-      errorAbort(s, CI, "invalid pragma applied to statement");
-    }
-  }
-}
-
-void
 ComputeVisitor::visitBodyIfStmt(IfStmt *stmt, Loop::Body &body)
 {
-  auto matches = pragmas.getMatches(stmt);
-  //by default, always assume an if statement is false
-  if (matches.empty()){
+  auto iter = pragmaCfg.predicatedBlocks.find(stmt);
+  if (iter == pragmaCfg.predicatedBlocks.end()){
     warn(stmt, CI, "if-stmt inside compute block has no prediction hint - assuming always false");
     if (stmt->getElse()){
       addOperations(stmt->getElse(), body);
     }
-    return;
-  }
-
-  if (matches.size() > 1){
-    for (SSTPragma* prg : matches){
-      prg->print();
-    }
-    errorAbort(stmt, CI, "if-stmt inside compute block should have a single prediction hint,"
-               "multiple pragmas found");
-  }
-
-  SSTPragma* prg = matches.front();
-  if (prg->classId == prg->id<SSTBranchPredictPragma>()){
-    SSTBranchPredictPragma* bprg = static_cast<SSTBranchPredictPragma*>(prg);
-    if (bprg->prediction() == "true"){
+  } else {
+    std::string predicate = iter->second;
+    if (predicate == "true"){
       addOperations(stmt->getThen(), body);
-    } else if (bprg->prediction() == "false"){
+    } else if (predicate == "false") {
       if (stmt->getElse()){
         addOperations(stmt->getElse(), body);
       }
@@ -481,18 +417,16 @@ ComputeVisitor::visitBodyIfStmt(IfStmt *stmt, Loop::Body &body)
       body.subLoops.emplace_back(body.depth+1);
       Loop& thenLoop = body.subLoops.back();
       thenLoop.tripCount = "1";
-      thenLoop.body.branchPrediction = bprg->prediction();
+      thenLoop.body.branchPrediction = predicate;
       addOperations(stmt->getThen(), thenLoop.body);
       if (stmt->getElse()){
         body.subLoops.emplace_back(body.depth+1);
         Loop& elseLoop = body.subLoops.back();
         elseLoop.tripCount = "1";
-        elseLoop.body.branchPrediction = "1-(" + bprg->prediction() + ")";
+        elseLoop.body.branchPrediction = "1-(" + predicate + ")";
         addOperations(stmt->getElse(), elseLoop.body);
       }
     }
-  } else {
-    errorAbort(stmt, CI, "only branch prediction pragmas should be applied to if-stmt");
   }
 }
 
@@ -516,14 +450,6 @@ ComputeVisitor::visitBodyDeclStmt(DeclStmt* stmt, Loop::Body& body)
   }
   Decl* d = stmt->getSingleDecl();
   if (d){
-    auto matches = pragmas.getMatches(stmt);
-    if (!matches.empty()){
-     SSTPragma* prg = matches.front();
-      if (prg->classId == prg->id<SSTReplacePragma>()){
-        SSTReplacePragma* rprg = static_cast<SSTReplacePragma*>(prg);
-        repls.decls[d] = rprg->replacement();
-      }
-    }
     if (isa<VarDecl>(d)){
       VarDecl* vd = cast<VarDecl>(d);
       if (vd->hasInit()){
@@ -642,7 +568,7 @@ ComputeVisitor::validateLoopControlExpr(Expr* rhs)
   //this is the START of the compute block
   //but also the END of the allowed scope for usable variables
   scope.stop = scopeStartLine;
-  recurseAll<ValidateScope,NullVisit>(rhs, repls, CI, scope);
+  recurseAll<ValidateScope,NullVisit>(rhs, CI, scope);
 }
 
 void
@@ -695,29 +621,6 @@ ComputeVisitor::visitInitialBinaryOperator(clang::BinaryOperator* op, ForLoopSpe
   spec->init = op->getRHS();
 }
 
-
-bool
-ComputeVisitor::checkPredicateMax(Expr* max, std::ostream& os)
-{
-  auto iter = repls.exprs.find(max);
-  if (iter != repls.exprs.end()){
-    os << iter->second;
-    return true;
-  }
-
-  //we might have overriden a declaration
-  if (max->getStmtClass() == Stmt::DeclRefExprClass){
-    DeclRefExpr* dref = cast<DeclRefExpr>(max);
-    auto iter = repls.decls.find(dref->getDecl());
-    if (iter != repls.decls.end()){
-      os << iter->second;
-      return true;
-    }
-  }
-
-  return false;
-}
-
 std::string
 ComputeVisitor::getTripCount(ForLoopSpec* spec)
 {
@@ -730,10 +633,7 @@ ComputeVisitor::getTripCount(ForLoopSpec* spec)
   std::stringstream os;
   os << "((";
   if (max){
-    bool specialReplace = checkPredicateMax(max,os);
-    if (!specialReplace){
-      printAll(max,os,repl);
-    }
+    printAll(max,os,repl);
   } else {
     os << "0";
   }

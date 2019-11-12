@@ -69,7 +69,7 @@ int ComputeSYMGS_ref( const SparseMatrix & A, const Vector & r, Vector & x) {
     const int currentNumberOfNonzeros = A.nonzerosInRow[i];
     const double  currentDiagonal = matrixDiagonal[i][0]; // Current diagonal value
     double sum = rv[i]; // RHS value
-#pragma sst replace currentNumberOfNonzeros 27
+#pragma sst loop_count 27
     for (int j=0; j< currentNumberOfNonzeros; j++) {
       local_int_t curCol = currentColIndices[j];
       sum -= currentValues[j] * xv[curCol];
@@ -88,7 +88,7 @@ int ComputeSYMGS_ref( const SparseMatrix & A, const Vector & r, Vector & x) {
     const int currentNumberOfNonzeros = A.nonzerosInRow[i];
     const double  currentDiagonal = matrixDiagonal[i][0]; // Current diagonal value
     double sum = rv[i]; // RHS value
-#pragma sst replace currentNumberOfNonzeros 27
+#pragma sst loop_count 27
     for (int j = 0; j< currentNumberOfNonzeros; j++) {
       local_int_t curCol = currentColIndices[j];
       sum -= currentValues[j]*xv[curCol];
