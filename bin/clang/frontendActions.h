@@ -74,7 +74,9 @@ class ReplaceAction : public clang::ASTFrontendAction {
   GlobalVarNamespace globalNs_;
   clang::CompilerInstance* ci_ = nullptr;
   PragmaConfig prgConfig_;
-  SkeletonASTVisitor visitor_;
+  SSTPragmaList pragmaList_;
+  FirstPassASTVisitor first_pass_visitor_;
+  SkeletonASTVisitor skeleton_visitor_;
 };
 
 #endif

@@ -63,7 +63,7 @@ int ComputeSPMV_ref( const SparseMatrix & A, Vector & x, Vector & y) {
     const double * const cur_vals = A.matrixValues[i];
     const local_int_t * const cur_inds = A.mtxIndL[i];
     const int cur_nnz = A.nonzerosInRow[i];
-#pragma sst replace cur_nnz 27
+#pragma sst loop_count 27
     for (int j=0; j< cur_nnz; j++)
       sum += cur_vals[j]*xv[cur_inds[j]];
     yv[i] = sum;

@@ -46,7 +46,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include "clangHeaders.h"
 #include "computeLoops.h"
-#include "replacements.h"
 #include "dataFlow.h"
 #include "pragmas.h"
 
@@ -81,11 +80,8 @@ class ComputeVisitor  {
   uint32_t currentGeneration; //0 is sentinel for not inited
   std::map<MemoryLocation,AccessHistory,MemoryLocationCompare> arrays;
   std::map<clang::NamedDecl*,Variable> variables;
-  //alloy any statement as key to cover whiles and fors
-  std::map<clang::Stmt*,std::string> explicitLoopCounts_;
   clang::CompilerInstance& CI;
-  SSTPragmaList& pragmas;
-  Replacements repls;
+  PragmaConfig& pragmaCfg;
   clang::SourceLocation scopeStartLine;
   SkeletonASTVisitor* context;
 
@@ -144,8 +140,6 @@ class ComputeVisitor  {
 
   void visitBodyWhileStmt(clang::WhileStmt* stmt, Loop::Body& body);
 
-  void checkStmtPragmas(clang::Stmt* s);
-
   void visitStrideCompoundStmt(clang::CompoundStmt* stmt, ForLoopSpec* spec);
 
   void visitStrideCompoundAssignOperator(clang::CompoundAssignOperator* op, ForLoopSpec* spec);
@@ -165,14 +159,6 @@ class ComputeVisitor  {
   void visitInitialBinaryOperator(clang::BinaryOperator* op, ForLoopSpec* spec);
 
   void getInitialVariables(clang::Stmt* stmt, ForLoopSpec* spec);
-
-  /**
-   * @brief checkPredicateMax
-   * @param max
-   * @param os
-   * @return true if a special replacement was printed to os, false otherwise
-   */
-  bool checkPredicateMax(clang::Expr* max, std::ostream& os);
 
   std::string getTripCount(ForLoopSpec* spec);
 

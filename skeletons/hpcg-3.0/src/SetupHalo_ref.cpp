@@ -322,7 +322,7 @@ void SetupHalo_ref(SparseMatrix & A) {
   #pragma omp parallel for
 #endif
   for (local_int_t i=0; i< localNumberOfRows; i++) {
-#pragma sst replace nonzerosInRow 27
+#pragma sst loop_count 27
     for (int j=0; j<nonzerosInRow[i]; j++) {
       global_int_t curIndex = mtxIndG[i][j];
       int rankIdOfColumnEntry = ComputeRankOfMatrixRow(*(A.geom), curIndex);

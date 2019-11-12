@@ -48,7 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 class SSTReplacePragma : public SSTPragma {
  protected:
-  std::string fxn_;
+  std::string match_;
   std::string replacement_;
  public:
   SSTReplacePragma(clang::SourceLocation loc, clang::CompilerInstance& CI,
@@ -63,10 +63,10 @@ class SSTReplacePragma : public SSTPragma {
   }
 
   const std::string& fxn() const {
-    return fxn_;
+    return match_;
   }
 
-  void run(clang::Stmt* s, std::list<const clang::Expr*>& replaced);
+  std::list<const clang::Expr*> run(clang::Stmt* s);
   void run(clang::Stmt* s, clang::Rewriter& r);
   void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg) override;
   void activate(clang::Decl *d, clang::Rewriter &r, PragmaConfig &cfg) override;
@@ -83,8 +83,8 @@ class SSTStartReplacePragma : public SSTReplacePragma {
                         const std::list<clang::Token>& tokens) :
     SSTReplacePragma(loc,CI,tokens){}
 
-  void activate(clang::Stmt*  /*s*/, clang::Rewriter&  /*r*/, PragmaConfig& cfg) override {
-    cfg.replacePragmas[fxn_] = this;
+  void activate(clang::Rewriter&, PragmaConfig& cfg) override {
+    cfg.replacePragmas[match_] = this;
   }
 };
 

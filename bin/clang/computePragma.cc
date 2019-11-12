@@ -47,7 +47,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include "recurseAll.h"
 #include "dataFlow.h"
 #include "computeLoops.h"
-#include "replacements.h"
 #include "validateScope.h"
 #include <sstream>
 
@@ -55,12 +54,145 @@ using namespace clang;
 using namespace clang::driver;
 using namespace clang::tooling;
 
+SSTLoopCountPragma::SSTLoopCountPragma(SourceLocation loc, CompilerInstance &CI, const std::list<Token> &tokens)
+{
+  if (tokens.size() != 1){
+    errorAbort(loc, CI, "loop_count pragma should taken a single token as the pragma argument");
+  }
+  loopCountToken_ = tokens.front();
+  loopCount_ = getSingleString(tokens,CI);
+}
+
+void
+SSTLoopCountPragma::transformWhileLoop(Stmt* s, Rewriter& r, PragmaConfig& cfg)
+{
+  WhileStmt* ws = cast<WhileStmt>(s);
+  FunctionDecl* fd = cfg.fxnContexts.back();
+  Expr* loop_count = tokenToExpr(fd, loopCountToken_, getStart(ws->getCond()));
+  IdentifierInfo* II = &CI->getPreprocessor().getIdentifierTable().get("loop_variable");
+  TypeSourceInfo *TInfo = fd->getASTContext().getTrivialTypeSourceInfo(loop_count->getType(), getStart(ws->getCond()));
+  VarDecl* loopVar = VarDecl::Create(fd->getASTContext(), fd,
+                                     getStart(ws->getCond()), getEnd(ws->getCond()),
+                                     II, fd->getASTContext().IntTy, TInfo,
+                                     SC_None);
+  llvm::APInt api(32,0,true);
+  IntegerLiteral* zero = IntegerLiteral::Create(fd->getASTContext(), api,
+                                                fd->getASTContext().IntTy, getEnd(ws->getCond()));
+  loopVar->setInit(zero);
+  DeclGroupRef dgr(loopVar);
+  DeclStmt* init_stmt = new (fd->getASTContext()) DeclStmt(dgr, getStart(ws->getCond()), getEnd(ws->getCond()));
+
+  DeclRefExpr* cond_ref = DeclRefExpr::Create(
+     fd->getASTContext(),
+     loopVar->getQualifierLoc(),
+     SourceLocation(),
+     loopVar,
+     false,
+     getStart(ws->getCond()),
+     loopVar->getType(),
+     VK_LValue,
+     loopVar);
+
+  BinaryOperator* cond_stmt = new (fd->getASTContext()) BinaryOperator(cond_ref, loop_count, BO_LT,
+                                             fd->getASTContext().IntTy, VK_RValue,
+                                             OK_Ordinary, getStart(ws->getCond()), FPOptions());
+
+  DeclRefExpr* inc_ref = DeclRefExpr::Create(
+     fd->getASTContext(),
+     loopVar->getQualifierLoc(),
+     SourceLocation(),
+     loopVar,
+     false,
+     getStart(ws->getCond()),
+     loopVar->getType(),
+     VK_LValue,
+     loopVar);
+
+  UnaryOperator* inc_stmt = new (fd->getASTContext()) UnaryOperator(inc_ref, UO_PostInc, loop_count->getType(),
+                                                          VK_RValue, OK_Ordinary, getStart(ws->getCond()));
+
+  ForStmt* fs = new (fd->getASTContext()) ForStmt(fd->getASTContext(), init_stmt, cond_stmt, loopVar, inc_stmt,
+                     ws->getBody(), getStart(ws), getStart(ws->getCond()), getEnd(ws->getCond()));
+
+  auto iter = cfg.findStmtBlockMatch(ws);
+  if (iter == cfg.currentStmtBlockEnd()){
+    internalError(ws, *CI, "while-stmt is not part of an enclosing CompountStmt");
+  }
+  *iter = fs;
+}
+
+void
+SSTLoopCountPragma::transformForLoop(Stmt* s, Rewriter& r, PragmaConfig& cfg)
+{
+  ForStmt* fs = cast<ForStmt>(s);
+  FunctionDecl* fd = cfg.fxnContexts.back();
+  Expr* loop_count = tokenToExpr(fd, loopCountToken_, getStart(fs->getCond()));
+  IdentifierInfo* II = &CI->getPreprocessor().getIdentifierTable().get("loop_variable");
+  TypeSourceInfo *TInfo = fd->getASTContext().getTrivialTypeSourceInfo(loop_count->getType(), getStart(fs->getInit()));
+  VarDecl* loopVar = VarDecl::Create(fd->getASTContext(), fd,
+                                     getStart(fs->getInit()), getEnd(fs->getInit()),
+                                     II, fd->getASTContext().IntTy, TInfo,
+                                     SC_None);
+  llvm::APInt api(32,0,true);
+  IntegerLiteral* zero = IntegerLiteral::Create(fd->getASTContext(), api,
+                                                fd->getASTContext().IntTy, getEnd(fs->getInit()));
+  loopVar->setInit(zero);
+  DeclGroupRef dgr(loopVar);
+  DeclStmt* init_stmt = new (fd->getASTContext()) DeclStmt(dgr, getStart(fs->getInit()), getEnd(fs->getInit()));
+
+  DeclRefExpr* cond_ref = DeclRefExpr::Create(
+     fd->getASTContext(),
+     loopVar->getQualifierLoc(),
+     SourceLocation(),
+     loopVar,
+     false,
+     getStart(fs->getCond()),
+     loopVar->getType(),
+     VK_LValue,
+     loopVar);
+
+  BinaryOperator* cond_stmt = new (fd->getASTContext()) BinaryOperator(cond_ref, loop_count, BO_LT,
+                                             fd->getASTContext().IntTy, VK_RValue,
+                                             OK_Ordinary, getStart(fs->getCond()), FPOptions());
+
+  DeclRefExpr* inc_ref = DeclRefExpr::Create(
+     fd->getASTContext(),
+     loopVar->getQualifierLoc(),
+     SourceLocation(),
+     loopVar,
+     false,
+     getStart(fs->getInc()),
+     loopVar->getType(),
+     VK_LValue,
+     loopVar);
+
+  UnaryOperator* inc_stmt = new (fd->getASTContext()) UnaryOperator(inc_ref, UO_PostInc, loop_count->getType(),
+                                                          VK_RValue, OK_Ordinary, getStart(fs->getInc()));
+
+  fs->setInit(init_stmt);
+  fs->setCond(cond_stmt);
+  fs->setInc(inc_stmt);
+  fs->setConditionVariable(fd->getASTContext(), loopVar);
+}
+
+void
+SSTLoopCountPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
+{
+  if (isa<WhileStmt>(s)){
+    transformWhileLoop(s,r,cfg);
+  } else if (isa<ForStmt>(s)){
+    transformForLoop(s,r,cfg);
+  } else {
+    errorAbort(s, *CI, "loop_count pragma not applied to ForStmt or WhileStmt");
+  }
+}
+
 void
 SSTComputePragma::visitAndReplaceStmt(Stmt* stmt, Rewriter& r, PragmaConfig& cfg)
 {
   Loop loop(0); //just treat this is a loop of size 1
   loop.tripCount = "1";
-  ComputeVisitor vis(*CI, *pragmaList, nullptr, cfg.astVisitor);
+  ComputeVisitor vis(*CI, nullptr, cfg.astVisitor, cfg);
   vis.setContext(stmt);
   vis.addOperations(stmt,loop.body);
   vis.replaceStmt(stmt,r,loop,cfg, nthread_);
@@ -139,14 +271,12 @@ SSTComputePragma::replaceForStmt(clang::ForStmt* stmt, CompilerInstance& CI, SST
                                  Rewriter& r, PragmaConfig& cfg, SkeletonASTVisitor* visitor,
                                  const std::string& nthread)
 {
-  visitor->appendComputeLoop(stmt);
-  ComputeVisitor vis(CI, prgList, nullptr, visitor); //null, no parent
+  ComputeVisitor vis(CI, nullptr, visitor, cfg); //null, no parent
   Loop loop(0); //depth zeros
   vis.setContext(stmt);
   vis.visitLoop(stmt,loop);
   vis.replaceStmt(stmt,r,loop,cfg, nthread);
   //cfg.skipNextStmt = true;
-  visitor->popComputeLoop();
 }
 
 void
@@ -546,7 +676,7 @@ SSTImplicitStatePragma::SSTImplicitStatePragma(clang::SourceLocation loc, clang:
 
 using namespace pragmas;
 
-static PragmaRegister<SSTStringPragmaShim, SSTLoopCountPragma, true> loopCountPragma(
+static PragmaRegister<SSTTokenListPragmaShim, SSTLoopCountPragma, true> loopCountPragma(
     "sst", "loop_count", SKELETONIZE | PUPPETIZE | SHADOWIZE);
 static PragmaRegister<SSTStringPragmaShim, SSTMemoryPragma, true> memoryPragma(
     "sst", "memory", SKELETONIZE | SHADOWIZE);

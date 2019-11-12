@@ -51,9 +51,9 @@ Questions? Contact sst-macro-help@sandia.gov
 
 class SkeletonASTConsumer : public clang::ASTConsumer {
  public:
-  SkeletonASTConsumer(clang::Rewriter &R, SkeletonASTVisitor& r) :
-    visitor_(r),
-    firstPass_(r.getCompilerInstance(), r.getPragmas(), R, r.getPragmaConfig())
+  SkeletonASTConsumer(clang::Rewriter &R, FirstPassASTVisitor& fp, SkeletonASTVisitor& r) :
+    skeletonVisitor_(r),
+    firstPassVisitor_(fp)
   {
     initNullWhitelist();
   }
@@ -69,9 +69,9 @@ class SkeletonASTConsumer : public clang::ASTConsumer {
     return nullWhitelist_.find(name) != nullWhitelist_.end();
   }
 
-  SkeletonASTVisitor& visitor_;
+  SkeletonASTVisitor& skeletonVisitor_;
 
-  FirstPassASTVistor firstPass_;
+  FirstPassASTVisitor& firstPassVisitor_;
 
   std::list<clang::Decl*> allDecls_;
 
