@@ -45,7 +45,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #define bin_clang_validate_scope_h
 
 #include "clangHeaders.h"
-#include "replacements.h"
 #include "recurseAll.h"
 #include "astVisitor.h"
 #include "util.h"
@@ -70,34 +69,26 @@ struct VariableScope {
 };
 
 struct ValidateScope {
-  bool operator()(const clang::Expr* e, 
-                  ExprRole  /*role*/, Replacements& repls,
-                  clang::CompilerInstance&  /*CI*/, 
-                  VariableScope&  /*scope*/){
-    //if this has been replaced, stop recursing
-    return repls.exprs.find(e) != repls.exprs.end();
+  bool operator()(const clang::Expr* /*e*/, 
+                  ExprRole /*role*/,
+                  clang::CompilerInstance& /*CI*/, 
+                  VariableScope& /*scope*/){
+    return false;
   }
 
-  bool operator()(const clang::Stmt*  /*s*/, 
-                  ExprRole  /*role*/, Replacements&  /*repls*/,
-                  clang::CompilerInstance&  /*CI*/, 
-                  VariableScope&  /*scope*/){
+  bool operator()(const clang::Stmt* /*s*/, 
+                  ExprRole /*role*/,
+                  clang::CompilerInstance& /*CI*/, 
+                  VariableScope& /*scope*/){
     //do nothing
     return false; //but don't stop recursing
   }
 
   bool operator()(const clang::DeclRefExpr* expr, 
-                  ExprRole  /*role*/, Replacements& repls,
+                  ExprRole /*role*/,
                   clang::CompilerInstance& CI, 
                   VariableScope& scope){
     const clang::ValueDecl* d = expr->getDecl();
-
-    //this might be already replaced - then we don't need to worry about it
-    if (repls.decls.find(expr->getDecl()) != repls.decls.end()){
-      return false;
-    } else if (repls.exprs.find(expr) != repls.exprs.end()){
-      return true;
-    }
 
     //some types we skip
     switch(d->getKind()){

@@ -54,6 +54,95 @@ Questions? Contact sst-macro-help@sandia.gov
 #define visitFxn(cls) \
   bool Visit##cls(clang::cls* c){ return TestStmtMacro(c); }
 
+static constexpr int IndexResetter = -1;
+
+/**
+ * Exception-safe pushing back on a list
+ * Forces clean up even if exceptions get thrown
+ */
+template <class T>
+struct PushGuard {
+  template <class U>
+  PushGuard(std::list<T>& theList, U&& t) : myList(theList) {
+    myList.push_back(t);
+  }
+
+  ~PushGuard(){ myList.pop_back(); }
+
+  void swap(T&& t){
+    myList.pop_back();
+    myList.push_back(t);
+  }
+
+  std::list<T>& myList;
+};
+
+template <class T, class U>
+struct InsertGuard {
+  InsertGuard(std::map<T*,U*>& theMap, T* t, U* u) :
+    myMap(theMap), myKey(t) {
+    myMap.emplace(t,u);
+  }
+
+  ~InsertGuard(){ myMap.erase(myKey); }
+
+  std::map<T*,U*>& myMap;
+  T* myKey;
+};
+
+template <class T>
+struct VectorPushGuard {
+  template <class... Args>
+  VectorPushGuard(std::vector<T>& theVec, Args&& ...args) : myVec(theVec) {
+    myVec.emplace_back(std::forward<Args>(args)...);
+  }
+
+  template <class... Args>
+  void swap(Args&& ...args){
+    myVec.pop_back();
+    myVec.emplace_back(std::forward<Args>(args)...);
+  }
+
+  ~VectorPushGuard(){ myVec.pop_back(); }
+
+  std::vector<T>& myVec;
+};
+
+struct IndexGuard {
+  IndexGuard(int& t, int value) {
+    if (t < 0) {
+      t = value;
+      myPtr = &t;
+    } else { //don't overwrite
+      myPtr = nullptr;
+    }
+  }
+
+  ~IndexGuard(){ if (myPtr) *myPtr = IndexResetter; }
+
+  int* myPtr;
+};
+
+template <class T>
+struct EmplaceGuard {
+  EmplaceGuard(std::list<T>& theList) : myList(theList) {
+    myList.emplace_back();
+  }
+
+  ~EmplaceGuard(){ myList.pop_back(); }
+
+  std::list<T>& myList;
+};
+
+struct IncrementGuard {
+  IncrementGuard(int& idx) : myIdx(idx)
+  {
+    ++myIdx;
+  }
+  ~IncrementGuard(){ --myIdx; }
+  int& myIdx;
+};
+
 struct StmtDeleteException : public std::runtime_error
 {
   StmtDeleteException(clang::Stmt* deld) :
@@ -101,24 +190,35 @@ struct ASTVisitorCmdLine {
 };
 
 
-class FirstPassASTVistor : public clang::RecursiveASTVisitor<FirstPassASTVistor>
+class FirstPassASTVisitor : public clang::RecursiveASTVisitor<FirstPassASTVisitor>
 {
+  using Parent = clang::RecursiveASTVisitor<FirstPassASTVisitor>;
  public:
   friend struct PragmaActivateGuard;
 
-  FirstPassASTVistor(clang::CompilerInstance& ci,
-                     SSTPragmaList& prgs, clang::Rewriter& rw,
-                     PragmaConfig& cfg);
+  FirstPassASTVisitor(SSTPragmaList& pragmas, clang::Rewriter& rw, PragmaConfig& cfg);
 
   bool VisitDecl(clang::Decl* d);
   bool VisitStmt(clang::Stmt* s);
 
+  bool TraverseFunctionDecl(clang::FunctionDecl* fd, DataRecursionQueue* queue = nullptr);
+
+  bool TraverseCompoundStmt(clang::CompoundStmt* cs, DataRecursionQueue* queue = nullptr);
+
+  void setCompilerInstance(clang::CompilerInstance& c){
+    ci_ = &c;
+  }
+
   clang::CompilerInstance& getCompilerInstance() {
-    return ci_;
+    return *ci_;
+  }
+
+  SSTPragmaList& getPragmas(){
+    return pragmas_;
   }
 
  private:
-  clang::CompilerInstance& ci_;
+  clang::CompilerInstance* ci_;
   SSTPragmaList& pragmas_;
   PragmaConfig& pragmaConfig_;
   clang::Rewriter& rewriter_;
@@ -141,7 +241,7 @@ class FirstPassASTVistor : public clang::RecursiveASTVisitor<FirstPassASTVistor>
 
 class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor> {
   friend class SkeletonASTConsumer;
-
+  using Parent=clang::RecursiveASTVisitor<SkeletonASTVisitor>;
  private:
   struct AnonRecord {
     clang::RecordDecl* decl;
@@ -173,16 +273,16 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     ArrayInfo() : isFxnStatic(false), needsDeref(true) {}
   };
 
-  static constexpr int IndexResetter = -1;
-
   static bool indexIsSet(int idx){
     return idx != IndexResetter;
   }
 
  public:
-  SkeletonASTVisitor(clang::Rewriter &R,
-                     GlobalVarNamespace& ns,
-                     PragmaConfig& cfg) :
+  SkeletonASTVisitor(SSTPragmaList& pragmas,
+      clang::Rewriter &R,
+      GlobalVarNamespace& ns,
+      PragmaConfig& cfg) :
+    pragmas_(pragmas),
     rewriter_(R), 
     visitingGlobal_(false),
     globalNs_(ns), 
@@ -474,6 +574,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    */
   bool TraverseCXXConstructorDecl(clang::CXXConstructorDecl* D);
 
+  bool TraverseCXXDestructorDecl(clang::CXXDestructorDecl* D);
+
   clang::SourceLocation getVariableNameLocationEnd(clang::VarDecl* D);
 
   SSTPragmaList& getPragmas(){
@@ -498,14 +600,6 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
 
   const std::string& getAppName() const {
     return mainName_;
-  }
-
-  void appendComputeLoop(clang::ForStmt* stmt){
-    computeLoops_.push_back(stmt);
-  }
-
-  void popComputeLoop(){
-    computeLoops_.pop_back();
   }
 
  private:
@@ -555,7 +649,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   clang::Rewriter& rewriter_;
   clang::CompilerInstance* ci_;
   std::map<clang::RecordDecl*,clang::TypedefDecl*> typedefStructs_;
-  SSTPragmaList pragmas_;
+  SSTPragmaList& pragmas_;
   bool visitingGlobal_;
   std::set<clang::FunctionDecl*> templateDefinitions_;
   std::list<clang::CXXConstructorDecl*> ctorContexts_;
@@ -750,8 +844,6 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::list<clang::FunctionDecl*> fxnContexts_;
   std::list<clang::CXXRecordDecl*> classContexts_;
   std::list<clang::Stmt*> loopContexts_; //both fors and whiles
-  /* a subset of loop contexts, only those loops that are skeletonized */
-  std::list<clang::ForStmt*> computeLoops_;
   std::list<clang::Stmt*> stmtContexts_;
   std::list<clang::Decl*> assignments_;
   std::list<clang::Expr*> activeDerefs_;
@@ -818,93 +910,6 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::map<std::string, MPI_Call> mpiCalls_;
 
  private:
-  /**
-   * Exception-safe pushing back on a list
-   * Forces clean up even if exceptions get thrown
-   */
-  template <class T>
-  struct PushGuard {
-    template <class U>
-    PushGuard(std::list<T>& theList, U&& t) : myList(theList) {
-      myList.push_back(t);
-    }
-
-    ~PushGuard(){ myList.pop_back(); }
-
-    void swap(T&& t){
-      myList.pop_back();
-      myList.push_back(t);
-    }
-
-    std::list<T>& myList;
-  };
-
-  template <class T, class U>
-  struct InsertGuard {
-    InsertGuard(std::map<T*,U*>& theMap, T* t, U* u) :
-      myMap(theMap), myKey(t) {
-      myMap.emplace(t,u);
-    }
-
-    ~InsertGuard(){ myMap.erase(myKey); }
-
-    std::map<T*,U*>& myMap;
-    T* myKey;
-  };
-
-  template <class T>
-  struct VectorPushGuard {
-    template <class... Args>
-    VectorPushGuard(std::vector<T>& theVec, Args&& ...args) : myVec(theVec) {
-      myVec.emplace_back(std::forward<Args>(args)...);
-    }
-
-    template <class... Args>
-    void swap(Args&& ...args){
-      myVec.pop_back();
-      myVec.emplace_back(std::forward<Args>(args)...);
-    }
-
-    ~VectorPushGuard(){ myVec.pop_back(); }
-
-    std::vector<T>& myVec;
-  };
-
-  struct IndexGuard {
-    IndexGuard(int& t, int value) {
-      if (t < 0) {
-        t = value;
-        myPtr = &t;
-      } else { //don't overwrite
-        myPtr = nullptr;
-      }
-    }
-
-    ~IndexGuard(){ if (myPtr) *myPtr = IndexResetter; }
-
-    int* myPtr;
-  };
-
-  template <class T>
-  struct EmplaceGuard {
-    EmplaceGuard(std::list<T>& theList) : myList(theList) {
-      myList.emplace_back();
-    }
-
-    ~EmplaceGuard(){ myList.pop_back(); }
-
-    std::list<T>& myList;
-  };
-
-  struct IncrementGuard {
-    IncrementGuard(int& idx) : myIdx(idx)
-    {
-      ++myIdx;
-    }
-    ~IncrementGuard(){ --myIdx; }
-    int& myIdx;
-  };
-
   template <class Lambda>
   void goIntoContext(clang::Stmt* stmt, Lambda&& l){
     stmtContexts_.push_back(stmt);
@@ -1119,8 +1124,8 @@ struct PragmaActivateGuard {
   }
 
   template <class T>
-  PragmaActivateGuard(T* t, FirstPassASTVistor* visitor, bool doVisit = true) :
-    PragmaActivateGuard(t, visitor->ci_, visitor->pragmaConfig_, visitor->rewriter_,
+  PragmaActivateGuard(T* t, FirstPassASTVisitor* visitor, bool doVisit = true) :
+    PragmaActivateGuard(t, *visitor->ci_, visitor->pragmaConfig_, visitor->rewriter_,
       visitor->pragmas_, doVisit, true/*1st pass*/)
   {
   }

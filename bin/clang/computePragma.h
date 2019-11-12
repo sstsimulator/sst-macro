@@ -92,25 +92,23 @@ class SSTMemoryPragma : public SSTPragma {
 
 class SSTLoopCountPragma : public SSTPragma {
  public:
-  SSTLoopCountPragma(const std::string& repl) :
-    loopCount_(repl)
-  {
-  }
+  SSTLoopCountPragma(clang::SourceLocation loc, clang::CompilerInstance& CI,
+                     const std::list<clang::Token>& tokens);
 
   const std::string& count() const {
     return loopCount_;
   }
 
-  void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg) override {
-    //no activate actions are actually required
-    //other code in computeVisitor.cc will detect this pragma and trigger actions
-  }
+  void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg) override;
 
-  bool reusable() const override {
+  bool firstPass(const clang::Stmt* s) const override {
     return true;
   }
 
  private:
+  void transformWhileLoop(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg);
+  void transformForLoop(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg);
+  clang::Token loopCountToken_;
   std::string loopCount_;
 };
 

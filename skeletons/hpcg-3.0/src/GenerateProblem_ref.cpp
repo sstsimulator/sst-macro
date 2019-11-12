@@ -117,7 +117,7 @@ void GenerateProblem_ref(SparseMatrix & A, Vector * b, Vector * x, Vector * xexa
   }
 
 
-#pragma sst replace localNumberOfNonzeros numberOfNonzerosPerRow*nx*ny*nz
+#pragma sst init numberOfNonzerosPerRow*nx*ny*nz
   local_int_t localNumberOfNonzeros = 0;
   // TODO:  This triply nested loop could be flattened or use nested parallelism
 #ifndef HPCG_NO_OPENMP

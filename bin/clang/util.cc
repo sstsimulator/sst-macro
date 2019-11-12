@@ -206,3 +206,91 @@ makeCxxName(const std::string& name)
   return uniqueFilePrefix;
 }
 
+static Expr* nameToExpr(DeclContext* ctx, const std::string& name, clang::SourceLocation loc)
+{
+  std::vector<NamedDecl*> matches;
+  for (auto* d : ctx->decls()){
+    if (isa<NamedDecl>(d)){
+      NamedDecl* nd = cast<NamedDecl>(d);
+      if (nd->getNameAsString() == name){
+        matches.push_back(nd);
+      }
+    }
+  }
+
+  if (!matches.empty()){
+    NamedDecl* nd = matches.back();
+    VarDecl* vd = cast<VarDecl>(nd);
+
+    DeclRefExpr* dref = DeclRefExpr::Create(
+        ctx->getParentASTContext(),
+        vd->getQualifierLoc(),
+        SourceLocation(),
+        vd,
+        /*enclosing*/ false,
+        loc,
+        vd->getType(),
+        VK_LValue,
+        vd->getFirstDecl());
+
+    return dref;
+  } else {
+    return nullptr;
+  }
+}
+
+Expr* tokenToExpr(DeclContext* ctx, const Token& tok, clang::SourceLocation loc)
+{
+  switch(tok.getKind()){
+    case tok::identifier: {
+      std::string varName = tok.getIdentifierInfo()->getNameStart();
+      return nameToExpr(ctx, varName, loc);
+    }
+    case tok::string_literal: {
+      std::stringstream sstr;
+      getLiteralDataAsString(tok, sstr);
+      std::string varName = sstr.str();
+      return nameToExpr(ctx, varName, loc);
+    }
+    case tok::numeric_constant: {
+      std::stringstream sstr;
+      getLiteralDataAsString(tok, sstr);
+      std::string valueText = sstr.str();
+      if (valueText.find(".") == std::string::npos){
+        //make an integer literal
+        int i = std::atoi(valueText.c_str());
+        //just assume 32 bit integer for now
+        llvm::APInt api(32, i, true);
+        IntegerLiteral* ilit = IntegerLiteral::Create(ctx->getParentASTContext(), api,
+                                                      ctx->getParentASTContext().IntTy, loc);
+        return ilit;
+      } else {
+        double d = std::atof(valueText.c_str());
+        llvm::APFloat apf(d);
+        FloatingLiteral* flit = FloatingLiteral::Create(ctx->getParentASTContext(), apf, true,
+                                                        ctx->getParentASTContext().DoubleTy, loc);
+        return flit;
+      }
+      break;
+    }
+    default:
+      return nullptr;
+  }
+}
+
+void getLiteralDataAsString(const Token &tok, std::ostream &os)
+{
+  const char* data = tok.getLiteralData(); //not null-terminated, direct from buffer
+  for (int i=0 ; i < tok.getLength(); ++i){
+    //must explicitly add chars, this will not hit a \0
+     os << data[i];
+  }
+}
+
+std::string getLiteralDataAsString(const Token &tok)
+{
+  std::stringstream sstr;
+  getLiteralDataAsString(tok, sstr);
+  return sstr.str();
+}
+

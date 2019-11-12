@@ -2255,6 +2255,14 @@ SkeletonASTVisitor::TraverseFunctionTemplateDecl(FunctionTemplateDecl *D)
 }
 
 bool
+SkeletonASTVisitor::TraverseCXXDestructorDecl(CXXDestructorDecl* D)
+{
+  PushGuard<FunctionDecl*> pg(fxnContexts_, D);
+  Parent::TraverseCXXDestructorDecl(D);
+  return true;
+}
+
+bool
 SkeletonASTVisitor::TraverseCXXConstructorDecl(CXXConstructorDecl *D)
 {
   if (D->isTemplateInstantiation())
@@ -2262,6 +2270,7 @@ SkeletonASTVisitor::TraverseCXXConstructorDecl(CXXConstructorDecl *D)
 
   IncrementGuard ig(insideCxxMethod_);
   PushGuard<CXXConstructorDecl*> pg(ctorContexts_, D);
+  PushGuard<FunctionDecl*> pgf(fxnContexts_, D);
   for (auto *I : D->inits()) {
     TraverseConstructorInitializer(I);
   }
@@ -2281,6 +2290,7 @@ SkeletonASTVisitor::TraverseCXXMethodDecl(CXXMethodDecl *D)
     PragmaActivateGuard pag(D, this);
     if (D->isThisDeclarationADefinition() && !pag.skipVisit()) {
       IncrementGuard ig(insideCxxMethod_);
+      PushGuard<FunctionDecl*> pg(fxnContexts_, D);
       traverseFunctionBody(D->getBody());
     }
   } catch (DeclDeleteException& e) {
@@ -2372,6 +2382,7 @@ bool
 SkeletonASTVisitor::TraverseCompoundStmt(CompoundStmt* stmt, DataRecursionQueue*  /*queue*/)
 {
   try {
+    PushGuard<CompoundStmt*> pg(pragmaConfig_.stmtBlocks, stmt);
     PragmaActivateGuard pag(stmt, this);
     if (!pag.skipVisit()){
       auto end = stmt->body_end();
@@ -2565,6 +2576,13 @@ SkeletonASTVisitor::TraverseWhileStmt(WhileStmt* S, DataRecursionQueue*  /*queue
 bool
 SkeletonASTVisitor::TraverseForStmt(ForStmt *S, DataRecursionQueue*  /*queue*/)
 {
+  if (fxnContexts_.empty()){
+    errorAbort(S, *ci_, "Traversing ForStmt with no function context");
+  }
+
+  FunctionDecl* fd = fxnContexts_.back();
+
+
   try {
     PragmaActivateGuard pag(S, this);
     if (pag.skipVisit()) return true;
@@ -2890,22 +2908,36 @@ SkeletonASTVisitor::maybePrintGlobalReplacement(VarDecl* vd, llvm::raw_ostream& 
 
 
 bool
-FirstPassASTVistor::VisitDecl(Decl *d)
+FirstPassASTVisitor::VisitDecl(Decl *d)
 {
   PragmaActivateGuard pag(d, this, true/*always do first pass pragmas*/);
   return true;
 }
 
 bool
-FirstPassASTVistor::VisitStmt(Stmt *s)
+FirstPassASTVisitor::VisitStmt(Stmt *s)
 {
   PragmaActivateGuard pag(s, this, true/*always do first pass pragmas*/);
   return true;
 }
 
-FirstPassASTVistor::FirstPassASTVistor(CompilerInstance& ci,
-  SSTPragmaList& prgs, clang::Rewriter& rw, PragmaConfig& cfg) :
-  ci_(ci), 
+bool
+FirstPassASTVisitor::TraverseFunctionDecl(FunctionDecl *fd, DataRecursionQueue* queue)
+{
+  PushGuard<FunctionDecl*> pg(pragmaConfig_.fxnContexts, fd);
+  Parent::TraverseFunctionDecl(fd);
+  return true;
+}
+
+bool
+FirstPassASTVisitor::TraverseCompoundStmt(CompoundStmt* cs, DataRecursionQueue* queue)
+{
+  PushGuard<CompoundStmt*> pg(pragmaConfig_.stmtBlocks, cs);
+  Parent::TraverseCompoundStmt(cs);
+  return true;
+}
+
+FirstPassASTVisitor::FirstPassASTVisitor(SSTPragmaList& prgs, clang::Rewriter& rw, PragmaConfig& cfg) :
   pragmas_(prgs), 
   pragmaConfig_(cfg),
   rewriter_(rw)

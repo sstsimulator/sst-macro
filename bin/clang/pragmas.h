@@ -52,10 +52,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <cstdint>
 #include <functional>
 
-
-std::string getLiteralDataAsString(const clang::Token& tok);
-void getLiteralDataAsString(const clang::Token &tok, std::ostream& os);
-
 class SkeletonASTVisitor;
 struct SSTPragma;
 class SSTReplacePragma;
@@ -67,11 +63,29 @@ struct PragmaConfig {
   std::map<clang::FunctionDecl*,std::set<SSTPragma*>> functionPragmas;
   std::map<const clang::DeclContext*,SSTNullVariablePragma*> nullSafeFunctions;
   std::vector<std::pair<SSTPragma*, std::string>> globalCppFunctionsToWrite;
-  std::set<const clang::DeclRefExpr*> deletedRefs;
   std::set<std::string> newParams;
   std::string dependentScopeGlobal;
   std::string computeMemorySpec;
   std::list<std::pair<SSTNullVariablePragma*,clang::TypedefDecl*>> pendingTypedefs;
+  std::list<clang::FunctionDecl*> fxnContexts;
+  std::map<clang::IfStmt*,std::string> predicatedBlocks;
+  std::list<clang::CompoundStmt*> stmtBlocks;
+
+  clang::CompoundStmt::body_iterator currentStmtBlockBegin(){
+    return stmtBlocks.back()->body_begin();
+  }
+
+  clang::CompoundStmt::body_iterator findStmtBlockMatch(clang::Stmt* s){
+    clang::CompoundStmt* block = stmtBlocks.back();
+    for (auto* iter = block->body_begin(); iter != block->body_end(); ++iter){
+      if (*iter == s) return iter;
+    }
+    return block->body_end();
+  }
+
+  clang::CompoundStmt::body_iterator currentStmtBlockEnd(){
+    return stmtBlocks.back()->body_end();
+  }
 
   int pragmaDepth = 0;
 
@@ -135,10 +149,6 @@ struct SSTPragma {
     return startPragmaLoc < getStart(s) && getStart(s) <= targetLoc;
   }
 
-  virtual bool reusable() const {
-    return false;
-  }
-
   template <class T> static std::uintptr_t id() {
     return pragmaID<T>();
   }
@@ -197,7 +207,7 @@ struct SSTPragmaList {
   template <class T>
   std::list<SSTPragma*>
   getMatches(T* t, bool firstPass = false){
-    std::list<SSTPragma*> ret = getPulled(t);
+    std::list<SSTPragma*> ret;
     auto end = pragmas.end();
     auto iter=pragmas.begin();
     while (iter != end){
@@ -207,16 +217,10 @@ struct SSTPragmaList {
       if (match){
         if (firstPass){
           if (p->firstPass(t)){
-            if (p->reusable()){
-              appendPulled(t,p);
-            }
             pragmas.erase(tmp);
             ret.push_back(p);
           }
         } else {
-          if (p->reusable()){
-            appendPulled(t,p);
-          }
           pragmas.erase(tmp);
           ret.push_back(p);
         }
@@ -225,43 +229,7 @@ struct SSTPragmaList {
     return ret;
   }
 
-  void appendPulled(clang::Stmt* s, SSTPragma* prg){
-    //for "stacked" pragmas, should visit BASE first
-    //the BASE is the driving pragma and all the rest
-    //are "modifiers" for the base
-    pulledStmts[s].push_back(prg);
-  }
-
-  void appendPulled(clang::Decl* d, SSTPragma* prg){
-    //for "stacked" pragmas, should visit BASE first
-    //the BASE is the driving pragma and all the rest
-    //are "modifiers" for the base
-    pulledDecls[d].push_back(prg);
-  }
-
-  std::list<SSTPragma*>
-  getPulled(clang::Stmt* s) const {
-    auto iter = pulledStmts.find(s);
-    if (iter != pulledStmts.end()){
-      return iter->second;
-    } else {
-      return std::list<SSTPragma*>();
-    }
-  }
-
-  std::list<SSTPragma*>
-  getPulled(clang::Decl* d) const {
-    auto iter = pulledDecls.find(d);
-    if (iter != pulledDecls.end()){
-      return iter->second;
-    } else {
-      return std::list<SSTPragma*>();
-    }
-  }
-
   std::list<SSTPragma*> pragmas;
-  std::map<clang::Stmt*,std::list<SSTPragma*>> pulledStmts;
-  std::map<clang::Decl*,std::list<SSTPragma*>> pulledDecls;
 };
 
 
@@ -755,6 +723,24 @@ class SSTKeepIfPragma : public SSTPragma {
   std::string ifCond_;
 };
 
+class SSTAssumeTruePragma : public SSTPragma {
+ public:
+  SSTAssumeTruePragma() {}
+
+ private:
+  void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg) override;
+
+};
+
+class SSTAssumeFalsePragma : public SSTPragma {
+ public:
+  SSTAssumeFalsePragma() {}
+
+ private:
+  void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg) override;
+
+};
+
 class SSTBranchPredictPragma : public SSTPragma {
  public:
   SSTBranchPredictPragma(const std::string& prd)
@@ -763,7 +749,7 @@ class SSTBranchPredictPragma : public SSTPragma {
   const std::string& prediction() const {
     return prediction_;
   }
-  bool reusable() const override {
+  bool firstPass(const clang::Stmt *s) const override {
     return true;
   }
  private:

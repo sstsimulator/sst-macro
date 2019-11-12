@@ -74,7 +74,7 @@ SkeletonASTConsumer::HandleTopLevelDecl(DeclGroupRef DR)
           allDecls_.push_back(d);
         }
         if (isNullWhitelisted(fd->getNameAsString())){
-          visitor_.pragmaConfig_.nullSafeFunctions[fd] = nullptr;
+          skeletonVisitor_.pragmaConfig_.nullSafeFunctions[fd] = nullptr;
         }
       }
       break;
@@ -82,7 +82,7 @@ SkeletonASTConsumer::HandleTopLevelDecl(DeclGroupRef DR)
       allDecls_.push_back(d);
       break;
     }
-    firstPass_.TraverseDecl(d);
+    firstPassVisitor_.TraverseDecl(d);
     //delay processing to force all template instances to be generated
     //visitor_.setTopLevelScope(d);
     //bool isGlobalVar = isa<VarDecl>(d);
@@ -99,18 +99,18 @@ SkeletonASTConsumer::run()
 {
   try {
     for (Decl* d : allDecls_){
-      visitor_.setTopLevelScope(d);
+      skeletonVisitor_.setTopLevelScope(d);
       bool isGlobalVar = isa<VarDecl>(d);
-      visitor_.setVisitingGlobal(isGlobalVar);
-      visitor_.TraverseDecl(d);
-      visitor_.setVisitingGlobal(false); //and reset
+      skeletonVisitor_.setVisitingGlobal(isGlobalVar);
+      skeletonVisitor_.TraverseDecl(d);
+      skeletonVisitor_.setVisitingGlobal(false); //and reset
     }
-    visitor_.finalize();
+    skeletonVisitor_.finalize();
   } catch (StmtDeleteException& e) {
     //e.deleted->dump();
     std::string error = std::string("unhandled delete exception on expression")
         + " of type " + e.deleted->getStmtClassName();
-    internalError(getStart(e.deleted), visitor_.getCompilerInstance(), error);
+    internalError(getStart(e.deleted), skeletonVisitor_.getCompilerInstance(), error);
   }
 
 }

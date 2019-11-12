@@ -65,7 +65,8 @@ clang::LangOptions* sst::activeLangOpts = nullptr;
 clang::Sema* sst::activeSema = nullptr;
 
 ReplaceAction::ReplaceAction() :
-  visitor_(rewriter_, globalNs_, prgConfig_)
+  skeleton_visitor_(pragmaList_, rewriter_, globalNs_, prgConfig_),
+  first_pass_visitor_(pragmaList_, rewriter_, prgConfig_)
 {
 }
 
@@ -90,9 +91,10 @@ class DeleteOpenMPPragma : public PragmaHandler
 std::unique_ptr<clang::ASTConsumer>
 ReplaceAction::CreateASTConsumer(clang::CompilerInstance& CI, clang::StringRef /* file */) {
   rewriter_.setSourceMgr(CI.getSourceManager(), CI.getLangOpts());
-  visitor_.setCompilerInstance(CI);
+  skeleton_visitor_.setCompilerInstance(CI);
+  first_pass_visitor_.setCompilerInstance(CI);
   initPragmas(CI, ASTVisitorCmdLine::mode);
-  return llvm::make_unique<SkeletonASTConsumer>(rewriter_, visitor_);
+  return llvm::make_unique<SkeletonASTConsumer>(rewriter_, first_pass_visitor_, skeleton_visitor_);
 }
 
 void
@@ -125,7 +127,7 @@ ReplaceAction::ExecuteAction()
     SSTPragmaNamespace* ns = pair.second;
     for (auto&& name : ns->names()){
       PragmaHandlerFactoryBase* factory = ns->getFactory(ASTVisitorCmdLine::mode, name);
-      auto* handler = factory->getHandler(visitor_.getPragmas(), *ci_, visitor_);
+      auto* handler = factory->getHandler(skeleton_visitor_.getPragmas(), *ci_, skeleton_visitor_);
       ci_->getPreprocessor().AddPragmaHandler(ns->name(), handler);
     }
   }
@@ -207,9 +209,9 @@ ReplaceAction::EndSourceFileAction()
     ofs << "#include <sstmac/software/process/cppglobal.h>\n"
         << "#include <sstmac/software/process/memoize.h>\n\n";
     globalNs_.genSSTCode(ofs,"");
-    visitor_.registerNewKeywords(ofs);
-    if (visitor_.hasCStyleMain()){
-      std::string appname = visitor_.getAppName();
+    skeleton_visitor_.registerNewKeywords(ofs);
+    if (skeleton_visitor_.hasCStyleMain()){
+      std::string appname = skeleton_visitor_.getAppName();
       ofs << "int userSkeletonMainInitFxn(const char* name, int (*foo)(int,char**));\n"
          << "extern \"C\" int sstmac_user_main_" << appname << "(int argc, char** argv);\n"
          << "int " << appname << "_sstmac_initer = userSkeletonMainInitFxn("

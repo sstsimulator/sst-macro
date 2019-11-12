@@ -61,22 +61,6 @@ std::map<std::string, SSTPragmaNamespace*>* PragmaRegisterMap::namespaces_ = nul
 
 
 
-void getLiteralDataAsString(const Token &tok, std::ostream &os)
-{
-  const char* data = tok.getLiteralData(); //not null-terminated, direct from buffer
-  for (int i=0 ; i < tok.getLength(); ++i){
-    //must explicitly add chars, this will not hit a \0
-     os << data[i];
-  }
-}
-
-std::string getLiteralDataAsString(const Token &tok)
-{
-  std::stringstream sstr;
-  getLiteralDataAsString(tok, sstr);
-  return sstr.str();
-}
-
 static void tokenToString(const Token& tok, std::ostream& os,
                           clang::CompilerInstance& CI)
 {
@@ -460,13 +444,28 @@ SSTKeepIfPragma::activate(Stmt *s, Rewriter &r, PragmaConfig & /*cfg*/)
 }
 
 void
-SSTBranchPredictPragma::activate(Stmt *s, Rewriter &r, PragmaConfig & /*cfg*/)
+SSTAssumeTruePragma::activate(Stmt *s, Rewriter &r, PragmaConfig &)
+{
+  IfStmt* ifs = cast<IfStmt>(s);
+  replace(ifs->getCond(), r, "true", *CI);
+}
+
+void
+SSTAssumeFalsePragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
+{
+  IfStmt* ifs = cast<IfStmt>(s);
+  replace(ifs->getCond(), r, "false", *CI);
+}
+
+
+void
+SSTBranchPredictPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
+>>>>>>> 971ddd7e... major overhaul of pragma framework using AST modification
 {
   if (s->getStmtClass() != Stmt::IfStmtClass){
     errorAbort(s, *CI, "predicate pragma not applied to if statement");
   }
-  IfStmt* ifs = cast<IfStmt>(s);
-  replace(ifs->getCond(), r, prediction_, *CI);
+  cfg.predicatedBlocks[cast<IfStmt>(s)] = prediction_;
 }
 
 void
@@ -1097,6 +1096,10 @@ static PragmaRegister<SSTStringPragmaShim, SSTGlobalVariablePragma, true> global
     "sst", "global", ALL_MODES);
 static PragmaRegister<SSTStringPragmaShim, SSTReturnPragma, true> returnPragma(
     "sst", "return", SKELETONIZE | SHADOWIZE | PUPPETIZE);
+static PragmaRegister<SSTNoArgsPragmaShim, SSTAssumeTruePragma, true> assumeTruePragma(
+    "sst", "assume_true", SKELETONIZE | SHADOWIZE | PUPPETIZE);
+static PragmaRegister<SSTNoArgsPragmaShim, SSTAssumeFalsePragma, true> assumeFalsePragma(
+    "sst", "assume_false", SKELETONIZE | SHADOWIZE | PUPPETIZE);
 static PragmaRegister<SSTStringPragmaShim, SSTBranchPredictPragma, true> branchPredictPragma(
     "sst", "branch_predict", SKELETONIZE | SHADOWIZE | PUPPETIZE);
 static PragmaRegister<SSTTokenListPragmaShim, SSTAdvanceTimePragma, true> advanceTimePragma(

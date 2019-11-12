@@ -236,8 +236,9 @@ Domain::Domain(Int_t numRanks, Index_t colLoc,
       //e(0) = einit;
    }
    //set initial deltatime base on analytic CFL calculation
-#pragma sst replace volo 1
-   deltatime() = (Real_t(.5)*cbrt(volo(0)))/sqrt(Real_t(2.0)*einit);
+#pragma sst init 1
+   Real_t volo0 = volo(0);
+   deltatime() = (Real_t(.5)*cbrt(volo0))/sqrt(Real_t(2.0)*einit);
 
 } // End constructor
 
