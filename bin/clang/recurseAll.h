@@ -70,31 +70,6 @@ enum class ExprRole {
   ReturnValue
 };
 
-static const char* tostr(ExprRole role)
-{
-#define enum_case(x) case ExprRole::x: return #x
-  switch(role){
-  enum_case(ArrayBase);
-  enum_case(ArrayIdx);
-  enum_case(CallFxn);
-  enum_case(CallArg);
-  enum_case(BinOpLHS);
-  enum_case(BinOpRHS);
-  enum_case(ForInit);
-  enum_case(ForCond);
-  enum_case(ForInc);
-  enum_case(ForBody);
-  enum_case(SubExpr);
-  enum_case(IfCond);
-  enum_case(IfBody);
-  enum_case(IfElse);
-  enum_case(IfInit);
-  enum_case(Standalone);
-  enum_case(ThisPtr);
-  enum_case(ReturnValue);
-  }
-#undef enum_case
-}
 
 namespace pvt {
 

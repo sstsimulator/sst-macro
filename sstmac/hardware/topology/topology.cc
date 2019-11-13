@@ -180,7 +180,6 @@ Topology::outputGraphviz(const std::string& path)
     }
     for (auto& pair : weighted_conns){
       int dst = pair.first;
-      int wght = pair.second;
       if (s < dst){
         out << "sw" << s << "--sw" << dst << ";\n";
       }

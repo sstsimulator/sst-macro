@@ -200,7 +200,6 @@ class MerlinNIC :
     auto* req = link_control_->recv(vn);
     while (req){
       MyRequest* myreq = static_cast<MyRequest*>(req);
-      uint64_t size = req->size_in_bits/8;
       auto bytes = myreq->size_in_bits/8;
       auto* payload = myreq->takePayload();
       MessageEvent* ev = payload ? static_cast<MessageEvent*>(payload) : nullptr;

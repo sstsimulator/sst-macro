@@ -458,7 +458,7 @@ struct PragmaRegisterMap {
 
 struct SSTPragmaNamespace {
 
-  SSTPragmaNamespace(const std::string name) :
+  SSTPragmaNamespace(const std::string &name) :
     name_(name)
   {
   }
@@ -501,8 +501,8 @@ struct PragmaRegister {
  * Use as fill-in for pragmas which should not be activated in a given mode
  */
 struct SSTDoNothingPragma : public SSTPragma {
-  void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg){}
-  void activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig& cfg){}
+  void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg) override {}
+  void activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig& cfg) override {}
 };
 
 class SSTReturnPragma : public SSTPragma {
@@ -633,7 +633,7 @@ class SSTNullVariablePragma : public SSTPragma {
 
   void doActivate(clang::Decl* d, clang::Rewriter& r, PragmaConfig& cfg);
 
-  virtual void activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig& cfg) override;
+  void activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig& cfg) override;
   void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg) override;
 
   clang::NamedDecl* declAppliedTo_;
@@ -736,9 +736,9 @@ class SSTKeepPragma : public SSTPragma {
  public:
   SSTKeepPragma(){}
  protected:
-  virtual void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg) override;
+  void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg) override;
 
-  virtual void activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig& cfg) override;
+  void activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig& cfg) override;
 
   void deactivate(PragmaConfig &cfg) override {
     cfg.makeNoChanges = false;
@@ -751,7 +751,7 @@ class SSTKeepIfPragma : public SSTPragma {
     : ifCond_(ifCond)
   {}
  private:
-  void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg);
+  void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg) override;
   std::string ifCond_;
 };
 
@@ -789,7 +789,7 @@ class SSTAdvanceTimePragma : public SSTPragma {
                        const std::list<clang::Token>& tokens);
 
  private:
-  void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg);
+  void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg) override;
   std::string units_;
   std::string amount_;
 };
