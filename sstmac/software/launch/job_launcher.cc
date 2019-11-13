@@ -79,7 +79,6 @@ JobLauncher::JobLauncher(SST::Params& params, OperatingSystem* os) :
   }
 
   addLaunchRequests(params);
-  os->rebuildMemoizations();
 }
 
 void
@@ -159,9 +158,6 @@ JobLauncher::addLaunchRequests(SST::Params& params)
     initial_requests_.push_back(mgr);
     ++aid;
   }
-
-  //just in case any memoizations were loaded
-  os_->rebuildMemoizations();
 }
 
 void

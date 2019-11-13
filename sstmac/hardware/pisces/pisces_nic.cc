@@ -62,8 +62,8 @@ RegisterNamespaces("congestion_delays", "congestion_matrix");
 namespace sstmac {
 namespace hw {
 
-PiscesNIC::PiscesNIC(SST::Component* parent, SST::Params& params) :
-  NIC(parent, params),
+PiscesNIC::PiscesNIC(uint32_t id, SST::Params& params, Node* parent) :
+  NIC(id, params, parent),
   pending_inject_(1)
 {
   SST::Params inj_params = params.find_scoped_params("injection");

@@ -400,24 +400,32 @@ class Component :
   }
 
 #if SSTMAC_INTEGRATED_SST_CORE
-  template <class T> T* loadSub(const std::string& name, SST::Params& params, const std::string& iface){
-    auto* sub = loadSubComponent("macro." + name + "_" + iface, this, params);
+  template <class T, class... Args> T* loadSub(const std::string& name, const std::string& iface, int slot_id,
+                                               SST::Params& params, Args&&... args){
+    auto* sub = loadAnonymousSubComponent<T>("macro." + name + "_" + iface, iface, slot_id,
+                                          SST::ComponentInfo::SHARE_PORTS | SST::ComponentInfo::SHARE_STATS,
+                                          params, std::forward<Args>(args)...);
     return dynamic_cast<T*>(sub);
   }
 
-  template <class T> T* newSub(const std::string& name, SST::Params& params){
-    auto* sub = loadSubComponent("macro." + name, this, params);
+  template <class T, class... Args> T* newSub(const std::string& name, int slot_id,
+                               SST::Params& params, Args&&... args){
+    auto* sub = loadAnonymousSubComponent<T>("macro." + name, name, slot_id,
+                                          SST::ComponentInfo::SHARE_PORTS | SST::ComponentInfo::SHARE_STATS,
+                                          params, std::forward<Args>(args)...);
     return dynamic_cast<T*>(sub);
   }
 #else
   void initLinks(SST::Params& params){} //need for SST core compatibility
 
-  template <class T> T* loadSub(const std::string& name, SST::Params& params, const std::string&  /*iface*/){
-    return sprockit::create<T>("macro", name, this, params);
+  template <class T, class... Args> T* loadSub(const std::string& name, const std::string& /*iface*/, int slot_id,
+                                SST::Params& params, Args&&... args){
+    return sprockit::create<T>("macro", name, componentId(), params, std::forward<Args>(args)...);
   }
 
-  template <class T> T* newSub(const std::string&  /*name*/, SST::Params& params){
-    return new T(this, params);
+  template <class T, class... Args> T* newSub(const std::string& /*name*/, int slot_id,
+                               SST::Params& params, Args&&... args){
+    return new T(componentId(), params, std::forward<Args>(args)...);
   }
 #endif
 
@@ -440,9 +448,9 @@ class SubComponent :
   virtual std::string toString() const = 0;
 
  protected:
-  SubComponent(const std::string& selfname, SST::Component* parent) :
+  SubComponent(uint32_t id, const std::string& selfname, SST::Component* parent) :
 #if SSTMAC_INTEGRATED_SST_CORE
-    SST::SubComponent(parent),
+    SST::SubComponent(id),
     EventScheduler(selfname, 0, parent)
 #else
     EventScheduler(selfname, parent->componentId(), parent)

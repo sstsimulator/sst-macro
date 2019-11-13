@@ -63,8 +63,8 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-SculpinNIC::SculpinNIC(SST::Component* parent, SST::Params& params) :
-  NIC(parent, params)
+SculpinNIC::SculpinNIC(uint32_t id, SST::Params& params, Node* parent) :
+  NIC(id, params, parent)
 {
   SST::Params inj_params = params.find_scoped_params("injection");
 

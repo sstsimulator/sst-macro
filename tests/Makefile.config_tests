@@ -24,20 +24,16 @@ CONFIGTESTS = \
 
 
 if !INTEGRATED_SST_CORE
-CONFIGTESTS += test_configs_sequoia 
-
 COVERAGETESTS = \
   test_feature_nic_contention \
   test_memory_leak \
   test_feature_excl_job_launcher \
   test_coverage_smp_pisces \
-  test_coverage_trinity_amm1_sculpin \
   test_coverage_edison_amm1_sculpin \
   test_coverage_edison_amm1 \
   test_coverage_edison_amm2 \
   test_coverage_edison_amm3 \
   test_mpi_only_coverage_edison_amm3 \
-  test_coverage_kahuna \
   test_coverage_hopper_amm1 \
   test_coverage_hopper_amm2 \
   test_coverage_hopper_amm3 \
@@ -46,7 +42,6 @@ COVERAGETESTS = \
   test_coverage_hopper_amm3_macrels \
   test_coverage_dragonfly \
   test_coverage_deepthought \
-  test_coverage_sequoia \
   test_coverage_exa1_pisces \
   test_coverage_exa1_macrels \
   test_coverage_exa2_pisces \

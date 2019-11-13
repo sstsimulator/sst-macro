@@ -56,8 +56,8 @@ LogPMemoryModel::~LogPMemoryModel()
   if (link_) delete link_;
 }
 
-LogPMemoryModel::LogPMemoryModel(SST::Component* nd, SST::Params& params)
-  : MemoryModel(nd, params) //no self events
+LogPMemoryModel::LogPMemoryModel(uint32_t id, SST::Params& params, Node* node)
+  : MemoryModel(id, params, node)
 {
 
   lat_ = TimeDelta(params.find<SST::UnitAlgebra>("latency").getValue().toDouble());

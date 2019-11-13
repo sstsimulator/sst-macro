@@ -63,13 +63,13 @@ class SculpinNIC :
 {
  public:
 #if SSTMAC_INTEGRATED_SST_CORE
-  SST_ELI_REGISTER_SUBCOMPONENT(
+  SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(
     SculpinNIC,
     "macro",
     "sculpin_nic",
     SST_ELI_ELEMENT_VERSION(1,0,0),
     "A NIC implementing the sculpin model",
-    "nic")
+    sstmac::hw::NIC)
 #else
   SST_ELI_REGISTER_DERIVED(
     NIC,
@@ -80,7 +80,7 @@ class SculpinNIC :
     "A NIC implementing the sculpin model")
 #endif
 
-  SculpinNIC(SST::Component* parent, SST::Params& params);
+  SculpinNIC(uint32_t id, SST::Params& params, Node* node);
 
   std::string toString() const override {
     return sprockit::printf("sculpin nic(%d)", int(addr()));

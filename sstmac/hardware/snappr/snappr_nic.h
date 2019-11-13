@@ -64,13 +64,13 @@ class SnapprNIC :
 {
  public:
 #if SSTMAC_INTEGRATED_SST_CORE
-  SST_ELI_REGISTER_SUBCOMPONENT(
+  SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(
     SnapprNIC,
     "macro",
     "snappr_nic",
     SST_ELI_ELEMENT_VERSION(1,0,0),
     "A NIC implementing the snappr model",
-    "nic")
+    sstmac::hw::NIC)
 #else
   SST_ELI_REGISTER_DERIVED(
     NIC,
@@ -81,7 +81,7 @@ class SnapprNIC :
     "A NIC implementing the snappr model")
 #endif
 
-  SnapprNIC(SST::Component* parent, SST::Params& params);
+  SnapprNIC(uint32_t id, SST::Params& params, Node* parent);
 
   std::string toString() const override {
     return sprockit::printf("snappr nic(%d)", int(addr()));
