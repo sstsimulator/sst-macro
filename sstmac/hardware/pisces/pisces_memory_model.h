@@ -59,13 +59,13 @@ class PiscesMemoryModel : public MemoryModel
 {
  public:
 #if SSTMAC_INTEGRATED_SST_CORE
-  SST_ELI_REGISTER_SUBCOMPONENT(
+  SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(
     PiscesMemoryModel,
     "macro",
     "pisces_memory",
     SST_ELI_ELEMENT_VERSION(1,0,0),
     "a memory model using pisces packet flow for contention",
-    "memory")
+    sstmac::hw::MemoryModel)
 #else
   SST_ELI_REGISTER_DERIVED(
     MemoryModel,
@@ -77,7 +77,7 @@ class PiscesMemoryModel : public MemoryModel
 #endif
 
 
-  PiscesMemoryModel(SST::Component* nd, SST::Params& params);
+  PiscesMemoryModel(uint32_t id, SST::Params& params, Node* parent);
 
   virtual ~PiscesMemoryModel();
 

@@ -55,8 +55,8 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-LogPNIC::LogPNIC(SST::Component* parent, SST::Params& params) :
-  NIC(parent, params),
+LogPNIC::LogPNIC(uint32_t id, SST::Params& params, Node* node) :
+  NIC(id, params, node),
   next_out_free_()
 {
   SST::Params inj_params = params.find_scoped_params("injection");

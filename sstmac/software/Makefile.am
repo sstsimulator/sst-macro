@@ -30,7 +30,6 @@ libsstmac_sw_la_SOURCES = \
   process/gdb.cc \
   process/global.cc \
   process/graphviz.cc \
-  process/memoize.cc \
   process/operating_system.cc \
   process/thread.cc \
   process/thread_info.cc \

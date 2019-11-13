@@ -56,10 +56,10 @@ namespace hw {
 
 static sprockit::NeedDeletestatics<MemoryModel> need_del;
 
-MemoryModel::MemoryModel(SST::Component* parent_node, SST::Params&  /*params*/) :
-  SubComponent("mem", parent_node)
+MemoryModel::MemoryModel(uint32_t id, SST::Params& /*params*/, Node* node) :
+  SubComponent(id, "mem", node)
 {
-  parent_node_ = safe_cast(Node, parent_node);
+  parent_node_ = node;
   nodeid_ = parent_node_->addr();
 }
 

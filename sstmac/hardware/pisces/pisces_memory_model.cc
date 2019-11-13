@@ -63,11 +63,8 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-
-
-
-PiscesMemoryModel::PiscesMemoryModel(SST::Component* nd, SST::Params& params) :
-  MemoryModel(nd, params),
+PiscesMemoryModel::PiscesMemoryModel(uint32_t id, SST::Params& params, Node* node) :
+  MemoryModel(id, params, node),
   arb_(nullptr)
 {
   nchannels_ = params.find<int>("nchannels", 8);

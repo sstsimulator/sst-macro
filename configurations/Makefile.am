@@ -17,7 +17,6 @@ library_include_HEADERS = \
   infinite.ini \
   pisces.ini \
   macrels.ini \
-  kahuna.ini \
   hopper_pisces.ini \
   small_torus.ini \
   small_torus_macrels.ini \
@@ -38,8 +37,6 @@ library_include_HEADERS = \
   hopper_amm1_macrels.ini \
   hopper_amm2_macrels.ini \
   hopper_amm3_macrels.ini \
-  trinity_amm.ini \
-  trinity_amm1_sculpin.ini \
   deepthought.ini \
   parsedumpi.ini \
   mpi_test_all.ini \
@@ -51,7 +48,6 @@ library_include_HEADERS = \
   hopper_nodemap.txt \
   fullmap.txt \
   default.ini \
-  sequoia.ini \
   exa1_pisces.ini \
   exa1_macrels.ini \
   exa2_pisces.ini \

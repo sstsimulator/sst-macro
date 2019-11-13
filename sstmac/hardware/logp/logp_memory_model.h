@@ -58,13 +58,13 @@ class LogPMemoryModel : public MemoryModel
 {
  public:
 #if SSTMAC_INTEGRATED_SST_CORE
-  SST_ELI_REGISTER_SUBCOMPONENT(
+  SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(
     LogPMemoryModel,
     "macro",
     "logp_memory",
     SST_ELI_ELEMENT_VERSION(1,0,0),
     "Implements a simple memory model that is just a single link",
-    "memory")
+    sstmac::hw::MemoryModel)
 #else
   SST_ELI_REGISTER_DERIVED(
     MemoryModel,
@@ -75,7 +75,7 @@ class LogPMemoryModel : public MemoryModel
     "Implements a simple memory model that is just a single link")
 #endif
 
-  LogPMemoryModel(SST::Component* comp, SST::Params& params);
+  LogPMemoryModel(uint32_t id, SST::Params& params, hw::Node* node);
 
   virtual ~LogPMemoryModel();
 
