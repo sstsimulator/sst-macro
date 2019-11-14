@@ -67,9 +67,9 @@ class StatHistogram : public SST::Statistics::MultiStatistic<BinType,CountType>
 
   StatHistogram(SST::BaseComponent* comp, const std::string& name,
                 const std::string& subName, SST::Params& params) :
+      SST::Statistics::MultiStatistic<BinType,CountType>(comp, name, subName, params),
       bin_size_(0),
-      is_log_(false),
-      SST::Statistics::MultiStatistic<BinType,CountType>(comp, name, subName, params)
+      is_log_(false)
   {
     min_val_ = params.find<SST::UnitAlgebra>("min_value").getValue().toDouble();
     max_val_ = params.find<SST::UnitAlgebra>("max_value").getValue().toDouble();
@@ -115,7 +115,7 @@ class StatHistogram : public SST::Statistics::MultiStatistic<BinType,CountType>
     }
   }
 
-  void outputStatisticData(SST::Statistics::StatisticOutput* statOutput, bool EndOfSimFlag) override {
+  void outputStatisticData(SST::Statistics::StatisticOutput* statOutput, bool  /*EndOfSimFlag*/) override {
     int fid = 0;
     statOutput->outputField(fields_[fid++], int(counts_.size()));
     statOutput->outputField(fields_[fid++], bin_size_);

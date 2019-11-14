@@ -166,7 +166,7 @@ PiscesBranchedSwitch::connectInput(int src_outport, int dst_inport, EventLink::p
 }
 
 int
-PiscesBranchedSwitch::queueLength(int port, int vc) const
+PiscesBranchedSwitch::queueLength(int  /*port*/, int  /*vc*/) const
 {
   spkt_abort_printf("unimplemented: PiscesTiledSwitch::queueLength");
   return 0;

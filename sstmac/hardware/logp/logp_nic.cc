@@ -56,8 +56,8 @@ namespace sstmac {
 namespace hw {
 
 LogPNIC::LogPNIC(SST::Component* parent, SST::Params& params) :
-  next_out_free_(),
-  NIC(parent, params)
+  NIC(parent, params),
+  next_out_free_()
 {
   SST::Params inj_params = params.find_scoped_params("injection");
   inj_byte_delay_ = TimeDelta(inj_params.find<SST::UnitAlgebra>("bandwidth").getValue().inverse().toDouble());
@@ -113,7 +113,7 @@ LogPNIC::doSend(NetworkMessage* msg)
 }
 
 void
-LogPNIC::connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link)
+LogPNIC::connectOutput(int  /*src_outport*/, int  /*dst_inport*/, EventLink::ptr&& link)
 {
   logp_link_ = std::move(link);
 }
@@ -125,7 +125,7 @@ LogPNIC::connectInput(int src_outport, int dst_inport, EventLink::ptr&& link)
 }
 
 LinkHandler*
-LogPNIC::payloadHandler(int port)
+LogPNIC::payloadHandler(int  /*port*/)
 {
   return newLinkHandler(this, &NIC::mtlHandle);
 }

@@ -427,19 +427,19 @@ SkeletonASTVisitor::shouldVisitDecl(VarDecl* D)
 
 
 bool
-SkeletonASTVisitor::VisitCXXNewExpr(CXXNewExpr *expr)
+SkeletonASTVisitor::VisitCXXNewExpr(CXXNewExpr * /*expr*/)
 {
   return true; //don't do this anymore
 }
 
 bool
-SkeletonASTVisitor::TraverseDecltypeTypeLoc(clang::DecltypeTypeLoc loc)
+SkeletonASTVisitor::TraverseDecltypeTypeLoc(clang::DecltypeTypeLoc  /*loc*/)
 {
   return true;
 }
 
 bool
-SkeletonASTVisitor::TraverseCXXDeleteExpr(CXXDeleteExpr* expr, DataRecursionQueue* queue)
+SkeletonASTVisitor::TraverseCXXDeleteExpr(CXXDeleteExpr* expr, DataRecursionQueue*  /*queue*/)
 {
   activeBinOpIdx_ = IndexResetter;
 
@@ -453,7 +453,7 @@ SkeletonASTVisitor::TraverseCXXDeleteExpr(CXXDeleteExpr* expr, DataRecursionQueu
 }
 
 bool
-SkeletonASTVisitor::TraverseInitListExpr(InitListExpr* expr, DataRecursionQueue* queue)
+SkeletonASTVisitor::TraverseInitListExpr(InitListExpr* expr, DataRecursionQueue*  /*queue*/)
 {
   if (visitingGlobal_){
     QualType qty = expr->getType();
@@ -778,7 +778,7 @@ GlobalVariableVisitor::VisitDeclRefExpr(DeclRefExpr *expr)
 }
 
 bool
-GlobalVariableVisitor::VisitCallExpr(CallExpr* expr)
+GlobalVariableVisitor::VisitCallExpr(CallExpr*  /*expr*/)
 {
   //we have to assume this touches globals
   visitedGlobals_ = true;
@@ -857,7 +857,7 @@ SkeletonASTVisitor::visitPt2Pt(CallExpr *expr)
   }
 }
 bool 
-SkeletonASTVisitor::TraverseReturnStmt(clang::ReturnStmt* stmt, DataRecursionQueue* queue)
+SkeletonASTVisitor::TraverseReturnStmt(clang::ReturnStmt* stmt, DataRecursionQueue*  /*queue*/)
 {
   try {
     PragmaActivateGuard pag(stmt, this);
@@ -872,7 +872,7 @@ SkeletonASTVisitor::TraverseReturnStmt(clang::ReturnStmt* stmt, DataRecursionQue
 }
 
 bool
-SkeletonASTVisitor::TraverseCXXMemberCallExpr(CXXMemberCallExpr* expr, DataRecursionQueue* queue)
+SkeletonASTVisitor::TraverseCXXMemberCallExpr(CXXMemberCallExpr* expr, DataRecursionQueue*  /*queue*/)
 {
   PragmaActivateGuard pag(expr, this);
   if (pag.skipVisit()){
@@ -965,7 +965,7 @@ SkeletonASTVisitor::deleteNullVariableMember(NamedDecl* nullVarDecl, MemberExpr*
 }
 
 bool
-SkeletonASTVisitor::TraverseMemberExpr(MemberExpr *expr, DataRecursionQueue* queue)
+SkeletonASTVisitor::TraverseMemberExpr(MemberExpr *expr, DataRecursionQueue*  /*queue*/)
 {
   ValueDecl* member = expr->getMemberDecl();
   if (isNullVariable(member)){
@@ -1008,7 +1008,7 @@ SkeletonASTVisitor::TraverseMemberExpr(MemberExpr *expr, DataRecursionQueue* que
 }
 
 bool
-SkeletonASTVisitor::TraverseCallExpr(CallExpr* expr, DataRecursionQueue* queue)
+SkeletonASTVisitor::TraverseCallExpr(CallExpr* expr, DataRecursionQueue*  /*queue*/)
 {
   //this "breaks" connections for null variable propagation
   activeBinOpIdx_ = IndexResetter;
@@ -1825,7 +1825,7 @@ SkeletonASTVisitor::getVariableNameLocationEnd(VarDecl* D)
 
 bool
 SkeletonASTVisitor::TraverseUnresolvedLookupExpr(clang::UnresolvedLookupExpr* expr,
-                                                 DataRecursionQueue* queue)
+                                                 DataRecursionQueue*  /*queue*/)
 {
   for (auto iter=expr->decls_begin(); iter != expr->decls_end(); ++iter){
     NamedDecl* nd = *iter;
@@ -1865,13 +1865,13 @@ SkeletonASTVisitor::finalize()
   for (auto& pair : declsToInsertAfter_){
     auto& declPair = pair.second;
 
-    bool hasTypeDecl = false;
     clang::VarDecl* D = declPair.first;
 
     SourceLocation declEnd = getEndLoc(getEnd(D));
     rewriter_.InsertText(declEnd, declPair.second);
 
     /**
+    bool hasTypeDecl = false;
     auto ty = D->getType().getTypePtr();
     if (ty->isStructureType()){
       RecordDecl* recDecl = ty->getAsStructureType()->getDecl();
@@ -2369,7 +2369,7 @@ SkeletonASTVisitor::VisitCXXDependentScopeMemberExpr(clang::CXXDependentScopeMem
 }
 
 bool
-SkeletonASTVisitor::TraverseCompoundStmt(CompoundStmt* stmt, DataRecursionQueue* queue)
+SkeletonASTVisitor::TraverseCompoundStmt(CompoundStmt* stmt, DataRecursionQueue*  /*queue*/)
 {
   try {
     PragmaActivateGuard pag(stmt, this);
@@ -2387,7 +2387,7 @@ SkeletonASTVisitor::TraverseCompoundStmt(CompoundStmt* stmt, DataRecursionQueue*
 }
 
 bool
-SkeletonASTVisitor::TraverseFieldDecl(clang::FieldDecl* fd, DataRecursionQueue* queue)
+SkeletonASTVisitor::TraverseFieldDecl(clang::FieldDecl* fd, DataRecursionQueue*  /*queue*/)
 {
   try {
     PragmaActivateGuard pag(fd, this);
@@ -2403,7 +2403,7 @@ SkeletonASTVisitor::TraverseFieldDecl(clang::FieldDecl* fd, DataRecursionQueue* 
 }
 
 bool
-SkeletonASTVisitor::TraverseUnaryOperator(UnaryOperator* op, DataRecursionQueue* queue)
+SkeletonASTVisitor::TraverseUnaryOperator(UnaryOperator* op, DataRecursionQueue*  /*queue*/)
 {
   switch(op->getOpcode()){
     case UO_Deref: {
@@ -2430,7 +2430,7 @@ SkeletonASTVisitor::TraverseCompoundAssignOperator(CompoundAssignOperator *op, D
 }
 
 bool
-SkeletonASTVisitor::TraverseBinaryOperator(BinaryOperator* op, DataRecursionQueue* queue)
+SkeletonASTVisitor::TraverseBinaryOperator(BinaryOperator* op, DataRecursionQueue*  /*queue*/)
 {
   try {
 
@@ -2475,7 +2475,7 @@ SkeletonASTVisitor::TraverseBinaryOperator(BinaryOperator* op, DataRecursionQueu
 }
 
 bool
-SkeletonASTVisitor::TraverseIfStmt(IfStmt* stmt, DataRecursionQueue* queue)
+SkeletonASTVisitor::TraverseIfStmt(IfStmt* stmt, DataRecursionQueue*  /*queue*/)
 {
   try {
     PragmaActivateGuard pag(stmt, this);
@@ -2498,7 +2498,7 @@ SkeletonASTVisitor::TraverseIfStmt(IfStmt* stmt, DataRecursionQueue* queue)
 }
 
 bool
-SkeletonASTVisitor::TraverseDeclStmt(DeclStmt* stmt, DataRecursionQueue* queue)
+SkeletonASTVisitor::TraverseDeclStmt(DeclStmt* stmt, DataRecursionQueue*  /*queue*/)
 {
   try {
 
@@ -2531,7 +2531,7 @@ SkeletonASTVisitor::TraverseDeclStmt(DeclStmt* stmt, DataRecursionQueue* queue)
 }
 
 bool
-SkeletonASTVisitor::TraverseDoStmt(DoStmt* S, DataRecursionQueue* queue)
+SkeletonASTVisitor::TraverseDoStmt(DoStmt* S, DataRecursionQueue*  /*queue*/)
 {
   try {
     PragmaActivateGuard pag(S, this);
@@ -2547,7 +2547,7 @@ SkeletonASTVisitor::TraverseDoStmt(DoStmt* S, DataRecursionQueue* queue)
 }
 
 bool
-SkeletonASTVisitor::TraverseWhileStmt(WhileStmt* S, DataRecursionQueue* queue)
+SkeletonASTVisitor::TraverseWhileStmt(WhileStmt* S, DataRecursionQueue*  /*queue*/)
 {
   try {
     PragmaActivateGuard pag(S, this);
@@ -2563,7 +2563,7 @@ SkeletonASTVisitor::TraverseWhileStmt(WhileStmt* S, DataRecursionQueue* queue)
 }
 
 bool
-SkeletonASTVisitor::TraverseForStmt(ForStmt *S, DataRecursionQueue* queue)
+SkeletonASTVisitor::TraverseForStmt(ForStmt *S, DataRecursionQueue*  /*queue*/)
 {
   try {
     PragmaActivateGuard pag(S, this);
@@ -2583,7 +2583,7 @@ SkeletonASTVisitor::TraverseForStmt(ForStmt *S, DataRecursionQueue* queue)
 }
 
 bool
-SkeletonASTVisitor::TraverseArraySubscriptExpr(ArraySubscriptExpr* expr, DataRecursionQueue* queue)
+SkeletonASTVisitor::TraverseArraySubscriptExpr(ArraySubscriptExpr* expr, DataRecursionQueue*  /*queue*/)
 {
   /**
   Expr* base = getUnderlyingExpr(expr->getBase());
@@ -2697,7 +2697,7 @@ SkeletonASTVisitor::propagateNullness(Decl* target, Decl* src)
 }
 
 void
-SkeletonASTVisitor::nullifyIfStmt(IfStmt* if_stmt, Decl* d)
+SkeletonASTVisitor::nullifyIfStmt(IfStmt* if_stmt, Decl*  /*d*/)
 {
   //oooooh, not good - I could really foobar things here
   //crash and burn and tell programmer to fix it

@@ -62,10 +62,12 @@ class BtreeScattervActor :
   }
 
   BtreeScattervActor(CollectiveEngine* engine, int root, void *dst, void *src,
-                       int* send_counts, int recvcnt, int type_size, int tag,
+                       int*  /*send_counts*/, int recvcnt, int type_size, int tag,
                        int cq_id, Communicator* comm) :
     DagCollectiveActor(Collective::scatter, engine, dst, src, type_size, tag, cq_id, comm),
-    root_(root), send_counts_(send_counts), recvcnt_(recvcnt) {}
+    root_(root), 
+    recvcnt_(recvcnt) 
+  {}
 
  protected:
   void finalizeBuffers() override;
@@ -79,7 +81,7 @@ class BtreeScattervActor :
   int root_;
   int midpoint_;
   int log2nproc_;
-  int* send_counts_;
+  // TODOWARNING int* send_counts_;
   int recvcnt_;
 
 };

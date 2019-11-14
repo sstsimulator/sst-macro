@@ -56,14 +56,14 @@ using namespace sstmac::hw;
 
 extern "C" int ubuntu_cant_name_mangle() { return 0; }
 
-void* ptest(void* args)
+void* ptest(void*  /*args*/)
 {
    SSTMAC_compute(1); 
    printf("Yes, I reach here!\n");
    return 0;
 }
 
-void* ptest3(void* args)
+void* ptest3(void*  /*args*/)
 {
    SSTMAC_compute(1);
    printf("No, I do not reach here!\n");
@@ -108,7 +108,7 @@ void* ptest2(void* args)
 #define sstmac_app_name test_pthread
 
 
-int USER_MAIN(int argc, char** argv)
+int USER_MAIN(int  /*argc*/, char**  /*argv*/)
 {
     void* no_args = 0;
     pthread_t thr1, thr2;

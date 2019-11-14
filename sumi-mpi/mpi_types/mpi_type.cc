@@ -57,14 +57,14 @@ namespace sumi {
 
 MpiType::MpiType() :
   id(-1),
-  committed_(false),
-  contiguous_(true),
   type_(NONE),
-  size_(-1),
+  contiguous_(true),
+  committed_(false),
   pdata_(nullptr),
-  idata_(nullptr),
   vdata_(nullptr),
-  builtin_(false)
+  idata_(nullptr),
+  builtin_(false),
+  size_(-1)
 {
 }
 
@@ -145,9 +145,10 @@ MpiType::init_primitive(const char* labelit, int size)
 // MPI datatypes.
 //
 void
-MpiType::init_primitive(const std::string& labelit, const int sizeit, int align)
+MpiType::init_primitive(const std::string& labelit, const int sizeit, int  /*align*/)
 {
-  init_primitive(labelit.c_str(), sizeit, align);
+  // TODOWARNING init_primitive(labelit.c_str(), sizeit, align);
+  init_primitive(labelit.c_str(), sizeit);
 }
 
 void

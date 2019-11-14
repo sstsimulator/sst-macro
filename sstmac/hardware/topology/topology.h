@@ -325,7 +325,7 @@ class Topology : public sprockit::printable
  public:
   virtual ~Topology();
 
-  virtual double portScaleFactor(uint32_t addr, int port) const {
+  virtual double portScaleFactor(uint32_t  /*addr*/, int  /*port*/) const {
     return 1.0;
   }
 
@@ -376,7 +376,7 @@ class Topology : public sprockit::printable
    */
   virtual VTKSwitchGeometry getVtkGeometry(SwitchId sid) const;
 
-  virtual bool isCurvedVtkLink(SwitchId sid, int port) const {
+  virtual bool isCurvedVtkLink(SwitchId  /*sid*/, int  /*port*/) const {
     return false;
   }
 
@@ -501,7 +501,7 @@ class Topology : public sprockit::printable
     return std::string("switch") + std::to_string(id);
   }
 
-  virtual std::string portTypeName(SwitchId sid, int port) const {
+  virtual std::string portTypeName(SwitchId  /*sid*/, int  /*port*/) const {
     return "network";
   }
 

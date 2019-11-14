@@ -172,7 +172,7 @@ class SimTransport : public Transport, public sstmac::sw::API {
     return buffer;
   }
 
-  void freePublicBuffer(void* buf, uint64_t size) override {
+  void freePublicBuffer(void* buf, uint64_t  /*size*/) override {
     ::free(buf);
   }
 

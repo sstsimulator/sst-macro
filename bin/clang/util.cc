@@ -124,7 +124,7 @@ internalError(const std::string &error){
 
 
 void
-internalError(SourceLocation loc, CompilerInstance &CI, const std::string &error)
+internalError(SourceLocation  /*loc*/, CompilerInstance & /*CI*/, const std::string &error)
 {
   std::string newError = "internal error: " + error;
 	 

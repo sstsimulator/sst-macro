@@ -82,8 +82,10 @@ MpiApi::test(MPI_Request *request, MPI_Status *status, int& tag, int& source)
 int
 MpiApi::test(MPI_Request *request, int *flag, MPI_Status *status)
 {
+#ifdef SSTMAC_OTF2_ENABLED
   MPI_Request req_cpy = *request;
   auto start_clock = traceClock();
+#endif
   int tag, source;
   _StartMPICall_(MPI_Test);
   if (test(request, status, tag, source)){

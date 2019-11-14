@@ -63,7 +63,8 @@ class SimpleComputeScheduler : public ComputeScheduler
 
   SimpleComputeScheduler(SST::Params& params, OperatingSystem* os,
                          int ncore, int nsocket)
-    : ncore_active_(0), ComputeScheduler(params, os, ncore, nsocket)
+    : ComputeScheduler(params, os, ncore, nsocket),
+      ncore_active_(0) 
   {}
   
   void reserveCores(int ncore, Thread* thr) override;

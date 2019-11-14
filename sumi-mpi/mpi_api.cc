@@ -117,20 +117,20 @@ MpiApi* sstmac_mpi()
 MpiApi::MpiApi(SST::Params& params, sstmac::sw::App* app,
                SST::Component* comp) :
   sumi::SimTransport(params, app, comp),
-  status_(is_fresh),
+  queue_(nullptr),
   next_type_id_(0),
   next_op_id_(first_custom_op_id),
-  group_counter_(MPI_GROUP_SELF+1),
+  comm_factory_(app->sid(), this),
+  status_(is_fresh),
+  crossed_comm_world_barrier_(false),
   worldcomm_(nullptr),
   selfcomm_(nullptr),
-  req_counter_(0),
-  queue_(nullptr),
-  generate_ids_(true),
+  group_counter_(MPI_GROUP_SELF+1),
 #ifdef SSTMAC_OTF2_ENABLED
   OTF2Writer_(nullptr),
 #endif
-  crossed_comm_world_barrier_(false),
-  comm_factory_(app->sid(), this)
+  req_counter_(0),
+  generate_ids_(true)
 {
   if (!engine_) engine_ = new CollectiveEngine(params, this);
 
@@ -204,7 +204,7 @@ MpiApi::~MpiApi()
 }
 
 int
-MpiApi::abort(MPI_Comm comm, int errcode)
+MpiApi::abort(MPI_Comm  /*comm*/, int errcode)
 {
 
   spkt_throw_printf(sprockit::ValueError,
@@ -220,9 +220,11 @@ MpiApi::commRank(MPI_Comm comm, int *rank)
 }
 
 int
-MpiApi::init(int* argc, char*** argv)
+MpiApi::init(int*  /*argc*/, char***  /*argv*/)
 {
+#ifdef SSTMAC_OTF2_ENABLED
   auto start_clock = traceClock();
+#endif
 
   if (status_ == is_initialized){
     sprockit::abort("MPI_Init cannot be called twice");
@@ -282,7 +284,9 @@ MpiApi::checkInit()
 int
 MpiApi::finalize()
 {
+#ifdef SSTMAC_OTF2_ENABLED
   auto start_clock = traceClock();
+#endif
 
   StartMPICall(MPI_Finalize);
 
@@ -320,15 +324,15 @@ MpiApi::finalize()
 double
 MpiApi::wtime()
 {
-  auto call_start_time = (uint64_t)now().usec();
+  // TODOWARNING auto call_start_time = (uint64_t)now().usec();
   StartMPICall(MPI_Wtime);
   return now().sec();
 }
 
 int
-MpiApi::getCount(const MPI_Status *status, MPI_Datatype datatype, int *count)
+MpiApi::getCount(const MPI_Status *status, MPI_Datatype  /*datatype*/, int *count)
 {
-  auto call_start_time = (uint64_t)now().usec();
+  // TODOWARNING auto call_start_time = (uint64_t)now().usec();
   *count = status->count;
   return MPI_SUCCESS;
 }
@@ -577,7 +581,7 @@ MpiApi::checkKey(int key)
 
 
 int
-MpiApi::errorString(int errorcode, char *str, int *resultlen)
+MpiApi::errorString(int  /*errorcode*/, char *str, int *resultlen)
 {
   static const char* errorstr = "mpi error";
   *resultlen = ::strlen(errorstr);

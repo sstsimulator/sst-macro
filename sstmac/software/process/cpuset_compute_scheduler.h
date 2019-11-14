@@ -63,8 +63,8 @@ class CpusetComputeScheduler : public ComputeScheduler
 
   CpusetComputeScheduler(SST::Params& params,
                            OperatingSystem* os, int ncore, int nsockets) :
-    available_cores_(0),
-    ComputeScheduler(params, os, ncore, nsockets)
+    ComputeScheduler(params, os, ncore, nsockets),
+    available_cores_(0)
   {
     //all cores greater than ncore should be removed from bitmask
     for (int i=0; i < ncore; ++i){

@@ -231,12 +231,12 @@ Topology::outputXYZ(const std::string& path)
 
 void
 Topology::createPartition(
-  int *switch_to_lp,
-  int *switch_to_thread,
-  int me,
-  int nproc,
-  int nthread,
-  int noccupied) const
+  int * /*switch_to_lp*/,
+  int * /*switch_to_thread*/,
+  int  /*me*/,
+  int  /*nproc*/,
+  int  /*nthread*/,
+  int  /*noccupied*/) const
 {
   spkt_throw_printf(sprockit::UnimplementedError,
     "topology::partition: not valid for %s",
@@ -274,7 +274,7 @@ Topology::label(uint32_t comp_id) const
 }
 
 Topology::VTKSwitchGeometry
-Topology::getVtkGeometry(SwitchId sid) const
+Topology::getVtkGeometry(SwitchId  /*sid*/) const
 {
   spkt_abort_printf("unimplemented: topology::getVtkGeometry for %s",
                     toString().c_str());
@@ -302,7 +302,7 @@ Topology::nodeNameToId(const std::string& hostname) const
 }
 
 void
-Topology::initHostnameMap(SST::Params& params)
+Topology::initHostnameMap(SST::Params&  /*params*/)
 {
   if (!idmap_.empty() || !hostmap_.empty()){
     spkt_abort_printf("topology::initHostnameMap: maps not empty");
@@ -328,7 +328,7 @@ Topology::dumpPorts()
 }
 
 void
-Topology::portConfigDump(const std::string &dumpFile)
+Topology::portConfigDump(const std::string & /*dumpFile*/)
 {
   spkt_abort_printf("Topology chosen does not support port dump");
 }
@@ -367,7 +367,7 @@ class MerlinTopology : public Topology {
     return 0;
   }
 
-  void connectedOutports(SwitchId src, std::vector<Topology::Connection>& conns) const override {
+  void connectedOutports(SwitchId  /*src*/, std::vector<Topology::Connection>&  /*conns*/) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
@@ -376,18 +376,18 @@ class MerlinTopology : public Topology {
     return -1;
   }
 
-  int numHopsToNode(NodeId src, NodeId dst) const override {
+  int numHopsToNode(NodeId  /*src*/, NodeId  /*dst*/) const override {
     spkt_abort_printf("merlin topology functions should never be called");
     return -1;
   }
 
-  void endpointsConnectedToInjectionSwitch(SwitchId swid,
-                          std::vector<InjectionPort>& nodes) const override {
+  void endpointsConnectedToInjectionSwitch(SwitchId  /*swid*/,
+                          std::vector<InjectionPort>&  /*nodes*/) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  void endpointsConnectedToEjectionSwitch(SwitchId swid,
-                          std::vector<InjectionPort>& nodes) const override {
+  void endpointsConnectedToEjectionSwitch(SwitchId  /*swid*/,
+                          std::vector<InjectionPort>&  /*nodes*/) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 

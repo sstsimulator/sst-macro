@@ -51,6 +51,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/thread.h>
+
+#include <unusedvariablemacro.h>
+
 #include <sprockit/sim_parameters.h>
 #include <sprockit/factory.h>
 #include <sprockit/debug.h>
@@ -83,10 +86,10 @@ MpiQueue::sortbyseqnum::operator()(MpiMessage* a, MpiMessage*b) const
 }
 
 MpiQueue::MpiQueue(SST::Params& params, int task_id,
-                   MpiApi* api, CollectiveEngine* engine) :
+                   MpiApi* api, CollectiveEngine*  /*engine*/) :
+  queue_(api->parent()->os()),
   taskid_(task_id),
-  api_(api),
-  queue_(api->parent()->os())
+  api_(api)
 {
   max_vshort_msg_size_ = params.find<SST::UnitAlgebra>("max_vshort_msg_size", "512B").getRoundedValue();
   max_eager_msg_size_ = params.find<SST::UnitAlgebra>("max_eager_msg_size", "8192B").getRoundedValue();
@@ -504,7 +507,7 @@ MpiQueue::forwardProgress(double timeout)
 void
 MpiQueue::startProgressLoop(
   const std::vector<MpiRequest*>& req,
-  sstmac::TimeDelta timeout)
+  sstmac::TimeDelta  /*timeout*/)
 {
   startProgressLoop(req);
 }

@@ -67,7 +67,7 @@ class job_launch_event :
   }
 
  private:
-  int appnum_;
+  // TODOWARNING int appnum_;
   AppLaunchRequest* appman_;
 };
 

@@ -48,7 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/compute.h>
 #include <sstmac/util.h>
 
-int USER_MAIN(int argc, char** argv)
+int USER_MAIN(int  /*argc*/, char**  /*argv*/)
 {
   std::string message = sstmac::getParam<std::string>("message");
   sstmac_compute(1e-6);

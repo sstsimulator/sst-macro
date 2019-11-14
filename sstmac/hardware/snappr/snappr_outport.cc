@@ -26,12 +26,17 @@ SnapprOutPort::SnapprOutPort(SST::Params& params, const std::string &arb,
                              const std::string& subId, const std::string& portName,
                              int number, TimeDelta byt_delay, bool congestion, bool flow_control,
                              Component* parent)
-  : arbitration_scheduled(false), inports(nullptr),
-    portName_(subId), number_(number),
+  : arbitration_scheduled(false), 
+    byte_delay(byt_delay), 
     state_ftq(nullptr),
     queue_depth_ftq(nullptr),
-    byte_delay(byt_delay), congestion_(congestion), flow_control_(flow_control),
-    parent_(parent), notifier_(nullptr)
+    inports(nullptr),
+    parent_(parent), 
+    flow_control_(flow_control),
+    congestion_(congestion), 
+    portName_(subId), 
+    number_(number),
+    notifier_(nullptr)
 {
   arb_ = sprockit::create<SnapprPortArbitrator>("macro", arb, byte_delay, params);
   xmit_active = parent->registerStatistic<uint64_t>(params, "xmit_active", subId);
@@ -278,9 +283,9 @@ struct FifoPortArbitrator : public SnapprPortArbitrator
     "fifo",
     "implements a FIFO strategy for queuing packets")
 
-  FifoPortArbitrator(TimeDelta link_byte_delay, SST::Params& params){}
+  FifoPortArbitrator(TimeDelta  /*link_byte_delay*/, SST::Params&  /*params*/){}
 
-  void insert(uint64_t cycle, SnapprPacket *pkt) override {
+  void insert(uint64_t  /*cycle*/, SnapprPacket *pkt) override {
     VirtualLane& vl = vls_[pkt->virtualLane()];
     vl.occupancy += 1;
     if (vl.credits >= pkt->numBytes()){
@@ -329,7 +334,7 @@ struct FifoPortArbitrator : public SnapprPortArbitrator
     }
   }
 
-  SnapprPacket* pop(uint64_t cycle) override {
+  SnapprPacket* pop(uint64_t  /*cycle*/) override {
     SnapprPacket* pkt = port_queue_.front();
     port_debug("FIFO %p VL %d popping packet", this, pkt->virtualLane());
     port_queue_.pop();
@@ -353,11 +358,11 @@ struct ScatterPortArbitrator : public SnapprPortArbitrator
   };
 
  public:
-  ScatterPortArbitrator(SST::Params& params){
+  ScatterPortArbitrator(SST::Params&  /*params*/){
     //nothing to do
   }
 
-  void insert(uint64_t cycle, SnapprPacket *pkt) override {
+  void insert(uint64_t  /*cycle*/, SnapprPacket *pkt) override {
     VirtualLane& vl = vls_[pkt->virtualLane()];
     if (vl.credits >= pkt->numBytes()){
       port_queue_.emplace(pkt);
@@ -367,7 +372,7 @@ struct ScatterPortArbitrator : public SnapprPortArbitrator
     }
   }
 
-  SnapprPacket* pop(uint64_t cycle) override {
+  SnapprPacket* pop(uint64_t  /*cycle*/) override {
     SnapprPacket* pkt = port_queue_.top();
     port_queue_.pop();
     return pkt;

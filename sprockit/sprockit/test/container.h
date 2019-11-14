@@ -67,7 +67,7 @@ class ContainerAppend
 {
  public:
   static void
-  append(C& c, const A& a) {
+  append(C& c, const A&  /*a*/) {
     invalidContainer(c);
   }
 };

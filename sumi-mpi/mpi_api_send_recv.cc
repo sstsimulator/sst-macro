@@ -65,7 +65,9 @@ namespace sumi {
 int
 MpiApi::send(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm)
 {  
+#ifdef SSTMAC_OTF2_ENABLED
   auto start_clock = traceClock();
+#endif
 
   start_pt2pt_call(MPI_Send,count,datatype,dest,tag,comm);
   MpiComm* commPtr = getComm(comm);
@@ -92,7 +94,9 @@ MpiApi::sendrecv(const void *sendbuf, int sendcount,
  MPI_Datatype recvtype, int source, int recvtag,
  MPI_Comm comm, MPI_Status *status)
 {
+#ifdef SSTMAC_OTF2_ENABLED
   auto start_clock = traceClock();
+#endif
 
   start_pt2pt_call(MPI_Sendrecv,sendcount,sendtype,source,recvtag,comm);
   MpiRequest* req = doIsend(sendbuf, sendcount, sendtype, dest, sendtag, comm);
@@ -116,7 +120,9 @@ MpiApi::request_free(MPI_Request *req)
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request | sprockit::dbg::mpi_pt2pt,
     "MPI_Request_free(REQ=%d)", *req);
 
+#ifdef SSTMAC_OTF2_ENABLED
   auto start_clock = traceClock();
+#endif
 
   MpiRequest* reqPtr = getRequest(*req);
   if (reqPtr){
@@ -162,7 +168,9 @@ MpiApi::doStart(MPI_Request req)
 int
 MpiApi::start(MPI_Request* req)
 {
+#ifdef SSTMAC_OTF2_ENABLED
   auto start_clock = traceClock();
+#endif
 
   _StartMPICall_(MPI_Start);
   doStart(*req);
@@ -179,7 +187,7 @@ MpiApi::start(MPI_Request* req)
 int
 MpiApi::startall(int count, MPI_Request* req)
 {
-  auto call_start_time = (uint64_t)now().usec();
+  // TODOWARNING auto call_start_time = (uint64_t)now().usec();
 
   _StartMPICall_(MPI_Startall);
   for (int i=0; i < count; ++i){
@@ -201,7 +209,7 @@ MpiApi::sendInit(const void *buf, int count,
                  MPI_Datatype datatype, int dest, int tag,
                  MPI_Comm comm, MPI_Request *request)
 {
-  auto call_start_time = (uint64_t)now().usec();
+  // TODOWARNING auto call_start_time = (uint64_t)now().usec();
 
   _StartMPICall_(MPI_Send_init);
 
@@ -249,7 +257,9 @@ int
 MpiApi::isend(const void *buf, int count, MPI_Datatype datatype, int dest,
                int tag, MPI_Comm comm, MPI_Request *request)
 {
+#ifdef SSTMAC_OTF2_ENABLED
   auto start_clock = traceClock();
+#endif
 
   start_Ipt2pt_call(MPI_Isend,count,datatype,dest,tag,comm,request);
   MpiRequest* req = doIsend(buf, count, datatype, dest, tag, comm);
@@ -275,7 +285,9 @@ int
 MpiApi::recv(void *buf, int count, MPI_Datatype datatype, int source,
               int tag, MPI_Comm comm, MPI_Status *status)
 {
+#ifdef SSTMAC_OTF2_ENABLED
   auto start_clock = traceClock();
+#endif
 
   start_pt2pt_call(MPI_Recv,count,datatype,source,tag,comm);
   int rc = doRecv(buf,count,datatype,source,tag,comm,status);
@@ -344,7 +356,9 @@ int
 MpiApi::irecv(void *buf, int count, MPI_Datatype datatype, int source,
                int tag, MPI_Comm comm, MPI_Request *request)
 {
+#ifdef SSTMAC_OTF2_ENABLED
   auto start_clock = traceClock();
+#endif
 
   start_Ipt2pt_call(MPI_Irecv,count,datatype,dest,tag,comm,request);
 

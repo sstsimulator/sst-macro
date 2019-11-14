@@ -63,14 +63,14 @@ PiscesBuffer::~PiscesBuffer()
 }
 
 void
-PiscesBuffer::setInput(int this_inport, int src_outport, EventLink::ptr&& link)
+PiscesBuffer::setInput(int  /*this_inport*/, int src_outport, EventLink::ptr&& link)
 {
   input_.link = std::move(link);
   input_.port_to_credit = src_outport;
 }
 
 void
-PiscesBuffer::setOutput(int this_outport, int dst_inport, EventLink::ptr&& link, int credits)
+PiscesBuffer::setOutput(int  /*this_outport*/, int dst_inport, EventLink::ptr&& link, int credits)
 {
   output_.link = std::move(link);
   output_.arrival_port = dst_inport;

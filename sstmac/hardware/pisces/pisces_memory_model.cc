@@ -67,8 +67,8 @@ namespace hw {
 
 
 PiscesMemoryModel::PiscesMemoryModel(SST::Component* nd, SST::Params& params) :
-  arb_(nullptr),
-  MemoryModel(nd, params)
+  MemoryModel(nd, params),
+  arb_(nullptr)
 {
   nchannels_ = params.find<int>("nchannels", 8);
   channels_available_.resize(nchannels_);

@@ -222,7 +222,7 @@ DefaultJoblauncher::handleLaunchRequest(AppLaunchRequest* request,
 }
 
 void
-DefaultJoblauncher::stopEventReceived(JobStopRequest *ev)
+DefaultJoblauncher::stopEventReceived(JobStopRequest * /*ev*/)
 {
   os_->decrementAppRefcount();
 }
@@ -240,7 +240,7 @@ ExclusiveJoblauncher::handleLaunchRequest(AppLaunchRequest *request, ordered_nod
 }
 
 void
-ExclusiveJoblauncher::stopEventReceived(JobStopRequest *ev)
+ExclusiveJoblauncher::stopEventReceived(JobStopRequest * /*ev*/)
 {
   active_job_ = nullptr;
   if (!pending_requests_.empty()){

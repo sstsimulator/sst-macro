@@ -163,11 +163,11 @@ struct NullRegression : public OperatingSystem::ThreadSafeTimerModel<double>
   using Parent = OperatingSystem::ThreadSafeTimerModel<double>;
 
   NullRegression(SST::BaseComponent* comp, const std::string& key,
-                 const std::string& subName, SST::Params& params)
+                 const std::string&  /*subName*/, SST::Params& params)
     : Parent(params, comp, key, ""), computed_(false) {}
 
-  double compute(int n_params, const double params[],
-                 OperatingSystem::ImplicitState* state) override {
+  double compute(int  /*n_params*/, const double  /*params*/[],
+                 OperatingSystem::ImplicitState*  /*state*/) override {
     if (!computed_){
       computed_ = true;
       computeMean();
@@ -179,8 +179,8 @@ struct NullRegression : public OperatingSystem::ThreadSafeTimerModel<double>
     return Parent::start();
   }
 
-  void finishCollection(int thr_tag, int n_params, const double params[],
-                         OperatingSystem::ImplicitState* state) override {
+  void finishCollection(int thr_tag, int  /*n_params*/, const double  /*params*/[],
+                         OperatingSystem::ImplicitState*  /*state*/) override {
     Parent::finish(thr_tag);
   }
 
@@ -223,11 +223,11 @@ struct LinearRegression : public OperatingSystem::ThreadSafeTimerModel<std::pair
 
   using parent = OperatingSystem::ThreadSafeTimerModel<std::pair<double,double>>;
   LinearRegression(SST::BaseComponent* comp, const std::string& key,
-                   const std::string& subName, SST::Params& params)
+                   const std::string&  /*subName*/, SST::Params& params)
     : parent(params, comp, key, ""), computed_(false) {}
 
   double compute(int n_params, const double params[],
-                 OperatingSystem::ImplicitState* state) override {
+                 OperatingSystem::ImplicitState*  /*state*/) override {
     if (n_params != 1){
       spkt_abort_printf("linear regression can only take one parameter - got %d", n_params);
     }
@@ -245,7 +245,7 @@ struct LinearRegression : public OperatingSystem::ThreadSafeTimerModel<std::pair
   }
 
   void finishCollection(int thr_tag, int n_params, const double params[],
-                        OperatingSystem::ImplicitState* state) override {
+                        OperatingSystem::ImplicitState*  /*state*/) override {
     if (n_params != 1){
       spkt_abort_printf("linear regression can only take one parameter - got %d", n_params);
     }
@@ -312,13 +312,13 @@ std::map<std::string,std::unique_ptr<OperatingSystem::RegressionModel>> Operatin
 std::unique_ptr<std::map<std::string,std::string>> OperatingSystem::memoize_init_ = nullptr;
 
 OperatingSystem::OperatingSystem(SST::Component* parent, SST::Params& params) :
-  node_(safe_cast(hw::Node,parent)),
-  blocked_thread_(nullptr),
-  active_thread_(nullptr),
-  des_context_(nullptr),
-  compute_sched_(nullptr),
   SubComponent("os", parent),
+  node_(safe_cast(hw::Node,parent)),
+  active_thread_(nullptr),
+  blocked_thread_(nullptr),
+  des_context_(nullptr),
   params_(params),
+  compute_sched_(nullptr),
   sync_tunnel_(nullptr)
 {
   my_addr_ = node_ ? node_->addr() : 0;
@@ -506,7 +506,7 @@ void
 OperatingSystem::compute(TimeDelta t)
 {
   // guard the ftq tag in this function
-  const auto& cur_tag = active_thread_->tag();
+  // TODOWARNING const auto& cur_tag = active_thread_->tag();
   FTQScope scope(active_thread_, FTQTag::compute);
 
   sw::UnblockEvent* ev = new sw::UnblockEvent(this, active_thread_);
@@ -987,7 +987,7 @@ OperatingSystem::startThread(Thread* t)
 }
 
 void
-OperatingSystem::startApp(App* theapp, const std::string& unique_name)
+OperatingSystem::startApp(App* theapp, const std::string&  /*unique_name*/)
 {
   os_debug("starting app %d:%d on thread %d",
     int(theapp->tid()), int(theapp->aid()), threadId());

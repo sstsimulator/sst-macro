@@ -50,8 +50,10 @@ namespace sstmac {
 namespace sw {
 
 Library::Library(const std::string& libname, SoftwareId sid, OperatingSystem* os) :
-  sid_(sid), libname_(libname), os_(os),
-  addr_(os->addr())
+  os_(os),
+  sid_(sid), 
+  addr_(os->addr()),
+  libname_(libname) 
 {
   os_->registerLib(this);
 }
@@ -62,7 +64,7 @@ Library::~Library()
 }
 
 void
-Library::incomingEvent(Event* ev)
+Library::incomingEvent(Event*  /*ev*/)
 {
   spkt_throw_printf(sprockit::UnimplementedError,
     "%s::incomingEvent: this library should only block, never receive incoming",
@@ -70,7 +72,7 @@ Library::incomingEvent(Event* ev)
 }
 
 void
-Library::incomingRequest(Request* ev)
+Library::incomingRequest(Request*  /*ev*/)
 {
   spkt_throw_printf(sprockit::UnimplementedError,
     "%s::incomingRequest: this library should only block, never receive incoming",

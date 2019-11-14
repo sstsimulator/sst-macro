@@ -111,7 +111,7 @@ int USER_MAIN(int argc, char** argv)
     pseudo_random_shuffle(seed, pairing);
   }
 
-  int dst_intra_grp;
+  int dst_intra_grp = 0;
   if (my_group < dst_group){
     dst_intra_grp = pairing[my_intra_grp];
   } else {

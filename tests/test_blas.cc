@@ -64,7 +64,7 @@ extern "C" int ubuntu_cant_name_mangle() { return 0; }
 
 #define sstmac_app_name test_blas
 
-int USER_MAIN(int argc, char** argv)
+int USER_MAIN(int  /*argc*/, char**  /*argv*/)
 {
   run_fxn(sstmac_simple_daxpy,10000);
   run_fxn(sstmac_simple_dgemv,1000,1000);

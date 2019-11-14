@@ -100,14 +100,14 @@ debug_print(const char* info, const std::string& rank_str,
 }
 
 CollectiveActor::CollectiveActor(CollectiveEngine* engine, int tag, int cq_id, Communicator* comm) :
-  engine_(engine),
-  tag_(tag),
-  cq_id_(cq_id),
-  comm_(comm),
-  complete_(false),
   my_api_(engine->tport()),
+  engine_(engine),
+  dom_me_(comm->myCommRank()),
   dom_nproc_(comm->nproc()),
-  dom_me_(comm->myCommRank())
+  tag_(tag),
+  comm_(comm),
+  cq_id_(cq_id),
+  complete_(false)
 {
 }
 
@@ -217,7 +217,7 @@ DagCollectiveActor::startAction(Action* ac)
 }
 
 void
-DagCollectiveActor::startShuffle(Action *ac)
+DagCollectiveActor::startShuffle(Action * /*ac*/)
 {
   spkt_throw_printf(sprockit::UnimplementedError,
     "collective %s does not shuffle data - invalid DAG",
@@ -282,7 +282,7 @@ DagCollectiveActor::sendEagerMessage(Action* ac)
 {
   uint64_t num_bytes;
   void* buf = getSendBuffer(ac, num_bytes);
-  auto* msg = my_api_->smsgSend<CollectiveWorkMessage>(ac->phys_partner, num_bytes, buf,
+  /*auto* msg =*/ my_api_->smsgSend<CollectiveWorkMessage>(ac->phys_partner, num_bytes, buf,
                                               cq_id_, cq_id_, Message::collective, engine_->smsgQos(),
                                               type_, dom_me_, ac->partner,
                                               tag_, ac->round, ac->nelems, type_size_,
@@ -316,7 +316,7 @@ DagCollectiveActor::sendRdmaGetHeader(Action* ac)
 {
   uint64_t num_bytes;
   void* buf = getSendBuffer(ac, num_bytes);
-  auto* msg = my_api_->smsgSend<CollectiveWorkMessage>(ac->phys_partner, 64, //use platform-independent size
+  my_api_->smsgSend<CollectiveWorkMessage>(ac->phys_partner, 64, //use platform-independent size
                         buf, Message::no_ack, cq_id_, Message::collective, engine_->rdmaHeaderQos(),
                         type_, dom_me_, ac->partner,
                         tag_, ac->round,

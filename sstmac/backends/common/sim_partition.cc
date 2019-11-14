@@ -61,10 +61,10 @@ RegisterDebugSlot(partition);
 
 namespace sstmac {
 
-Partition::Partition(SST::Params& params, ParallelRuntime* rt) :
-  rt_(rt),
+Partition::Partition(SST::Params&  /*params*/, ParallelRuntime* rt) :
   switch_to_lpid_(nullptr),
-  switch_to_thread_(nullptr)
+  switch_to_thread_(nullptr),
+  rt_(rt)
 {
   nproc_ = rt_->nproc();
   me_ = rt_->me();
@@ -163,7 +163,7 @@ OccupiedBlockPartition::~OccupiedBlockPartition()
 }
 
 void
-BlockPartition::finalizeInit(SST::Params& params)
+BlockPartition::finalizeInit(SST::Params&  /*params*/)
 {
   partitionSwitches();
 }

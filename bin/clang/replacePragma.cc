@@ -82,14 +82,14 @@ struct ReplacementConfig
 template <bool PreVisit> //whether pre or post visit
 struct ReplaceStatementVisit {
   template <class T, class... Args>
-  bool operator()(T* t, ExprRole role,
-                  CompilerInstance& CI,
-                  ReplacementConfig& cfg) {
+  bool operator()(T*  /*t*/, ExprRole  /*role*/,
+                  CompilerInstance&  /*CI*/,
+                  ReplacementConfig&  /*cfg*/) {
     return false;
   }
 
   void visit(const Expr* expr, const std::string& name, ExprRole role,
-             CompilerInstance& CI, ReplacementConfig& cfg){
+             CompilerInstance&  /*CI*/, ReplacementConfig& cfg){
     if (PreVisit && name == cfg.matchText){
       switch (role){
         case ExprRole::ArrayBase:
@@ -105,7 +105,7 @@ struct ReplaceStatementVisit {
   }
 
   void visit(const Expr* expr, ExprRole role,
-             CompilerInstance& CI,
+             CompilerInstance&  /*CI*/,
              ReplacementConfig& cfg)
   {
     switch(role){
@@ -157,7 +157,7 @@ struct ReplaceStatementVisit {
     return false;
   }
 
-  bool operator()(const DeclStmt* stmt, ExprRole role,
+  bool operator()(const DeclStmt* stmt, ExprRole  /*role*/,
                   CompilerInstance& CI, ReplacementConfig& cfg){
     if (PreVisit){
       const Decl* d = stmt->getSingleDecl();
@@ -221,7 +221,7 @@ SSTReplacePragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
 
 
 void
-SSTReplacePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
+SSTReplacePragma::activate(Decl *d, Rewriter &r, PragmaConfig & /*cfg*/)
 {
 #define repl_case(kind,d,rw) \
   case Decl::kind: activate##kind##Decl(cast<kind##Decl>(d), rw); break
@@ -254,7 +254,7 @@ SSTReplacePragma::activateCXXRecordDecl(CXXRecordDecl *d, Rewriter &r)
 }
 
 void
-SSTInitPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
+SSTInitPragma::activate(Stmt *s, Rewriter &r, PragmaConfig & /*cfg*/)
 {
 #define repl_case(cls,s,rw) \
   case Stmt::cls##Class: activate##cls(cast<cls>(s), rw); break
@@ -276,7 +276,7 @@ SSTInitPragma::activateBinaryOperator(BinaryOperator* op, Rewriter& r)
 }
 
 void
-SSTInsteadPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
+SSTInsteadPragma::activate(Stmt *s, Rewriter &r, PragmaConfig & /*cfg*/)
 {
   replace(s, r, repl_, *CI);
   throw StmtDeleteException(s);

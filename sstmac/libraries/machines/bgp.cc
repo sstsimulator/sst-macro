@@ -52,7 +52,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 extern "C"
 void
-Kernel_GetPersonality(_BGP_Personality_t *p, int size)
+Kernel_GetPersonality(_BGP_Personality_t *p, int  /*size*/)
 {
   sstmac::NodeId nid = sstmac::Runtime::current_node();
   SST::Params empty{};

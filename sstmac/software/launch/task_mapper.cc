@@ -57,10 +57,11 @@ TaskMapper::~TaskMapper() throw()
 }
 
 TaskMapper::TaskMapper(SST::Params& params) :
-  rt_(nullptr), topology_(nullptr)
+  topology_(sstmac::hw::Topology::staticTopology(params)),
+  rt_(ParallelRuntime::staticRuntime(params))
 {
-  rt_ = ParallelRuntime::staticRuntime(params);
-  topology_ = sstmac::hw::Topology::staticTopology(params);
+  // TODOWARNING rt_ = ParallelRuntime::staticRuntime(params);
+  // TODOWARNING topology_ = sstmac::hw::Topology::staticTopology(params);
 }
 
 int

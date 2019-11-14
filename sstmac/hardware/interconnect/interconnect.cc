@@ -240,7 +240,7 @@ Interconnect::connectEndpoints(uint64_t linkIdOffset,
                                SST::Params& sw_params)
 {
   uint64_t linkId = linkIdOffset;
-  int num_nodes = topology_->numNodes();
+  // TODOWARNING int num_nodes = topology_->numNodes();
   int num_switches = topology_->numSwitches();
   int me = rt_->me();
   std::vector<Topology::InjectionPort> ports;
@@ -260,7 +260,7 @@ Interconnect::connectEndpoints(uint64_t linkIdOffset,
   for (int i=0; i < num_switches; ++i){
     //parallel - I don't own this
     int target_rank = partition_->lpidForSwitch(i);
-    int target_thread = partition_->threadForSwitch(i);
+    // TODOWARNING int target_thread = partition_->threadForSwitch(i);
 
     NetworkSwitch* injsw = switches_[i];
     NetworkSwitch* ejsw = switches_[i];
@@ -335,14 +335,14 @@ uint64_t
 Interconnect::connectLogP(
   uint64_t linkIdOffset,
   EventManager* mgr,
-  SST::Params& node_params,
+  SST::Params&  /*node_params*/,
   SST::Params& nic_params)
 {
   SST::Params inj_params = nic_params.get_namespace("injection");
   SST::Params empty{};
 
   int my_rank = rt_->me();
-  int my_thread = mgr->thread();
+  // TODOWARNING int my_thread = mgr->thread();
 
   uint64_t linkId = linkIdOffset;
 
@@ -431,11 +431,11 @@ Interconnect::connectLogP(
 
 void
 Interconnect::buildEndpoints(SST::Params& node_params,
-                  SST::Params& nic_params,
+                  SST::Params&  /*nic_params*/,
                   EventManager* mgr)
 {
   int my_rank = rt_->me();
-  int my_thread = mgr->thread();
+  // TODOWARNING int my_thread = mgr->thread();
 
   for (int i=0; i < num_switches_; ++i){
     SwitchId sid(i);

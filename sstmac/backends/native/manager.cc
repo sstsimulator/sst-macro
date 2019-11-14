@@ -248,7 +248,6 @@ Manager::Manager(SST::Params& params, ParallelRuntime* rt){}
 // Default constructor.
 //
 Manager::Manager(SST::Params& params, ParallelRuntime* rt) :
-  next_ppid_(0),
   interconnect_(nullptr),
   rt_(rt)
 {

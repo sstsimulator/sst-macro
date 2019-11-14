@@ -57,11 +57,11 @@ Packet::Packet(
   bool is_tail,
   NodeId fromaddr,
   NodeId toaddr) :
- num_bytes_(num_bytes),
- payload_(flow),
- flow_id_(flow_id),
+ toaddr_(toaddr),
  fromaddr_(fromaddr),
- toaddr_(toaddr)
+ flow_id_(flow_id),
+ num_bytes_(num_bytes),
+ payload_(flow)
 {
   ::memset(rtr_metadata_, 0, sizeof(rtr_metadata_));
   ::memset(stats_metadata_, 0, sizeof(stats_metadata_));

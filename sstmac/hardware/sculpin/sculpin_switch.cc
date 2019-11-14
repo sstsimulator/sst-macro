@@ -83,10 +83,10 @@ namespace sstmac {
 namespace hw {
 
 SculpinSwitch::SculpinSwitch(uint32_t id, SST::Params& params) :
+  NetworkSwitch(id, params),
   router_(nullptr),
-  congestion_(true),
-  vtk_(nullptr),
-  NetworkSwitch(id, params)
+  // TODOWARNING vtk_(nullptr),
+  congestion_(true)
 {
   SST::Params rtr_params = params.find_scoped_params("router");
   rtr_params.insert("id", std::to_string(my_addr_));
@@ -160,7 +160,7 @@ SculpinSwitch::connectInput(int src_outport, int dst_inport, EventLink::ptr&& li
 }
 
 int
-SculpinSwitch::queueLength(int port, int vc) const
+SculpinSwitch::queueLength(int port, int  /*vc*/) const
 {
   auto& p = ports_[port];
   //VC basically ignored, all ports on "same" VC
@@ -168,7 +168,7 @@ SculpinSwitch::queueLength(int port, int vc) const
 }
 
 void
-SculpinSwitch::handleCredit(Event *ev)
+SculpinSwitch::handleCredit(Event * /*ev*/)
 {
   spkt_abort_printf("SculpinSwitch::handleCredit: should never be called");
 }
@@ -186,7 +186,7 @@ SculpinSwitch::send(Port& p, SculpinPacket* pkt, Timestamp now)
   pkt->setTimeToSend(time_to_send);
   p.link->send(extra_delay, pkt);
 
-  TimeDelta delay = p.next_free - pkt->arrival();
+  // TODOWARNING TimeDelta delay = p.next_free - pkt->arrival();
 
   //if (xmit_delay_) xmit_delay_->addData(p.id, delay.usec());
 
@@ -254,7 +254,7 @@ SculpinSwitch::tryToSendPacket(SculpinPacket* pkt)
   Port& p = ports_[pkt->nextPort()];
   pkt->setSeqnum(p.seqnum++);
 
-  static int max_queue_depth = 0;
+  // TODOWARNING static int max_queue_depth = 0;
 
   if (!congestion_){
     TimeDelta time_to_send = pkt->numBytes() * p.byte_delay;
@@ -331,13 +331,13 @@ SculpinSwitch::toString() const
 }
 
 LinkHandler*
-SculpinSwitch::creditHandler(int port)
+SculpinSwitch::creditHandler(int  /*port*/)
 {
   return newLinkHandler(this, &SculpinSwitch::handleCredit);
 }
 
 LinkHandler*
-SculpinSwitch::payloadHandler(int port)
+SculpinSwitch::payloadHandler(int  /*port*/)
 {
   return newLinkHandler(this, &SculpinSwitch::handlePayload);
 }

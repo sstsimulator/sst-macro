@@ -83,9 +83,9 @@ class RecvCQ
     uint64_t bytes_arrived;
     uint64_t bytes_total;
     incomingMsg() :
+        msg(0),
         bytes_arrived(0),
-        bytes_total(0),
-        msg(0)
+        bytes_total(0)
     {
     }
   };

@@ -57,7 +57,7 @@ class ser_sizer
   }
 
   template <class T>
-  void size(T& t){
+  void size(T&  /*t*/){
     size_ += sizeof(T);
   }
 

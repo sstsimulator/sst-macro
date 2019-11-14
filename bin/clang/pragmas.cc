@@ -169,7 +169,7 @@ int SSTPragma::getActiveMode() const {
 
 void
 SSTPragmaNamespace::addFactory(int modeMask, const std::string &name,
-                               bool deleteOnUse, PragmaHandlerFactoryBase *factory)
+                               bool  /*deleteOnUse*/, PragmaHandlerFactoryBase *factory)
 {
   for (int i=0; i < NUM_MODES; ++i){
     int testMask = 1 << i;
@@ -220,7 +220,7 @@ PragmaRegisterMap::getNamespace(const std::string &ns)
 }
 
 void
-SSTPragmaHandler::configure(bool delOnUse, Token& PragmaTok, Preprocessor& PP, SSTPragma* fsp)
+SSTPragmaHandler::configure(bool delOnUse, Token&  /*PragmaTok*/, Preprocessor& PP, SSTPragma* fsp)
 {
   static int pragmaDepth = 0;
   static int maxPragmaDepth = 0;
@@ -253,7 +253,7 @@ SSTPragmaHandler::configure(bool delOnUse, Token& PragmaTok, Preprocessor& PP, S
 }
 
 void
-SSTPragmaHandler::HandlePragma(Preprocessor &PP, PragmaIntroducerKind Introducer, Token& PragmaTok)
+SSTPragmaHandler::HandlePragma(Preprocessor &PP, PragmaIntroducerKind  /*Introducer*/, Token& PragmaTok)
 {
   std::list<Token> tokens;
   Token next; PP.Lex(next);
@@ -272,9 +272,10 @@ SSTPragmaHandler::HandlePragma(Preprocessor &PP, PragmaIntroducerKind Introducer
 }
 
 std::map<std::string, std::list<std::string>>
-SSTPragma::getMap(SourceLocation loc, CompilerInstance& CI, const std::list<clang::Token>& tokens)
+SSTPragma::getMap(SourceLocation  /*loc*/, CompilerInstance& CI, const std::list<clang::Token>& tokens)
 {
   std::map<std::string, std::list<std::string>> allArgs;
+#if 0 // TODOWARNING
   auto iter = tokens.begin();
   auto incrementIter = [&](){
     ++iter;
@@ -283,6 +284,7 @@ SSTPragma::getMap(SourceLocation loc, CompilerInstance& CI, const std::list<clan
        "mis-formatted pragma, pragma modifiers should be of the form 'arg(a)' or 'arg(a,b)'");
     }
   };
+#endif
 
 
   int parenDepth = 0;
@@ -337,7 +339,7 @@ SSTPragma::getSingleString(const std::list<Token>& tokens, clang::CompilerInstan
 }
 
 void
-SSTDeletePragma::activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg){
+SSTDeletePragma::activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig&  /*cfg*/){
   replace(s,r,"",*CI);
   switch(s->getStmtClass()){
   case Stmt::ForStmtClass:
@@ -350,13 +352,13 @@ SSTDeletePragma::activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg)
 }
 
 void
-SSTDeletePragma::activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig& cfg){
+SSTDeletePragma::activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig&  /*cfg*/){
   replace(d,r,"",*CI);
   throw DeclDeleteException(d);
 }
 
 void
-SSTEmptyPragma::activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig& cfg){
+SSTEmptyPragma::activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig&  /*cfg*/){
   std::stringstream sstr;
   sstr << "{" << body_;
   if (body_.size()) sstr << ";";
@@ -373,25 +375,25 @@ SSTEmptyPragma::activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig& cfg){
 }
 
 void
-SSTEmptyPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
+SSTEmptyPragma::activate(Stmt *s, Rewriter & /*r*/, PragmaConfig & /*cfg*/)
 {
   errorAbort(s, *CI, "pragma empty should only apply to declarations, not statmements");
 }
 
 void
-SSTKeepPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
+SSTKeepPragma::activate(Stmt * /*s*/, Rewriter & /*r*/, PragmaConfig &cfg)
 {
   cfg.makeNoChanges = true;
 }
 
 void
-SSTKeepPragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
+SSTKeepPragma::activate(Decl * /*d*/, Rewriter & /*r*/, PragmaConfig &cfg)
 {
   cfg.makeNoChanges = true;
 }
 
 void
-SSTNewPragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
+SSTNewPragma::activate(Decl *d, Rewriter & /*r*/, PragmaConfig & /*cfg*/)
 {
 #define dcase(type,d,rw) \
   case(clang::Decl::type): \
@@ -443,7 +445,7 @@ SSTNewPragma::visitBinaryOperator(BinaryOperator *op, Rewriter& r)
 }
 
 void
-SSTNewPragma::activate(Stmt* stmt, Rewriter &r, PragmaConfig& cfg)
+SSTNewPragma::activate(Stmt* stmt, Rewriter &r, PragmaConfig&  /*cfg*/)
 {
 #define scase(type,s,rw) \
   case(clang::Stmt::type##Class): \
@@ -459,7 +461,7 @@ SSTNewPragma::activate(Stmt* stmt, Rewriter &r, PragmaConfig& cfg)
 }
 
 void
-SSTKeepIfPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
+SSTKeepIfPragma::activate(Stmt *s, Rewriter &r, PragmaConfig & /*cfg*/)
 {
   PrettyPrinter pp;
   pp.os << "if (" << ifCond_ << "){ ";
@@ -469,7 +471,7 @@ SSTKeepIfPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
 }
 
 void
-SSTBranchPredictPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
+SSTBranchPredictPragma::activate(Stmt *s, Rewriter &r, PragmaConfig & /*cfg*/)
 {
   if (s->getStmtClass() != Stmt::IfStmtClass){
     errorAbort(s, *CI, "predicate pragma not applied to if statement");
@@ -490,7 +492,7 @@ SSTOverheadPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
 }
 
 void
-SSTAdvanceTimePragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
+SSTAdvanceTimePragma::activate(Stmt *s, Rewriter &r, PragmaConfig & /*cfg*/)
 {
   PrettyPrinter pp;
   std::string replacement;
@@ -514,7 +516,7 @@ SSTAdvanceTimePragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
 }
 
 void
-SSTCallFunctionPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
+SSTCallFunctionPragma::activate(Stmt *s, Rewriter &r, PragmaConfig & /*cfg*/)
 {
   r.InsertText(getStart(s), repl_, false);
 }
@@ -549,7 +551,7 @@ SSTMallocPragma::visitDeclStmt(DeclStmt *stmt, Rewriter &r)
 }
 
 void
-SSTMallocPragma::activate(Stmt *stmt, Rewriter &r, PragmaConfig& cfg)
+SSTMallocPragma::activate(Stmt *stmt, Rewriter &r, PragmaConfig&  /*cfg*/)
 {
 #define scase(type,s,rw) \
   case(clang::Stmt::type##Class): \
@@ -565,7 +567,7 @@ SSTMallocPragma::activate(Stmt *stmt, Rewriter &r, PragmaConfig& cfg)
 }
 
 void
-SSTReturnPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
+SSTReturnPragma::activate(Stmt *s, Rewriter &r, PragmaConfig & /*cfg*/)
 {
   if (s->getStmtClass() != Stmt::ReturnStmtClass){
     errorAbort(s, *CI,
@@ -576,7 +578,7 @@ SSTReturnPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
 }
 
 void
-SSTReturnPragma::activate(Decl* d, Rewriter& r, PragmaConfig& cfg)
+SSTReturnPragma::activate(Decl* d, Rewriter& r, PragmaConfig&  /*cfg*/)
 {
   if (d->getKind() != Decl::Function){
     errorAbort(d, *CI, "pragma return not applied to function definition");
@@ -591,18 +593,18 @@ SSTReturnPragma::activate(Decl* d, Rewriter& r, PragmaConfig& cfg)
 }
 
 void
-SSTGlobalVariablePragma::activate(Stmt* s, Rewriter& r, PragmaConfig& cfg)
+SSTGlobalVariablePragma::activate(Stmt*  /*s*/, Rewriter&  /*r*/, PragmaConfig& cfg)
 {
   cfg.dependentScopeGlobal = name_;
 }
 
 void
-SSTGlobalVariablePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
+SSTGlobalVariablePragma::activate(Decl *d, Rewriter & /*r*/, PragmaConfig & /*cfg*/)
 {
   errorAbort(d, *CI, "global pragma should only be applied to statements");
 }
 
-SSTNullVariablePragma::SSTNullVariablePragma(SourceLocation loc, CompilerInstance& CI,
+SSTNullVariablePragma::SSTNullVariablePragma(SourceLocation  /*loc*/, CompilerInstance& CI,
                                              const std::list<Token> &tokens)
  : declAppliedTo_(nullptr),
    transitiveFrom_(nullptr),
@@ -683,7 +685,7 @@ static NamedDecl* getNamedDecl(Decl* d)
 }
 
 void
-SSTNullVariablePragma::doActivate(Decl* d, Rewriter& r, PragmaConfig& cfg)
+SSTNullVariablePragma::doActivate(Decl* d, Rewriter&  /*r*/, PragmaConfig& cfg)
 {
   if (!extras_.empty()){
     errorAbort(d, *CI, "illegal null_variable spec: "
@@ -835,13 +837,13 @@ SSTNullFieldsPragma::SSTNullFieldsPragma(SourceLocation loc, CompilerInstance &C
 }
 
 void
-SSTNullFieldsPragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
+SSTNullFieldsPragma::activate(Decl *d, Rewriter & /*r*/, PragmaConfig &cfg)
 {
   doActivateFieldsPragma(d, cfg, false, nullFields_, this, *CI);
 }
 
 void
-SSTNullFieldsPragma::activate(Stmt *stmt, Rewriter &r, PragmaConfig &cfg)
+SSTNullFieldsPragma::activate(Stmt *stmt, Rewriter & /*r*/, PragmaConfig & /*cfg*/)
 {
   errorAbort(stmt, *CI,
       "null_fields pragma should only be applied to struct declarations, not statements");
@@ -858,19 +860,19 @@ SSTNonnullFieldsPragma::SSTNonnullFieldsPragma(SourceLocation loc, CompilerInsta
 }
 
 void
-SSTNonnullFieldsPragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
+SSTNonnullFieldsPragma::activate(Decl *d, Rewriter & /*r*/, PragmaConfig &cfg)
 {
   doActivateFieldsPragma(d, cfg, true, nonnullFields_, this, *CI);
 }
 
 void
-SSTNonnullFieldsPragma::activate(Stmt *stmt, Rewriter &r, PragmaConfig &cfg)
+SSTNonnullFieldsPragma::activate(Stmt *stmt, Rewriter & /*r*/, PragmaConfig & /*cfg*/)
 {
   errorAbort(stmt, *CI,
      "nonull_fields pragma should only be applied to struct declarations, not statements");
 }
 
-SSTNullTypePragma::SSTNullTypePragma(SourceLocation loc, CompilerInstance& CI,
+SSTNullTypePragma::SSTNullTypePragma(SourceLocation  /*loc*/, CompilerInstance& CI,
                                      const std::list<Token> &tokens)
 {
   //this is valid - it just means wipe out the type
@@ -1003,7 +1005,7 @@ SSTAdvanceTimePragma::SSTAdvanceTimePragma(SourceLocation loc, CompilerInstance&
   amount_ = sval.str();
 }
 
-SSTCallFunctionPragma::SSTCallFunctionPragma(SourceLocation loc, CompilerInstance& CI,
+SSTCallFunctionPragma::SSTCallFunctionPragma(SourceLocation  /*loc*/, CompilerInstance& CI,
                                              const std::list<Token> &tokens)
 {
   std::stringstream sstr;
@@ -1045,7 +1047,7 @@ SSTStackAllocPragma::SSTStackAllocPragma(SourceLocation loc, CompilerInstance& C
 }
 
 void
-SSTStackAllocPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
+SSTStackAllocPragma::activate(Stmt *s, Rewriter &r, PragmaConfig & /*cfg*/)
 {
   if (toFree_.size()){
     std::string repl = "sstmac_free_stack(" + toFree_ + ")";

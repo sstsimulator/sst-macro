@@ -162,7 +162,7 @@ param_remap remap_list[] = {
 void
 remapParams(sprockit::SimParameters::ptr params, bool verbose)
 {
-  double timescale = 100e-18;//params->get_optional_time_param("timestamp_resolution", 100e-18);
+  // TODOWARNING double timescale = 100e-18;//params->get_optional_time_param("timestamp_resolution", 100e-18);
   TimeDelta::initStamps(100);
 
   sprockit::SimParameters::ptr top_params = params->getNamespace("topology");

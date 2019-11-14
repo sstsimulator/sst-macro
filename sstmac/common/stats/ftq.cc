@@ -61,6 +61,8 @@ namespace sstmac {
 
 static sstmac::FTQTag inactive("Inactive", 1);
 
+// TODOWARNING
+#if 0
 static const char* matplotlib_text_header =
     "#!/usr/bin/env python3\n"
     "\n"
@@ -140,6 +142,7 @@ static const char* matplotlib_mean_text_footer =
     "\n"
     "if args.show:\n"
     "    plt.show()\n";
+#endif
 
 
 #if !SSTMAC_INTEGRATED_SST_CORE
@@ -151,13 +154,13 @@ FTQAccumulator::FTQAccumulator(SST::BaseComponent *comp, const std::string &name
 }
 
 void
-FTQAccumulator::registerOutputFields(SST::Statistics::StatisticOutput *statOutput)
+FTQAccumulator::registerOutputFields(SST::Statistics::StatisticOutput * /*statOutput*/)
 {
   sprockit::abort("FTQAccumulator::registerOutputFields: not yet implemented");
 }
 
 void
-FTQAccumulator::outputStatisticData(SST::Statistics::StatisticOutput *statOutput, bool endOfSim)
+FTQAccumulator::outputStatisticData(SST::Statistics::StatisticOutput * /*statOutput*/, bool  /*endOfSim*/)
 {
   sprockit::abort("FTQAccumulator::outputStatisticData: not yet implemented");
 }
@@ -197,13 +200,13 @@ FTQCalendar::addData_impl(int event_typeid, uint64_t ticks_begin, uint64_t num_t
 }
 
 void
-FTQCalendar::registerOutputFields(StatisticFieldsOutput *statOutput)
+FTQCalendar::registerOutputFields(StatisticFieldsOutput * /*statOutput*/)
 {
   sprockit::abort("FTQCalendar::registerOutputFields: should never be called - ensure output is type 'ftq'");
 }
 
 void
-FTQCalendar::outputStatisticData(StatisticFieldsOutput *output, bool endOfSimFlag)
+FTQCalendar::outputStatisticData(StatisticFieldsOutput * /*output*/, bool  /*endOfSimFlag*/)
 {
   sprockit::abort("FTQCalendar::outputStatisticData: should never be called - ensure output is type 'ftq'");
 }
@@ -239,7 +242,7 @@ FTQOutput::startOutputGroup(StatisticGroup *grp)
 }
 
 void
-FTQOutput::output(StatisticBase *statistic, bool endOfSimFlag)
+FTQOutput::output(StatisticBase *statistic, bool  /*endOfSimFlag*/)
 {
   FTQCalendar* calendar = dynamic_cast<FTQCalendar*>(statistic);
   if (!calendar){

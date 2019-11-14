@@ -95,12 +95,12 @@ class FileTopology : public Topology
     return num_leaf_switches_;
   }
 
-  int minimalDistance(SwitchId src, SwitchId dst) const {
+  int minimalDistance(SwitchId  /*src*/, SwitchId  /*dst*/) const {
     spkt_abort_printf("minimalDistance() not implemented");
     return 0;
   }
 
-  int numHopsToNode(NodeId src, NodeId dst) const override {
+  int numHopsToNode(NodeId  /*src*/, NodeId  /*dst*/) const override {
     // extremely approximate
     return num_hops_;
   }

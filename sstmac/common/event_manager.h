@@ -183,7 +183,7 @@ class EventManager
 
   void registerStatisticCore(StatisticBase* base, SST::Params& params);
 
-  virtual EventManager* threadManager(int thr) const {
+  virtual EventManager* threadManager(int  /*thr*/) const {
     return const_cast<EventManager*>(this);
   }
 

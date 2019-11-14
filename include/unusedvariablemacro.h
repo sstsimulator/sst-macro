@@ -42,94 +42,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sstmac/software/process/operating_system.h>
-#include <sstmac/software/process/thread.h>
-#include <sstmac/software/process/app.h>
-#include <sstmac/software/libraries/compute/lib_compute_memmove.h>
-#include <sstmac/software/api/api.h>
-#include <sstmac/hardware/common/flow.h>
-#include <sstmac/common/sstmac_env.h>
-#include <sstmac/common/thread_lock.h>
-#include <sprockit/sim_parameters.h>
-#include <sprockit/keyword_registration.h>
+#ifndef include_unusedvariablemacro_h
+#define include_unusedvariablemacro_h
 
-namespace sstmac {
-namespace sw {
+#if __cplusplus >= 201703L
+  #define SSTMAC_MAYBE_UNUSED [[maybe_unused]]
+#else
+  #define SSTMAC_MAYBE_UNUSED __attribute__((unused))
+#endif
 
-static thread_lock the_api_lock;
-
-void
-apiLock() {
-  the_api_lock.lock();
-}
-
-void
-apiUnlock() {
-  the_api_lock.unlock();
-}
-
-API::~API()
-{
-}
-
-sstmac::sw::SoftwareId
-API::sid() const {
-  return parent_->sid();
-}
-
-sstmac::NodeId
-API::addr() const {
-  return parent_->os()->addr();
-}
-
-Thread*
-API::activeThread()
-{
-  return parent_->os()->activeThread();
-}
-
-void
-API::startAPICall()
-{
-  if (host_timer_){
-    host_timer_->start();
-  }
-  activeThread()->startAPICall();
-}
-void
-API::endAPICall()
-{
-  if (host_timer_) {
-    double time = host_timer_->stamp();
-    parent_->compute(TimeDelta(time));
-  }
-  activeThread()->endAPICall();
-}
-
-Timestamp
-API::now() const 
-{
-  return parent_->os()->now();
-}
-
-void
-API::schedule(Timestamp t, ExecutionEvent* ev)
-{
-  parent_->os()->sendExecutionEvent(t, ev);
-}
-
-void
-API::scheduleDelay(TimeDelta t, ExecutionEvent* ev)
-{
-  parent_->os()->sendDelayedExecutionEvent(t, ev);
-}
-
-API::API(SST::Params & /*params*/, App *parent, SST::Component*  /*comp*/) :
-  host_timer_(nullptr),
-  parent_(parent)
-{
-  //host_timer_(new HostTimer)
-}
-
-}
-}
+#endif // include_unusedvariablemacro_h

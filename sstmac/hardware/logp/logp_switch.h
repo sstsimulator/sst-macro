@@ -98,7 +98,7 @@ class LogPSwitch : public ConnectableComponent
     return "LogP switch";
   }
 
-  void connectOutput(int src_outport, int dst_inport, EventLink::ptr&& payload_link) override {
+  void connectOutput(int src_outport, int  /*dst_inport*/, EventLink::ptr&& payload_link) override {
     nic_links_[src_outport] = std::move(payload_link);
   }
 
@@ -106,11 +106,11 @@ class LogPSwitch : public ConnectableComponent
     //do nothing
   }
 
-  LinkHandler* payloadHandler(int port) override {
+  LinkHandler* payloadHandler(int  /*port*/) override {
     return newLinkHandler(this, &LogPSwitch::sendEvent);
   }
 
-  LinkHandler* creditHandler(int port) override {
+  LinkHandler* creditHandler(int  /*port*/) override {
     return newLinkHandler(this, &LogPSwitch::dropEvent);
   }
 

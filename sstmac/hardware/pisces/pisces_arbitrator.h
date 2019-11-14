@@ -157,7 +157,7 @@ class PiscesSimpleArbitrator :
     return "pisces simple arbitrator";
   }
 
-  TimeDelta headTailDelay(PiscesPacket *pkt) override {
+  TimeDelta headTailDelay(PiscesPacket * /*pkt*/) override {
     //no delay
     return TimeDelta();
   }

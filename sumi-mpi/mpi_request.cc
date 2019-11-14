@@ -48,8 +48,11 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sumi {
 
 CollectiveOpBase::CollectiveOpBase(MpiComm* cm) :
-  comm(cm), packed_send(false), packed_recv(false),
-  tag(cm->nextCollectiveTag()), complete(false)
+  packed_send(false), 
+  packed_recv(false),
+  tag(cm->nextCollectiveTag()), 
+  comm(cm), 
+  complete(false)
 {
 }
 

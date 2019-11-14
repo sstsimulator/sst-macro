@@ -104,13 +104,14 @@ class CallGraphIncrementStack
 }
 }
 
+#include <unusedvariablemacro.h>
 #if SSTMAC_HAVE_CALL_GRAPH
 #define CallGraphAppend(name) \
   struct graph_viz_##name : public sstmac::sw::CallGraphID<graph_viz_##name> {}; \
   static sstmac::sw::CallGraphRegistration __call_graph_register_variable__(#name, graph_viz_##name::id); \
   ::sstmac::sw::CallGraphIncrementStack __call_graph_append_variable__(graph_viz_##name::id)
 #else
-#define CallGraphAppend(...) int __call_graph_append_variable__
+#define CallGraphAppend(...) SSTMAC_MAYBE_UNUSED int __call_graph_append_variable__
 #endif
 
 #endif

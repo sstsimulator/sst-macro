@@ -48,7 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/compute.h>
 #include <sstmac/util.h>
 
-int USER_MAIN(int argc, char** argv)
+int USER_MAIN(int  /*argc*/, char**  /*argv*/)
 {
   std::vector<int> sizes = {4096, 16000, 64000, 1000000};
   for (auto sz : sizes){

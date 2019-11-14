@@ -98,13 +98,13 @@ SculpinNIC::payloadHandler(int port)
 }
 
 LinkHandler*
-SculpinNIC::creditHandler(int port)
+SculpinNIC::creditHandler(int  /*port*/)
 {
   return newLinkHandler(this, &SculpinNIC::handleCredit);
 }
 
 void
-SculpinNIC::connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link)
+SculpinNIC::connectOutput(int src_outport, int  /*dst_inport*/, EventLink::ptr&& link)
 {
   if (src_outport == Injection){
     inj_link_ = std::move(link);
@@ -202,7 +202,7 @@ SculpinNIC::handlePayload(Event *ev)
 }
 
 void
-SculpinNIC::handleCredit(Event *ev)
+SculpinNIC::handleCredit(Event * /*ev*/)
 {
   spkt_abort_printf("SculpinNIC::handleCredit: should not handle credits in sculpin model");
 }

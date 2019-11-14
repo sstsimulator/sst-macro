@@ -66,8 +66,8 @@ namespace sstmac {
 namespace hw {
 
 PiscesAbstractSwitch::PiscesAbstractSwitch(uint32_t id, SST::Params& params) :
-  router_(nullptr),
-  NetworkSwitch(id, params)
+  NetworkSwitch(id, params),
+  router_(nullptr)
 {
   SST::Params rtr_params = params.find_scoped_params("router");
   rtr_params.insert("id", std::to_string(my_addr_));
@@ -193,7 +193,7 @@ PiscesSwitch::InputPort::handle(Event *ev)
 }
 
 void
-PiscesSwitch::connectInput(int src_outport, int dst_inport, EventLink::ptr&& link)
+PiscesSwitch::connectInput(int  /*src_outport*/, int dst_inport, EventLink::ptr&& link)
 {
   int buffer_port = 0;
   xbar_->setInput(dst_inport, buffer_port, std::move(link));
