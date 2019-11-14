@@ -160,7 +160,7 @@ SculpinSwitch::connectInput(int src_outport, int dst_inport, EventLink::ptr&& li
 }
 
 int
-SculpinSwitch::queueLength(int port, int vc) const
+SculpinSwitch::queueLength(int port, int  /*vc*/) const
 {
   auto& p = ports_[port];
   //VC basically ignored, all ports on "same" VC
@@ -168,7 +168,7 @@ SculpinSwitch::queueLength(int port, int vc) const
 }
 
 void
-SculpinSwitch::handleCredit(Event *ev)
+SculpinSwitch::handleCredit(Event * /*ev*/)
 {
   spkt_abort_printf("SculpinSwitch::handleCredit: should never be called");
 }
@@ -331,13 +331,13 @@ SculpinSwitch::toString() const
 }
 
 LinkHandler*
-SculpinSwitch::creditHandler(int port)
+SculpinSwitch::creditHandler(int  /*port*/)
 {
   return newLinkHandler(this, &SculpinSwitch::handleCredit);
 }
 
 LinkHandler*
-SculpinSwitch::payloadHandler(int port)
+SculpinSwitch::payloadHandler(int  /*port*/)
 {
   return newLinkHandler(this, &SculpinSwitch::handlePayload);
 }

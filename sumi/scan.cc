@@ -149,7 +149,7 @@ SimultaneousBtreeScanActor::bufferAction(void *dst_buffer, void *msg_buffer, Act
 }
 
 void
-SimultaneousBtreeScanActor::startShuffle(Action *ac)
+SimultaneousBtreeScanActor::startShuffle(Action * /*ac*/)
 {
   int size = type_size_ * nelems_;
   ::memcpy(send_buffer_, result_buffer_, size);

@@ -81,13 +81,13 @@ SerialRuntime::allgather(void *send_buffer, int num_bytes, void *recv_buffer)
 }
 
 void
-SerialRuntime::send(int dst, void *buffer, int buffer_size)
+SerialRuntime::send(int  /*dst*/, void * /*buffer*/, int  /*buffer_size*/)
 {
   sprockit::abort("serial_runtime::send: should never be called - who would I send to?");
 }
 
 void
-SerialRuntime::recv(int src, void *buffer, int buffer_size)
+SerialRuntime::recv(int  /*src*/, void * /*buffer*/, int  /*buffer_size*/)
 {
   sprockit::abort("serial_runtime::recv: should never be called - who would I recv from?");
 }

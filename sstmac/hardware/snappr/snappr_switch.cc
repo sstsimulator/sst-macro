@@ -164,7 +164,7 @@ SnapprSwitch::connectInput(int src_outport, int dst_inport, EventLink::ptr&& lin
 }
 
 int
-SnapprSwitch::queueLength(int port, int vc) const
+SnapprSwitch::queueLength(int port, int  /*vc*/) const
 {
   auto& p = outports_[port];
   //VC basically ignored, all ports on "same" VC

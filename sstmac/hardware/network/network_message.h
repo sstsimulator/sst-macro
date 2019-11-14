@@ -94,7 +94,7 @@ class NetworkMessage : public Flow
    uint64_t size,
    bool needs_ack,
    void* buf,
-   header ctor_tag) :
+   header  /*ctor_tag*/) :
     NetworkMessage(qos, flow_id, libname, aid, to, from,
                     size, size, needs_ack, nullptr, nullptr, buf,
                     payload)
@@ -112,7 +112,7 @@ class NetworkMessage : public Flow
    bool needs_ack,
    void* local_buf,
    void* remote_buf,
-   rdma_get ctor_tag) :
+   rdma_get  /*ctor_tag*/) :
     NetworkMessage(qos, flow_id, libname, aid, to, from,
                     64/*default to 64 bytes for now*/,
                     payload_size, needs_ack, local_buf, remote_buf, nullptr,
@@ -131,7 +131,7 @@ class NetworkMessage : public Flow
    bool needs_ack,
    void* local_buf,
    void* remote_buf,
-   rdma_put ctor_tag) :
+   rdma_put  /*ctor_tag*/) :
     NetworkMessage(qos, flow_id, libname, aid, to, from,
                     payload_size, payload_size, needs_ack, local_buf, remote_buf, nullptr,
                     rdma_put_payload)

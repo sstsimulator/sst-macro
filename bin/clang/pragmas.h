@@ -150,11 +150,11 @@ struct SSTPragma {
    * @param d tag parameter, whether declarations should be visited first pass
    * @return
    */
-  virtual bool firstPass(const clang::Decl* d) const {
+  virtual bool firstPass(const clang::Decl*  /*d*/) const {
     return false;
   }
 
-  virtual bool firstPass(const clang::Stmt* s) const {
+  virtual bool firstPass(const clang::Stmt*  /*s*/) const {
     return false;
   }
 
@@ -353,8 +353,8 @@ class SSTPragmaHandlerInstance : public SSTPragmaHandler
 
 template <class T> struct SSTNoArgsPragmaShim : public T
 {
-  SSTNoArgsPragmaShim(clang::SourceLocation loc, clang::CompilerInstance& CI,
-                  const std::list<clang::Token>& tokens) :
+  SSTNoArgsPragmaShim(clang::SourceLocation  /*loc*/, clang::CompilerInstance&  /*CI*/,
+                  const std::list<clang::Token>&  /*tokens*/) :
     T() {
       this->classId = pragmaID<T>();
     }
@@ -363,7 +363,7 @@ template <class T> struct SSTNoArgsPragmaShim : public T
 template <class T> struct SSTStringPragmaShim : public T
 {
   using T::getSingleString;
-  SSTStringPragmaShim(clang::SourceLocation loc, clang::CompilerInstance& CI,
+  SSTStringPragmaShim(clang::SourceLocation  /*loc*/, clang::CompilerInstance& CI,
                   const std::list<clang::Token>& tokens) :
     T(getSingleString(tokens,CI)) //just a single string gets passed up
   {
@@ -554,7 +554,7 @@ class SSTNullVariablePragma : public SSTPragma {
     return ret;
   }
 
-  bool firstPass(const clang::Decl* d) const override {
+  bool firstPass(const clang::Decl*  /*d*/) const override {
     return true;
   }
 
@@ -654,14 +654,14 @@ class SSTNullVariableStopPragma : public SSTPragma {
  public:
   SSTNullVariableStopPragma(){}
 
-  void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg) override {
+  void activate(clang::Stmt*  /*s*/, clang::Rewriter&  /*r*/, PragmaConfig& cfg) override {
     cfg.nullifyDeclarationsPragma = nullptr;
   }
 };
 
 class SSTNullVariableGeneratorPragma : public SSTPragma {
  public:
-  SSTNullVariableGeneratorPragma(clang::SourceLocation loc, clang::CompilerInstance& CI,
+  SSTNullVariableGeneratorPragma(clang::SourceLocation  /*loc*/, clang::CompilerInstance&  /*CI*/,
                         const std::list<clang::Token>& tokens) :
     tokens_(tokens)
   {
@@ -671,7 +671,7 @@ class SSTNullVariableGeneratorPragma : public SSTPragma {
     return new SSTNullVariablePragma(getStart(d), CI, tokens_);
   }
 
-  void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg) override {
+  void activate(clang::Stmt*  /*s*/, clang::Rewriter&  /*r*/, PragmaConfig& cfg) override {
     cfg.nullifyDeclarationsPragma = this;
   }
 
@@ -824,7 +824,7 @@ class SSTNonnullFieldsPragma : public SSTNullVariablePragma {
  private:
   void activate(clang::Stmt *stmt, clang::Rewriter &r, PragmaConfig& cfg) override;
   void activate(clang::Decl* d, clang::Rewriter &r, PragmaConfig& cfg) override;
-  bool firstPass(const clang::Decl* d) const override { return false; }
+  bool firstPass(const clang::Decl*  /*d*/) const override { return false; }
   std::set<std::string> nonnullFields_;
 
 };
@@ -835,7 +835,7 @@ class SSTNullFieldsPragma : public SSTNullVariablePragma {
                       const std::list<clang::Token>& tokens);
 
  private:
-  bool firstPass(const clang::Decl* d) const override { return false; }
+  bool firstPass(const clang::Decl*  /*d*/) const override { return false; }
   void activate(clang::Stmt *stmt, clang::Rewriter &r, PragmaConfig& cfg) override;
   void activate(clang::Decl* d, clang::Rewriter &r, PragmaConfig& cfg) override;
 

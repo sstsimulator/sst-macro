@@ -48,61 +48,61 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sumi {
 
 int
-MpiApi::winFlush(int rank, MPI_Win win)
+MpiApi::winFlush(int  /*rank*/, MPI_Win  /*win*/)
 {
   spkt_abort_printf("unimplemented error: MPI_Win_flush");
   return MPI_SUCCESS;
 }
 
 int
-MpiApi::winFlushLocal(int rank, MPI_Win win)
+MpiApi::winFlushLocal(int  /*rank*/, MPI_Win  /*win*/)
 {
   spkt_abort_printf("unimplemented error: MPI_Win_flush_local");
   return MPI_SUCCESS;
 }
 
 int
-MpiApi::winCreate(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
-               MPI_Comm comm, MPI_Win *win)
+MpiApi::winCreate(void * /*base*/, MPI_Aint  /*size*/, int  /*disp_unit*/, MPI_Info  /*info*/,
+               MPI_Comm  /*comm*/, MPI_Win * /*win*/)
 {
   spkt_abort_printf("unimplemented error: MPI_Win_flush_local");
   return MPI_SUCCESS;
 }
 
 int
-MpiApi::winFree(MPI_Win *win)
+MpiApi::winFree(MPI_Win * /*win*/)
 {
   spkt_abort_printf("unimplemented error: MPI_Win_flush_local");
   return MPI_SUCCESS;
 }
 
 int
-MpiApi::winLock(int lock_type, int rank, int assert, MPI_Win win)
+MpiApi::winLock(int  /*lock_type*/, int  /*rank*/, int  /*assert*/, MPI_Win  /*win*/)
 {
   spkt_abort_printf("unimplemented error: MPI_Win_flush_local");
   return MPI_SUCCESS;
 }
 
 int
-MpiApi::winUnlock(int rank, MPI_Win win)
+MpiApi::winUnlock(int  /*rank*/, MPI_Win  /*win*/)
 {
   spkt_abort_printf("unimplemented error: MPI_Win_flush_local");
   return MPI_SUCCESS;
 }
 
 int
-MpiApi::get(void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
-             int target_rank, MPI_Aint target_disp, int target_count, MPI_Datatype target_datatype,
-             MPI_Win win)
+MpiApi::get(void * /*origin_addr*/, int  /*origin_count*/, MPI_Datatype  /*origin_datatype*/,
+             int  /*target_rank*/, MPI_Aint  /*target_disp*/, int  /*target_count*/, MPI_Datatype  /*target_datatype*/,
+             MPI_Win  /*win*/)
 {
   spkt_abort_printf("unimplemented error: MPI_Get");
   return MPI_SUCCESS;
 }
 
 int
-MpiApi::put(const void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
-             int target_rank, MPI_Aint target_disp, int target_count, MPI_Datatype target_datatype,
-             MPI_Win win)
+MpiApi::put(const void * /*origin_addr*/, int  /*origin_count*/, MPI_Datatype  /*origin_datatype*/,
+             int  /*target_rank*/, MPI_Aint  /*target_disp*/, int  /*target_count*/, MPI_Datatype  /*target_datatype*/,
+             MPI_Win  /*win*/)
 {
   spkt_abort_printf("unimplemented error: MPI_Put");
   return MPI_SUCCESS;

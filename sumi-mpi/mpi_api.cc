@@ -204,7 +204,7 @@ MpiApi::~MpiApi()
 }
 
 int
-MpiApi::abort(MPI_Comm comm, int errcode)
+MpiApi::abort(MPI_Comm  /*comm*/, int errcode)
 {
 
   spkt_throw_printf(sprockit::ValueError,
@@ -220,7 +220,7 @@ MpiApi::commRank(MPI_Comm comm, int *rank)
 }
 
 int
-MpiApi::init(int* argc, char*** argv)
+MpiApi::init(int*  /*argc*/, char***  /*argv*/)
 {
 #ifdef SSTMAC_OTF2_ENABLED
   auto start_clock = traceClock();
@@ -330,7 +330,7 @@ MpiApi::wtime()
 }
 
 int
-MpiApi::getCount(const MPI_Status *status, MPI_Datatype datatype, int *count)
+MpiApi::getCount(const MPI_Status *status, MPI_Datatype  /*datatype*/, int *count)
 {
   // TODOWARNING auto call_start_time = (uint64_t)now().usec();
   *count = status->count;
@@ -581,7 +581,7 @@ MpiApi::checkKey(int key)
 
 
 int
-MpiApi::errorString(int errorcode, char *str, int *resultlen)
+MpiApi::errorString(int  /*errorcode*/, char *str, int *resultlen)
 {
   static const char* errorstr = "mpi error";
   *resultlen = ::strlen(errorstr);

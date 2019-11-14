@@ -49,28 +49,28 @@ Questions? Contact sst-macro-help@sandia.gov
 
 /* Set scheduling parameters for a process.  */
 extern "C" int
-SSTMAC_sched_setparam (pid_t pid, const struct sstmac_sched_param *param){
+SSTMAC_sched_setparam (pid_t  /*pid*/, const struct sstmac_sched_param * /*param*/){
   sprockit::abort("sched_setparam: not implemented");
   return 0;
 }
 
 /* Retrieve scheduling parameters for a particular process.  */
 extern "C" int
-SSTMAC_sched_getparam (pid_t pid, struct sstmac_sched_param *param){
+SSTMAC_sched_getparam (pid_t  /*pid*/, struct sstmac_sched_param * /*param*/){
   sprockit::abort("sched_getparam: not implemented");
   return 0;
 }
 
 /* Set scheduling algorithm and/or parameters for a process.  */
 extern "C" int
-SSTMAC_sched_setscheduler (pid_t pid, int policy,  const struct sstmac_sched_param *param){
+SSTMAC_sched_setscheduler (pid_t  /*pid*/, int  /*policy*/,  const struct sstmac_sched_param * /*param*/){
   sprockit::abort("sched_setscheduler: not implemented");
   return 0;
 }
 
 /* Retrieve scheduling algorithm for a particular purpose.  */
 extern "C" int
-SSTMAC_sched_getscheduler (pid_t pid){
+SSTMAC_sched_getscheduler (pid_t  /*pid*/){
   sprockit::abort("sched_getscheduler: not implemented");
   return 0;
 }
@@ -85,7 +85,7 @@ SSTMAC_sched_yield (void){
 
 /* Get the SCHED_RR interval for the named process.  */
 extern "C" int
-SSTMAC_sched_rr_get_interval (pid_t pid, struct timespec *t){
+SSTMAC_sched_rr_get_interval (pid_t  /*pid*/, struct timespec * /*t*/){
   sprockit::abort("sched_rr_get_interval: not implemented");
   return 0;
 }
@@ -107,7 +107,7 @@ SSTMAC_CPU_CLR_S (int cpu, size_t setsize, sstmac_cpu_set_t* cpusetp){
 }
 
 extern "C" int
-SSTMAC_CPU_ISSET_S (int cpu, size_t setsize, sstmac_cpu_set_t* cpusetp){
+SSTMAC_CPU_ISSET_S (int cpu, size_t  /*setsize*/, sstmac_cpu_set_t* cpusetp){
   return cpusetp->cpubits & (1<<cpu);
 }
 
@@ -131,27 +131,27 @@ SSTMAC_count_bits(sstmac_cpu_set_t* cpusetp){
 }
 
 extern "C" int
-SSTMAC_CPU_COUNT_S (size_t setsize, sstmac_cpu_set_t* cpusetp){
+SSTMAC_CPU_COUNT_S (size_t  /*setsize*/, sstmac_cpu_set_t* cpusetp){
   return SSTMAC_count_bits(cpusetp);
 }
 
 extern "C" int
-SSTMAC_CPU_EQUAL_S(size_t setsize, sstmac_cpu_set_t* cpusetp1, sstmac_cpu_set_t* cpusetp2){
+SSTMAC_CPU_EQUAL_S(size_t  /*setsize*/, sstmac_cpu_set_t* cpusetp1, sstmac_cpu_set_t*  /*cpusetp2*/){
   return cpusetp1->cpubits == cpusetp1->cpubits;
 }
 
 extern "C" void
-SSTMAC_CPU_AND_S(size_t setsize, sstmac_cpu_set_t* destset, sstmac_cpu_set_t* srcset1, sstmac_cpu_set_t* srcset2){
+SSTMAC_CPU_AND_S(size_t  /*setsize*/, sstmac_cpu_set_t* destset, sstmac_cpu_set_t* srcset1, sstmac_cpu_set_t* srcset2){
   destset->cpubits = srcset1->cpubits & srcset2->cpubits;
 }
 
 extern "C" void
-SSTMAC_CPU_OR_S(size_t setsize, sstmac_cpu_set_t* destset, sstmac_cpu_set_t* srcset1, sstmac_cpu_set_t* srcset2){
+SSTMAC_CPU_OR_S(size_t  /*setsize*/, sstmac_cpu_set_t* destset, sstmac_cpu_set_t* srcset1, sstmac_cpu_set_t* srcset2){
   destset->cpubits = srcset1->cpubits | srcset2->cpubits;
 }
 
 extern "C" void
-SSTMAC_CPU_XOR_S(size_t setsize, sstmac_cpu_set_t* destset, sstmac_cpu_set_t* srcset1, sstmac_cpu_set_t* srcset2){
+SSTMAC_CPU_XOR_S(size_t  /*setsize*/, sstmac_cpu_set_t* destset, sstmac_cpu_set_t* srcset1, sstmac_cpu_set_t* srcset2){
   destset->cpubits = srcset1->cpubits ^ srcset2->cpubits;
 }
 
@@ -170,7 +170,7 @@ void SSTMAC_CPU_FREE(sstmac_cpu_set_t* cpuset){
 
 /* Set the CPU affinity for a task */
 extern "C" int
-SSTMAC_sched_setaffinity (pid_t pid, size_t cpusetsize, const sstmac_cpu_set_t *cpuset){
+SSTMAC_sched_setaffinity (pid_t  /*pid*/, size_t  /*cpusetsize*/, const sstmac_cpu_set_t *cpuset){
   sstmac::sw::OperatingSystem* os = sstmac::sw::OperatingSystem::currentOs();
   sstmac::sw::Thread* t = os->activeThread();
   t->setCpumask(cpuset->cpubits);
@@ -185,7 +185,7 @@ SSTMAC_sched_setaffinity (pid_t pid, size_t cpusetsize, const sstmac_cpu_set_t *
 
 /* Get the CPU affinity for a task */
 extern "C" int
-SSTMAC_sched_getaffinity (pid_t pid, size_t cpusetsize, sstmac_cpu_set_t *cpuset){
+SSTMAC_sched_getaffinity (pid_t  /*pid*/, size_t  /*cpusetsize*/, sstmac_cpu_set_t *cpuset){
   sstmac::sw::Thread* t = sstmac::sw::OperatingSystem::currentThread();
   cpuset->cpubits = t->cpumask();
   return 0;

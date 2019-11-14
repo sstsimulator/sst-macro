@@ -113,7 +113,7 @@ SSTMAC_pthread_yield()
 }
 
 extern "C" void
-SSTMAC_pthread_exit(void *retval)
+SSTMAC_pthread_exit(void * /*retval*/)
 {
   pthread_debug("pthread_exit");
   Thread* current = currentThread();
@@ -121,7 +121,7 @@ SSTMAC_pthread_exit(void *retval)
 }
 
 extern "C" int
-SSTMAC_pthread_kill(sstmac_pthread_t thread, int sig)
+SSTMAC_pthread_kill(sstmac_pthread_t  /*thread*/, int  /*sig*/)
 {
   sprockit::abort("pthread_kill: not implemented");
   return -1;
@@ -132,7 +132,7 @@ SSTMAC_pthread_kill(sstmac_pthread_t thread, int sig)
  *      - status currently not set, don't use it
  */
 extern "C" int
-SSTMAC_pthread_join(sstmac_pthread_t pthread, void ** status)
+SSTMAC_pthread_join(sstmac_pthread_t pthread, void **  /*status*/)
 {
   pthread_debug("pthread_join");
   Thread* current_thr = currentThread();
@@ -180,14 +180,14 @@ SSTMAC_pthread_equal(sstmac_pthread_t thread_1, sstmac_pthread_t thread_2)
 }
 
 extern "C" int
-SSTMAC_pthread_mutexattr_gettype(const sstmac_pthread_mutexattr_t* attr, int* type)
+SSTMAC_pthread_mutexattr_gettype(const sstmac_pthread_mutexattr_t*  /*attr*/, int* type)
 {
   *type = SSTMAC_PTHREAD_MUTEX_NORMAL;
   return 0;
 }
 
 extern "C" int
-SSTMAC_pthread_mutexattr_settype(sstmac_pthread_mutexattr_t *attr, int type)
+SSTMAC_pthread_mutexattr_settype(sstmac_pthread_mutexattr_t * /*attr*/, int type)
 {
   if (type == SSTMAC_PTHREAD_MUTEX_NORMAL){
     return 0;
@@ -197,7 +197,7 @@ SSTMAC_pthread_mutexattr_settype(sstmac_pthread_mutexattr_t *attr, int type)
 }
 
 extern "C" int
-SSTMAC_pthread_spin_init(sstmac_pthread_spinlock_t* lock, int pshared)
+SSTMAC_pthread_spin_init(sstmac_pthread_spinlock_t* lock, int  /*pshared*/)
 
 {
   return SSTMAC_pthread_mutex_init(lock, NULL);  
@@ -205,7 +205,7 @@ SSTMAC_pthread_spin_init(sstmac_pthread_spinlock_t* lock, int pshared)
 
 extern "C" int
 SSTMAC_pthread_mutex_init(sstmac_pthread_mutex_t * mutex,
-                          const sstmac_pthread_mutexattr_t *attr)
+                          const sstmac_pthread_mutexattr_t * /*attr*/)
 {
   pthread_debug("pthread_mutex_init");
   Thread* thr = currentThread();
@@ -360,14 +360,14 @@ class UnblockEvent : public ExecutionEvent
 
 
 extern "C" int
-SSTMAC_pthread_mutexattr_init(sstmac_pthread_mutexattr_t *attr)
+SSTMAC_pthread_mutexattr_init(sstmac_pthread_mutexattr_t * /*attr*/)
 {
   pthread_debug("pthread_mutexattr_init");
   return 0; //no op for now
 }
 
 extern "C" int
-SSTMAC_pthread_mutexattr_destroy(sstmac_pthread_mutexattr_t *attr)
+SSTMAC_pthread_mutexattr_destroy(sstmac_pthread_mutexattr_t * /*attr*/)
 {
   pthread_debug("pthread_mutexattr_destroy");
   return 0; //no op for now
@@ -375,7 +375,7 @@ SSTMAC_pthread_mutexattr_destroy(sstmac_pthread_mutexattr_t *attr)
 
 extern "C" int
 SSTMAC_pthread_cond_init(sstmac_pthread_cond_t * cond,
-                         const sstmac_pthread_condattr_t *attr)
+                         const sstmac_pthread_condattr_t * /*attr*/)
 {
   pthread_debug("pthread_cond_init");  
   //just intialize it
@@ -500,7 +500,7 @@ SSTMAC_pthread_cond_signal(sstmac_pthread_cond_t * cond)
 }
 
 extern "C" int
-SSTMAC_pthread_cond_broadcast(sstmac_pthread_cond_t * cond)
+SSTMAC_pthread_cond_broadcast(sstmac_pthread_cond_t *  /*cond*/)
 {
   pthread_debug("pthread_cond_broadcast");  
   spkt_throw_printf(sprockit::UnimplementedError,
@@ -508,14 +508,14 @@ SSTMAC_pthread_cond_broadcast(sstmac_pthread_cond_t * cond)
 }
 
 extern "C" int
-SSTMAC_pthread_condattr_getpshared(const sstmac_pthread_condattr_t* attr, int* pshared)
+SSTMAC_pthread_condattr_getpshared(const sstmac_pthread_condattr_t*  /*attr*/, int* pshared)
 {
   *pshared = SSTMAC_PTHREAD_PROCESS_PRIVATE;
   return 0;
 }
 
 extern "C" int
-SSTMAC_pthread_condattr_setpshared(sstmac_pthread_condattr_t* attr, int pshared)
+SSTMAC_pthread_condattr_setpshared(sstmac_pthread_condattr_t*  /*attr*/, int pshared)
 {
   if (pshared != SSTMAC_PTHREAD_PROCESS_PRIVATE){
     sprockit::abort("SST does not yet support PTHREAD_PROCESS_SHARED condition");
@@ -583,13 +583,13 @@ SSTMAC_pthread_getspecific(sstmac_pthread_key_t key)
 }
 
 extern "C" void
-SSTMAC_pthread_cleanup_pop(int execute)
+SSTMAC_pthread_cleanup_pop(int  /*execute*/)
 {
   sprockit::abort("not implemented: pthread_cleanup_pop");
 }
 
 extern "C" void
-SSTMAC_pthread_cleanup_push(void (*routine)(void*), void* arg)
+SSTMAC_pthread_cleanup_push(void (* /*routine*/)(void*), void*  /*arg*/)
 {
   sprockit::abort("not implemented: pthread_cleanup_push");
 }
@@ -606,27 +606,27 @@ SSTMAC_pthread_attr_init(sstmac_pthread_attr_t *attr)
 }
 
 extern "C" int
-SSTMAC_pthread_attr_destroy(sstmac_pthread_attr_t *attr)
+SSTMAC_pthread_attr_destroy(sstmac_pthread_attr_t * /*attr*/)
 {
   return 0; //no op for now
 }
 
 extern "C" int
-SSTMAC_pthread_attr_setaffinity_np(sstmac_pthread_attr_t *attr, size_t cpusetsize, const sstmac_cpu_set_t *cpuset)
+SSTMAC_pthread_attr_setaffinity_np(sstmac_pthread_attr_t *attr, size_t  /*cpusetsize*/, const sstmac_cpu_set_t *cpuset)
 {
   attr->cpumask = cpuset->cpubits;
   return 0;
 }
 
 extern "C" int
-SSTMAC_pthread_attr_getaffinity_np(sstmac_pthread_attr_t attr, size_t cpusetsize, sstmac_cpu_set_t *cpuset)
+SSTMAC_pthread_attr_getaffinity_np(sstmac_pthread_attr_t attr, size_t  /*cpusetsize*/, sstmac_cpu_set_t *cpuset)
 {
   cpuset->cpubits = attr.cpumask;
   return 0;
 }
 
 extern "C" int
-SSTMAC_pthread_attr_getstack(sstmac_pthread_attr_t *attr, void **stack, size_t *stacksize)
+SSTMAC_pthread_attr_getstack(sstmac_pthread_attr_t * /*attr*/, void **stack, size_t *stacksize)
 {
   *stack = nullptr;
   *stacksize = sstmac::sw::OperatingSystem::stacksize();
@@ -634,15 +634,15 @@ SSTMAC_pthread_attr_getstack(sstmac_pthread_attr_t *attr, void **stack, size_t *
 }
 
 extern "C" int
-SSTMAC_pthread_attr_getstacksize(sstmac_pthread_attr_t *attr,
-                                 size_t * stacksize)
+SSTMAC_pthread_attr_getstacksize(sstmac_pthread_attr_t * /*attr*/,
+                                 size_t *  /*stacksize*/)
 {
   spkt_throw_printf(sprockit::UnimplementedError,
                    "pthread::pthread_attr_getstacksize not implemented");
 }
 
 extern "C" int
-SSTMAC_pthread_attr_setstacksize(sstmac_pthread_attr_t *attr, size_t stacksize)
+SSTMAC_pthread_attr_setstacksize(sstmac_pthread_attr_t * /*attr*/, size_t  /*stacksize*/)
 {
   return EPERM;
   spkt_throw_printf(sprockit::UnimplementedError,
@@ -691,56 +691,56 @@ SSTMAC_pthread_detach(sstmac_pthread_t thr)
 }
 
 extern "C" int
-SSTMAC_pthread_rwlock_rdlock(sstmac_pthread_rwlock_t *rwlock)
+SSTMAC_pthread_rwlock_rdlock(sstmac_pthread_rwlock_t * /*rwlock*/)
 {
   return 0;
 }
 
 extern "C" int
-SSTMAC_pthread_rwlock_tryrdlock(sstmac_pthread_rwlock_t *rwlock)
+SSTMAC_pthread_rwlock_tryrdlock(sstmac_pthread_rwlock_t * /*rwlock*/)
 {
   return 0;
 }
 
 extern "C" int
-SSTMAC_pthread_rwlock_wrlock(sstmac_pthread_rwlock_t *rwlock)
+SSTMAC_pthread_rwlock_wrlock(sstmac_pthread_rwlock_t * /*rwlock*/)
 {
   return 0;
 }
 
 extern "C" int
-SSTMAC_pthread_rwlock_trywrlock(sstmac_pthread_rwlock_t *rwlock)
+SSTMAC_pthread_rwlock_trywrlock(sstmac_pthread_rwlock_t * /*rwlock*/)
 {
   return 0;
 }
 
 extern "C" int
-SSTMAC_pthread_rwlock_destroy(sstmac_pthread_rwlock_t *rwlock)
+SSTMAC_pthread_rwlock_destroy(sstmac_pthread_rwlock_t * /*rwlock*/)
 {
   return 0;
 }
 
 extern "C" int
-SSTMAC_pthread_rwlock_init(sstmac_pthread_rwlock_t *rwlock,
-       const sstmac_pthread_rwlockattr_t *attr)
+SSTMAC_pthread_rwlock_init(sstmac_pthread_rwlock_t * /*rwlock*/,
+       const sstmac_pthread_rwlockattr_t * /*attr*/)
 {
   return 0;
 }
 
 extern "C" int
-SSTMAC_pthread_rwlock_unlock(sstmac_pthread_rwlock_t* rwlock)
+SSTMAC_pthread_rwlock_unlock(sstmac_pthread_rwlock_t*  /*rwlock*/)
 {
   return 0;
 }
 
 extern "C" int
-SSTMAC_pthread_rwlockattr_init(sstmac_pthread_rwlockattr_t *attr)
+SSTMAC_pthread_rwlockattr_init(sstmac_pthread_rwlockattr_t * /*attr*/)
 {
   return 0;
 }
 
 extern "C" int
-SSTMAC_pthread_rwlockattr_destroy(sstmac_pthread_rwlockattr_t *attr)
+SSTMAC_pthread_rwlockattr_destroy(sstmac_pthread_rwlockattr_t * /*attr*/)
 {
   return 0;
 }
@@ -761,22 +761,22 @@ SSTMAC_pthread_getconcurrency()
 }
 
 extern "C" int
-SSTMAC_pthread_atfork(void (*prepare)(void), void (*parent)(void),
-       void (*child)(void))
+SSTMAC_pthread_atfork(void (* /*prepare*/)(void), void (* /*parent*/)(void),
+       void (* /*child*/)(void))
 {
   sprockit::abort("not implemented: pthread_atfork");
   return 0;
 }
 
 extern "C" int
-SSTMAC_pthread_mutexattr_getpshared(const sstmac_pthread_mutexattr_t* attr, int* pshared)
+SSTMAC_pthread_mutexattr_getpshared(const sstmac_pthread_mutexattr_t*  /*attr*/, int* pshared)
 {
   *pshared = SSTMAC_PTHREAD_PROCESS_PRIVATE;
   return 0;
 }
 
 extern "C" int
-SSTMAC_pthread_mutexattr_setpshared(sstmac_pthread_mutexattr_t* attr, int pshared)
+SSTMAC_pthread_mutexattr_setpshared(sstmac_pthread_mutexattr_t*  /*attr*/, int pshared)
 {
   if (pshared != SSTMAC_PTHREAD_PROCESS_PRIVATE){
     sprockit::abort("SST does not yet support PTHREAD_PROCESS_SHARED mutex");

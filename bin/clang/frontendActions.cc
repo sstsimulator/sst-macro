@@ -163,14 +163,14 @@ ReplaceAction::ExecuteAction()
 
 struct PragmaPPCallback : public PPCallbacks {
 
-  void PragmaDirective(SourceLocation Loc, PragmaIntroducerKind Introducer) override {
+  void PragmaDirective(SourceLocation Loc, PragmaIntroducerKind  /*Introducer*/) override {
     SSTPragmaHandler::pragmaDirectiveLoc = Loc;
   }
 
 };
 
 void
-ReplaceAction::initPragmas(CompilerInstance& CI, pragmas::Mode m)
+ReplaceAction::initPragmas(CompilerInstance& CI, pragmas::Mode  /*m*/)
 {
   /** Need this to figure out begin location of #pragma */
   CI.getPreprocessor().addPPCallbacks(llvm::make_unique<PragmaPPCallback>());

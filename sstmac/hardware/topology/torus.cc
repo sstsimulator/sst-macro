@@ -143,7 +143,7 @@ Torus::shortestPathPositive(
 }
 
 double
-Torus::portScaleFactor(uint32_t addr, int port) const
+Torus::portScaleFactor(uint32_t  /*addr*/, int port) const
 {
   if (port >= 2*dimensions_.size()){
     //ejection port

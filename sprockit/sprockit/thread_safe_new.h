@@ -89,7 +89,7 @@ class thread_safe_new {
     return allocate(thread);
   }
 
-  static void* operator new(size_t sz, void* ptr){
+  static void* operator new(size_t  /*sz*/, void* ptr){
     return ptr;
   }
 

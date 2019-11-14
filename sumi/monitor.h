@@ -82,7 +82,7 @@ class FunctionSet {
 class ActivityMonitor
 {
  public:
-  ActivityMonitor(SST::Params& params,
+  ActivityMonitor(SST::Params&  /*params*/,
                   Transport* t) : api_(t){}
 
   virtual ~ActivityMonitor(){}

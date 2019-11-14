@@ -85,7 +85,7 @@ class FTQAccumulator : public SST::Statistics::MultiStatistic<int,uint64_t,uint6
   void registerOutputFields(SST::Statistics::StatisticOutput* statOutput) override;
   void outputStatisticData(SST::Statistics::StatisticOutput* statOutput, bool endOfSim) override;
 
-  void addData_impl(int event_typeid, uint64_t ticks_begin, uint64_t num_ticks) override {
+  void addData_impl(int event_typeid, uint64_t  /*ticks_begin*/, uint64_t num_ticks) override {
     event_counts_[event_typeid] += num_ticks;
   }
 

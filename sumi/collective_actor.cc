@@ -217,7 +217,7 @@ DagCollectiveActor::startAction(Action* ac)
 }
 
 void
-DagCollectiveActor::startShuffle(Action *ac)
+DagCollectiveActor::startShuffle(Action * /*ac*/)
 {
   spkt_throw_printf(sprockit::UnimplementedError,
     "collective %s does not shuffle data - invalid DAG",

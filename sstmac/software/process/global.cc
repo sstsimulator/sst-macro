@@ -94,7 +94,7 @@ GlobalVariableContext::registerInitFxn(int offset, std::function<void (void *)> 
 }
 
 int
-GlobalVariableContext::append(const int size, const char* name)
+GlobalVariableContext::append(const int size, const char*  /*name*/)
 {
   int offset = stackOffset;
 

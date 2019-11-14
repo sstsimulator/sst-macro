@@ -213,7 +213,7 @@ class RendezvousGet final : public RendezvousProtocol
     MpiRequest* req;
     void* original;
     void* temporary;
-    send(MpiRequest* r, void* o, void* t) :
+    send(MpiRequest* r, void*  /*o*/, void* t) :
       req(r), original(0), temporary(t){}
   };
 

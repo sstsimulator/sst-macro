@@ -152,20 +152,20 @@ extern "C" void sstmac_exit(int code)
   sstmac::sw::OperatingSystem::currentThread()->kill(code);
 }
 
-extern "C" unsigned int sstmac_alarm(unsigned int delay)
+extern "C" unsigned int sstmac_alarm(unsigned int  /*delay*/)
 {
   //for now, do nothing
   //seriously, why are you using the alarm function?
   return 0;
 }
 
-extern "C" int sstmac_on_exit(void(*fxn)(int,void*), void* arg)
+extern "C" int sstmac_on_exit(void(* /*fxn*/)(int,void*), void*  /*arg*/)
 {
   //for now, just ignore any atexit functions
   return 0;
 }
 
-extern "C" int sstmac_atexit(void (*fxn)(void))
+extern "C" int sstmac_atexit(void (* /*fxn*/)(void))
 {
   //for now, just ignore any atexit functions
   return 0;

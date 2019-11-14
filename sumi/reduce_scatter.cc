@@ -74,7 +74,7 @@ HalvingReduceScatterActor::initDag()
 }
 
 bool
-HalvingReduceScatterActor::isLowerPartner(int virtual_me, int partner_gap)
+HalvingReduceScatterActor::isLowerPartner(int  /*virtual_me*/, int  /*partner_gap*/)
 {
   return false;
 }

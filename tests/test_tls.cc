@@ -56,7 +56,7 @@ struct tag1{}; struct tag2{};
 sstmac::CppVarTemplate<tag1,int,true> count(0);
 sstmac::CppVarTemplate<tag2,int,true> id(0);
 
-void thrash(std::mutex* mtx, int myId)
+void thrash(std::mutex*  /*mtx*/, int myId)
 {
   id() = myId;
   for (int i=0; i < 3; ++i){
@@ -70,7 +70,7 @@ void thrash(std::mutex* mtx, int myId)
 
 #define sstmac_app_name test_tls
 
-int USER_MAIN(int argc, char** argv)
+int USER_MAIN(int  /*argc*/, char**  /*argv*/)
 {
   //now test some mutexes
   std::mutex mtx;

@@ -79,7 +79,7 @@ void thrash(std::mutex* mtx)
 #define sstmac_app_name test_std_thread
 
 
-int USER_MAIN(int argc, char** argv)
+int USER_MAIN(int  /*argc*/, char**  /*argv*/)
 {
   std::string str1("I got my head checked");
   std::thread t1(fxn1, str1);

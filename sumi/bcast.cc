@@ -55,7 +55,7 @@ BinaryTreeBcastActor::bufferAction(void *dst_buffer, void *msg_buffer, Action *a
 }
 
 void
-BinaryTreeBcastActor::init_root(int me, int roundNproc, int nproc)
+BinaryTreeBcastActor::init_root(int  /*me*/, int roundNproc, int nproc)
 {
   int partnerGap = roundNproc / 2;
   while (partnerGap > 0){

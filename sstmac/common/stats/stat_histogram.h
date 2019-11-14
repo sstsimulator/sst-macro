@@ -115,7 +115,7 @@ class StatHistogram : public SST::Statistics::MultiStatistic<BinType,CountType>
     }
   }
 
-  void outputStatisticData(SST::Statistics::StatisticOutput* statOutput, bool EndOfSimFlag) override {
+  void outputStatisticData(SST::Statistics::StatisticOutput* statOutput, bool  /*EndOfSimFlag*/) override {
     int fid = 0;
     statOutput->outputField(fields_[fid++], int(counts_.size()));
     statOutput->outputField(fields_[fid++], bin_size_);

@@ -173,7 +173,7 @@ struct PrintAll {
     os << expr->getMemberDecl()->getNameAsString();
   }
 
-  void recurseDeclRefExpr(const DeclRefExpr* expr, std::ostream& os, Replacer&& repl){
+  void recurseDeclRefExpr(const DeclRefExpr* expr, std::ostream& os, Replacer&&  /*repl*/){
     PrettyPrinter pp;
     pp.print(expr);
     os << pp.str();
@@ -197,10 +197,10 @@ struct PrintAll {
 struct NullReplacement
 {
   template <class T>
-  bool hasReplacement(T* t){ return false; }
+  bool hasReplacement(T*  /*t*/){ return false; }
 
   template <class T>
-  std::string getReplacement(T* t){ return ""; }
+  std::string getReplacement(T*  /*t*/){ return ""; }
 };
 
 #include <sstream>

@@ -83,7 +83,7 @@ class SSTStartReplacePragma : public SSTReplacePragma {
                         const std::list<clang::Token>& tokens) :
     SSTReplacePragma(loc,CI,tokens){}
 
-  void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg) override {
+  void activate(clang::Stmt*  /*s*/, clang::Rewriter&  /*r*/, PragmaConfig& cfg) override {
     cfg.replacePragmas[fxn_] = this;
   }
 };
@@ -93,7 +93,7 @@ class SSTStopReplacePragma : public SSTPragma {
   SSTStopReplacePragma(const std::string& fxn) :
     fxn_(fxn){}
 
-  void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg) override {
+  void activate(clang::Stmt*  /*s*/, clang::Rewriter&  /*r*/, PragmaConfig& cfg) override {
     cfg.replacePragmas.erase(fxn_);
   }
  private:

@@ -82,7 +82,7 @@ class thread_safe_int_t :
     return tmp;
   }
 
-  Integer operator++(int i){
+  Integer operator++(int  /*i*/){
     Integer tmp(value_);
     lock();
     value_++;

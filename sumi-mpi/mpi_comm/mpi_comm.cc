@@ -132,7 +132,7 @@ MpiComm::deleteStatics()
 }
 
 int
-MpiComm::globalToCommRank(int global_rank) const
+MpiComm::globalToCommRank(int  /*global_rank*/) const
 {
   sprockit::abort("mpi_comm::global_to_comm_rank");
   return 0;

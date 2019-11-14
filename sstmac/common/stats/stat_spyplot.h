@@ -96,7 +96,7 @@ class StatSpyplot : public SST::Statistics::MultiStatistic<Dst,Count>
     }
   }
 
-  void outputStatisticData(SST::Statistics::StatisticOutput* output, bool endOfSim) override {
+  void outputStatisticData(SST::Statistics::StatisticOutput* output, bool  /*endOfSim*/) override {
     for (int i=0; i < n_dst_; ++i){
       output->outputField(fields_[i], vals_[i]);
     }

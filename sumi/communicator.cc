@@ -200,7 +200,7 @@ MapCommunicator::globalRankSetIntersection(const std::set<int> &neighbors) const
 }
 
 int
-IndexCommunicator::globalToCommRank(int global_rank) const
+IndexCommunicator::globalToCommRank(int  /*global_rank*/) const
 {
   sprockit::abort("index_domain::global_to_comm_rank: this should only be involved in failures");
   return 0;
@@ -232,7 +232,7 @@ SubrangeCommunicator::globalRankSetIntersection(const std::set<int> &neighbors) 
 }
 
 std::set<int>
-RotateCommunicator::globalRankSetIntersection(const std::set<int> &neighbors) const
+RotateCommunicator::globalRankSetIntersection(const std::set<int> & /*neighbors*/) const
 {
   spkt_abort_printf("RotateCommunicator: does not support rank intersection");
   return std::set<int>{};

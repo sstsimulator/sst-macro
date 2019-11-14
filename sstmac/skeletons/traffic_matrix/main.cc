@@ -74,7 +74,7 @@ class sumi_param_bcaster : public sprockit::ParamBcaster
     engine_(engine)
   {}
 
-  void bcast(void *buf, int size, int me, int root){
+  void bcast(void *buf, int size, int  /*me*/, int root){
     engine_->bcast(root, buf, size, sizeof(char), tag_, sumi::Message::default_cq);
     // TODOWARNING sumi::CollectiveDoneMessage* msg = nullptr;
     auto* dmsg = engine_->blockUntilNext(sumi::Message::default_cq);
@@ -240,7 +240,7 @@ quiesce(sumi::Transport* tport,
   }
 }
 
-int USER_MAIN(int argc, char** argv)
+int USER_MAIN(int  /*argc*/, char**  /*argv*/)
 {
   sumi::Transport* tport = sumi::Transport::get();
 

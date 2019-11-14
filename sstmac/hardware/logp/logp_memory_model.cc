@@ -80,7 +80,7 @@ LogPMemoryModel::accessFlow(uint64_t bytes, TimeDelta byte_request_delay, Callba
 }
 
 void
-LogPMemoryModel::accessRequest(int linkId, Request *req)
+LogPMemoryModel::accessRequest(int  /*linkId*/, Request * /*req*/)
 {
   spkt_abort_printf("LogP does not support single memory requests - only flow-level calls");
 }

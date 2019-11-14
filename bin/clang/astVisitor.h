@@ -1187,7 +1187,7 @@ struct PragmaActivateGuard {
 
 class GlobalVariableVisitor : public clang::RecursiveASTVisitor<GlobalVariableVisitor> {
  public:
-  GlobalVariableVisitor(clang::VarDecl* D, SkeletonASTVisitor* parent) :
+  GlobalVariableVisitor(clang::VarDecl*  /*D*/, SkeletonASTVisitor* parent) :
     visitedGlobals_(false),
     parent_(parent)
   {

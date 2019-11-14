@@ -55,7 +55,7 @@ Star::Star(SST::Params& params) :
 }
 
 void
-Star::connectedOutports(SwitchId src, std::vector<Connection>& conns) const
+Star::connectedOutports(SwitchId  /*src*/, std::vector<Connection>& conns) const
 {
   conns.resize(0);
 }

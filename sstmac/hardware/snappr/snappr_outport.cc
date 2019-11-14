@@ -283,9 +283,9 @@ struct FifoPortArbitrator : public SnapprPortArbitrator
     "fifo",
     "implements a FIFO strategy for queuing packets")
 
-  FifoPortArbitrator(TimeDelta link_byte_delay, SST::Params& params){}
+  FifoPortArbitrator(TimeDelta  /*link_byte_delay*/, SST::Params&  /*params*/){}
 
-  void insert(uint64_t cycle, SnapprPacket *pkt) override {
+  void insert(uint64_t  /*cycle*/, SnapprPacket *pkt) override {
     VirtualLane& vl = vls_[pkt->virtualLane()];
     vl.occupancy += 1;
     if (vl.credits >= pkt->numBytes()){
@@ -334,7 +334,7 @@ struct FifoPortArbitrator : public SnapprPortArbitrator
     }
   }
 
-  SnapprPacket* pop(uint64_t cycle) override {
+  SnapprPacket* pop(uint64_t  /*cycle*/) override {
     SnapprPacket* pkt = port_queue_.front();
     port_debug("FIFO %p VL %d popping packet", this, pkt->virtualLane());
     port_queue_.pop();
@@ -358,11 +358,11 @@ struct ScatterPortArbitrator : public SnapprPortArbitrator
   };
 
  public:
-  ScatterPortArbitrator(SST::Params& params){
+  ScatterPortArbitrator(SST::Params&  /*params*/){
     //nothing to do
   }
 
-  void insert(uint64_t cycle, SnapprPacket *pkt) override {
+  void insert(uint64_t  /*cycle*/, SnapprPacket *pkt) override {
     VirtualLane& vl = vls_[pkt->virtualLane()];
     if (vl.credits >= pkt->numBytes()){
       port_queue_.emplace(pkt);
@@ -372,7 +372,7 @@ struct ScatterPortArbitrator : public SnapprPortArbitrator
     }
   }
 
-  SnapprPacket* pop(uint64_t cycle) override {
+  SnapprPacket* pop(uint64_t  /*cycle*/) override {
     SnapprPacket* pkt = port_queue_.top();
     port_queue_.pop();
     return pkt;

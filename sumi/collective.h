@@ -184,7 +184,7 @@ class DoNothingCollective : public Collective
     return "DoNothing collective";
   }
 
-  CollectiveDoneMessage* recv(int target, CollectiveWorkMessage* msg) override { return nullptr; }
+  CollectiveDoneMessage* recv(int  /*target*/, CollectiveWorkMessage*  /*msg*/) override { return nullptr; }
 
   void start() override {}
 

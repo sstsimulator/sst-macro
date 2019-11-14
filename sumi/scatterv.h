@@ -62,7 +62,7 @@ class BtreeScattervActor :
   }
 
   BtreeScattervActor(CollectiveEngine* engine, int root, void *dst, void *src,
-                       int* send_counts, int recvcnt, int type_size, int tag,
+                       int*  /*send_counts*/, int recvcnt, int type_size, int tag,
                        int cq_id, Communicator* comm) :
     DagCollectiveActor(Collective::scatter, engine, dst, src, type_size, tag, cq_id, comm),
     root_(root), 

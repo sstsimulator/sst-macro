@@ -69,8 +69,8 @@ DumpiAllocation::DumpiAllocation(SST::Params& params)
 
 bool
 DumpiAllocation::allocate(
-  int nnode_requested,
-   const ordered_node_set& available,
+  int  /*nnode_requested*/,
+   const ordered_node_set&  /*available*/,
    ordered_node_set& allocation) const
 {
   DumpiMeta* meta = new DumpiMeta(metafile_);

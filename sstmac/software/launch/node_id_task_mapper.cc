@@ -78,7 +78,7 @@ NodeIdTaskMapper::NodeIdTaskMapper(SST::Params& params) :
 void
 NodeIdTaskMapper::mapRanks(
   const ordered_node_set& nodes,
-  int ppn,
+  int  /*ppn*/,
   std::vector<NodeId> &result,
   int nproc)
 {

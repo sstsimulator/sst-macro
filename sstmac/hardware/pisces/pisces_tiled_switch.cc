@@ -206,7 +206,7 @@ PiscesTiledSwitch::connectInput(int src_outport, int dst_inport, EventLink::ptr&
 }
 
 int
-PiscesTiledSwitch::queueLength(int port, int vc) const
+PiscesTiledSwitch::queueLength(int  /*port*/, int  /*vc*/) const
 {
   spkt_throw_printf(sprockit::UnimplementedError,
     "PiscesTiledSwitch::queue_length");
@@ -259,13 +259,13 @@ PiscesTiledSwitch::toString() const
 }
 
 LinkHandler*
-PiscesTiledSwitch::creditHandler(int port)
+PiscesTiledSwitch::creditHandler(int  /*port*/)
 {
   return newLinkHandler(this, &PiscesTiledSwitch::handleCredit);
 }
 
 LinkHandler*
-PiscesTiledSwitch::payloadHandler(int port)
+PiscesTiledSwitch::payloadHandler(int  /*port*/)
 {
   return newLinkHandler(this, &PiscesTiledSwitch::handlePayload);
 }

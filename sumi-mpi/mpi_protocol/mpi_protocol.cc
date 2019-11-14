@@ -50,7 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-MpiProtocol::MpiProtocol(SST::Params& params, MpiQueue *queue) :
+MpiProtocol::MpiProtocol(SST::Params&  /*params*/, MpiQueue *queue) :
   queue_(queue), mpi_(queue_->api())
 {
 }

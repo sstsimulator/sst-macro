@@ -107,7 +107,7 @@ class TimeDelta
     }
   }
 
-  explicit TimeDelta(tick_t ticks, timestamp_param_type_t ty) : ticks_(ticks) {}
+  explicit TimeDelta(tick_t ticks, timestamp_param_type_t  /*ty*/) : ticks_(ticks) {}
 
   explicit TimeDelta(uint64_t num_units, tick_t ticks_per_unit) : ticks_(num_units*ticks_per_unit) {}
 

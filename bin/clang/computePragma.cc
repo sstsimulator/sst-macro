@@ -337,7 +337,7 @@ SSTImplicitStatePragma::doReplace(SourceLocation startInsert, SourceLocation fin
 }
 
 void
-SSTImplicitStatePragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
+SSTImplicitStatePragma::activate(Stmt *s, Rewriter &r, PragmaConfig & /*cfg*/)
 {
   doReplace(getStart(s), getEnd(s),
             false, true, r, values_);
@@ -402,7 +402,7 @@ SSTImplicitStatePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
 }
 
 void
-SSTMemoryPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
+SSTMemoryPragma::activate(Stmt * /*s*/, Rewriter & /*r*/, PragmaConfig &cfg)
 {
   cfg.computeMemorySpec = memSpec_;
 }
@@ -414,7 +414,7 @@ enum OpenMPProperty {
 };
 
 std::string
-SSTOpenMPParallelPragma::numThreads(SourceLocation loc, CompilerInstance &CI, const std::list<Token> &tokens)
+SSTOpenMPParallelPragma::numThreads(SourceLocation  /*loc*/, CompilerInstance & /*CI*/, const std::list<Token> &tokens)
 {
   static const std::map<std::string, OpenMPProperty> omp_property_map = {
     {"num_threads", OMP_NTHREAD},

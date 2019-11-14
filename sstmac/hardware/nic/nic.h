@@ -266,9 +266,9 @@ class NullNIC : public NIC
 
   void connectInput(int src_outport, int dst_inport, EventLink::ptr&& credit_link) override {}
 
-  LinkHandler* payloadHandler(int port) override { return nullptr; }
+  LinkHandler* payloadHandler(int  /*port*/) override { return nullptr; }
 
-  LinkHandler* creditHandler(int port) override { return nullptr; }
+  LinkHandler* creditHandler(int  /*port*/) override { return nullptr; }
 };
 
 }

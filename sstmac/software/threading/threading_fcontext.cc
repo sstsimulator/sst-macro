@@ -67,7 +67,7 @@ class ThreadingFContext : public ThreadContext
 
   void startContext(void *stack, size_t sz,
       void (*func)(void*), void *args,
-      ThreadContext* from) override {
+      ThreadContext*  /*from*/) override {
     fxn_ = func;
     void* stacktop = (char*) stack + sz;
     ctx_ = sstmac_make_fcontext(stacktop, sz, start_fcontext_thread);
@@ -75,21 +75,21 @@ class ThreadingFContext : public ThreadContext
     ctx_ = sstmac_jump_fcontext(ctx_, this).ctx;
   }
 
-  void pauseContext(ThreadContext* to) override {
+  void pauseContext(ThreadContext*  /*to*/) override {
     // TODOWARNING ThreadingFContext* fctx = static_cast<ThreadingFContext*>(to);
     transfer_ = sstmac_jump_fcontext(transfer_, nullptr).ctx;
   }
 
-  void resumeContext(ThreadContext* from) override {
+  void resumeContext(ThreadContext*  /*from*/) override {
     auto newctx = sstmac_jump_fcontext(ctx_, nullptr).ctx;
     ctx_ = newctx;
   }
 
-  void completeContext(ThreadContext* to) override {
+  void completeContext(ThreadContext*  /*to*/) override {
     sstmac_jump_fcontext(transfer_, nullptr);
   }
 
-  void jumpContext(ThreadContext* to) override {
+  void jumpContext(ThreadContext*  /*to*/) override {
     spkt_abort_printf("error: fcontext interface does not support jump_context feature\n"
                       "must set SSTMAC_THREADING=pth or ucontext");
   }

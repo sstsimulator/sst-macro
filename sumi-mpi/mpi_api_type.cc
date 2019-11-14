@@ -251,7 +251,7 @@ MpiApi::commitBuiltinTypes()
 }
 
 int
-MpiApi::packSize(int incount, MPI_Datatype datatype, MPI_Comm comm, int *size)
+MpiApi::packSize(int incount, MPI_Datatype datatype, MPI_Comm  /*comm*/, int *size)
 {
   auto it = known_types_.find(datatype);
   if (it == known_types_.end()){

@@ -23,13 +23,13 @@ DelayStats::addData_impl(int src, int dst, int type, int stage, uint64_t bytes,
 }
 
 void
-DelayStats::registerOutputFields(SST::Statistics::StatisticFieldsOutput *statOutput)
+DelayStats::registerOutputFields(SST::Statistics::StatisticFieldsOutput * /*statOutput*/)
 {
   sprockit::abort("DelayStats::registerOutputFields: should not be called");
 }
 
 void
-DelayStats::outputStatisticData(SST::Statistics::StatisticFieldsOutput *output, bool endOfSimFlag)
+DelayStats::outputStatisticData(SST::Statistics::StatisticFieldsOutput * /*output*/, bool  /*endOfSimFlag*/)
 {
   sprockit::abort("DelayStats::outputStatisticData: should not be called");
 }
@@ -54,7 +54,7 @@ DelayStatsOutput::stopOutputGroup()
 }
 
 void
-DelayStatsOutput::output(SST::Statistics::StatisticBase* statistic, bool endOfSimFlag)
+DelayStatsOutput::output(SST::Statistics::StatisticBase* statistic, bool  /*endOfSimFlag*/)
 {
   DelayStats* stats = dynamic_cast<DelayStats*>(statistic);
   for (auto iter=stats->begin(); iter != stats->end(); ++iter){

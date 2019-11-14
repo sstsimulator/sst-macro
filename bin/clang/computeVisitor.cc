@@ -63,12 +63,12 @@ struct GlobalVarReplacer
   }
 
   template <class T>
-  bool hasReplacement(T* t){
+  bool hasReplacement(T*  /*t*/){
     return false;
   }
 
   template <class T>
-  std::string getReplacement(T* t){
+  std::string getReplacement(T*  /*t*/){
     return "";
   }
 
@@ -88,7 +88,7 @@ ComputeVisitor::visitAccessDeclRefExpr(DeclRefExpr* expr, MemoryLocation& mloc)
 }
 
 void
-ComputeVisitor::visitAccessCompoundStmt(CompoundStmt* stmt, Loop::Body& body, MemoryLocation& mloc)
+ComputeVisitor::visitAccessCompoundStmt(CompoundStmt* stmt, Loop::Body&  /*body*/, MemoryLocation&  /*mloc*/)
 {
   errorAbort(stmt, CI, "visiting compound statement in data flow analysis");
 }
@@ -354,7 +354,7 @@ ComputeVisitor::visitBodyArraySubscriptExpr(ArraySubscriptExpr* expr, Loop::Body
 
 
 void
-ComputeVisitor::visitBodyDeclRefExpr(DeclRefExpr* expr, Loop::Body& body, bool isLHS)
+ComputeVisitor::visitBodyDeclRefExpr(DeclRefExpr* expr, Loop::Body&  /*body*/, bool isLHS)
 {
   NamedDecl* decl = expr->getFoundDecl();
   Variable& var = getVariable(decl);

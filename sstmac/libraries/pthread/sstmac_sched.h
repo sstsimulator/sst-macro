@@ -73,12 +73,12 @@ extern int SSTMAC_sched_getscheduler (pid_t pid);
 extern int SSTMAC_sched_yield (void);
 
 /* Get maximum priority value for a scheduler.  */
-static inline int SSTMAC_sched_get_priority_max (int algorithm){
+static inline int SSTMAC_sched_get_priority_max (int  /*algorithm*/){
   return 99;
 }
 
 /* Get minimum priority value for a scheduler.  */
-static inline int SSTMAC_sched_get_priority_min (int algorithm){
+static inline int SSTMAC_sched_get_priority_min (int  /*algorithm*/){
   return 1;
 }
 

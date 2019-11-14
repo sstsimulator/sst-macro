@@ -65,7 +65,7 @@ class ComputeScheduler
   SST_ELI_DECLARE_DEFAULT_INFO()
   SST_ELI_DECLARE_CTOR(SST::Params&,sw::OperatingSystem*, int/*ncores*/, int/*nsockets*/)
 
-  ComputeScheduler(SST::Params& params, sw::OperatingSystem* os,
+  ComputeScheduler(SST::Params&  /*params*/, sw::OperatingSystem* os,
                     int ncores, int nsockets) :
     ncores_(ncores), 
     nsocket_(nsockets),

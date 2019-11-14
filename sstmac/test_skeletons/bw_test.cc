@@ -50,7 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #define sstmac_app_name bw_test
 
-int USER_MAIN(int argc, char** argv)
+int USER_MAIN(int  /*argc*/, char**  /*argv*/)
 {
   CallGraphAppend(main);
   sumi::Transport* tport = sumi::Transport::get();

@@ -60,7 +60,7 @@ RegisterKeywords(
 
 #define sstmac_app_name test_host_compute
 
-int USER_MAIN(int argc, char** argv)
+int USER_MAIN(int  /*argc*/, char**  /*argv*/)
 {
   CallGraphAppend(main);
 
