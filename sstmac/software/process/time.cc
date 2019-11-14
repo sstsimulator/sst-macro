@@ -63,7 +63,7 @@ extern "C" int SSTMAC_gettimeofday(struct timeval* tv, struct timezone* tz)
 extern "C" int SSTMAC_clock_gettime(clockid_t id, struct timespec *ts)
 {
   OperatingSystem* os = OperatingSystem::currentOs();
-  Timestamp t = os->now();
+  // TODOWARNING Timestamp t = os->now();
   uint64_t nsecs = os->now().nsecRounded();
   ts->tv_sec =  nsecs / 1000000000;
   ts->tv_nsec = nsecs % 1000000000;

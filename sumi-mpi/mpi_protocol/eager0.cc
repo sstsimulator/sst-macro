@@ -50,6 +50,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/null_buffer.h>
 #include <sprockit/sim_parameters.h>
 
+#include <unusedvariablemacro.h>
+
 namespace sumi {
 
 Eager0::Eager0(SST::Params &params, MpiQueue *queue) :
@@ -62,7 +64,7 @@ void
 Eager0::start(void* buffer, int src_rank, int dst_rank, sstmac::sw::TaskId tid, int count, MpiType* typeobj,
               int tag, MPI_Comm comm, int seq_id, MpiRequest* req)
 {
-  CallGraphAppend(MPIEager0Protocol_Send_Header);
+  SSTMAC_MAYBE_UNUSED CallGraphAppend(MPIEager0Protocol_Send_Header);
   void* temp_buf = nullptr;
   if (isNonNullBuffer(buffer)){
     temp_buf = fillSendBuffer(count, buffer, typeobj);
@@ -99,7 +101,7 @@ Eager0::incoming(MpiMessage *msg, MpiQueueRecvRequest *req)
 void
 Eager0::incoming(MpiMessage* msg)
 {
-  CallGraphAppend(MPIEager0Protocol_Handle_Header);
+  SSTMAC_MAYBE_UNUSED CallGraphAppend(MPIEager0Protocol_Handle_Header);
   if (msg->sstmac::hw::NetworkMessage::type() == MpiMessage::payload_sent_ack){
     char* temp_buf = (char*) msg->smsgBuffer();
     if (temp_buf) delete[] temp_buf;

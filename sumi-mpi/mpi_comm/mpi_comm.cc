@@ -55,13 +55,13 @@ namespace sumi {
 MpiComm* MpiComm::comm_null = nullptr;
 
 MpiComm::MpiComm() :
+  Communicator(-1),
   group_(nullptr),
   next_collective_tag_(0),
-  id_(MPI_COMM_NULL),
-  rank_(-1),
   del_grp_(false),
-  Communicator(-1),
-  topotype_(TOPO_NONE)
+  topotype_(TOPO_NONE),
+  id_(MPI_COMM_NULL),
+  rank_(-1)
 {
 }
 
@@ -80,10 +80,10 @@ MpiComm::MpiComm(
   group_(peers),
   next_collective_tag_(MPI_COMM_WORLD + 100),
   aid_(aid),
-  id_(id),
-  rank_(rank),
   del_grp_(del_grp),
-  topotype_(ty)
+  topotype_(ty),
+  id_(id),
+  rank_(rank)
 {
   if (peers->size() == 0) {
     spkt_throw_printf(sprockit::ValueError,

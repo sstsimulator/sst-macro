@@ -275,8 +275,8 @@ class FatTree :
   int up_ports_per_agg_switch_;
   int down_ports_per_core_switch_;
 
-  double leaf_agg_bw_;
-  double agg_core_bw_;
+  // TODOWARNING double leaf_agg_bw_;
+  // TODOWARNING double agg_core_bw_;
 
   void checkInput() const;
 };

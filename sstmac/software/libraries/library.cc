@@ -50,8 +50,10 @@ namespace sstmac {
 namespace sw {
 
 Library::Library(const std::string& libname, SoftwareId sid, OperatingSystem* os) :
-  sid_(sid), libname_(libname), os_(os),
-  addr_(os->addr())
+  os_(os),
+  sid_(sid), 
+  addr_(os->addr()),
+  libname_(libname) 
 {
   os_->registerLib(this);
 }

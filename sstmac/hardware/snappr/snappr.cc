@@ -66,11 +66,11 @@ SnapprPacket::SnapprPacket(
   NodeId toaddr,
   NodeId fromaddr,
   int qos) :
+  Packet(msg, num_bytes, flow_id, is_tail, fromaddr, toaddr),
   offset_(offset),
-  priority_(0),
-  inport_(-1),
   qos_(qos),
-  Packet(msg, num_bytes, flow_id, is_tail, fromaddr, toaddr)
+  priority_(0),
+  inport_(-1)
 {
 }
 

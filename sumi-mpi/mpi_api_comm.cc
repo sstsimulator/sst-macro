@@ -50,8 +50,13 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/thread.h>
 #include <sstmac/software/process/ftq_scope.h>
 
+// TODOWARNING
+// #define StartCommCall(fxn,comm) \
+//   auto call_start_time = (uint64_t)now().usec(); \
+//   StartMPICall(fxn); \
+//   mpi_api_debug(sprockit::dbg::mpi, "%s(%s) start", #fxn, commStr(comm).c_str())
+
 #define StartCommCall(fxn,comm) \
-  auto call_start_time = (uint64_t)now().usec(); \
   StartMPICall(fxn); \
   mpi_api_debug(sprockit::dbg::mpi, "%s(%s) start", #fxn, commStr(comm).c_str())
 
@@ -61,7 +66,10 @@ int
 MpiApi::commDup(MPI_Comm input, MPI_Comm *output)
 {
   checkInit();
+
+#ifdef SSTMAC_OTF2_ENABLED
   auto start_clock = traceClock();
+#endif
   StartCommCall(MPI_Comm_dup,input);
   MpiComm* inputPtr = getComm(input);
   MpiComm* outputPtr = comm_factory_.comm_dup(inputPtr);
@@ -113,7 +121,9 @@ MpiApi::commSize(MPI_Comm comm, int *size)
 int
 MpiApi::commCreate(MPI_Comm input, MPI_Group group, MPI_Comm *output)
 {
+#ifdef SSTMAC_OTF2_ENABLED
   auto start_clock = traceClock();
+#endif
   StartCommCall(MPI_Comm_create,input);
   MpiComm* inputPtr = getComm(input);
   MpiGroup* groupPtr = getGroup(group);
@@ -250,7 +260,9 @@ MpiApi::cartCoords(MPI_Comm comm, int rank, int maxdims, int coords[])
 int
 MpiApi::commSplit(MPI_Comm incomm, int color, int key, MPI_Comm *outcomm)
 {
+#ifdef SSTMAC_OTF2_ENABLED
   auto start_clock = traceClock();
+#endif
   StartCommCall(MPI_Comm_split,incomm);
   MpiComm* incommPtr = getComm(incomm);
   MpiComm* outcommPtr = comm_factory_.commSplit(incommPtr, color, key);

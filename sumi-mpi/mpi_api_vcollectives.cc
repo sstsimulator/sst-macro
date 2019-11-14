@@ -115,7 +115,9 @@ MpiApi::allgatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                     void *recvbuf, const int *recvcounts, const int *displs,
                     MPI_Datatype recvtype, MPI_Comm comm)
 {
+#ifdef SSTMAC_OTF2_ENABLED
   auto start_clock = traceClock();
+#endif
 
   do_vcoll(Allgatherv, MPI_Allgatherv, comm, sendcount, sendtype,
            recvcounts, displs, recvtype, sendbuf, recvbuf);
@@ -208,7 +210,9 @@ MpiApi::alltoallv(const void *sendbuf, const int *sendcounts,
                    void *recvbuf, const int *recvcounts,
                    const int *rdispls, MPI_Datatype recvtype, MPI_Comm comm)
 {
+#ifdef SSTMAC_OTF2_ENABLED
   auto start_clock = traceClock();
+#endif
 
   do_vcoll(Alltoallv, MPI_Alltoallv, comm,
            sendcounts, sendtype, sdispls,
@@ -320,7 +324,7 @@ MpiApi::startGatherv(const char* name, MPI_Comm comm, int sendcount, MPI_Datatyp
     }
     auto op = startGather(name, comm, sendcount, sendtype, root, recvcount, recvtype,
                           sendbuf, recvbuf);
-    return std::move(op);
+    return op;
   }
 }
 
@@ -329,7 +333,9 @@ MpiApi::gatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                  void *recvbuf, const int *recvcounts, const int *displs,
                  MPI_Datatype recvtype, int root, MPI_Comm comm)
 {
+#ifdef SSTMAC_OTF2_ENABLED
   auto start_clock = traceClock();
+#endif
 
   do_vcoll(Gatherv, MPI_Gatherv, comm, sendcount, sendtype, root,
            recvcounts, displs, recvtype, sendbuf, recvbuf);
@@ -431,7 +437,9 @@ int
 MpiApi::scatterv(const void* sendbuf, const int* sendcounts, const int *displs, MPI_Datatype sendtype,
                   void *recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm)
 {
+#ifdef SSTMAC_OTF2_ENABLED
   auto start_clock = traceClock();
+#endif
 
   do_vcoll(Scatterv, MPI_Scatterv, comm, sendcounts, sendtype, root, displs,
            recvcount, recvtype, sendbuf, recvbuf);

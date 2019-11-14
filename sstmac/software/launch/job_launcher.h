@@ -277,7 +277,6 @@ struct IncastIterator {
     while (power2_size < nranks_){
       power2_size *= 2;
     }
-    int ret = 0;
     num_to_send = 0;
     num_to_recv = 0;
     pvt_config(num_to_send, num_to_recv, to_send, to_recv, 0, power2_size);

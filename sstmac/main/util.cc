@@ -217,7 +217,7 @@ userSkeletonMainInitFxn(const char* name, main_fxn fxn)
   return 42;
 }
 
-static empty_main_fxn empty_skeleton_main;
+// TODOWARNING static empty_main_fxn empty_skeleton_main;
 
 int
 userSkeletonMainInitFxn(const char* name, empty_main_fxn fxn)

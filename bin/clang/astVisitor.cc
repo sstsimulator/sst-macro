@@ -1865,13 +1865,13 @@ SkeletonASTVisitor::finalize()
   for (auto& pair : declsToInsertAfter_){
     auto& declPair = pair.second;
 
-    bool hasTypeDecl = false;
     clang::VarDecl* D = declPair.first;
 
     SourceLocation declEnd = getEndLoc(getEnd(D));
     rewriter_.InsertText(declEnd, declPair.second);
 
     /**
+    bool hasTypeDecl = false;
     auto ty = D->getType().getTypePtr();
     if (ty->isStructureType()){
       RecordDecl* recDecl = ty->getAsStructureType()->getDecl();

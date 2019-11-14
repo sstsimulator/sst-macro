@@ -92,14 +92,14 @@ PiscesNtoMQueue(const std::string& selfname, uint32_t id,
                 int num_in_ports, int num_out_ports, int num_vc,
                 bool update_vc)
   : PiscesSender(selfname, id, parent, update_vc),
-    num_vc_(num_vc),
 #if SSTMAC_SANITY_CHECK
     initial_credits_(num_vc * num_out_ports),
 #endif
-    queues_(num_vc * num_out_ports),
-    credits_(num_vc * num_out_ports),
     inputs_(num_in_ports),
-    outputs_(num_out_ports)
+    outputs_(num_out_ports),
+    credits_(num_vc * num_out_ports),
+    queues_(num_vc * num_out_ports),
+    num_vc_(num_vc)
 
 {
   arb_ = sprockit::create<PiscesBandwidthArbitrator>("macro", arb, bw);

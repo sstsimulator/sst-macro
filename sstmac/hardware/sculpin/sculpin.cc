@@ -62,8 +62,8 @@ SculpinPacket::SculpinPacket(
   uint64_t flow_id,
   NodeId toaddr,
   NodeId fromaddr) :
-  priority_(0),
-  Packet(msg, num_bytes, flow_id, is_tail, fromaddr, toaddr)
+  Packet(msg, num_bytes, flow_id, is_tail, fromaddr, toaddr),
+  priority_(0)
 {
 }
 

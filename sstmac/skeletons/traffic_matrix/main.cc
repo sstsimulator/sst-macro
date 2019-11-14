@@ -69,11 +69,14 @@ static const int RecvCQ = 0;
 class sumi_param_bcaster : public sprockit::ParamBcaster
 {
  public:
-  sumi_param_bcaster(sumi::CollectiveEngine* engine) : engine_(engine), tag_(12345) {}
+  sumi_param_bcaster(sumi::CollectiveEngine* engine) : 
+    tag_(12345),
+    engine_(engine)
+  {}
 
   void bcast(void *buf, int size, int me, int root){
     engine_->bcast(root, buf, size, sizeof(char), tag_, sumi::Message::default_cq);
-    sumi::CollectiveDoneMessage* msg = nullptr;
+    // TODOWARNING sumi::CollectiveDoneMessage* msg = nullptr;
     auto* dmsg = engine_->blockUntilNext(sumi::Message::default_cq);
     delete dmsg;
     ++tag_;

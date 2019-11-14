@@ -56,8 +56,8 @@ namespace sstmac {
 namespace hw {
 
 LogPNIC::LogPNIC(SST::Component* parent, SST::Params& params) :
-  next_out_free_(),
-  NIC(parent, params)
+  NIC(parent, params),
+  next_out_free_()
 {
   SST::Params inj_params = params.find_scoped_params("injection");
   inj_byte_delay_ = TimeDelta(inj_params.find<SST::UnitAlgebra>("bandwidth").getValue().inverse().toDouble());

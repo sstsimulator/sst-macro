@@ -57,8 +57,8 @@ namespace sstmac {
 namespace sw {
 
 AppLauncher::AppLauncher(OperatingSystem* os) :
-  is_completed_(false),
-  Service(std::string("launcher"), SoftwareId(0,0), os)
+  Service(std::string("launcher"), SoftwareId(0,0), os),
+  is_completed_(false)
 {
 }
 

@@ -178,7 +178,7 @@ class MapCommunicator :
  private:
   std::map<int, int> global_to_local_;
   std::vector<int> local_to_global_;
-  int rank_;
+  // TODOWARNING int rank_;
 };
 
 class ShiftedCommunicator :

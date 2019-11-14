@@ -100,9 +100,9 @@ ReplaceAction::ExecuteAction()
 {
   if (!ci_->hasSema()) ci_->createSema(getTranslationUnitKind(), nullptr);
 
-  TranslationUnitKind TUKind = TU_Complete;
+  // TODOWARNING TranslationUnitKind TUKind = TU_Complete;
   ASTContext& Ctx = ci_->getASTContext();
-  CodeCompleteConsumer* CompletionConsumer = nullptr;
+  // TODOWARNING CodeCompleteConsumer* CompletionConsumer = nullptr;
   ASTConsumer& Consumer = ci_->getASTConsumer();
   Sema& S = ci_->getSema();
 

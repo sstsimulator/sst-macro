@@ -80,9 +80,9 @@ class SimultaneousBtreeScanActor :
 
   reduce_fxn fxn_;
 
-  int num_reducing_rounds_;
+  // TODOWARNING int num_reducing_rounds_;
 
-  int num_total_rounds_;
+  // TODOWARNING int num_total_rounds_;
 
 };
 

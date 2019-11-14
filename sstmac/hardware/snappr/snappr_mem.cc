@@ -12,8 +12,9 @@ namespace sstmac {
 namespace hw {
 
 SnapprMemoryModel::SnapprMemoryModel(SST::Component *nd, SST::Params &params) :
-  channelInterleaver_(0), flowId_(0),
-  MemoryModel(nd, params)
+  MemoryModel(nd, params),
+  flowId_(0),
+  channelInterleaver_(0)
 {
   flow_mtu_ = params.find<SST::UnitAlgebra>("flow_mtu", "512").getRoundedValue();
 

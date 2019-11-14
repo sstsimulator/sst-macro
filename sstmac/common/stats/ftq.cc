@@ -61,6 +61,8 @@ namespace sstmac {
 
 static sstmac::FTQTag inactive("Inactive", 1);
 
+// TODOWARNING
+#if 0
 static const char* matplotlib_text_header =
     "#!/usr/bin/env python3\n"
     "\n"
@@ -140,6 +142,7 @@ static const char* matplotlib_mean_text_footer =
     "\n"
     "if args.show:\n"
     "    plt.show()\n";
+#endif
 
 
 #if !SSTMAC_INTEGRATED_SST_CORE

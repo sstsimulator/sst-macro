@@ -47,6 +47,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/software/process/tls.h>
+#include <unusedvariablemacro.h>
 
 #ifndef SSTMAC_INLINE
 #ifdef __STRICT_ANSI__
@@ -69,6 +70,7 @@ void allocate_static_init_tls_segment();
 }
 #endif
 
+SSTMAC_MAYBE_UNUSED
 static SSTMAC_INLINE char* get_sstmac_global_data(){
   if (sstmac_global_stacksize == 0){
     if (static_init_glbls_segment == 0){
@@ -81,6 +83,7 @@ static SSTMAC_INLINE char* get_sstmac_global_data(){
   }
 }
 
+SSTMAC_MAYBE_UNUSED
 static SSTMAC_INLINE char* get_sstmac_tls_data(){
   if (sstmac_global_stacksize == 0){
     if (static_init_tls_segment == 0){
@@ -93,6 +96,7 @@ static SSTMAC_INLINE char* get_sstmac_tls_data(){
   }
 }
 
+SSTMAC_MAYBE_UNUSED
 static SSTMAC_INLINE int get_sstmac_tls_thread_id(){
   int* idPtr = (int*)(get_sstmac_tls() + SSTMAC_TLS_THREAD_ID);
   return *idPtr;

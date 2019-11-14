@@ -210,14 +210,14 @@ App::allocateDataSegment(bool tls)
 App::App(SST::Params& params, SoftwareId sid,
          OperatingSystem* os) :
   Thread(params, sid, os),
-  compute_lib_(nullptr),
   params_(params),
+  compute_lib_(nullptr),
   next_tls_key_(0),
   next_condition_(0),
-  notify_(true),
   next_mutex_(0),
   min_op_cutoff_(0),
   globals_storage_(nullptr),
+  notify_(true),
   rc_(0)
 {
   globals_storage_ = allocateDataSegment(false); //not tls

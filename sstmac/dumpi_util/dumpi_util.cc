@@ -47,6 +47,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <cstring>
 #include <sprockit/errors.h>
 
+#include <unusedvariablemacro.h>
+
 namespace sstmac {
 namespace sw {
 
@@ -120,6 +122,7 @@ int undumpi_read_stream(void* profile,
       void *uarg);
 
 
+SSTMAC_MAYBE_UNUSED
 static int dumpi_util_ubuntu_linker_is_an_abomination(){
   return undumpi_read_stream(0,0,0);
 }

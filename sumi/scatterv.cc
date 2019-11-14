@@ -111,9 +111,9 @@ BtreeScattervActor::bufferAction(void *dst_buffer, void *msg_buffer, Action *ac)
 void
 BtreeScattervActor::initDag()
 {
-  int me = comm_->myCommRank();
-  int nproc = comm_->nproc();
-  int round = 0;
+  // TODOWARNING int me = comm_->myCommRank();
+  // TODOWARNING int nproc = comm_->nproc();
+  // TODOWARNING int round = 0;
 
 }
 

@@ -285,11 +285,11 @@ ParallelRuntime::initRuntimeParams(SST::Params& params)
 
 ParallelRuntime::ParallelRuntime(SST::Params& params,
                                    int me, int nproc)
-  : part_(nullptr),
-    me_(me),
-    nproc_(nproc),
+  : nproc_(nproc),
     nthread_(1),
-    epoch_(0)
+    me_(me),
+    epoch_(0),
+    part_(nullptr)
 {
   if (me_ == 0){
     sprockit::output::init_out0(&std::cout);

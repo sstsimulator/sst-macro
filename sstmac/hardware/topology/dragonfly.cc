@@ -69,7 +69,7 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-static const double PI = 3.141592653589793238462;
+// TODOWARNING static const double PI = 3.141592653589793238462;
 
 Dragonfly::Dragonfly(SST::Params& params) :
   CartesianTopology(params)
@@ -336,7 +336,7 @@ InterGroupWiring::randomIntermediate(Router* rtr, SwitchId current_sw, SwitchId 
   int srcG = current_sw / g_;
   int dstA = dest_sw % g_;
   int dstG = dest_sw / g_;
-  SwitchId sid = current_sw;
+  // TODOWARNING SwitchId sid = current_sw;
   uint32_t attempt = 0;
   if (srcG == dstG){
     int interA = srcA;

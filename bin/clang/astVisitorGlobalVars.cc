@@ -1,4 +1,5 @@
 #include "astVisitor.h"
+#include <unusedvariablemacro.h>
 
 using namespace clang;
 
@@ -544,9 +545,13 @@ SkeletonASTVisitor::checkInstanceStaticClassVar(VarDecl *D)
   //throw away the class name in the list of scopes
   sem.pop_back();
   auto semBegin = sem.begin();
-  for (auto& ignore : lex){ //figure out the overlap between lexical and semantic namespaces
-    ++semBegin;
-  }
+
+  std::advance(semBegin, lex.size());
+  // TODOWARNING @jjwilke look ^^, no loop needed
+  // for (auto& ignore : lex){ //figure out the overlap between lexical and semantic namespaces
+  //   ++semBegin;
+  // }
+  
   for (auto iter = semBegin; iter != sem.end(); ++iter){ //I must init/declare vars in the most enclosing namespace
     os << "namespace " << *iter << " {";
   }

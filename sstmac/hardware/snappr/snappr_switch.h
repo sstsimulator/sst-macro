@@ -109,7 +109,7 @@ class SnapprSwitch :
   void deadlockCheck() override;
 
  private:
-  friend class SnapprInPort;
+  friend struct SnapprInPort;
 
   void handlePayload(SnapprPacket* ev, int port);
 

@@ -42,45 +42,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sstmac/hardware/common/packet.h>
-#include <sstmac/hardware/common/unique_id.h>
-#include <sstmac/hardware/common/flow.h>
-#include <sprockit/serializer.h>
+#ifndef include_unusedvariablemacro_h
+#define include_unusedvariablemacro_h
 
-namespace sstmac {
-namespace hw {
+#if __cplusplus >= 201703L
+  #define SSTMAC_MAYBE_UNUSED [[maybe_unused]]
+#else
+  #define SSTMAC_MAYBE_UNUSED __attribute__((unused))
+#endif
 
-Packet::Packet(
-  Flow* flow,
-  uint32_t num_bytes,
-  uint64_t flow_id,
-  bool is_tail,
-  NodeId fromaddr,
-  NodeId toaddr) :
- toaddr_(toaddr),
- fromaddr_(fromaddr),
- flow_id_(flow_id),
- num_bytes_(num_bytes),
- payload_(flow)
-{
-  ::memset(rtr_metadata_, 0, sizeof(rtr_metadata_));
-  ::memset(stats_metadata_, 0, sizeof(stats_metadata_));
-  ::memset(nic_metadata_, 0, sizeof(nic_metadata_));
-  auto hdr = rtrHeader<Header>();
-  hdr->is_tail = is_tail;
-}
-
-void
-Packet::serialize_order(serializer& ser)
-{
-  Event::serialize_order(ser);
-  ser & payload_;
-  ser & num_bytes_;
-  ser & flow_id_;
-  ser & rtr_metadata_;
-  ser & stats_metadata_;
-  ser & nic_metadata_;
-}
-
-}
-}
+#endif // include_unusedvariablemacro_h

@@ -75,7 +75,10 @@ class CallGraph : public SST::Statistics::CustomStatistic
     uint64_t self_time_ticks_;
 
    public:
-    FunctionTrace(int nfxn) : self_time_ticks_(0), calls_(nfxn) {}
+    FunctionTrace(int nfxn) : 
+      calls_(nfxn),
+      self_time_ticks_(0)
+    {}
 
     uint64_t selfTime() const {
       return self_time_ticks_;

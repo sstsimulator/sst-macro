@@ -93,14 +93,14 @@ NicEvent::validate_serialization(serializable *ser)
 #endif
 
 NIC::NIC(SST::Component* parent, SST::Params& params) :
-  spy_bytes_(nullptr),
-  xmit_flows_(nullptr),
+  ConnectableSubcomponent("nic", parent), //no self events with NIC
   parent_(safe_cast(Node, parent)), //better be a node
   my_addr_(parent_->addr()),
   logp_link_(nullptr),
-  os_(parent_->os()),
+  spy_bytes_(nullptr),
+  xmit_flows_(nullptr),
   queue_(parent_->os()),
-  ConnectableSubcomponent("nic", parent) //no self events with NIC
+  os_(parent_->os())
 {
   negligibleSize_ = params.find<int>("negligible_size", DEFAULT_NEGLIGIBLE_SIZE);
   top_ = Topology::staticTopology(params);

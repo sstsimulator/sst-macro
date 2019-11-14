@@ -162,7 +162,8 @@ class OperatingSystem : public SubComponent
     ThreadSafeTimerModel(SST::Params& params, SST::BaseComponent* comp,
                          const std::string& name, const std::string& subName) :
       RegressionModel(comp, name, subName, params),
-      free_slots_(100), timers_(100)
+      timers_(100),
+      free_slots_(100)
     {
       for (int i=0; i < free_slots_.size(); ++i) free_slots_[i] = i;
     }
@@ -455,7 +456,8 @@ class OperatingSystem : public SubComponent
 
   struct CoreAllocateGuard {
     CoreAllocateGuard(OperatingSystem* os, Thread* thr) :
-      thr_(thr), os_(os)
+      os_(os),
+      thr_(thr)
     {
       os->allocateCore(thr);
     }
@@ -470,7 +472,7 @@ class OperatingSystem : public SubComponent
 
 
  private:
-  friend class CoreAllocateGuard;
+  friend struct CoreAllocateGuard;
   void allocateCore(Thread* thr);
   void deallocateCore(Thread* thr);
 

@@ -95,11 +95,12 @@ class LaunchRequest : public hw::NetworkMessage
                const std::string& unique_name,
                NodeId to, NodeId from,
                const std::string& libname) :
-    ty_(ty), tid_(tid),
-    unique_name_(unique_name),
     NetworkMessage(0/**qos**/, flow_id, libname, aid, to, from,
                    256, //use rough fixed size to avoid platform-dependent sizeof(...)
-                   false, nullptr, header{})
+                   false, nullptr, header{}),
+    tid_(tid),
+    unique_name_(unique_name),
+    ty_(ty)
   {
   }
 

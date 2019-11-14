@@ -141,7 +141,7 @@ class SculpinSwitch :
 
   Router* router_;
 
-  SST::Statistics::MultiStatistic<uint64_t/*time*/,int/*port*/,double/*color*/,int/*id*/>* vtk_;
+  // TODOWARNING SST::Statistics::MultiStatistic<uint64_t/*time*/,int/*port*/,double/*color*/,int/*id*/>* vtk_;
 
 #if SSTMAC_VTK_ENABLED
 #if SSTMAC_INTEGRATED_SST_CORE
