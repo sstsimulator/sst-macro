@@ -343,7 +343,7 @@ SimTransport::memcopy(uint64_t bytes)
 }
 
 void
-SimTransport::incomingEvent(sstmac::Event *ev)
+SimTransport::incomingEvent(sstmac::Event * /*ev*/)
 {
   spkt_abort_printf("sumi_transport::incoming_event: should not directly handle events");
 }
@@ -1074,7 +1074,7 @@ class PatternQoSAnalysis : public QoSAnalysis
     rdmaCutoff_ = params.find<SST::UnitAlgebra>("rdma_cutoff").getRoundedValue();
   }
 
-  int selectQoS(Message *m) override {
+  int selectQoS(Message * /*m*/) override {
     return 0;
   }
 

@@ -51,7 +51,7 @@ using sstmac::sw::OperatingSystem;
 using sstmac::TimeDelta;
 using sstmac::Timestamp;
 
-extern "C" int SSTMAC_gettimeofday(struct timeval* tv, struct timezone* tz)
+extern "C" int SSTMAC_gettimeofday(struct timeval* tv, struct timezone*  /*tz*/)
 {
   OperatingSystem* os = OperatingSystem::currentOs();
   uint64_t usecs = os->now().usecRounded();
@@ -60,7 +60,7 @@ extern "C" int SSTMAC_gettimeofday(struct timeval* tv, struct timezone* tz)
   return 0;
 }
 
-extern "C" int SSTMAC_clock_gettime(clockid_t id, struct timespec *ts)
+extern "C" int SSTMAC_clock_gettime(clockid_t  /*id*/, struct timespec *ts)
 {
   OperatingSystem* os = OperatingSystem::currentOs();
   // TODOWARNING Timestamp t = os->now();
@@ -70,7 +70,7 @@ extern "C" int SSTMAC_clock_gettime(clockid_t id, struct timespec *ts)
   return 0;
 }
 
-extern "C" int sstmac_ts_nanosleep(const struct timespec *req, struct timespec *rem)
+extern "C" int sstmac_ts_nanosleep(const struct timespec *req, struct timespec * /*rem*/)
 {
   uint64_t ticks = req->tv_sec * TimeDelta::one_second;
   ticks += req->tv_nsec * TimeDelta::one_nanosecond;

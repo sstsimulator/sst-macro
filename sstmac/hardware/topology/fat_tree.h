@@ -194,7 +194,7 @@ class FatTree :
     return -1;
   }
 
-  bool isCurvedVtkLink(SwitchId sid, int port) const override {
+  bool isCurvedVtkLink(SwitchId  /*sid*/, int  /*port*/) const override {
     return false;
   }
 

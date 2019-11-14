@@ -112,7 +112,7 @@ LaunchRequest::cloneInjectionAck() const
 }
 
 int
-StartAppRequest::coreAffinity(int intranode_rank) const
+StartAppRequest::coreAffinity(int  /*intranode_rank*/) const
 {
   return Thread::no_core_affinity;
 }

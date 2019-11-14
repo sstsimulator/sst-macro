@@ -71,23 +71,23 @@ struct VariableScope {
 
 struct ValidateScope {
   bool operator()(const clang::Expr* e, 
-                  ExprRole role, Replacements& repls,
-                  clang::CompilerInstance& CI, 
-                  VariableScope& scope){
+                  ExprRole  /*role*/, Replacements& repls,
+                  clang::CompilerInstance&  /*CI*/, 
+                  VariableScope&  /*scope*/){
     //if this has been replaced, stop recursing
     return repls.exprs.find(e) != repls.exprs.end();
   }
 
-  bool operator()(const clang::Stmt* s, 
-                  ExprRole role, Replacements& repls,
-                  clang::CompilerInstance& CI, 
-                  VariableScope& scope){
+  bool operator()(const clang::Stmt*  /*s*/, 
+                  ExprRole  /*role*/, Replacements&  /*repls*/,
+                  clang::CompilerInstance&  /*CI*/, 
+                  VariableScope&  /*scope*/){
     //do nothing
     return false; //but don't stop recursing
   }
 
   bool operator()(const clang::DeclRefExpr* expr, 
-                  ExprRole role, Replacements& repls,
+                  ExprRole  /*role*/, Replacements& repls,
                   clang::CompilerInstance& CI, 
                   VariableScope& scope){
     const clang::ValueDecl* d = expr->getDecl();

@@ -113,7 +113,7 @@ Collective::Collective(type_t ty, CollectiveEngine* engine, int tag, int cq_id, 
 }
 
 CollectiveDoneMessage*
-Collective::addActors(Collective *coll)
+Collective::addActors(Collective * /*coll*/)
 {
   sprockit::abort("collective:add_actors: collective should not dynamically add actors");
   return nullptr;

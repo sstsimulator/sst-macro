@@ -60,13 +60,13 @@ class LibCompute :
   virtual ~LibCompute(){}
 
  protected:
-  LibCompute(SST::Params& params,
+  LibCompute(SST::Params&  /*params*/,
               const std::string& libname, SoftwareId sid,
               OperatingSystem* os)
     : Library(libname, sid, os) {
   }
 
-  LibCompute(SST::Params& params,
+  LibCompute(SST::Params&  /*params*/,
               const char* name, SoftwareId sid,
               OperatingSystem* os)
     : Library(name, sid, os)

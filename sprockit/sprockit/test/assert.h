@@ -57,7 +57,7 @@ template <class T>
 class InvalidContainer {};
 
 template <class T>
-void invalidContainer(const T& t)
+void invalidContainer(const T&  /*t*/)
 {
   FailCompileTime<true, InvalidContainer<T> > check;
 }

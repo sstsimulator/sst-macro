@@ -69,8 +69,8 @@ HostnameTaskMapper::HostnameTaskMapper(SST::Params& params) :
 
 void
 HostnameTaskMapper::mapRanks(
-  const ordered_node_set& nodes,
-  int ppn,
+  const ordered_node_set&  /*nodes*/,
+  int  /*ppn*/,
   std::vector<NodeId> &result,
   int nproc)
 {

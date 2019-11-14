@@ -104,7 +104,7 @@ NodeIdAllocation::readCoordinateFile(
 
 bool
 NodeIdAllocation::allocate(int nnode_requested,
-  const ordered_node_set& available,
+  const ordered_node_set&  /*available*/,
   ordered_node_set &allocation) const
 {
   std::vector<NodeId> node_list;

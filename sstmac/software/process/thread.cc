@@ -74,7 +74,7 @@ static thread_safe_u32 THREAD_ID_CNT(0);
 // Private method that gets called by the scheduler.
 //
 void
-Thread::initThread(const SST::Params& params,
+Thread::initThread(const SST::Params&  /*params*/,
   int physical_thread_id, ThreadContext* des_thread, void *stack,
   int stacksize, void* globals_storage, void* tls_storage)
 {
@@ -265,7 +265,7 @@ Thread::setTlsValue(long thekey, void *ptr)
 }
 
 void
-Thread::appendBacktrace(int id)
+Thread::appendBacktrace(int  /*id*/)
 {
 #if SSTMAC_HAVE_CALL_GRAPH
   backtrace_[bt_nfxn_] = id;

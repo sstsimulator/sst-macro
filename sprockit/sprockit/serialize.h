@@ -108,7 +108,7 @@ template <class T,bool flag>
 class serialize_ptr
 {
  public:
-  void operator()(serializer& ser, T*& t){
+  void operator()(serializer&  /*ser*/, T*&  /*t*/){
     ::abort();
   }
 };

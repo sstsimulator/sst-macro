@@ -69,8 +69,8 @@ HostnameAllocation::HostnameAllocation(SST::Params& params) :
 
 void
 HostnameAllocation::readHostFile(
-  ParallelRuntime* rt,
-  const char* here,
+  ParallelRuntime*  /*rt*/,
+  const char*  /*here*/,
   const std::string &hostfile,
   std::vector<std::string>& hosts)
 {
@@ -86,8 +86,8 @@ HostnameAllocation::readHostFile(
 }
 
 bool
-HostnameAllocation::allocate(int nnode_requested,
- const ordered_node_set& available,
+HostnameAllocation::allocate(int  /*nnode_requested*/,
+ const ordered_node_set&  /*available*/,
  ordered_node_set &allocation) const
 {
   std::vector< std::string > hosts;

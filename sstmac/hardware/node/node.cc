@@ -208,7 +208,7 @@ Node::connectInput(int src_outport, int dst_inport, EventLink::ptr&& link)
 }
 
 void
-Node::execute(ami::SERVICE_FUNC func, Event* data)
+Node::execute(ami::SERVICE_FUNC  /*func*/, Event*  /*data*/)
 {
   sprockit::abort("node does not implement asynchronous services - choose new node model");
 }

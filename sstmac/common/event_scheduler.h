@@ -310,7 +310,7 @@ class EventScheduler : public sprockit::printable
  protected:
   //friend int ::sstmac::run_standalone(int, char**);
 
-  EventScheduler(const std::string& selfname, uint32_t id, SST::Component* base) :
+  EventScheduler(const std::string&  /*selfname*/, uint32_t id, SST::Component* base) :
 #if !SSTMAC_INTEGRATED_SST_CORE
     mgr_(nullptr), 
     seqnum_(0), 
@@ -386,7 +386,7 @@ class Component :
   virtual void init(unsigned int phase); //needed for SST core compatibility
 
  protected:
-  Component(uint32_t cid, SST::Params& params) :
+  Component(uint32_t cid, SST::Params&  /*params*/) :
 #if SSTMAC_INTEGRATED_SST_CORE
    SSTIntegratedComponent(params, cid),
    EventScheduler(cid, this)
@@ -409,11 +409,11 @@ class Component :
 #else
   void initLinks(SST::Params& params){} //need for SST core compatibility
 
-  template <class T> T* loadSub(const std::string& name, SST::Params& params, const std::string& iface){
+  template <class T> T* loadSub(const std::string& name, SST::Params& params, const std::string&  /*iface*/){
     return sprockit::create<T>("macro", name, this, params);
   }
 
-  template <class T> T* newSub(const std::string& name, SST::Params& params){
+  template <class T> T* newSub(const std::string&  /*name*/, SST::Params& params){
     return new T(this, params);
   }
 #endif
@@ -576,7 +576,7 @@ class SubLink : public EventLink
   EventHandler* handler_;
 };
 
-static inline EventLink::ptr allocateSubLink(const std::string& name, TimeDelta lat,
+static inline EventLink::ptr allocateSubLink(const std::string&  /*name*/, TimeDelta lat,
                                              SST::Component* comp, LinkHandler* handler)
 {
   return EventLink::ptr(new SubLink(lat, comp, handler));

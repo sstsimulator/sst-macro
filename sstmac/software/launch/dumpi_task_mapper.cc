@@ -87,10 +87,10 @@ DumpiTaskMapper::DumpiTaskMapper(SST::Params& params) :
 
 void
 DumpiTaskMapper::mapRanks(
-  const ordered_node_set& nodes,
-  int ppn,
+  const ordered_node_set&  /*nodes*/,
+  int  /*ppn*/,
   std::vector<NodeId> &result,
-  int nproc)
+  int  /*nproc*/)
 {
   DumpiMeta* meta = new DumpiMeta(metaname_);
 

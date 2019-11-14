@@ -99,7 +99,7 @@ CoordinateAllocation::readCoordinateFile(
 bool
 CoordinateAllocation::allocate(
   int nnode_requested,
-  const ordered_node_set& available,
+  const ordered_node_set&  /*available*/,
   ordered_node_set& allocation) const
 {
   std::vector<hw::coordinates> node_list;

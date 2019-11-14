@@ -66,10 +66,10 @@ CoordinateTaskMapper::CoordinateTaskMapper(SST::Params& params) :
 
 void
 CoordinateTaskMapper::mapRanks(
-  const ordered_node_set& nodes,
-  int ppn,
+  const ordered_node_set&  /*nodes*/,
+  int  /*ppn*/,
   std::vector<NodeId> &result,
-  int nproc)
+  int  /*nproc*/)
 {
   hw::CartesianTopology* regtop = safe_cast(hw::CartesianTopology, topology_);
 

@@ -260,11 +260,11 @@ MpiApi::ialltoallv(const int *sendcounts, MPI_Datatype sendtype,
 }
 
 int
-MpiApi::ialltoallw(const void *sendbuf, const int sendcounts[],
-                    const int sdispls[], const MPI_Datatype sendtypes[],
-                    void *recvbuf, const int recvcounts[],
-                    const int rdispls[], const MPI_Datatype recvtypes[],
-                    MPI_Comm comm, MPI_Request *request)
+MpiApi::ialltoallw(const void * /*sendbuf*/, const int  /*sendcounts*/[],
+                    const int  /*sdispls*/[], const MPI_Datatype  /*sendtypes*/[],
+                    void * /*recvbuf*/, const int  /*recvcounts*/[],
+                    const int  /*rdispls*/[], const MPI_Datatype  /*recvtypes*/[],
+                    MPI_Comm  /*comm*/, MPI_Request * /*request*/)
 {
   sprockit::abort("MPI_Ialltoallw: unimplemented"
                   "but, seriously, why are you using this collective anyway?");
@@ -272,7 +272,7 @@ MpiApi::ialltoallw(const void *sendbuf, const int sendcounts[],
 }
 
 sumi::CollectiveDoneMessage*
-MpiApi::startGatherv(CollectivevOp* op)
+MpiApi::startGatherv(CollectivevOp*  /*op*/)
 {
   sprockit::abort("sumi::gatherv: not implemented");
   return nullptr;
@@ -379,7 +379,7 @@ MpiApi::igatherv(int sendcount, MPI_Datatype sendtype,
 }
 
 sumi::CollectiveDoneMessage*
-MpiApi::startScatterv(CollectivevOp* op)
+MpiApi::startScatterv(CollectivevOp*  /*op*/)
 {
   sprockit::abort("sumi::scatterv: not implemented");
   return nullptr;

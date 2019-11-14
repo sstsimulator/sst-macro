@@ -193,7 +193,7 @@ PiscesSwitch::InputPort::handle(Event *ev)
 }
 
 void
-PiscesSwitch::connectInput(int src_outport, int dst_inport, EventLink::ptr&& link)
+PiscesSwitch::connectInput(int  /*src_outport*/, int dst_inport, EventLink::ptr&& link)
 {
   int buffer_port = 0;
   xbar_->setInput(dst_inport, buffer_port, std::move(link));

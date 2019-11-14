@@ -53,7 +53,7 @@ Questions? Contact sst-macro-help@sandia.gov
 class ComputeVisitor  {
  public:
   //97 = 'a', for debug printing
-  ComputeVisitor(clang::CompilerInstance& c, SSTPragmaList& plist, ComputeVisitor* par,
+  ComputeVisitor(clang::CompilerInstance& c, SSTPragmaList& plist, ComputeVisitor*  /*par*/,
                  SkeletonASTVisitor* ctxt) :
     idCount(97), 
     currentGeneration(1), 

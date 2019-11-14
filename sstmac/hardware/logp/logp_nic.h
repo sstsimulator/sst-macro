@@ -95,7 +95,7 @@ class LogPNIC :
     return "simple nic";
   }
 
-  LinkHandler* creditHandler(int port) override {
+  LinkHandler* creditHandler(int  /*port*/) override {
     return newLinkHandler(this, &LogPNIC::dropEvent);
   }
 

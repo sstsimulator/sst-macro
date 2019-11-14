@@ -85,11 +85,11 @@ class Star : public StructuredTopology
     return 1;
   }
 
-  int minimalDistance(SwitchId src, SwitchId dst) const {
+  int minimalDistance(SwitchId  /*src*/, SwitchId  /*dst*/) const {
     return 1;
   }
 
-  int numHopsToNode(NodeId src, NodeId dst) const override {
+  int numHopsToNode(NodeId  /*src*/, NodeId  /*dst*/) const override {
     return 1;
   }
 

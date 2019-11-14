@@ -142,7 +142,7 @@ Dragonfly::minimalDistance(SwitchId src, SwitchId dst) const
 }
 
 std::string
-Dragonfly::portTypeName(SwitchId sid, int port) const
+Dragonfly::portTypeName(SwitchId  /*sid*/, int port) const
 {
   if (port < a_){
     return "intra";
@@ -198,7 +198,7 @@ Dragonfly::connectedOutports(SwitchId src, std::vector<Connection>& conns) const
 }
 
 bool
-Dragonfly::isCurvedVtkLink(SwitchId sid, int port) const
+Dragonfly::isCurvedVtkLink(SwitchId  /*sid*/, int port) const
 {
   if (port >= a_){
     return false; //global link - these are straight lines
@@ -324,7 +324,7 @@ Dragonfly::portConfigDump(const std::string &dump_file)
   ofs.close();
 }
 
-InterGroupWiring::InterGroupWiring(SST::Params& params, int a, int g, int h) :
+InterGroupWiring::InterGroupWiring(SST::Params&  /*params*/, int a, int g, int h) :
   a_(a), g_(g), h_(h)
 {
 }
@@ -374,7 +374,7 @@ class SingleLinkGroupWiring : public InterGroupWiring
     }
   }
 
-  int inputGroupPort(int srcA, int srcG, int srcH, int dstA, int dstG) const override {
+  int inputGroupPort(int  /*srcA*/, int  /*srcG*/, int srcH, int  /*dstA*/, int  /*dstG*/) const override {
     if (srcH != 0){
       spkt_abort_printf("h must be 1 for single link inter-group pattern");
     }
@@ -446,7 +446,7 @@ class CirculantGroupWiring : public InterGroupWiring
     }
   }
 
-  int inputGroupPort(int srcA, int srcG, int srcH, int dstA, int dstG) const override {
+  int inputGroupPort(int  /*srcA*/, int  /*srcG*/, int srcH, int  /*dstA*/, int  /*dstG*/) const override {
     if (srcH % 2 == 0){
       return srcH + 1;
     } else {
@@ -532,7 +532,7 @@ class AllToAllGroupWiring : public InterGroupWiring
     if (a_ % covering_) spkt_abort_printf("dragonfly covering=%d must evenly divide group_size=%d", covering_, a_);
   }
 
-  int inputGroupPort(int srcA, int srcG, int srcH, int dstA, int dstG) const override {
+  int inputGroupPort(int srcA, int srcG, int  /*srcH*/, int dstA, int dstG) const override {
     int deltaA = modulo(srcA - dstA,a_); //mod arithmetic in case srcA < dstA
     int offset = deltaA / stride_;
     if (srcG < dstG){
@@ -590,7 +590,7 @@ class AllToAllGroupWiring : public InterGroupWiring
    *                  is the "port offset", a unique index for the group link
    * @return The number of routers in group srcG with connections to dstG
    */
-  void connectedToGroup(int srcG, int dstG, std::vector<std::pair<int,int>>& connected) const override {
+  void connectedToGroup(int  /*srcG*/, int dstG, std::vector<std::pair<int,int>>& connected) const override {
     connected.clear();
     for (int a=0; a < a_; ++a){
       int offset = dstG * covering_;

@@ -136,7 +136,7 @@ BlasAPI::daxpy(int n)
 }
 
 ComputeEvent*
-BlasKernel::op_3d(int m, int k, int n)
+BlasKernel::op_3d(int  /*m*/, int  /*k*/, int  /*n*/)
 {
   spkt_throw_printf(sprockit::UnimplementedError,
     "blas_kernel::mult_op: %s does not implement 3D ops",
@@ -144,7 +144,7 @@ BlasKernel::op_3d(int m, int k, int n)
 }
 
 ComputeEvent*
-BlasKernel::op_2d(int m, int n)
+BlasKernel::op_2d(int  /*m*/, int  /*n*/)
 {
   spkt_throw_printf(sprockit::UnimplementedError,
     "blas_kernel::mult_op: %s does not implement 2D ops",
@@ -152,7 +152,7 @@ BlasKernel::op_2d(int m, int n)
 }
 
 ComputeEvent*
-BlasKernel::op_1d(int n)
+BlasKernel::op_1d(int  /*n*/)
 {
   spkt_throw_printf(sprockit::UnimplementedError,
     "blas_kernel::mult_op: %s does not implement 1D ops",

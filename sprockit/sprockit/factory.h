@@ -218,7 +218,7 @@ template <> class NoValidConstructorsForDerivedType<0> {};
 template <class Base> struct CtorList<Base,void>
 {
   template <class T,int numValidCtors>
-  static bool add(const std::string& lib, const std::string& elem){
+  static bool add(const std::string&  /*lib*/, const std::string&  /*elem*/){
     return NoValidConstructorsForDerivedType<numValidCtors>::atLeastOneValidCtor;
   }
 };

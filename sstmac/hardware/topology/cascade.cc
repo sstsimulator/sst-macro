@@ -286,7 +286,7 @@ Cascade::connectedOutports(SwitchId src, std::vector<Connection>& conns) const
 }
 
 double
-Cascade::portScaleFactor(uint32_t addr, int port) const
+Cascade::portScaleFactor(uint32_t  /*addr*/, int port) const
 {
   if (port >= (x_+y_)){
     //group port

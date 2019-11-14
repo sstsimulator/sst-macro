@@ -61,7 +61,7 @@ class CollectiveDoneMessage :
 {
 
  public:
-  CollectiveDoneMessage(int tag, Collective::type_t ty, Communicator* dom, uint8_t cq_id) :
+  CollectiveDoneMessage(int tag, Collective::type_t ty, Communicator* dom, uint8_t  /*cq_id*/) :
     tag_(tag), result_(0), vote_(0), type_(ty), dom_(dom)
   {
   }

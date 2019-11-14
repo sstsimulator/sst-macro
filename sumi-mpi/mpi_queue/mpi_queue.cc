@@ -86,7 +86,7 @@ MpiQueue::sortbyseqnum::operator()(MpiMessage* a, MpiMessage*b) const
 }
 
 MpiQueue::MpiQueue(SST::Params& params, int task_id,
-                   MpiApi* api, CollectiveEngine* engine) :
+                   MpiApi* api, CollectiveEngine*  /*engine*/) :
   queue_(api->parent()->os()),
   taskid_(task_id),
   api_(api)
@@ -507,7 +507,7 @@ MpiQueue::forwardProgress(double timeout)
 void
 MpiQueue::startProgressLoop(
   const std::vector<MpiRequest*>& req,
-  sstmac::TimeDelta timeout)
+  sstmac::TimeDelta  /*timeout*/)
 {
   startProgressLoop(req);
 }

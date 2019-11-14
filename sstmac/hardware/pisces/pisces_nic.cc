@@ -108,7 +108,7 @@ PiscesNIC::payloadHandler(int port)
 }
 
 LinkHandler*
-PiscesNIC::creditHandler(int port)
+PiscesNIC::creditHandler(int  /*port*/)
 {
   return newLinkHandler(this, &PiscesNIC::packetSent);
 }
@@ -126,7 +126,7 @@ PiscesNIC::connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link)
 }
 
 void
-PiscesNIC::connectInput(int src_outport, int dst_inport, EventLink::ptr&& link)
+PiscesNIC::connectInput(int  /*src_outport*/, int dst_inport, EventLink::ptr&& link)
 {
   if (dst_inport == Injection){ //the logp port is not for credits!
     credit_link_ = std::move(link);

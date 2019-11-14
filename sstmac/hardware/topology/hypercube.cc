@@ -120,7 +120,7 @@ Hypercube::minimalDistance(
 }
 
 double
-Hypercube::portScaleFactor(uint32_t addr, int port) const
+Hypercube::portScaleFactor(uint32_t  /*addr*/, int port) const
 {
   int port_cutoff = 0;
   int dim=0; 
@@ -139,7 +139,7 @@ Hypercube::portScaleFactor(uint32_t addr, int port) const
 }
 
 std::string
-Hypercube::portTypeName(SwitchId sid, int port) const
+Hypercube::portTypeName(SwitchId  /*sid*/, int port) const
 {
   static const char* dimNames[] = {"X","Y","Z","A","B"};
 

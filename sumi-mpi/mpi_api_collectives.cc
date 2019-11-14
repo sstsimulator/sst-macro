@@ -842,7 +842,7 @@ MpiApi::startReduceScatter(CollectiveOp* op)
 }
 
 CollectiveOpBase::ptr
-MpiApi::startReduceScatter(const char* name, MPI_Comm comm, const int* recvcounts,
+MpiApi::startReduceScatter(const char*  /*name*/, MPI_Comm  /*comm*/, const int*  /*recvcounts*/,
                            MPI_Datatype type, MPI_Op mop, const void* src, void* dst)
 {
   sprockit::abort("sumi::reduce_scatter");
@@ -903,7 +903,7 @@ MpiApi::ireduceScatter(int *recvcnts, MPI_Datatype type,
 }
 
 CollectiveOpBase::ptr
-MpiApi::startReduceScatterBlock(const char* name, MPI_Comm comm, int count, MPI_Datatype type,
+MpiApi::startReduceScatterBlock(const char*  /*name*/, MPI_Comm  /*comm*/, int  /*count*/, MPI_Datatype type,
                                     MPI_Op mop, const void* src, void* dst)
 {
   sprockit::abort("sumi::reduce_scatter: not implemented");

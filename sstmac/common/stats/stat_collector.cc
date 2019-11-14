@@ -59,7 +59,7 @@ SST_ELI_INSTANTIATE_STATISTIC(NullStatistic, double)
 SST_ELI_INSTANTIATE_STATISTIC(NullStatistic, uint64_t)
 SST_ELI_INSTANTIATE_STATISTIC(NullStatistic, void)
 
-StatisticBase::StatisticBase(EventScheduler *parent, const std::string &name,
+StatisticBase::StatisticBase(EventScheduler * /*parent*/, const std::string &name,
                              const std::string &subName, SST::Params &params) :
   name_(name), sub_id_(subName), group_(nullptr)
 {
@@ -134,7 +134,7 @@ StatOutputCSV::outputPending()
 }
 
 void
-Statistic<void>::outputStatisticData(StatisticFieldsOutput *output, bool endOfSimFlag)
+Statistic<void>::outputStatisticData(StatisticFieldsOutput * /*output*/, bool  /*endOfSimFlag*/)
 {
   spkt_abort_printf("void statistic '%s' should never call outputStatisticData\n"
                     "ensure that correct output is set for group '%s'",
@@ -142,7 +142,7 @@ Statistic<void>::outputStatisticData(StatisticFieldsOutput *output, bool endOfSi
 }
 
 void
-Statistic<void>::registerOutputFields(StatisticFieldsOutput *statOutput)
+Statistic<void>::registerOutputFields(StatisticFieldsOutput * /*statOutput*/)
 {
   spkt_abort_printf("void statistic '%s' should never call registerOutputFields\n"
                     "ensure that correct output is set for group '%s'",

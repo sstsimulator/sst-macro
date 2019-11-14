@@ -89,7 +89,7 @@ MpiApi::commDup(MPI_Comm input, MPI_Comm *output)
 }
 
 int
-MpiApi::commCreateGroup(MPI_Comm comm, MPI_Group group, int tag, MPI_Comm *newcomm)
+MpiApi::commCreateGroup(MPI_Comm comm, MPI_Group group, int  /*tag*/, MPI_Comm *newcomm)
 {
   checkInit();
   StartCommCall(MPI_Comm_create_group,comm);
@@ -245,7 +245,7 @@ MpiApi::cartShift(MPI_Comm comm, int direction, int disp, int *rank_source,
 }
 
 int
-MpiApi::cartCoords(MPI_Comm comm, int rank, int maxdims, int coords[])
+MpiApi::cartCoords(MPI_Comm comm, int rank, int  /*maxdims*/, int coords[])
 {
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Cart_coords(...)");
   MpiComm* incommPtr = getComm(comm);
@@ -317,7 +317,7 @@ MpiApi::commFree(MPI_Comm* input)
 }
 
 int
-MpiApi::commGetAttr(MPI_Comm, int comm_keyval, void* attribute_val, int *flag)
+MpiApi::commGetAttr(MPI_Comm, int  /*comm_keyval*/, void*  /*attribute_val*/, int *flag)
 {
   /**
   if (comm_keyval == MPI_TAG_UB){

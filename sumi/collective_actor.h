@@ -286,8 +286,8 @@ class Slicer {
 
   virtual void memcpyPackedBufs(void* dst, void* src, int nelems) const = 0;
 
-  virtual void unpackReduce(void* packedBuf, void* unpackedObj,
-            int offset, int nelems) const {
+  virtual void unpackReduce(void*  /*packedBuf*/, void*  /*unpackedObj*/,
+            int  /*offset*/, int  /*nelems*/) const {
     sprockit::abort("slicer for collective does not implement a reduce op");
   }
 

@@ -115,32 +115,32 @@ struct RecurseAll {
 #undef recurse_case
   }
 
-  void recurseReturnStmt(const ReturnStmt* stmt, ExprRole role, Args&& ...args){
+  void recurseReturnStmt(const ReturnStmt* stmt, ExprRole  /*role*/, Args&& ...args){
     recurse(stmt->getRetValue(), ExprRole::ReturnValue, std::forward<Args>(args)...);
   }
 
-  void recurseForStmt(const ForStmt* stmt, ExprRole role, Args&& ...args){
+  void recurseForStmt(const ForStmt* stmt, ExprRole  /*role*/, Args&& ...args){
     recurse(stmt->getInit(), ExprRole::ForInit, std::forward<Args>(args)...);
     recurse(stmt->getCond(), ExprRole::ForCond, std::forward<Args>(args)...);
     recurse(stmt->getInc(), ExprRole::ForInc, std::forward<Args>(args)...);
     recurse(stmt->getBody(), ExprRole::ForBody, std::forward<Args>(args)...);
   }
 
-  void recurseCompoundStmt(const CompoundStmt* stmt, ExprRole role, Args&& ...args){
+  void recurseCompoundStmt(const CompoundStmt* stmt, ExprRole  /*role*/, Args&& ...args){
     auto end = stmt->child_end();
     for (auto iter=stmt->child_begin(); iter != end; ++iter){
       recurse(*iter, ExprRole::Standalone, std::forward<Args>(args)...);
     }
   }
 
-  void recurseIfStmt(const IfStmt* stmt, ExprRole role, Args&& ...args){
+  void recurseIfStmt(const IfStmt* stmt, ExprRole  /*role*/, Args&& ...args){
     recurse(stmt->getCond(), ExprRole::IfCond, std::forward<Args>(args)...);
     recurse(stmt->getThen(), ExprRole::IfBody, std::forward<Args>(args)...);
     if (stmt->getElse()) recurse(stmt->getElse(), ExprRole::IfElse, std::forward<Args>(args)...);
     if (stmt->getInit()) recurse(stmt->getInit(), ExprRole::IfInit, std::forward<Args>(args)...);
   }
 
-  void recurseDeclStmt(const DeclStmt* stmt, ExprRole role, Args&& ...args){
+  void recurseDeclStmt(const DeclStmt* stmt, ExprRole  /*role*/, Args&& ...args){
     const Decl* D = stmt->getSingleDecl();
     if (D){
       switch(D->getKind()){
@@ -158,7 +158,7 @@ struct RecurseAll {
     }
   }
 
-  void recurseBinaryOperator(const BinaryOperator* op, ExprRole role, Args&& ...args){
+  void recurseBinaryOperator(const BinaryOperator* op, ExprRole  /*role*/, Args&& ...args){
     recurse(op->getLHS(), ExprRole::BinOpLHS, std::forward<Args>(args)...);
     recurse(op->getRHS(), ExprRole::BinOpRHS, std::forward<Args>(args)...);
   }
@@ -168,7 +168,7 @@ struct RecurseAll {
     recurse(expr->getSubExpr(), role, std::forward<Args>(args)...);
   }
 
-  void recurseCallExpr(const CallExpr* expr, ExprRole role, Args&& ...args){
+  void recurseCallExpr(const CallExpr* expr, ExprRole  /*role*/, Args&& ...args){
     recurse(expr->getCallee(), ExprRole::CallFxn, std::forward<Args>(args)...);
     for (int i=0; i < expr->getNumArgs(); ++i){
       recurse(expr->getArg(i), ExprRole::CallArg, std::forward<Args>(args)...);
@@ -179,7 +179,7 @@ struct RecurseAll {
     recurse(expr->getSubExpr(), role, std::forward<Args>(args)...);
   }
 
-  void recurseCXXMemberCallExpr(const CXXMemberCallExpr* expr, ExprRole role, Args&& ...args){
+  void recurseCXXMemberCallExpr(const CXXMemberCallExpr* expr, ExprRole  /*role*/, Args&& ...args){
     //recurse(expr->getImplicitObjectArgument(), ExprRole::ThisPtr, std::forward<Args>(args)...);
     recurse(expr->getCallee(), ExprRole::CallFxn, std::forward<Args>(args)...);
     for (int i=0; i < expr->getNumArgs(); ++i){
@@ -187,7 +187,7 @@ struct RecurseAll {
     }
   }
 
-  void recurseCXXOperatorCallExpr(const CXXOperatorCallExpr* expr, ExprRole role, Args&& ...args){
+  void recurseCXXOperatorCallExpr(const CXXOperatorCallExpr* expr, ExprRole  /*role*/, Args&& ...args){
     //recurse(expr->getImplicitObjectArgument(), ExprRole::ThisPtr, std::forward<Args>(args)...);
     recurse(expr->getCallee(), ExprRole::CallFxn, std::forward<Args>(args)...);
     for (int i=0; i < expr->getNumArgs(); ++i){
@@ -196,7 +196,7 @@ struct RecurseAll {
   }
 
 
-  void recurseMemberExpr(const MemberExpr* expr, ExprRole role, Args&& ...args){
+  void recurseMemberExpr(const MemberExpr* expr, ExprRole  /*role*/, Args&& ...args){
     recurse(expr->getBase(), ExprRole::ThisPtr, std::forward<Args>(args)...);
   }
 
@@ -214,7 +214,7 @@ struct RecurseAll {
     recurse(expr->getSubExpr(), role, std::forward<Args>(args)...);
   }
 
-  void recurseArraySubscriptExpr(const ArraySubscriptExpr* expr, ExprRole role, Args&& ...args){
+  void recurseArraySubscriptExpr(const ArraySubscriptExpr* expr, ExprRole  /*role*/, Args&& ...args){
     recurse(expr->getBase(), ExprRole::ArrayBase, std::forward<Args>(args)...);
     recurse(expr->getIdx(), ExprRole::ArrayIdx, std::forward<Args>(args)...);
   }
@@ -225,7 +225,7 @@ struct RecurseAll {
 struct NullVisit
 {
   template <class T, class... Args>
-  bool operator()(T* t, ExprRole role, Args&& ...args){ return false; }
+  bool operator()(T*  /*t*/, ExprRole  /*role*/, Args&& ... /*args*/){ return false; }
 };
 
 template <class PreVisit, class PostVisit, class... Args>

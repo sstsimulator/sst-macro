@@ -91,7 +91,7 @@ void
 CartAllocation::insert(
   hw::CartesianTopology* regtop,
   const std::vector<int>& coords,
-  const ordered_node_set& available,
+  const ordered_node_set&  /*available*/,
   ordered_node_set& allocation) const
 {
   NodeId nid = regtop->node_addr(coords);

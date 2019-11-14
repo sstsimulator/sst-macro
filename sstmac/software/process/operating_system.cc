@@ -163,11 +163,11 @@ struct NullRegression : public OperatingSystem::ThreadSafeTimerModel<double>
   using Parent = OperatingSystem::ThreadSafeTimerModel<double>;
 
   NullRegression(SST::BaseComponent* comp, const std::string& key,
-                 const std::string& subName, SST::Params& params)
+                 const std::string&  /*subName*/, SST::Params& params)
     : Parent(params, comp, key, ""), computed_(false) {}
 
-  double compute(int n_params, const double params[],
-                 OperatingSystem::ImplicitState* state) override {
+  double compute(int  /*n_params*/, const double  /*params*/[],
+                 OperatingSystem::ImplicitState*  /*state*/) override {
     if (!computed_){
       computed_ = true;
       computeMean();
@@ -179,8 +179,8 @@ struct NullRegression : public OperatingSystem::ThreadSafeTimerModel<double>
     return Parent::start();
   }
 
-  void finishCollection(int thr_tag, int n_params, const double params[],
-                         OperatingSystem::ImplicitState* state) override {
+  void finishCollection(int thr_tag, int  /*n_params*/, const double  /*params*/[],
+                         OperatingSystem::ImplicitState*  /*state*/) override {
     Parent::finish(thr_tag);
   }
 
@@ -223,11 +223,11 @@ struct LinearRegression : public OperatingSystem::ThreadSafeTimerModel<std::pair
 
   using parent = OperatingSystem::ThreadSafeTimerModel<std::pair<double,double>>;
   LinearRegression(SST::BaseComponent* comp, const std::string& key,
-                   const std::string& subName, SST::Params& params)
+                   const std::string&  /*subName*/, SST::Params& params)
     : parent(params, comp, key, ""), computed_(false) {}
 
   double compute(int n_params, const double params[],
-                 OperatingSystem::ImplicitState* state) override {
+                 OperatingSystem::ImplicitState*  /*state*/) override {
     if (n_params != 1){
       spkt_abort_printf("linear regression can only take one parameter - got %d", n_params);
     }
@@ -245,7 +245,7 @@ struct LinearRegression : public OperatingSystem::ThreadSafeTimerModel<std::pair
   }
 
   void finishCollection(int thr_tag, int n_params, const double params[],
-                        OperatingSystem::ImplicitState* state) override {
+                        OperatingSystem::ImplicitState*  /*state*/) override {
     if (n_params != 1){
       spkt_abort_printf("linear regression can only take one parameter - got %d", n_params);
     }
@@ -987,7 +987,7 @@ OperatingSystem::startThread(Thread* t)
 }
 
 void
-OperatingSystem::startApp(App* theapp, const std::string& unique_name)
+OperatingSystem::startApp(App* theapp, const std::string&  /*unique_name*/)
 {
   os_debug("starting app %d:%d on thread %d",
     int(theapp->tid()), int(theapp->aid()), threadId());

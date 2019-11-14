@@ -113,7 +113,7 @@ LogPNIC::doSend(NetworkMessage* msg)
 }
 
 void
-LogPNIC::connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link)
+LogPNIC::connectOutput(int  /*src_outport*/, int  /*dst_inport*/, EventLink::ptr&& link)
 {
   logp_link_ = std::move(link);
 }
@@ -125,7 +125,7 @@ LogPNIC::connectInput(int src_outport, int dst_inport, EventLink::ptr&& link)
 }
 
 LinkHandler*
-LogPNIC::payloadHandler(int port)
+LogPNIC::payloadHandler(int  /*port*/)
 {
   return newLinkHandler(this, &NIC::mtlHandle);
 }

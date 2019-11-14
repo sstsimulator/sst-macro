@@ -120,7 +120,7 @@ class SSTMemoizeComputePragma : public SSTPragma
   SSTMemoizeComputePragma(clang::SourceLocation loc, clang::CompilerInstance& CI,
                           std::map<std::string, std::list<std::string>>&& in_args);
 
-  bool firstPass(const clang::Decl *d) const override {
+  bool firstPass(const clang::Decl * /*d*/) const override {
     return true;
   }
 
@@ -147,7 +147,7 @@ class SSTImplicitStatePragma : public SSTPragma
   SSTImplicitStatePragma(clang::SourceLocation loc, clang::CompilerInstance& CI,
       std::map<std::string, std::list<std::string>>&& in_args);
 
-  bool firstPass(const clang::Decl *d) const override {
+  bool firstPass(const clang::Decl * /*d*/) const override {
     return true;
   }
 

@@ -51,7 +51,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sprockit {
 
 template <class Out, class In>
-Out* __safe_cast__(const char* objname,
+Out* __safe_cast__(const char*  /*objname*/,
               const char* file,
               int line,
               In* in,

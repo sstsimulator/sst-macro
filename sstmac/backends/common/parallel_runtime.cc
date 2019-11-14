@@ -74,7 +74,7 @@ ParallelRuntime* ParallelRuntime::static_runtime_ = nullptr;
 static int backupSize = 10e6;
 
 char*
-ParallelRuntime::CommBuffer::allocateSpace(size_t size, IpcEvent *ev)
+ParallelRuntime::CommBuffer::allocateSpace(size_t size, IpcEvent * /*ev*/)
 {
   uint64_t newOffset = add_int64_atomic(size, &bytesAllocated);
   uint64_t myStartPos = newOffset - size;
@@ -283,7 +283,7 @@ ParallelRuntime::initRuntimeParams(SST::Params& params)
 #endif
 }
 
-ParallelRuntime::ParallelRuntime(SST::Params& params,
+ParallelRuntime::ParallelRuntime(SST::Params&  /*params*/,
                                    int me, int nproc)
   : nproc_(nproc),
     nthread_(1),

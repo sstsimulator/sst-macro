@@ -73,7 +73,7 @@ KeywordRegistration::deleteStatics()
 }
 
 bool
-KeywordRegistration::isValidNamespace(const std::string& ns)
+KeywordRegistration::isValidNamespace(const std::string&  /*ns*/)
 {
   return true;
 }

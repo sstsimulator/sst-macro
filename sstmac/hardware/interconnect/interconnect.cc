@@ -335,7 +335,7 @@ uint64_t
 Interconnect::connectLogP(
   uint64_t linkIdOffset,
   EventManager* mgr,
-  SST::Params& node_params,
+  SST::Params&  /*node_params*/,
   SST::Params& nic_params)
 {
   SST::Params inj_params = nic_params.get_namespace("injection");
@@ -431,7 +431,7 @@ Interconnect::connectLogP(
 
 void
 Interconnect::buildEndpoints(SST::Params& node_params,
-                  SST::Params& nic_params,
+                  SST::Params&  /*nic_params*/,
                   EventManager* mgr)
 {
   int my_rank = rt_->me();

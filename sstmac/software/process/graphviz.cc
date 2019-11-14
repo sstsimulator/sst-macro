@@ -292,7 +292,7 @@ CallGraphOutput::dumpSummary(CallGraph* cgr)
 }
 
 void
-CallGraphOutput::output(StatisticBase *statistic, bool endOfSimFlag)
+CallGraphOutput::output(StatisticBase *statistic, bool  /*endOfSimFlag*/)
 {
   CallGraph* cgr = dynamic_cast<CallGraph*>(statistic);
   if (!cgr){

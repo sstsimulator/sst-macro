@@ -151,7 +151,7 @@ FatTree::FatTree(SST::Params& params) :
 }
 
 Topology::VTKSwitchGeometry
-FatTree::getVtkGeometry(SwitchId sid) const
+FatTree::getVtkGeometry(SwitchId  /*sid*/) const
 {
   // TODOWARNING int core_row_cutoff = num_leaf_switches_ + num_agg_switches_;
   // TODOWARNING int agg_row_cutoff = num_leaf_switches_;
@@ -359,7 +359,7 @@ FatTree::connectedOutports(SwitchId src, std::vector<Connection>& conns) const
 }
 
 double
-FatTree::portScaleFactor(uint32_t addr, int port) const
+FatTree::portScaleFactor(uint32_t addr, int  /*port*/) const
 {
   int my_level = level(addr);
 
@@ -570,12 +570,12 @@ TaperedFatTree::endpointsConnectedToInjectionSwitch(SwitchId swaddr,
 
 void
 TaperedFatTree::createPartition(
-  int *switch_to_lp,
-  int *switch_to_thread,
-  int me,
-  int nproc,
-  int nthread,
-  int noccupied) const
+  int * /*switch_to_lp*/,
+  int * /*switch_to_thread*/,
+  int  /*me*/,
+  int  /*nproc*/,
+  int  /*nthread*/,
+  int  /*noccupied*/) const
 {
   spkt_throw_printf(sprockit::UnimplementedError, "tapered_fat_tree::createPartition");
 /**
@@ -638,7 +638,7 @@ TaperedFatTree::createPartition(
 }
 
 double
-TaperedFatTree::portScaleFactor(uint32_t addr, int port) const
+TaperedFatTree::portScaleFactor(uint32_t  /*addr*/, int  /*port*/) const
 {
   return 1.0;
 }

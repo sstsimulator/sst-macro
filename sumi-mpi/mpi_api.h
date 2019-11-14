@@ -139,11 +139,11 @@ class MpiApi : public sumi::SimTransport
     return MPI_SUCCESS;
   }
 
-  int bufferAttach(void* buffer, int size){
+  int bufferAttach(void*  /*buffer*/, int  /*size*/){
     return MPI_SUCCESS;
   }
 
-  int bufferDetach(void* buffer, int* size){
+  int bufferDetach(void*  /*buffer*/, int*  /*size*/){
     return MPI_SUCCESS;
   }
 
@@ -170,15 +170,15 @@ class MpiApi : public sumi::SimTransport
 
   int abort(MPI_Comm comm, int errcode);
 
-  int errhandlerSet(MPI_Comm comm, MPI_Errhandler handler){
+  int errhandlerSet(MPI_Comm  /*comm*/, MPI_Errhandler  /*handler*/){
     return MPI_SUCCESS;
   }
 
-  int errhandlerCreate(MPI_Handler_function *function, MPI_Errhandler *errhandler){
+  int errhandlerCreate(MPI_Handler_function * /*function*/, MPI_Errhandler * /*errhandler*/){
     return MPI_SUCCESS;
   }
 
-  int errorClass(int errorcode, int* errorclass){
+  int errorClass(int  /*errorcode*/, int* errorclass){
     *errorclass = 0;
     return MPI_SUCCESS;
   }
@@ -221,7 +221,7 @@ class MpiApi : public sumi::SimTransport
 
   int commFree(MPI_Comm* input);
 
-  int commSetErrhandler(MPI_Comm comm, MPI_Errhandler errhandler){
+  int commSetErrhandler(MPI_Comm  /*comm*/, MPI_Errhandler  /*errhandler*/){
     return MPI_SUCCESS;
   }
 

@@ -93,7 +93,7 @@ class RuntimeParamBcaster :
  public:
   RuntimeParamBcaster(ParallelRuntime* rt) : rt_(rt) {}
 
-  void bcast(void *buf, int size, int me, int root){
+  void bcast(void *buf, int size, int  /*me*/, int root){
     rt_->bcast(buf, size, root);
   }
 
@@ -169,7 +169,7 @@ initOpts(opts& oo, int argc, char** argv)
  * @param params  An already allocated parameter object
  */
 void
-initParams(ParallelRuntime* rt, opts& oo, sprockit::SimParameters::ptr params, bool parallel)
+initParams(ParallelRuntime* rt, opts& oo, sprockit::SimParameters::ptr params, bool  /*parallel*/)
 {
   //use the config file to set up file search paths
   size_t pos = oo.configfile.find_last_of('/');

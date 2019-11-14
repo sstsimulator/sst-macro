@@ -64,10 +64,10 @@ sstmac_simple_dgemm(int m, int n, int k)
 }
 
 extern "C" void
-sstmac_dgemm(char *transa, char *transb, int* m, int* n, int* k, 
-  double* alpha, double* a, int* lda, 
-  double* b, int* ldb, double* beta, 
-  double* c, int* ldc
+sstmac_dgemm(char * /*transa*/, char * /*transb*/, int* m, int* n, int* k, 
+  double*  /*alpha*/, double*  /*a*/, int*  /*lda*/, 
+  double*  /*b*/, int*  /*ldb*/, double*  /*beta*/, 
+  double*  /*c*/, int*  /*ldc*/
 )
 {
   sstmac_simple_dgemm(*m, *n, *k);
@@ -80,10 +80,10 @@ sstmac_simple_dgemv(int m, int n)
 }
 
 extern "C" void
-sstmac_dgemv(char *transa, int* m, int* n,
-  double* alpha, double* a, int* lda,
-  double* x, int* incx, double* beta,
-  double* y, int* incy
+sstmac_dgemv(char * /*transa*/, int* m, int* n,
+  double*  /*alpha*/, double*  /*a*/, int*  /*lda*/,
+  double*  /*x*/, int*  /*incx*/, double*  /*beta*/,
+  double*  /*y*/, int*  /*incy*/
 )
 {
   sstmac_simple_dgemv(*m, *n);
@@ -98,9 +98,9 @@ sstmac_simple_daxpy(int n)
 
 extern "C" void
 sstmac_daxpy(int* n,
-  double* alpha,
-  double* x, int* incx,
-  double* y, int* incy
+  double*  /*alpha*/,
+  double*  /*x*/, int*  /*incx*/,
+  double*  /*y*/, int*  /*incy*/
 )
 {
   sstmac_simple_daxpy(*n);
@@ -114,8 +114,8 @@ sstmac_simple_ddot(int n)
 
 extern "C" void
 sstmac_ddot(int* n,
-  double* x, int* incx,
-  double* y, int* incy)
+  double*  /*x*/, int*  /*incx*/,
+  double*  /*y*/, int*  /*incy*/)
 {
   sstmac_simple_ddot(*n);
 }
