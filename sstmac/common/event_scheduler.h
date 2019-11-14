@@ -57,6 +57,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/sst_core/integrated_component.h>
 #include <sprockit/sim_parameters_fwd.h>
 
+#include <unusedvariablemacro.h>
+
 #if SSTMAC_INTEGRATED_SST_CORE
 #include <sst/core/params.h>
 #include <sst/core/link.h>
@@ -310,7 +312,8 @@ class EventScheduler : public sprockit::printable
  protected:
   //friend int ::sstmac::run_standalone(int, char**);
 
-  EventScheduler(const std::string&  /*selfname*/, uint32_t id, SST::Component* base) :
+  EventScheduler(SSTMAC_MAYBE_UNUSED const std::string&  selfname, 
+                 uint32_t id, SST::Component* base) :
 #if !SSTMAC_INTEGRATED_SST_CORE
     mgr_(nullptr), 
     seqnum_(0), 
@@ -386,7 +389,7 @@ class Component :
   virtual void init(unsigned int phase); //needed for SST core compatibility
 
  protected:
-  Component(uint32_t cid, SST::Params&  /*params*/) :
+  Component(uint32_t cid, SSTMAC_MAYBE_UNUSED SST::Params&  params) :
 #if SSTMAC_INTEGRATED_SST_CORE
    SSTIntegratedComponent(params, cid),
    EventScheduler(cid, this)
