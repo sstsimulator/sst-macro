@@ -105,7 +105,7 @@ class OperatingSystem : public SubComponent
 
   virtual ~OperatingSystem();
 
-  std::string toString() const {
+  std::string toString() const override {
     return "operating system";
   }
 
