@@ -78,6 +78,12 @@ namespace hw {
 class Node : public ConnectableComponent
 {
  public:
+  enum {
+    NIC_SLOT,
+    MEMORY_SLOT,
+    OS_SLOT
+  } SubcomponentSlots;
+
   SST_ELI_DECLARE_BASE(Node)
   SST_ELI_DECLARE_DEFAULT_INFO()
   SST_ELI_DECLARE_CTOR(uint32_t, SST::Params&)

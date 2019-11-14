@@ -74,8 +74,8 @@ struct SnapprRequest : public MemoryModel::Request {
   NetworkMessage* payload;
 };
 
-SnapprNIC::SnapprNIC(SST::Component* parent, SST::Params& params) :
-  NIC(parent, params)
+SnapprNIC::SnapprNIC(uint32_t id, SST::Params& params, Node* parent) :
+  NIC(id, params, parent)
 {
   SST::Params inj_params = params.find_scoped_params("injection");
 

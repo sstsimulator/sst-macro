@@ -113,7 +113,7 @@ Node::Node(uint32_t id, SST::Params& params)
   if (mem_name.empty()){
     spkt_abort_printf("Missing node.memory.name parameter");
   }
-  mem_model_ = loadSub<MemoryModel>(mem_name, mem_params, "memory");
+  mem_model_ = loadSub<MemoryModel>(mem_name, "memory", MEMORY_SLOT, mem_params, this);
 
   SST::Params proc_params = params.find_scoped_params("proc");
   auto proc_name = proc_params.find<std::string>("processor", "instruction");
@@ -125,7 +125,7 @@ Node::Node(uint32_t id, SST::Params& params)
   nsocket_ = params.find<int>("nsockets", 1);
 
   SST::Params os_params = params.find_scoped_params("os");
-  os_ = newSub<sw::OperatingSystem>("os", os_params);
+  os_ = newSub<sw::OperatingSystem>("os", OS_SLOT, os_params, this);
 
   app_launcher_ = new AppLauncher(os_);
 
@@ -135,7 +135,7 @@ Node::Node(uint32_t id, SST::Params& params)
       "macro", params.find<std::string>("job_launcher", "default"), params, os_);
   }
 
-  nic_ = loadSub<NIC>(nic_name, nic_params, "nic");
+  nic_ = loadSub<NIC>(nic_name, "nic", NIC_SLOT, nic_params, this);
 
   //nic_ = sprockit::create<NIC>("macro", nic_name, nic_params, this);
   //sstmac::loadSubComponent<NIC>(nic_name, this, nic_params);

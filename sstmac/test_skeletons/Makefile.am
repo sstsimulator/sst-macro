@@ -30,7 +30,6 @@ libsstmac_test_skeletons_la_SOURCES = \
   app_hello_world.cc \
   dfly_worst_case.cc \
   compute.cc \
-  global_test.cc \
   mpi_coverage_test.cc \
   mpi_ping_all.cc \
   mpi_ping_pong.cc \

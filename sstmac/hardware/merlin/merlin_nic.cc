@@ -99,13 +99,13 @@ class MerlinNIC :
 
  public:
 #if SSTMAC_INTEGRATED_SST_CORE
-  SST_ELI_REGISTER_SUBCOMPONENT(
+  SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(
     MerlinNIC,
     "macro",
     "merlin_nic",
     SST_ELI_ELEMENT_VERSION(1,0,0),
     "A NIC wrapping Merlin",
-    "nic")
+    sstmac::hw::NIC)
 #else
   SST_ELI_REGISTER_DERIVED(
     NIC,
@@ -116,16 +116,17 @@ class MerlinNIC :
     "A NIC wrapping Merlin")
 #endif
 
-  MerlinNIC(SST::Component* parent, SST::Params& params) :
-    NIC(parent, params),
+  MerlinNIC(uint32_t id, SST::Params& params, Node* parent) :
+    NIC(id, params, parent),
     test_size_(0),
     vns_(2)
   {
-    auto* link_ctrl = parent->loadSubComponent(params.find<std::string>("module"), parent, params);
-    link_control_ = dynamic_cast<SST::Interfaces::SimpleNetwork*>(link_ctrl);
-    if (!link_control_){
-      sprockit::abort("Failed to dynamic cast link control");
-    }
+    int slot_id = 0;
+    link_control_ = loadAnonymousSubComponent<SST::Interfaces::SimpleNetwork>(
+                                 params.find<std::string>("module"),
+                                 "LinkControl", slot_id,
+                                 SST::ComponentInfo::SHARE_PORTS | SST::ComponentInfo::INSERT_STATS,
+                                 params, vns_);
 
     pending_.resize(vns_);
     ack_queue_.resize(vns_);

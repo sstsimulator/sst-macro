@@ -58,13 +58,13 @@ class SnapprMemoryModel : public MemoryModel
 {
  public:
 #if SSTMAC_INTEGRATED_SST_CORE
-  SST_ELI_REGISTER_SUBCOMPONENT(
+  SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(
     SnapprMemoryModel,
     "macro",
     "snappr_memory",
     SST_ELI_ELEMENT_VERSION(1,0,0),
     "a memory model using pisces packet flow for contention",
-    "memory")
+    sstmac::hw::MemoryModel)
 #else
   SST_ELI_REGISTER_DERIVED(
     MemoryModel,
@@ -76,7 +76,7 @@ class SnapprMemoryModel : public MemoryModel
 #endif
 
 
-  SnapprMemoryModel(SST::Component* nd, SST::Params& params);
+  SnapprMemoryModel(uint32_t id, SST::Params& params, Node* parent);
 
   virtual ~SnapprMemoryModel(){}
 
