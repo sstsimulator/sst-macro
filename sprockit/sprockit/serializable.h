@@ -59,7 +59,7 @@ namespace sprockit {
       "type %s should not be serialized", \
       #obj); \
   } \
-  virtual void serialize_order(sprockit::serializer& sst) override { \
+  virtual void serialize_order(sprockit::serializer&) override { \
     throw_exc(); \
   } \
   virtual uint32_t cls_id() const override { \

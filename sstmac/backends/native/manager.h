@@ -93,8 +93,6 @@ class Manager {
 
   bool running_;
 
-  // TODOWARNING sstmac::sw::AppId next_ppid_;
-
   sstmac::hw::Interconnect* interconnect_;
   ParallelRuntime* rt_;
 #endif

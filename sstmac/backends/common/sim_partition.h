@@ -95,7 +95,7 @@ class Partition
     return switch_to_thread_[id];
   }
 
-  virtual void finalizeInit(SST::Params& params){}
+  virtual void finalizeInit(SST::Params&){}
 
  protected:
   Partition(SST::Params& params, ParallelRuntime* rt);

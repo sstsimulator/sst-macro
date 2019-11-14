@@ -147,7 +147,6 @@ MpiType::init_primitive(const char* labelit, int size)
 void
 MpiType::init_primitive(const std::string& labelit, const int sizeit, int  /*align*/)
 {
-  // TODOWARNING init_primitive(labelit.c_str(), sizeit, align);
   init_primitive(labelit.c_str(), sizeit);
 }
 

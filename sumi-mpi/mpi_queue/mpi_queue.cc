@@ -513,7 +513,7 @@ MpiQueue::startProgressLoop(
 }
 
 void
-MpiQueue::finishProgressLoop(const std::vector<MpiRequest*>& req)
+MpiQueue::finishProgressLoop(const std::vector<MpiRequest*>&)
 {
 }
 

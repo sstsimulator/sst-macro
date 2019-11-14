@@ -219,7 +219,7 @@ PiscesSwitch::setup()
 }
 
 void
-PiscesSwitch::init(unsigned int phase)
+PiscesSwitch::init(unsigned int /*phase*/)
 {
 }
 

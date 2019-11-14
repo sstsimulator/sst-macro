@@ -262,15 +262,15 @@ class NullNIC : public NIC
 
   std::string toString() const override { return "null nic"; }
 
-  void doSend(NetworkMessage* msg) override {}
+  void doSend(NetworkMessage*) override {}
 
-  void connectOutput(int src_outport, int dst_inport, EventLink::ptr&& payload_link) override {}
+  void connectOutput(int, int, EventLink::ptr&&) override {}
 
-  void connectInput(int src_outport, int dst_inport, EventLink::ptr&& credit_link) override {}
+  void connectInput(int, int, EventLink::ptr&&) override {}
 
-  LinkHandler* payloadHandler(int  /*port*/) override { return nullptr; }
+  LinkHandler* payloadHandler(int) override { return nullptr; }
 
-  LinkHandler* creditHandler(int  /*port*/) override { return nullptr; }
+  LinkHandler* creditHandler(int) override { return nullptr; }
 };
 
 }

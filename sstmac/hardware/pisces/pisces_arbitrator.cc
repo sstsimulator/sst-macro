@@ -90,18 +90,6 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-/* TODOWARNING
-static void
-validate_bw(double test_bw)
-{
-  if (test_bw < 0 || (test_bw != test_bw)){ //i.e. NAN
-    spkt_throw_printf(sprockit::ValueError,
-        "Payload has invalid bandwidth %12.8e",
-        test_bw);
-  }
-}
-*/
-
 PiscesBandwidthArbitrator::
 PiscesBandwidthArbitrator(double bw)
 {
@@ -118,13 +106,9 @@ void
 PiscesSimpleArbitrator::arbitrate(IncomingPacket &st)
 {
   Timestamp start_send = next_free_ < st.now ? st.now : next_free_;
-  // TODOWARNING TimeDelta arrive_delay = st.pkt->byteLength() * st.pkt->byteDelay();
   TimeDelta output_delay = st.pkt->byteLength() * byteDelay_;
   next_free_ = start_send + output_delay;
   st.pkt->initByteDelay(byteDelay_);
-  // TODOWARNING TimeDelta creditDelay = output_delay > arrive_delay
-  // TODOWARNING       ? output_delay - arrive_delay //if going out slower, delay credit
-  // TODOWARNING       : TimeDelta();
 
   //store and forward
   //head/tail are linked and go "at same time"

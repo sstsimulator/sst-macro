@@ -54,7 +54,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #define sstmac_app_name ariel_test
 
-int USER_MAIN(int argc, char** argv)
+int USER_MAIN(int  /*argc*/, char**  /*argv*/)
 {
   std::cout << "Starting shadow app" << std::endl;
   double t = sstmac_block();

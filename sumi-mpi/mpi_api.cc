@@ -324,7 +324,6 @@ MpiApi::finalize()
 double
 MpiApi::wtime()
 {
-  // TODOWARNING auto call_start_time = (uint64_t)now().usec();
   StartMPICall(MPI_Wtime);
   return now().sec();
 }
@@ -332,7 +331,6 @@ MpiApi::wtime()
 int
 MpiApi::getCount(const MPI_Status *status, MPI_Datatype  /*datatype*/, int *count)
 {
-  // TODOWARNING auto call_start_time = (uint64_t)now().usec();
   *count = status->count;
   return MPI_SUCCESS;
 }

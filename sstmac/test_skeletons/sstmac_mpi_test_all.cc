@@ -74,8 +74,6 @@ static void test_scatter(MPI_Comm comm);
 
 static void test_gather(MPI_Comm comm);
 
-// TODOWARNING static void test_gatherv(MPI_Comm comm);
-
 static void test_scan(MPI_Comm comm);
 
 static void test_send(MPI_Comm comm);
@@ -311,7 +309,6 @@ test_reduce(MPI_Comm comm)
   int rank, size;
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &size);
-  // TODOWARNING int count = 100; //arbitrary
 
   int var = rank;
   int root = 2 % size;
@@ -565,7 +562,6 @@ test_reducescatter(MPI_Comm comm)
   // sumi does not support reduce_scatter at the moment
   // it does support reduce scatter block
   int rank, size;
-  // TODOWARNING int recv = 0;
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &size);
 

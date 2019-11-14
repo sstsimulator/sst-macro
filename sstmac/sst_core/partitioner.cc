@@ -66,9 +66,9 @@ class DummyRuntine : public ParallelRuntime
     nthread_ = nthread;
   }
 
-  int64_t allreduceMin(int64_t mintime) override { return 0; }
+  int64_t allreduceMin(int64_t  /*mintime*/) override { return 0; }
 
-  int64_t allreduceMax(int64_t maxtime) override { return 0; }
+  int64_t allreduceMax(int64_t  /*maxtime*/) override { return 0; }
 
   void globalSum(int32_t* data, int nelems, int root) override;
 
@@ -115,7 +115,7 @@ class SSTMacroPartition : public SSTPartitioner
   RankInfo me;
 
  public:
-  SSTMacroPartition(RankInfo size, RankInfo my_rank, int verbosity) :
+  SSTMacroPartition(RankInfo size, RankInfo my_rank, int  /*verbosity*/) :
     world_size(size), me(my_rank)
   {
   }

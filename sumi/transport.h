@@ -205,7 +205,7 @@ class Transport {
 
   virtual void* makePublicBuffer(void* buffer, uint64_t size) = 0;
 
-  virtual void unmakePublicBuffer(void* buf, uint64_t size){}
+  virtual void unmakePublicBuffer(void*, uint64_t){}
 
   virtual void freePublicBuffer(void* buf, uint64_t size) = 0;
 

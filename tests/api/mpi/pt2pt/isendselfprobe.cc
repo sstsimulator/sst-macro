@@ -9,7 +9,7 @@
 #include "mpitest.h"
 
 namespace isendselfprobe {
-int isendselfprobe( int argc, char * argv[] )
+int isendselfprobe( int  /*argc*/, char *  /*argv*/[] )
 {
     int rank;
     int sendMsg = 123;

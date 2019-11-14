@@ -85,7 +85,7 @@ PiscesBranchedSwitch::~PiscesBranchedSwitch()
 }
 
 void
-PiscesBranchedSwitch::initComponents(SST::Params& params)
+PiscesBranchedSwitch::initComponents(SST::Params& /*params*/)
 {
 #if 0
   // [muxer -> xbar -> demuxer -> output_buffer] -> [muxer...]

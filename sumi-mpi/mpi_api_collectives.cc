@@ -92,7 +92,6 @@ MpiApi::startMpiCollective(Collective::type_t ty,
   op->ty = ty;
   op->sendbuf = const_cast<void*>(sendbuf);
   op->recvbuf = recvbuf;
-  // TODOWARNING const char* name = Collective::tostr(ty);
 
   if (sendbuf == MPI_IN_PLACE){
     if (recvbuf){

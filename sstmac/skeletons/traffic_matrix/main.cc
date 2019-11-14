@@ -76,7 +76,6 @@ class sumi_param_bcaster : public sprockit::ParamBcaster
 
   void bcast(void *buf, int size, int  /*me*/, int root){
     engine_->bcast(root, buf, size, sizeof(char), tag_, sumi::Message::default_cq);
-    // TODOWARNING sumi::CollectiveDoneMessage* msg = nullptr;
     auto* dmsg = engine_->blockUntilNext(sumi::Message::default_cq);
     delete dmsg;
     ++tag_;

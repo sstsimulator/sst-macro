@@ -63,6 +63,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <unusedvariablemacro.h>
+
 MakeDebugSlot(host_compute)
 
 namespace sstmac {
@@ -171,7 +173,7 @@ Thread::runRoutine(void* threadptr)
   }
 }
 
-Thread::Thread(SST::Params& params, SoftwareId sid, OperatingSystem* os) :
+Thread::Thread(SSTMAC_MAYBE_UNUSED SST::Params& params, SoftwareId sid, OperatingSystem* os) :
   state_(PENDING),
   os_(os),
   parent_app_(nullptr),

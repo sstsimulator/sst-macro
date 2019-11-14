@@ -55,7 +55,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 
 SSTIntegratedComponent::SSTIntegratedComponent(
-  SST::Params& params,
+  SST::Params&  /*params*/,
   uint32_t id) :
   SST::Component(SST::ComponentId_t(id))
 {
@@ -69,7 +69,7 @@ SSTIntegratedComponent::SSTIntegratedComponent(
 }
 
 void
-SSTIntegratedComponent::initLinks(SST::Params& params)
+SSTIntegratedComponent::initLinks(SST::Params&  /*params*/)
 {
   //loop all the links in our map and determine what we need to do with them
   for (auto& pair : link_map_->getLinkMap()){

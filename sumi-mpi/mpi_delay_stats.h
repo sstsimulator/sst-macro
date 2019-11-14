@@ -127,9 +127,9 @@ class DelayStatsOutput : public sstmac::StatisticOutput
 
   ~DelayStatsOutput(){}
 
-  void registerStatistic(SST::Statistics::StatisticBase* stat) override {}
+  void registerStatistic(SST::Statistics::StatisticBase*) override {}
 
-  void startOutputGroup(SST::Statistics::StatisticGroup * grp) override;
+  void startOutputGroup(SST::Statistics::StatisticGroup*) override;
   void stopOutputGroup() override;
 
   void output(SST::Statistics::StatisticBase* statistic, bool endOfSimFlag) override;

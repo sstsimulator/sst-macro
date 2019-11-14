@@ -54,7 +54,7 @@ class thread_safe_new {
 #endif
 
 #if SSTMAC_CUSTOM_NEW
-  static void freeAtEnd(T* ptr){
+  static void freeAtEnd(T*){
     //do nothing - the allocation is getting cleaned up
   }
 

@@ -108,7 +108,6 @@ void
 test_pt2pt(MPI_Comm comm)
 {
   int rank, size;
-  // TODOWARNING int worldRank;
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &size);
 

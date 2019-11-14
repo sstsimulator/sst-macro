@@ -63,7 +63,7 @@ using Event = SST::Event;
 class Event : public serializable
 {
  public:
-  void serialize_order(serializer& ser){}
+  void serialize_order(serializer&){}
 };
 #endif
 

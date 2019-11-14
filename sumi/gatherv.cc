@@ -63,23 +63,10 @@ BtreeGathervActor::initTree()
 }
 
 void
-BtreeGathervActor::initBuffers()
-{
-  // TODOWARNING
-  // void* dst = result_buffer_;
-  // void* src = send_buffer_;
-  // if (!src)
-  //   return;
-}
+BtreeGathervActor::initBuffers() { }
 
 void
-BtreeGathervActor::finalizeBuffers()
-{
-  // TODOWARNING
-  // if (!result_buffer_)
-  //   return;
-
-}
+BtreeGathervActor::finalizeBuffers() { }
 
 void
 BtreeGathervActor::bufferAction(void *dst_buffer, void *msg_buffer, Action *ac)
@@ -88,20 +75,7 @@ BtreeGathervActor::bufferAction(void *dst_buffer, void *msg_buffer, Action *ac)
 }
 
 void
-BtreeGathervActor::initDag()
-{
-#if 0 // TODOWARNING
-  int me = comm_->myCommRank();
-  int nproc = comm_->nproc();
-  int round = 0;
-
-  int maxGap = midpoint_;
-  if (root_ != 0){
-    //special case to handle the last gather round
-    maxGap = midpoint_ / 2;
-  }
-#endif
-}
+BtreeGathervActor::initDag() { }
 
 
 }

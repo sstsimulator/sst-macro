@@ -67,7 +67,6 @@ int USER_MAIN(int argc, char** argv)
   MPI_Init(&argc, &argv);
 
   int rank; 
-  // TODOWARNING int size;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   if (rank % 2 == 0){
     runPingPong();
