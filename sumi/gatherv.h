@@ -49,6 +49,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi/collective_actor.h>
 #include <sumi/collective_message.h>
 #include <sumi/comm_functions.h>
+#include <unusedvariablemacro.h>
 
 namespace sumi {
 
@@ -75,11 +76,11 @@ class BtreeGathervActor :
   void bufferAction(void *dst_buffer, void *msg_buffer, Action* ac) override;
 
  private:
-  int root_;
+  SSTMAC_MAYBE_UNUSED int root_;
   int midpoint_;
   int log2nproc_;
-  int sendcnt_;
-  int* recv_counts_;
+  SSTMAC_MAYBE_UNUSED int sendcnt_;
+  SSTMAC_MAYBE_UNUSED int* recv_counts_;
 
 };
 
@@ -91,7 +92,10 @@ class BtreeGatherv :
   BtreeGatherv(CollectiveEngine* engine, int root, void *dst, void *src,
                 int sendcnt, int *recv_counts, int type_size, int tag, int cq_id, Communicator* comm)
     : DagCollective(gatherv, engine, dst, src, type_size, tag, cq_id, comm),
-      recv_counts_(recv_counts), sendcnt_(sendcnt), root_(root){}
+      sendcnt_(sendcnt), 
+      recv_counts_(recv_counts), 
+      root_(root)
+  {}
 
 
   std::string toString() const override {

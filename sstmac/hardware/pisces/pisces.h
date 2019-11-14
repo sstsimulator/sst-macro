@@ -205,8 +205,8 @@ class PiscesCredit :
     int port,
     int vc,
     int num_credits)
-    : port_(port),
-      num_credits_(num_credits),
+    : num_credits_(num_credits),
+      port_(port),
       vc_(vc)
   {
   }

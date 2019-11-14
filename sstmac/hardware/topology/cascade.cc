@@ -51,6 +51,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/util.h>
 #include <sprockit/keyword_registration.h>
 #include <sprockit/sim_parameters.h>
+#include <unusedvariablemacro.h>
 
 RegisterKeywords(
 { "topology_group_connections", "DEPRECATED: for group-based topologies, number of group connections per router" },
@@ -60,6 +61,7 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
+SSTMAC_MAYBE_UNUSED
 static const double PI = 3.141592653589793238462;
 
 Cascade::Cascade(SST::Params& params) :
@@ -97,7 +99,7 @@ bool
 Cascade::xy_connected_to_group(int myX, int myY, int myG, int dstg) const
 {
   int gstride = std::max(1, g_ / group_con_);
-  int gconns = 0;
+  // TODOWARNING int gconns = 0;
   int my_group_id = myX + myY * x_;
   int goffset = my_group_id % g_;
   int theg = myG + goffset;

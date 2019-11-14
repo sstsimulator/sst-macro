@@ -67,7 +67,9 @@ namespace sstmac {
 class EventLink {
  public:
   EventLink(const std::string& name, TimeDelta selflat, SST::Link* link) :
-    name_(name), selflat_(selflat), link_(link)
+    link_(link),
+    selflat_(selflat), 
+    name_(name)
   {
   }
 
@@ -566,7 +568,10 @@ class SubLink : public EventLink
   }
 
  private:
+#if SSTMAC_INTEGRATED_SST_CORE
   SST::Link* self_link_;
+#endif
+
   Component* comp_;
   EventHandler* handler_;
 };

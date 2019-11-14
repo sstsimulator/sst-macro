@@ -67,7 +67,9 @@ class ComputeScheduler
 
   ComputeScheduler(SST::Params& params, sw::OperatingSystem* os,
                     int ncores, int nsockets) :
-    os_(os), ncores_(ncores), nsocket_(nsockets)
+    ncores_(ncores), 
+    nsocket_(nsockets),
+    os_(os)
   {
   }
 

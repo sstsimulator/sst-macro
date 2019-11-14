@@ -256,9 +256,9 @@ SimParameters::SimParameters(SimParameters::const_ptr params) :
 }
 
 SimParameters::SimParameters(const key_value_map& p) :
-  params_(p),
   parent_(nullptr),
-  namespace_("global")
+  namespace_("global"),
+  params_(p)
 {
 }
 
@@ -476,7 +476,6 @@ SimParameters::getOptionalTimeParam(const std::string &key,
 double
 SimParameters::getQuantity(const std::string& key)
 {
-  bool error = false;
   std::string value = getParam(key);
   return getQuantityWithUnits(value.c_str(), key.c_str());
 }
@@ -580,7 +579,6 @@ SimParameters::getTokenizer(const std::string& key)
 double
 SimParameters::getFreqParam(const std::string &key)
 {
-  bool errorflag = false;
   std::string param_value_str = getParam(key);
   return get_freq_from_str(param_value_str.c_str(), key.c_str());
 }
@@ -588,7 +586,6 @@ SimParameters::getFreqParam(const std::string &key)
 double
 SimParameters::getOptionalFreqParam(const std::string &key, double def)
 {
-  bool errorflag = false;
   std::string freq_str = printf("%eHz", def);
   std::string param_value_str = getOptionalParam(key, freq_str);
   return get_freq_from_str(param_value_str.c_str(), key.c_str());
@@ -597,7 +594,6 @@ SimParameters::getOptionalFreqParam(const std::string &key, double def)
 long
 SimParameters::getByteLengthParam(const std::string &key)
 {
-  bool errorflag = false;
   std::string param_value_str = getParam(key);
   return get_byte_length_from_str(param_value_str.c_str(), key.c_str());
 }

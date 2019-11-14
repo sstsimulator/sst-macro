@@ -96,9 +96,15 @@ Collective::tostr(type_t ty)
 }
 
 Collective::Collective(type_t ty, CollectiveEngine* engine, int tag, int cq_id, Communicator* comm) :
-  type_(ty), engine_(engine), my_api_(engine->tport()), tag_(tag),
-  dom_nproc_(comm->nproc()), dom_me_(comm->myCommRank()),
-  complete_(false), comm_(comm), cq_id_(cq_id),
+  my_api_(engine->tport()), 
+  engine_(engine), 
+  cq_id_(cq_id),
+  comm_(comm), 
+  dom_me_(comm->myCommRank()),
+  dom_nproc_(comm->nproc()), 
+  complete_(false), 
+  tag_(tag),
+  type_(ty), 
   subsequent_(nullptr)
 {
   debug_printf(sumi_collective | sumi_vote,

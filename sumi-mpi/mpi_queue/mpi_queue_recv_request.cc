@@ -61,9 +61,17 @@ MpiQueueRecvRequest::MpiQueueRecvRequest(
   int count,
   MPI_Datatype type,
   int source, int tag, MPI_Comm comm, void* buffer) :
-  start_(start), queue_(queue), source_(source), tag_(tag), comm_(comm),
-  seqnum_(0), count_(count), type_(queue->api()->typeFromId(type)),
-  key_(key), final_buffer_(buffer), recv_buffer_(nullptr)
+  queue_(queue), 
+  source_(source), 
+  tag_(tag), 
+  comm_(comm),
+  seqnum_(0), 
+  final_buffer_(buffer), 
+  recv_buffer_(nullptr),
+  count_(count), 
+  type_(queue->api()->typeFromId(type)),
+  key_(key), 
+  start_(start) 
 {
   if (isNonNullBuffer(buffer) && !type_->contiguous()){
     recv_buffer_ = new char[count*type_->packed_size()];

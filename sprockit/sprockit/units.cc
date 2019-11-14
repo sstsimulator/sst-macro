@@ -323,7 +323,7 @@ populate_length_names(std::map<std::string, int64_t> &value)
   value["GB"] = value["Gbytes"] = value["GBytes"] = one_GB;
   int64_t one_TB = one_GB * 1000LL;
   value["TB"] = value["Tbytes"] = value["TBytes"] = one_TB;
-  int64_t one_KiB = 1024;
+  // TODOWARNING int64_t one_KiB = 1024;
 }
 
 void

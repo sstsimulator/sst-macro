@@ -121,8 +121,8 @@ class MemberFxnHandler : public EventHandler
 
   MemberFxnHandler(Cls* obj, Fxn fxn, const Args&... args) :
     params_(args...),
-    obj_(obj),
-    fxn_(fxn)
+    fxn_(fxn),
+    obj_(obj)
   {
   }
 

@@ -51,8 +51,8 @@ namespace sumi {
 
 MpiGroup::MpiGroup(const std::vector<TaskId>& tl) :
   local_to_world_map_(tl),
-  is_comm_world_(false),
-  size_(tl.size())
+  size_(tl.size()),
+  is_comm_world_(false)
 {
 }
 

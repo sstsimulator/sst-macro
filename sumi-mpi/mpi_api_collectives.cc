@@ -92,7 +92,7 @@ MpiApi::startMpiCollective(Collective::type_t ty,
   op->ty = ty;
   op->sendbuf = const_cast<void*>(sendbuf);
   op->recvbuf = recvbuf;
-  const char* name = Collective::tostr(ty);
+  // TODOWARNING const char* name = Collective::tostr(ty);
 
   if (sendbuf == MPI_IN_PLACE){
     if (recvbuf){
@@ -287,7 +287,9 @@ int
 MpiApi::allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                    void *recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm comm)
 {
+#ifdef SSTMAC_OTF2_ENABLED
   auto start_clock = traceClock();
+#endif
 
   do_coll(Allgather, MPI_Allgather, comm,
           sendcount, sendtype, recvcount, recvtype,
@@ -357,7 +359,9 @@ MpiApi::alltoall(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                  void *recvbuf, int recvcount, MPI_Datatype recvtype,
                  MPI_Comm comm)
 {
+#ifdef SSTMAC_OTF2_ENABLED
   auto start_clock = traceClock();
+#endif
 
   do_coll(Alltoall, MPI_Alltoall, comm,
          sendcount, sendtype,
@@ -448,7 +452,9 @@ int
 MpiApi::allreduce(const void *src, void *dst, int count,
                    MPI_Datatype type, MPI_Op mop, MPI_Comm comm)
 {
+#ifdef SSTMAC_OTF2_ENABLED
   auto start_clock = traceClock();
+#endif
 
   do_coll(Allreduce, MPI_Allreduce, comm,
            count, type, mop, src, dst);
@@ -510,7 +516,10 @@ MpiApi::startBarrier(const char* name, MPI_Comm comm)
 int
 MpiApi::barrier(MPI_Comm comm)
 {
+#ifdef SSTMAC_OTF2_ENABLED
   auto start_clock = traceClock();
+#endif
+
   StartMPICall(MPI_Barrier);
   waitCollective( startBarrier("MPI_Barrier", comm) );
   FinishMPICall(MPI_Barrier);
@@ -578,8 +587,9 @@ MpiApi::startBcast(const char* name, MPI_Comm comm, int count, MPI_Datatype data
 int
 MpiApi::bcast(void* buffer, int count, MPI_Datatype type, int root, MPI_Comm comm)
 {
+#ifdef SSTMAC_OTF2_ENABLED
   auto start_clock = traceClock();
-
+#endif
   do_coll(Bcast, MPI_Bcast, comm,
            count, type, root, buffer);
 
@@ -668,8 +678,9 @@ int
 MpiApi::gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                 void *recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm)
 {
+#ifdef SSTMAC_OTF2_ENABLED
   auto start_clock = traceClock();
-
+#endif
   do_coll(Gather, MPI_Gather, comm, sendcount, sendtype, root,
           recvcount, recvtype, sendbuf, recvbuf);
 
@@ -779,8 +790,9 @@ int
 MpiApi::reduce(const void *src, void *dst, int count,
                 MPI_Datatype type, MPI_Op mop, int root, MPI_Comm comm)
 {
+#ifdef SSTMAC_OTF2_ENABLED
   auto start_clock = traceClock();
-
+#endif
   do_coll(Reduce, MPI_Reduce, comm, count,
           type, root, mop, src, dst);
 
@@ -851,8 +863,9 @@ int
 MpiApi::reduceScatter(const void *src, void *dst, const int *recvcnts,
                         MPI_Datatype type, MPI_Op mop, MPI_Comm comm)
 {
+#ifdef SSTMAC_OTF2_ENABLED
   auto start_clock = traceClock();
-
+#endif
   do_coll(ReduceScatter, MPI_Reduce_scatter,
           comm, recvcnts, type, mop, src, dst);
 
@@ -976,8 +989,9 @@ MpiApi::startScan(const char* name, MPI_Comm comm, int count, MPI_Datatype type,
 int
 MpiApi::scan(const void *src, void *dst, int count, MPI_Datatype type, MPI_Op mop, MPI_Comm comm)
 {
+#ifdef SSTMAC_OTF2_ENABLED
   auto start_clock = traceClock();
-
+#endif
   do_coll(Scan, MPI_Scan, comm, count, type, mop, src, dst);
 
 #ifdef SSTMAC_OTF2_ENABLED
@@ -1053,8 +1067,9 @@ MpiApi::scatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                  void *recvbuf, int recvcount, MPI_Datatype recvtype, int root,
                  MPI_Comm comm)
 {
+#ifdef SSTMAC_OTF2_ENABLED
   auto start_clock = traceClock();
-
+#endif
   do_coll(Scatter, MPI_Scatter, comm, sendcount, sendtype, root,
           recvcount, recvtype, sendbuf, recvbuf);
 

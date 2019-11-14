@@ -10,4 +10,6 @@
 #
 
 library_includedir=$(includedir)
-nobase_library_include_HEADERS = clangtidymacros.h
+nobase_library_include_HEADERS = \
+																 clangtidymacros.h \
+																 unusedvariablemacro.h

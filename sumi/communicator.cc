@@ -136,7 +136,8 @@ Communicator::createSmpCommunicator(const std::set<int>& neighbors, CollectiveEn
 }
 
 GlobalCommunicator::GlobalCommunicator(Transport *tport) :
-  transport_(tport), Communicator(tport->rank())
+  Communicator(tport->rank()),
+  transport_(tport) 
 {
 }
 
@@ -159,8 +160,8 @@ GlobalCommunicator::globalToCommRank(int global_rank) const
 }
 
 MapCommunicator::MapCommunicator(int rank, std::vector<int>&& local_to_global)
- : local_to_global_(std::move(local_to_global)),
-   Communicator(rank)
+ : Communicator(rank),
+   local_to_global_(std::move(local_to_global))
 {
   for (int idx=0; idx < local_to_global_.size(); ++idx){
     global_to_local_[local_to_global_[idx]] = idx;

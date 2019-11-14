@@ -17,6 +17,7 @@ library_includedir=$(includedir)/sumi-mpi
 
 AM_CPPFLAGS += \
 	-I$(top_srcdir)/sumi \
+	-I$(top_srcdir)/include \
 	-I$(top_builddir)/sumi
 
 if HAVE_OTF2

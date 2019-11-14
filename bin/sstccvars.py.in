@@ -16,6 +16,7 @@ sstCppFlags = [
 "@CPPFLAGS@",
 "-I${includedir}/sstmac",
 "-I${includedir}",
+"-I${includedir}/include",
 "-I${includedir}/memoization",
 "-I${includedir}/sstmac/software/libraries",
 "-I${includedir}/sstmac/tools",

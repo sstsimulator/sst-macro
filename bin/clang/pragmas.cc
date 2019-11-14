@@ -275,6 +275,7 @@ std::map<std::string, std::list<std::string>>
 SSTPragma::getMap(SourceLocation loc, CompilerInstance& CI, const std::list<clang::Token>& tokens)
 {
   std::map<std::string, std::list<std::string>> allArgs;
+#if 0 // TODOWARNING
   auto iter = tokens.begin();
   auto incrementIter = [&](){
     ++iter;
@@ -283,6 +284,7 @@ SSTPragma::getMap(SourceLocation loc, CompilerInstance& CI, const std::list<clan
        "mis-formatted pragma, pragma modifiers should be of the form 'arg(a)' or 'arg(a,b)'");
     }
   };
+#endif
 
 
   int parenDepth = 0;

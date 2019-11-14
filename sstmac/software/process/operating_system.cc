@@ -312,13 +312,13 @@ std::map<std::string,std::unique_ptr<OperatingSystem::RegressionModel>> Operatin
 std::unique_ptr<std::map<std::string,std::string>> OperatingSystem::memoize_init_ = nullptr;
 
 OperatingSystem::OperatingSystem(SST::Component* parent, SST::Params& params) :
-  node_(safe_cast(hw::Node,parent)),
-  blocked_thread_(nullptr),
-  active_thread_(nullptr),
-  des_context_(nullptr),
-  compute_sched_(nullptr),
   SubComponent("os", parent),
+  node_(safe_cast(hw::Node,parent)),
+  active_thread_(nullptr),
+  blocked_thread_(nullptr),
+  des_context_(nullptr),
   params_(params),
+  compute_sched_(nullptr),
   sync_tunnel_(nullptr)
 {
   my_addr_ = node_ ? node_->addr() : 0;
@@ -506,7 +506,7 @@ void
 OperatingSystem::compute(TimeDelta t)
 {
   // guard the ftq tag in this function
-  const auto& cur_tag = active_thread_->tag();
+  // TODOWARNING const auto& cur_tag = active_thread_->tag();
   FTQScope scope(active_thread_, FTQTag::compute);
 
   sw::UnblockEvent* ev = new sw::UnblockEvent(this, active_thread_);

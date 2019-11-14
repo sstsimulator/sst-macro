@@ -161,7 +161,9 @@ int
 MpiApi::waitany(int count, MPI_Request array_of_requests[], int *indx,
                  MPI_Status *status)
 {
+#ifdef SSTMAC_OTF2_ENABLED
   auto start_clock = traceClock();
+#endif
 
   // for caching the request in an upper scope before it is destroyed
   MPI_Request req_val = -1;

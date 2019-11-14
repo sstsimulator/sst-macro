@@ -203,8 +203,8 @@ class SnapprCredit :
  public:
   SnapprCredit(uint32_t num_bytes, int vl, int port) :
     num_bytes_(num_bytes),
-    port_(port),
-    vl_(vl)
+    vl_(vl),
+    port_(port)
   {
   }
 

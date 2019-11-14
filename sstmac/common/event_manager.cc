@@ -106,15 +106,15 @@ void runEventmanagerThread(void* argPtr)
 }
 
 EventManager::EventManager(SST::Params& params, ParallelRuntime *rt) :
-  rt_(rt),
-  nthread_(rt->nthread()),
-  me_(rt->me()),
-  nproc_(rt->nproc()),
   pendingSlot_(0),
   complete_(false),
-  thread_id_(0),
+  rt_(rt),
+  interconn_(nullptr),
   stopped_(false),
-  interconn_(nullptr)
+  me_(rt->me()),
+  nproc_(rt->nproc()),
+  nthread_(rt->nthread()),
+  thread_id_(0)
 {
   for (int i=0; i < num_pendingSlots; ++i){
     pending_events_[i].resize(nthread_);
@@ -307,7 +307,9 @@ EventManager::scheduleIncoming(IpcEvent* iev)
   qev->setSeqnum(iev->seqnum);
   qev->setTime(iev->t);
   qev->setLink(iev->link);
+#if SSTMAC_SANITY_CHECK
   size_t prev_size = event_queue_.size();
+#endif
   schedule(qev);
 #if SSTMAC_SANITY_CHECK
   if (event_queue_.size() == prev_size){

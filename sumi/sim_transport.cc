@@ -224,14 +224,14 @@ Transport::startCollectiveMessageLog()
 
 SimTransport::SimTransport(SST::Params& params, sstmac::sw::App* parent, SST::Component* comp) :
   //the name of the transport itself should be mapped to a unique name
-  API(params, parent, comp),
   Transport("sumi", parent->sid(), parent->os()->addr()),
+  API(params, parent, comp),
   //the server is what takes on the specified libname
-  spy_bytes_(nullptr),
   completion_queues_(1),
+  spy_bytes_(nullptr),
+  parent_app_(parent),
   default_progress_queue_(parent->os()),
   nic_ioctl_(parent->os()->nicDataIoctl()),
-  parent_app_(parent),
   qos_analysis_(nullptr)
 {
   completion_queues_[0] = std::bind(&DefaultProgressQueue::incoming,
@@ -507,11 +507,11 @@ SimTransport::now() const
 }
 
 CollectiveEngine::CollectiveEngine(SST::Params& params, Transport *tport) :
-  system_collective_tag_(-1), //negative tags reserved for special system work
+  tport_(tport),
+  global_domain_(nullptr),
   eager_cutoff_(512),
   use_put_protocol_(false),
-  global_domain_(nullptr),
-  tport_(tport)
+  system_collective_tag_(-1) //negative tags reserved for special system work
 {
   global_domain_ = new GlobalCommunicator(tport);
   eager_cutoff_ = params.find<int>("eager_cutoff", 512);
@@ -962,7 +962,8 @@ CollectiveEngine::waitBarrier(int tag)
 {
   if (tport_->nproc() == 1) return;
   barrier(tag, Message::default_cq);
-  auto* dmsg = blockUntilNext(Message::default_cq);
+  // TODOWARNING auto* dmsg = blockUntilNext(Message::default_cq);
+  blockUntilNext(Message::default_cq);
 }
 
 void
@@ -1086,7 +1087,7 @@ class PatternQoSAnalysis : public QoSAnalysis
     }
 
     printf("Message %12lu: %2u->%2u %8llu %10.4e %10.4e\n",
-       m->hash(), m->sender(), m->recver(), m->byteLength(),
+       m->hash(), m->sender(), m->recver(), static_cast<unsigned long long>(m->byteLength()),
        delay.sec(), acceptable_delay.sec());
 
   }

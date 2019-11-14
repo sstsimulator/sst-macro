@@ -280,6 +280,7 @@ run(opts& oo,
 #endif
 }
 
+#if 0 // TODOWARNING
 static void tokenize(const std::string& in, std::set<std::string>& tokens){
   std::stringstream sstr(in);
   std::string item;
@@ -287,6 +288,7 @@ static void tokenize(const std::string& in, std::set<std::string>& tokens){
     tokens.insert(item);
   }
 }
+#endif
 
 int
 tryMain(sprockit::SimParameters::ptr params,

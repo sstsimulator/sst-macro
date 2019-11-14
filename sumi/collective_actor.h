@@ -120,9 +120,10 @@ struct Action
   }
 
   Action(type_t ty, int r, int p) :
-    type(ty), round(r),
+    type(ty), 
     partner(p),
-    join_counter(0)
+    join_counter(0),
+    round(r)
   {
     id = messageId(ty, r, p);
   }
@@ -267,6 +268,8 @@ class Slicer {
  public:
   static reduce_fxn null_reduce_fxn;
 
+  virtual ~Slicer() = default;
+
   /**
    * @brief pack_in
    * @param packedBuf
@@ -391,12 +394,12 @@ class DagCollectiveActor :
                        int type_size, int tag, int cq_id, Communicator* comm,
                        reduce_fxn fxn = Slicer::null_reduce_fxn) :
     CollectiveActor(engine, tag, cq_id, comm),
-    type_(ty),
-    slicer_(new DefaultSlicer(type_size, fxn)),
     type_size_(type_size),
-    result_buffer_(dst),
+    send_buffer_(src),
     recv_buffer_(nullptr),
-    send_buffer_(src)
+    result_buffer_(dst),
+    type_(ty),
+    slicer_(new DefaultSlicer(type_size, fxn))
   {
   }
 

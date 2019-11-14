@@ -26,12 +26,17 @@ SnapprOutPort::SnapprOutPort(SST::Params& params, const std::string &arb,
                              const std::string& subId, const std::string& portName,
                              int number, TimeDelta byt_delay, bool congestion, bool flow_control,
                              Component* parent)
-  : arbitration_scheduled(false), inports(nullptr),
-    portName_(subId), number_(number),
+  : arbitration_scheduled(false), 
+    byte_delay(byt_delay), 
     state_ftq(nullptr),
     queue_depth_ftq(nullptr),
-    byte_delay(byt_delay), congestion_(congestion), flow_control_(flow_control),
-    parent_(parent), notifier_(nullptr)
+    inports(nullptr),
+    parent_(parent), 
+    flow_control_(flow_control),
+    congestion_(congestion), 
+    portName_(subId), 
+    number_(number),
+    notifier_(nullptr)
 {
   arb_ = sprockit::create<SnapprPortArbitrator>("macro", arb, byte_delay, params);
   xmit_active = parent->registerStatistic<uint64_t>(params, "xmit_active", subId);

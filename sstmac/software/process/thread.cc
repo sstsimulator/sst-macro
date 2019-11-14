@@ -172,26 +172,26 @@ Thread::runRoutine(void* threadptr)
 }
 
 Thread::Thread(SST::Params& params, SoftwareId sid, OperatingSystem* os) :
-  os_(os),
   state_(PENDING),
-  bt_nfxn_(0),
-  last_bt_collect_nfxn_(0),
-  thread_id_(Thread::main_thread),
+  os_(os),
+  parent_app_(nullptr),
   p_txt_(ProcessContext::none),
+  ftag_(FTQTag::null),
+  sid_(sid),
+  host_timer_(nullptr),
+  last_bt_collect_nfxn_(0),
+  bt_nfxn_(0),
+  timed_out_(false),
+  tls_storage_(nullptr),
+  thread_id_(Thread::main_thread),
   context_(nullptr),
   cpumask_(0),
-  host_timer_(nullptr),
-  parent_app_(nullptr),
-  timed_out_(false),
+  active_core_mask_(0),
   block_counter_(0),
   pthread_concurrency_(0),
-  callGraph_(nullptr),
-  ftq_trace_(nullptr),
-  sid_(sid),
-  ftag_(FTQTag::null),
-  tls_storage_(nullptr),
   detach_state_(DETACHED),
-  active_core_mask_(0)
+  callGraph_(nullptr),
+  ftq_trace_(nullptr)
 {
   //make all cores possible active
   cpumask_ = ~(cpumask_);

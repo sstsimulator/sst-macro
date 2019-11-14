@@ -51,6 +51,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/errors.h>
 #include <sprockit/stl_string.h>
 
+#include <unusedvariablemacro.h>
+
 #include <sys/types.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -216,11 +218,11 @@ MpiCommFactory::commSplit(MpiComm* caller, int my_color, int my_key)
   int root = caller->peerTask(int(0));
   int tag = caller->nextCollectiveTag();
   comm_split_entry& entry = comm_split_entries[aid][int(caller->id())][root][tag];
-  char fname[256];
-  size_t len = 3*caller->size()*sizeof(int);
   entry.refcount++;
   if (entry.buf == 0){
 #if SSTMAC_MMAP_COLLECTIVES
+    char fname[256];
+    size_t len = 3*caller->size()*sizeof(int);
     sprintf(fname, "%d.%d.%d", int(caller->id()), root, tag);
     int fd = shm_open(fname, O_RDWR | O_CREAT | O_EXCL, S_IRWXU);
     if (fd < 0){ //oops, someone else already created it

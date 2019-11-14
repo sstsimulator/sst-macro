@@ -16,7 +16,7 @@ check_PROGRAMS = \
 #  sst_saturation 
 
 AM_CPPFLAGS = -I$(top_builddir) -I$(top_srcdir) 
-AM_CPPFLAGS += -I$(top_srcdir)/sumi -I$(top_builddir)/sumi
+AM_CPPFLAGS += -I$(top_srcdir)/sumi -I$(top_srcdir)/include -I$(top_builddir)/sumi
 AM_CPPFLAGS += -I$(top_srcdir)/sprockit -I$(top_builddir)/sprockit
 AM_CPPFLAGS += -I$(top_srcdir)/sstmac/install -DSSTMAC=1
 AM_CPPFLAGS += -I$(top_builddir)/sstmac/replacements -I$(top_srcdir)/sstmac/replacements 

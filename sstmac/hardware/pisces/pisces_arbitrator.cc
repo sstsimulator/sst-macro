@@ -43,6 +43,7 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sstmac/hardware/pisces/pisces_arbitrator.h>
+#include <unusedvariablemacro.h>
 
 #include <math.h>
 
@@ -89,6 +90,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
+/* TODOWARNING
 static void
 validate_bw(double test_bw)
 {
@@ -98,6 +100,7 @@ validate_bw(double test_bw)
         test_bw);
   }
 }
+*/
 
 PiscesBandwidthArbitrator::
 PiscesBandwidthArbitrator(double bw)
@@ -106,8 +109,8 @@ PiscesBandwidthArbitrator(double bw)
 }
 
 PiscesSimpleArbitrator::PiscesSimpleArbitrator(double bw) :
-  next_free_(),
-  PiscesBandwidthArbitrator(bw)
+  PiscesBandwidthArbitrator(bw),
+  next_free_()
 {
 }
 
@@ -115,13 +118,13 @@ void
 PiscesSimpleArbitrator::arbitrate(IncomingPacket &st)
 {
   Timestamp start_send = next_free_ < st.now ? st.now : next_free_;
-  TimeDelta arrive_delay = st.pkt->byteLength() * st.pkt->byteDelay();
+  // TODOWARNING TimeDelta arrive_delay = st.pkt->byteLength() * st.pkt->byteDelay();
   TimeDelta output_delay = st.pkt->byteLength() * byteDelay_;
   next_free_ = start_send + output_delay;
   st.pkt->initByteDelay(byteDelay_);
-  TimeDelta creditDelay = output_delay > arrive_delay
-        ? output_delay - arrive_delay //if going out slower, delay credit
-        : TimeDelta();
+  // TODOWARNING TimeDelta creditDelay = output_delay > arrive_delay
+  // TODOWARNING       ? output_delay - arrive_delay //if going out slower, delay credit
+  // TODOWARNING       : TimeDelta();
 
   //store and forward
   //head/tail are linked and go "at same time"
@@ -145,15 +148,15 @@ PiscesNullArbitrator::headTailDelay(PiscesPacket *pkt)
 void
 PiscesNullArbitrator::arbitrate(IncomingPacket &st)
 {
-  PiscesPacket* payload = st.pkt;
+  SSTMAC_MAYBE_UNUSED PiscesPacket* payload = st.pkt;
   pflow_arb_debug_printf_l0("Null: starting packet %p:%llu of size %u with byte_delay=%9.5e epoch_delay=%9.5e: %s",
                             payload, payload->flowId(),
                             payload->numBytes(), payload->byteDelay().sec(), byteDelay_.sec());
   TimeDelta byteDelay = std::max(byteDelay_, st.pkt->byteDelay());
   st.pkt->setByteDelay(byteDelay_);
   TimeDelta actual_delay = st.pkt->numBytes() * byteDelay;
-  TimeDelta min_delay = st.pkt->numBytes() * byteDelay_;
 #if SSTMAC_SANITY_CHECK
+  TimeDelta min_delay = st.pkt->numBytes() * byteDelay_;
   if (actual_delay < min_delay){
     spkt_abort_printf("null arbitrator computed bad delay");
   }
@@ -168,8 +171,8 @@ PiscesNullArbitrator::arbitrate(IncomingPacket &st)
 
 PiscesCutThroughArbitrator::
 PiscesCutThroughArbitrator(double bw)
-  : head_(nullptr),
-    PiscesBandwidthArbitrator(bw)
+  : PiscesBandwidthArbitrator(bw),
+    head_(nullptr)
 {
   cycleLength_ = byteDelay_;
   head_ = Epoch::allocateAtBeginning();

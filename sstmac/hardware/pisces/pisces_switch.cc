@@ -66,8 +66,8 @@ namespace sstmac {
 namespace hw {
 
 PiscesAbstractSwitch::PiscesAbstractSwitch(uint32_t id, SST::Params& params) :
-  router_(nullptr),
-  NetworkSwitch(id, params)
+  NetworkSwitch(id, params),
+  router_(nullptr)
 {
   SST::Params rtr_params = params.find_scoped_params("router");
   rtr_params.insert("id", std::to_string(my_addr_));
