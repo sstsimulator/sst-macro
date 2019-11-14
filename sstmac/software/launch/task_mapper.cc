@@ -59,10 +59,7 @@ TaskMapper::~TaskMapper() throw()
 TaskMapper::TaskMapper(SST::Params& params) :
   topology_(sstmac::hw::Topology::staticTopology(params)),
   rt_(ParallelRuntime::staticRuntime(params))
-{
-  // TODOWARNING rt_ = ParallelRuntime::staticRuntime(params);
-  // TODOWARNING topology_ = sstmac::hw::Topology::staticTopology(params);
-}
+{ }
 
 int
 TaskMapper::validateNproc(int ppn, int num_nodes, int nproc,

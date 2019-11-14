@@ -187,8 +187,6 @@ MpiApi::start(MPI_Request* req)
 int
 MpiApi::startall(int count, MPI_Request* req)
 {
-  // TODOWARNING auto call_start_time = (uint64_t)now().usec();
-
   _StartMPICall_(MPI_Startall);
   for (int i=0; i < count; ++i){
     doStart(req[i]);
@@ -209,8 +207,6 @@ MpiApi::sendInit(const void *buf, int count,
                  MPI_Datatype datatype, int dest, int tag,
                  MPI_Comm comm, MPI_Request *request)
 {
-  // TODOWARNING auto call_start_time = (uint64_t)now().usec();
-
   _StartMPICall_(MPI_Send_init);
 
   MpiRequest* req = MpiRequest::construct(MpiRequest::Send);

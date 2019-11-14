@@ -168,7 +168,7 @@ py_dict_from_params(SST::Params& params)
 }
 
 static PyObject*
-set_debug_flags(PyObject* self, PyObject* args)
+set_debug_flags(PyObject*  /*self*/, PyObject* args)
 {
   Py_ssize_t size = PyTuple_Size(args);
   for (int i=0; i < size; ++i){
@@ -180,7 +180,7 @@ set_debug_flags(PyObject* self, PyObject* args)
 }
 
 static PyObject*
-load_extern_so_file(PyObject* self, PyObject* args)
+load_extern_so_file(PyObject*  /*self*/, PyObject* args)
 {
   std::string pathStr = loadExternPathStr();
   Py_ssize_t size = PyTuple_Size(args);
@@ -193,7 +193,7 @@ load_extern_so_file(PyObject* self, PyObject* args)
 }
 
 static PyObject*
-read_params(PyObject* self, PyObject* args)
+read_params(PyObject*  /*self*/, PyObject* args)
 {
   PyObject* sys_argv = PyTuple_GetItem(args, 0);
   int argc = PyList_Size(sys_argv);

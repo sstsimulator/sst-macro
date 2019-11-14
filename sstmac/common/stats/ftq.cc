@@ -61,7 +61,8 @@ namespace sstmac {
 
 static sstmac::FTQTag inactive("Inactive", 1);
 
-// TODOWARNING
+// 11/14/2019 calewis, these are never used apparently, but I don't feel
+// safe deleting them
 #if 0
 static const char* matplotlib_text_header =
     "#!/usr/bin/env python3\n"

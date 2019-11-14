@@ -113,7 +113,7 @@ SnapprNIC::SnapprNIC(uint32_t id, SST::Params& params, Node* parent) :
 }
 
 void
-SnapprNIC::init(unsigned int phase)
+SnapprNIC::init(unsigned int /*phase*/)
 {
 }
 

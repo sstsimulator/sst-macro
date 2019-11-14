@@ -56,6 +56,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/thread_safe.h>
 #include <sprockit/printable.h>
 
+#include <unusedvariablemacro.h>
+
 RegisterDebugSlot(parallel);
 
 RegisterKeywords(
@@ -222,7 +224,7 @@ ParallelRuntime::bcastFileStream(const std::string &fname)
 }
 
 void
-ParallelRuntime::initPartitionParams(SST::Params& params)
+ParallelRuntime::initPartitionParams(SSTMAC_MAYBE_UNUSED SST::Params&  params)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   sprockit::abort("parallel_runtime::init_partition_params: should not be used with integrated core");
@@ -239,7 +241,7 @@ ParallelRuntime::initPartitionParams(SST::Params& params)
 }
 
 ParallelRuntime*
-ParallelRuntime::staticRuntime(SST::Params& params)
+ParallelRuntime::staticRuntime(SSTMAC_MAYBE_UNUSED SST::Params&  params)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   return nullptr;

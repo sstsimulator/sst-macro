@@ -76,7 +76,6 @@ class ThreadingFContext : public ThreadContext
   }
 
   void pauseContext(ThreadContext*  /*to*/) override {
-    // TODOWARNING ThreadingFContext* fctx = static_cast<ThreadingFContext*>(to);
     transfer_ = sstmac_jump_fcontext(transfer_, nullptr).ctx;
   }
 

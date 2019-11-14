@@ -50,12 +50,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/thread.h>
 #include <sstmac/software/process/ftq_scope.h>
 
-// TODOWARNING
-// #define StartCommCall(fxn,comm) \
-//   auto call_start_time = (uint64_t)now().usec(); \
-//   StartMPICall(fxn); \
-//   mpi_api_debug(sprockit::dbg::mpi, "%s(%s) start", #fxn, commStr(comm).c_str())
-
 #define StartCommCall(fxn,comm) \
   StartMPICall(fxn); \
   mpi_api_debug(sprockit::dbg::mpi, "%s(%s) start", #fxn, commStr(comm).c_str())

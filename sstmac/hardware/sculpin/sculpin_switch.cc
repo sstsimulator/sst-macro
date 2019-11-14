@@ -85,7 +85,6 @@ namespace hw {
 SculpinSwitch::SculpinSwitch(uint32_t id, SST::Params& params) :
   NetworkSwitch(id, params),
   router_(nullptr),
-  // TODOWARNING vtk_(nullptr),
   congestion_(true)
 {
   SST::Params rtr_params = params.find_scoped_params("router");
@@ -154,7 +153,8 @@ SculpinSwitch::connectOutput(int src_outport, int dst_inport, EventLink::ptr&& l
 }
 
 void
-SculpinSwitch::connectInput(int src_outport, int dst_inport, EventLink::ptr&& link)
+SculpinSwitch::connectInput(int /*src_outport*/, int /*dst_inport*/, 
+                            EventLink::ptr&& /*link*/)
 {
   //no-op
 }
@@ -185,10 +185,6 @@ SculpinSwitch::send(Port& p, SculpinPacket* pkt, Timestamp now)
   p.next_free += time_to_send;
   pkt->setTimeToSend(time_to_send);
   p.link->send(extra_delay, pkt);
-
-  // TODOWARNING TimeDelta delay = p.next_free - pkt->arrival();
-
-  //if (xmit_delay_) xmit_delay_->addData(p.id, delay.usec());
 
 #if SSTMAC_VTK_ENABLED
 #if SSTMAC_INTEGRATED_SST_CORE
@@ -253,8 +249,6 @@ SculpinSwitch::tryToSendPacket(SculpinPacket* pkt)
   pkt->setArrival(now_);
   Port& p = ports_[pkt->nextPort()];
   pkt->setSeqnum(p.seqnum++);
-
-  // TODOWARNING static int max_queue_depth = 0;
 
   if (!congestion_){
     TimeDelta time_to_send = pkt->numBytes() * p.byte_delay;

@@ -11,7 +11,7 @@
 namespace coll9 {
 void addem ( int *, int *, int *, MPI_Datatype * );
 
-void addem(int *invec, int *inoutvec, int *len, MPI_Datatype *dtype)
+void addem(int *invec, int *inoutvec, int *len, MPI_Datatype * /*dtype*/)
 {
   int i;
   for ( i=0; i<*len; i++ ) 

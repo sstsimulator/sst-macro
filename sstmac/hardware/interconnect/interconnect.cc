@@ -65,6 +65,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/util.h>
 #include <cinttypes>
 
+#include <unusedvariablemacro.h>
+
 
 RegisterDebugSlot(interconnect);
 
@@ -108,8 +110,9 @@ Interconnect::~Interconnect()
 }
 #endif
 
-Interconnect::Interconnect(SST::Params& params, EventManager *mgr,
-                           Partition *part, ParallelRuntime *rt)
+Interconnect::Interconnect(SST::Params& params, SSTMAC_MAYBE_UNUSED EventManager * mgr,
+                           SSTMAC_MAYBE_UNUSED Partition * part, 
+                           SSTMAC_MAYBE_UNUSED ParallelRuntime * rt)
 {
   if (!static_interconnect_) static_interconnect_ = this;
   topology_ = Topology::staticTopology(params);
@@ -240,7 +243,6 @@ Interconnect::connectEndpoints(uint64_t linkIdOffset,
                                SST::Params& sw_params)
 {
   uint64_t linkId = linkIdOffset;
-  // TODOWARNING int num_nodes = topology_->numNodes();
   int num_switches = topology_->numSwitches();
   int me = rt_->me();
   std::vector<Topology::InjectionPort> ports;
@@ -260,7 +262,6 @@ Interconnect::connectEndpoints(uint64_t linkIdOffset,
   for (int i=0; i < num_switches; ++i){
     //parallel - I don't own this
     int target_rank = partition_->lpidForSwitch(i);
-    // TODOWARNING int target_thread = partition_->threadForSwitch(i);
 
     NetworkSwitch* injsw = switches_[i];
     NetworkSwitch* ejsw = switches_[i];
@@ -342,7 +343,6 @@ Interconnect::connectLogP(
   SST::Params empty{};
 
   int my_rank = rt_->me();
-  // TODOWARNING int my_thread = mgr->thread();
 
   uint64_t linkId = linkIdOffset;
 
@@ -435,7 +435,6 @@ Interconnect::buildEndpoints(SST::Params& node_params,
                   EventManager* mgr)
 {
   int my_rank = rt_->me();
-  // TODOWARNING int my_thread = mgr->thread();
 
   for (int i=0; i < num_switches_; ++i){
     SwitchId sid(i);

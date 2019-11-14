@@ -83,6 +83,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
 
+#include <unusedvariablemacro.h>
+
 RegisterDebugSlot(os,
     "print debug output related to operating system operators - the majority of this debug info will be related to thread context switching");
 
@@ -200,7 +202,7 @@ OperatingSystem::deallocateCore(Thread *thr)
 }
 
 void
-OperatingSystem::initThreads(int nthread)
+OperatingSystem::initThreads(SSTMAC_MAYBE_UNUSED int nthread)
 {
 #if SSTMAC_USE_MULTITHREAD
   if (active_os_.size() == 0){
@@ -306,7 +308,6 @@ void
 OperatingSystem::compute(TimeDelta t)
 {
   // guard the ftq tag in this function
-  // TODOWARNING const auto& cur_tag = active_thread_->tag();
   FTQScope scope(active_thread_, FTQTag::compute);
 
   sw::UnblockEvent* ev = new sw::UnblockEvent(this, active_thread_);

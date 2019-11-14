@@ -53,15 +53,6 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-// TODOWARNING static bool
-// TODOWARNING equals(const std::vector<int>& coords, int x, int y, int z)
-// TODOWARNING {
-// TODOWARNING   if (coords.size() != 3) {
-// TODOWARNING     return false;
-// TODOWARNING   }
-// TODOWARNING   return coords[0] == x && coords[1] == y && coords[2] == z;
-// TODOWARNING }
-
 Torus::Torus(SST::Params& params) :
   CartesianTopology(params)
 {

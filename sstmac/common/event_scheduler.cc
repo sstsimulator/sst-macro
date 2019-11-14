@@ -56,6 +56,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <unistd.h>
 #include <limits>
 
+#include <unusedvariablemacro.h>
+
 #if SSTMAC_INTEGRATED_SST_CORE
 #include <sstmac/sst_core/connectable_wrapper.h>
 #endif
@@ -136,7 +138,7 @@ uint32_t EventLink::selfLinkIdCounter_{0};
 #endif
 
 void
-Component::init(unsigned int phase)
+Component::init(SSTMAC_MAYBE_UNUSED unsigned int phase)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   SSTIntegratedComponent::init(phase);
@@ -152,7 +154,7 @@ Component::setup()
 }
 
 void
-SubComponent::init(unsigned int phase)
+SubComponent::init(unsigned int /*phase*/)
 {
 }
 

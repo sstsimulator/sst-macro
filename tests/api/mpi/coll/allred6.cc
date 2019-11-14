@@ -14,7 +14,7 @@ namespace allred6 {
 
 void mysum( void *cinPtr, void *coutPtr, int *count, MPI_Datatype *dtype );
 
-void mysum( void *cinPtr, void *coutPtr, int *count, MPI_Datatype *dtype )
+void mysum( void *cinPtr, void *coutPtr, int *count, MPI_Datatype * /*dtype*/ )
 {
     const int *cin = (const int *)cinPtr;
     int       *cout = (int *)coutPtr;

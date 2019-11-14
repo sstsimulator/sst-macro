@@ -130,7 +130,6 @@ class PiscesNIC : public NIC
   EventLink::ptr credit_link_;
   EventLink::ptr self_mtl_link_;
 
-  // TODOWARNING NodeId my_addr_;
 
   uint32_t packet_size_;
   uint32_t inj_credits_;

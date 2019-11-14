@@ -219,20 +219,20 @@ class MerlinNIC :
     return true; //keep me active
   }
 
-  void connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link) override {
+  void connectOutput(int  /*src_outport*/, int  /*dst_inport*/, EventLink::ptr&&  /*link*/) override {
     sprockit::abort("should never be called on Merlin NIC");
   }
 
-  void connectInput(int src_outport, int dst_inport, EventLink::ptr&& link) override {
+  void connectInput(int  /*src_outport*/, int  /*dst_inport*/, EventLink::ptr&&  /*link*/) override {
     sprockit::abort("should never be called on Merlin NIC");
   }
 
-  LinkHandler* creditHandler(int port) override {
+  LinkHandler* creditHandler(int  /*port*/) override {
     sprockit::abort("should never be called on Merlin NIC");
     return nullptr;
   }
 
-  LinkHandler* payloadHandler(int port) override {
+  LinkHandler* payloadHandler(int  /*port*/) override {
     sprockit::abort("should never be called on Merlin NIC");
     return nullptr;
   }

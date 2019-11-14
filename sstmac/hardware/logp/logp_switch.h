@@ -86,7 +86,7 @@ class LogPSwitch : public ConnectableComponent
 
     virtual double value() = 0;
 
-    ContentionModel(SST::Params& params){}
+    ContentionModel(SST::Params&){}
   };
 
  public:
@@ -102,9 +102,7 @@ class LogPSwitch : public ConnectableComponent
     nic_links_[src_outport] = std::move(payload_link);
   }
 
-  void connectInput(int src_outport, int dst_inport, EventLink::ptr&& credit_link) override {
-    //do nothing
-  }
+  void connectInput(int, int, EventLink::ptr&&) override {}
 
   LinkHandler* payloadHandler(int  /*port*/) override {
     return newLinkHandler(this, &LogPSwitch::sendEvent);
@@ -120,7 +118,7 @@ class LogPSwitch : public ConnectableComponent
 
   void sendEvent(Event* ev);
 
-  void dropEvent(Event* ev){}
+  void dropEvent(Event*){}
 
   void send(NetworkMessage* msg){
     send(now(), msg);

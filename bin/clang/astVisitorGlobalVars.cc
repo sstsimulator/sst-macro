@@ -547,11 +547,6 @@ SkeletonASTVisitor::checkInstanceStaticClassVar(VarDecl *D)
   auto semBegin = sem.begin();
 
   std::advance(semBegin, lex.size());
-  // TODOWARNING @jjwilke look ^^, no loop needed
-  // for (auto& ignore : lex){ //figure out the overlap between lexical and semantic namespaces
-  //   ++semBegin;
-  // }
-  
   for (auto iter = semBegin; iter != sem.end(); ++iter){ //I must init/declare vars in the most enclosing namespace
     os << "namespace " << *iter << " {";
   }

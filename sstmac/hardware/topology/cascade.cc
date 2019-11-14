@@ -99,7 +99,6 @@ bool
 Cascade::xy_connected_to_group(int myX, int myY, int myG, int dstg) const
 {
   int gstride = std::max(1, g_ / group_con_);
-  // TODOWARNING int gconns = 0;
   int my_group_id = myX + myY * x_;
   int goffset = my_group_id % g_;
   int theg = myG + goffset;

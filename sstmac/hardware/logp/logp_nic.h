@@ -89,7 +89,7 @@ class LogPNIC :
 
   void mtlHandle(Event* ev) override;
 
-  void dropEvent(Event* ev){}
+  void dropEvent(Event*){}
 
   virtual std::string toString() const override {
     return "simple nic";

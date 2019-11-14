@@ -83,7 +83,7 @@ RegisterKeywords(
 
 MakeDebugSlot(app_compute);
 
-void sstmac_app_loaded(int aid){}
+void sstmac_app_loaded(int /*aid*/){}
 
 namespace sstmac {
 namespace sw {

@@ -416,7 +416,7 @@ class Component :
     return dynamic_cast<T*>(sub);
   }
 #else
-  void initLinks(SST::Params& params){} //need for SST core compatibility
+  void initLinks(SST::Params&){} //need for SST core compatibility
 
   template <class T, class... Args> T* loadSub(const std::string& name, const std::string& /*iface*/, int slot_id,
                                 SST::Params& params, Args&&... args){

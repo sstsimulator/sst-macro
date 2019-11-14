@@ -98,7 +98,7 @@ PiscesTiledSwitch::tileToRowCol(int tile, int& row, int& col){
 }
 
 void
-PiscesTiledSwitch::initComponents(SST::Params& params)
+PiscesTiledSwitch::initComponents(SST::Params& /*params*/)
 {
   //TODO
 #if 0
@@ -184,7 +184,8 @@ PiscesTiledSwitch::initComponents(SST::Params& params)
 }
 
 void
-PiscesTiledSwitch::connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link)
+PiscesTiledSwitch::connectOutput(int /*src_outport*/, int /*dst_inport*/, 
+                                 EventLink::ptr&& /*link*/)
 {
   //TODO
 #if 0
@@ -195,7 +196,8 @@ PiscesTiledSwitch::connectOutput(int src_outport, int dst_inport, EventLink::ptr
 }
 
 void
-PiscesTiledSwitch::connectInput(int src_outport, int dst_inport, EventLink::ptr&& link)
+PiscesTiledSwitch::connectInput(int /*src_outport*/, int /*dst_inport*/, 
+                                EventLink::ptr&& /*link*/)
 {
   //TODO
 #if 0

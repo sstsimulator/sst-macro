@@ -73,7 +73,7 @@ SculpinNIC::SculpinNIC(uint32_t id, SST::Params& params, Node* parent) :
 }
 
 void
-SculpinNIC::init(unsigned int phase)
+SculpinNIC::init(unsigned int /*phase*/)
 {
 }
 
@@ -116,7 +116,8 @@ SculpinNIC::connectOutput(int src_outport, int  /*dst_inport*/, EventLink::ptr&&
 }
 
 void
-SculpinNIC::connectInput(int src_outport, int dst_inport, EventLink::ptr&& link)
+SculpinNIC::connectInput(int /*src_outport*/, int /*dst_inport*/, 
+                         EventLink::ptr&& /*link*/)
 {
   //nothing to do
 }

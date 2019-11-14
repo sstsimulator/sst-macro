@@ -121,7 +121,7 @@ FileTopology::FileTopology(SST::Params& params) :
 }
 
 void
-FileTopology::initHostnameMap(SST::Params& params)
+FileTopology::initHostnameMap(SST::Params& /*params*/)
 {
   //this is done in the constructor
 }

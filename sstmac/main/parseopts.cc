@@ -98,7 +98,6 @@ parseOpts(int argc, char **argv, opts &oo)
   int lowrestimer = 0;
   int run_ping_all = 0;
   int infinite_network = 0;
-  // TODOWARNING int outputXYZ = 0;
   bool need_config_file = true;
   bool machine_configured = false;
   int app_exe_num = 1;

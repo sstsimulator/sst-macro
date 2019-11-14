@@ -64,7 +64,7 @@ class NoiseModel
   virtual double value() = 0;
 
  protected:
-  NoiseModel(SST::Params& params){}
+  NoiseModel(SST::Params&){}
   NoiseModel(){}
 
 };

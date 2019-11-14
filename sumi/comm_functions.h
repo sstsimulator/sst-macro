@@ -143,7 +143,7 @@ struct Max
 struct Null
 {
   static void
-  op(void* dst_buffer, const void* src_buffer, int nelems){}
+  op(void* /*dst_buffer*/, const void* /*src_buffer*/, int /*nelems*/){}
 };
 
 

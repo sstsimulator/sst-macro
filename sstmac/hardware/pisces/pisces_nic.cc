@@ -82,7 +82,7 @@ PiscesNIC::PiscesNIC(uint32_t id, SST::Params& params, Node* parent) :
 }
 
 void
-PiscesNIC::init(unsigned int phase)
+PiscesNIC::init(unsigned int /*phase*/)
 {
 }
 

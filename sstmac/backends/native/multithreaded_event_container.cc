@@ -137,28 +137,6 @@ spin_up_pthread_work(void* args){
   return 0;
 }
 
-#if 0 //TODOWARNING
-static void
-print_backtrace(int sig)
-{
-  void* array[40];
-  char cmd[1024];
-  char debug[1024];
-  int size = backtrace(array, 40);
-  std::stringstream sstr;
-  for (int i=0; i < size; ++i){
-    void* addr = array[i];
-    Dl_info info;
-    int err = dladdr(addr, &info);
-    sstr << sprockit::printf("backtrace[%2d] = %p : %s %p\n",
-                  i, addr, info.dli_fname, info.dli_fbase);
-  }
-  std::cout << sstr.str() << std::endl;
-  sleep(1);
-  exit(1);
-}
-#endif
-
 MultithreadedEventContainer::MultithreadedEventContainer(
   SST::Params& params, ParallelRuntime* rt) :
   ClockCycleEventMap(params, rt)

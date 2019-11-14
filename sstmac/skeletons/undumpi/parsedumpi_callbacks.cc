@@ -858,7 +858,6 @@ on_MPI_Waitany(const dumpi_waitany *prm, uint16_t thread,
                const dumpi_time *cpu, const dumpi_time *wall,
                const dumpi_perfinfo *perf, void *uarg)
 {
-  // TODOWARNING ParsedumpiCallbacks *cb = reinterpret_cast<ParsedumpiCallbacks*>(uarg);
   return waitany_pessimistic(prm, thread, cpu, wall, perf, uarg);
 }
 
@@ -891,7 +890,6 @@ on_MPI_Testany(const dumpi_testany *prm, uint16_t thread,
                const dumpi_time *cpu, const dumpi_time *wall,
                const dumpi_perfinfo *perf, void *uarg)
 {
-  // TODOWARNING ParsedumpiCallbacks *cb = reinterpret_cast<ParsedumpiCallbacks*>(uarg);
   return testany_pessimistic(prm, thread, cpu, wall, perf, uarg);
 }
 
@@ -1228,7 +1226,6 @@ on_MPI_Type_vector(const dumpi_type_vector *prm, uint16_t  /*thread*/,
   }
   cb->start_mpi(cpu, wall, perf);
   MPI_Datatype oldtype = cb->getMpitype(prm->oldtype);
-  // TODOWARNING MpiType* old_type_obj = cb->getmpi()->typeFromId(oldtype);
 
   MPI_Datatype newtype;
   cb->getmpi()->typeVector(prm->count, prm->blocklength, 0, oldtype, &newtype);

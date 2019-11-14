@@ -211,8 +211,9 @@ Transport::activeDelay(sstmac::Timestamp start)
 }
 
 void
-Transport::logMessageDelay(Message *msg, uint64_t bytes, int stage,
-                           sstmac::TimeDelta sync_delay, sstmac::TimeDelta active_delay)
+Transport::logMessageDelay(Message * /*msg*/, uint64_t /*bytes*/, int /*stage*/,
+                           sstmac::TimeDelta /*sync_delay*/, 
+                           sstmac::TimeDelta /*active_delay*/)
 {
 }
 
@@ -543,7 +544,7 @@ CollectiveEngine::notifyCollectiveDone(int rank, Collective::type_t ty, int tag)
 }
 
 void
-CollectiveEngine::initSmp(const std::set<int>& neighbors)
+CollectiveEngine::initSmp(const std::set<int>& /*neighbors*/)
 {
 }
 
@@ -962,7 +963,6 @@ CollectiveEngine::waitBarrier(int tag)
 {
   if (tport_->nproc() == 1) return;
   barrier(tag, Message::default_cq);
-  // TODOWARNING auto* dmsg = blockUntilNext(Message::default_cq);
   blockUntilNext(Message::default_cq);
 }
 
@@ -1047,7 +1047,7 @@ class NullQoSAnalysis : public QoSAnalysis
     return m->qos();
   }
 
-  void logDelay(sstmac::TimeDelta delay, Message *m) override {
+  void logDelay(sstmac::TimeDelta /*delay*/, Message * /*m*/) override {
 
   }
 

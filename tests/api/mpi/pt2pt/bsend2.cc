@@ -12,7 +12,7 @@ namespace bsend2 {
 
 #undef BUFSIZE
 #define BUFSIZE 2000
-int bsend2( int argc, char *argv[] )
+int bsend2( int  /*argc*/, char * /*argv*/[] )
 {
     MPI_Status status;
     int a[10], b[10];

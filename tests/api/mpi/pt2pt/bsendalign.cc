@@ -14,7 +14,7 @@ namespace bsendalign {
 /** Test bsend with a buffer with arbitray alignment */
 #undef BUFSIZE
 #define BUFSIZE 2000*4
-int bsendalign( int argc, char *argv[] )
+int bsendalign( int  /*argc*/, char * /*argv*/[] )
 {
     MPI_Status status;
     int a[10], b[10];

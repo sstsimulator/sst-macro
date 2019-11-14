@@ -79,11 +79,6 @@ class SimultaneousBtreeScanActor :
   int nelems_;
 
   reduce_fxn fxn_;
-
-  // TODOWARNING int num_reducing_rounds_;
-
-  // TODOWARNING int num_total_rounds_;
-
 };
 
 class SimultaneousBtreeScan :

@@ -150,7 +150,7 @@ class MemberFxnHandler : public EventHandler
 
   template <class T = Cls>
   typename std::enable_if<!has_deadlock_check<T>::value>::type
-  localDeadlockCheck(Event* ev) {}
+  localDeadlockCheck(Event*) {}
 
   std::tuple<Args...> params_;
   Fxn fxn_;
