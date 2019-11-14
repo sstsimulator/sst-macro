@@ -51,7 +51,7 @@ using namespace sstmac;
 #define sstmac_app_name apitest
 
 int
-USER_MAIN(int argc, char *argv[])
+USER_MAIN(int  /*argc*/, char * /*argv*/[])
 {
   return 0;
 }

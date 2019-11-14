@@ -164,7 +164,7 @@ class NullMemoryModel : public MemoryModel
 
   std::string toString() const override { return "null memory"; }
 
-  void accessFlow(uint64_t bytes, TimeDelta byte_delay, Callback *cb) override {}
+  void accessFlow(uint64_t, TimeDelta, Callback *) override {}
 
   void accessRequest(int linkId, Request* req) override;
 

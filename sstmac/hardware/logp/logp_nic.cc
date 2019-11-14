@@ -119,7 +119,8 @@ LogPNIC::connectOutput(int  /*src_outport*/, int  /*dst_inport*/, EventLink::ptr
 }
 
 void
-LogPNIC::connectInput(int src_outport, int dst_inport, EventLink::ptr&& link)
+LogPNIC::connectInput(int /*src_outport*/, int /*dst_inport*/, 
+                      EventLink::ptr&& /*link*/)
 {
   //nothing needed
 }

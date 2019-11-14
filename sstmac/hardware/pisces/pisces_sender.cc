@@ -52,9 +52,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 MakeDebugSlot(pisces_timeline)
 
-// TODOWARNING static int num_sends = 0;
-// TODOWARNING static int num_credits = 0;
-
 namespace sstmac {
 namespace hw {
 

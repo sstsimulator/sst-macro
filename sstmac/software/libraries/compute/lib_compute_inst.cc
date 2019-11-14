@@ -96,7 +96,6 @@ LibComputeInst::computeDetailed(
   st.nthread = nthread;
 
   // Do not overwrite an existing tag
-  // TODOWARNING const auto& cur_tag = os_->activeThread()->tag();
   FTQScope scope(os_->activeThread(), FTQTag::compute);
 
   computeInst(cmsg, nthread);

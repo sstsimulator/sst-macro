@@ -9,7 +9,7 @@
 #include "mpitest.h"
 
 namespace isendself {
-int isendself( int argc, char *argv[] )
+int isendself( int  /*argc*/, char * /*argv*/[] )
 {
     int a[10], b[10], i;
     MPI_Status status;

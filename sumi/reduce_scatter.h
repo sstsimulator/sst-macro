@@ -78,13 +78,6 @@ class HalvingReduceScatterActor :
 
  private:
   reduce_fxn fxn_;
-
-  // TODOWARNING int nelems_;
-
-  // TODOWARNING int num_reducing_rounds_;
-
-  // TODOWARNING int num_total_rounds_;
-
 };
 
 class HalvingReduceScatter :

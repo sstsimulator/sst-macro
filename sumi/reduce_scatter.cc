@@ -80,7 +80,7 @@ HalvingReduceScatterActor::isLowerPartner(int  /*virtual_me*/, int  /*partner_ga
 }
 
 void
-HalvingReduceScatterActor::bufferAction(void *dst_buffer, void *msg_buffer, Action* ac)
+HalvingReduceScatterActor::bufferAction(void * /*dst_buffer*/, void * /*msg_buffer*/, Action* /*ac*/)
 {
 }
 

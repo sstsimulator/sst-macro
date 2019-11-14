@@ -12,7 +12,7 @@ namespace bsend3 {
 
 #undef BUFSIZE
 #define BUFSIZE 2000
-int bsend3( int argc, char *argv[] )
+int bsend3( int  /*argc*/, char * /*argv*/[] )
 {
     MPI_Status status;
     MPI_Request request;

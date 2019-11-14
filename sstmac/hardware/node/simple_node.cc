@@ -59,6 +59,8 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <iostream>
 
+#include <unusedvariablemacro.h>
+
 namespace sstmac {
 namespace hw {
 
@@ -83,7 +85,7 @@ SimpleNode::SimpleNode(uint32_t id, SST::Params& params)
 }
 
 void
-SimpleNode::init(unsigned int phase)
+SimpleNode::init(SSTMAC_MAYBE_UNUSED unsigned int phase)
 {
 #if SSTMAC_HAVE_SST_ELEMENTS
   if (phase == 1){
@@ -119,7 +121,7 @@ SimpleNode::execute(ami::COMP_FUNC func, Event* data, ExecutionEvent* cb)
 }
 
 void
-SimpleNode::unblock(Event *ev)
+SimpleNode::unblock(SSTMAC_MAYBE_UNUSED Event *ev)
 {
 #if SSTMAC_HAVE_SST_ELEMENTS
   auto* nev = dynamic_cast<SST::ArielComponent::NotifyEvent*>(ev);

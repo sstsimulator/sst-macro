@@ -56,6 +56,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/sst_core/integrated_component.h>
 #endif
 
+#include <unusedvariablemacro.h>
+
 RegisterDebugSlot(network_switch)
 
 RegisterKeywords(
@@ -80,7 +82,7 @@ NetworkSwitch::NetworkSwitch(uint32_t id, SST::Params& params)
 }
 
 void
-NetworkSwitch::init(unsigned int phase)
+NetworkSwitch::init(SSTMAC_MAYBE_UNUSED unsigned int phase)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   if (phase == 0){

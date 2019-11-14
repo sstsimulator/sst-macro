@@ -81,7 +81,6 @@ class BtreeScattervActor :
   int root_;
   int midpoint_;
   int log2nproc_;
-  // TODOWARNING int* send_counts_;
   int recvcnt_;
 
 };

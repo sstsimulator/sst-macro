@@ -90,7 +90,6 @@ class ThreadingUContext : public ThreadContext
     context_.uc_stack.ss_size = stacksize;
     initContext();
 
-    // TODOWARNING ThreadingUContext* fromctx = static_cast<ThreadingUContext*>(from);
     context_.uc_link = NULL;
 
     makecontext(&context_, (void

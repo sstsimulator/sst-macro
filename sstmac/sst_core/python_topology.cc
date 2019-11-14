@@ -257,7 +257,7 @@ sys_get_ejection_connections(SystemPy_t* self, PyObject* swIdx)
 }
 
 static PyObject*
-sys_is_logp(SystemPy_t *self, PyObject *null)
+sys_is_logp(SystemPy_t *self, PyObject * /*null*/)
 {
   PyObject* theBool = PyBool_FromLong(self->logp);
   return theBool;
@@ -309,13 +309,13 @@ sys_dealloc(SystemPy_t* self)
 }
 
 static PyObject*
-sys_num_switches(SystemPy_t* self, PyObject* null)
+sys_num_switches(SystemPy_t* self, PyObject*  /*null*/)
 {
   return PyInt_FromLong(self->macro_topology->numSwitches());
 }
 
 static PyObject*
-sys_num_nodes(SystemPy_t* self, PyObject* null)
+sys_num_nodes(SystemPy_t* self, PyObject*  /*null*/)
 {
   return PyInt_FromLong(self->macro_topology->numNodes());
 }

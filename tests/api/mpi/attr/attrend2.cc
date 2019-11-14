@@ -85,7 +85,7 @@ int attrend2(int argc, char **argv)
     return 0;
 }
 
-int delete_fn(MPI_Comm comm, int keyval, void *attribute_val, void *extra_state)
+int delete_fn(MPI_Comm  /*comm*/, int  /*keyval*/, void *attribute_val, void * /*extra_state*/)
 {
     int flag;
     int i;

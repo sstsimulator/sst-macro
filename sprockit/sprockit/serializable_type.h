@@ -58,7 +58,7 @@ class serializable
 
   virtual void serialize_order(sprockit::serializer& ser) = 0;
 
-  virtual void validate_serialization(serializable* ser){}
+  virtual void validate_serialization(serializable*){}
 
   virtual uint32_t cls_id() const = 0;
 

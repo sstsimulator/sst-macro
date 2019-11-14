@@ -62,8 +62,6 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-// TODOWARNING static const double PI = 3.141592653589793238462;
-
 DragonflyPlus::DragonflyPlus(SST::Params& params) :
   Dragonfly(params)
 {

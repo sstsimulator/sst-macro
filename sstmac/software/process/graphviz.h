@@ -186,7 +186,7 @@ class CallGraphOutput : public sstmac::StatisticOutput
 
   CallGraphOutput(SST::Params& params);
 
-  void registerStatistic(SST::Statistics::StatisticBase* stat) override {}
+  void registerStatistic(SST::Statistics::StatisticBase*) override {}
 
   void startOutputGroup(SST::Statistics::StatisticGroup * grp) override;
   void stopOutputGroup() override;

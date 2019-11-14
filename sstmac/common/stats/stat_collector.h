@@ -123,7 +123,7 @@ class StatisticOutput
   SST_ELI_DECLARE_BASE(StatisticOutput)
   SST_ELI_DECLARE_CTOR(SST::Params&)
 
-  StatisticOutput(SST::Params& params){}
+  StatisticOutput(SST::Params&){}
   virtual ~StatisticOutput(){}
 
  public:
@@ -388,9 +388,9 @@ class NullStatisticBase<T,false> : public Statistic<T>
   {
   }
 
-  void addData_impl(T&& data) override {}
+  void addData_impl(T&&) override {}
 
-  void addData_impl(const T& data) override {}
+  void addData_impl(const T&) override {}
 
 };
 
@@ -406,7 +406,7 @@ class NullStatisticBase<std::tuple<Args...>,false> :
   {
   }
 
-  void addData_impl(Args... data) override {}
+  void addData_impl(Args...) override {}
 
 };
 
@@ -431,7 +431,7 @@ class NullStatisticBase<T,true> : public Statistic<T> {
   {
   }
 
-  void addData_impl(T data) override {}
+  void addData_impl(T) override {}
 
 };
 
@@ -452,9 +452,9 @@ class NullStatistic : public NullStatisticBase<T,isFund> {
   {
   }
 
-  void outputStatisticData(SST::Statistics::StatisticOutput *output, bool endOfSimFlag) override {}
+  void outputStatisticData(SST::Statistics::StatisticOutput *, bool) override {}
 
-  void registerOutputFields(SST::Statistics::StatisticOutput *statOutput) override {}
+  void registerOutputFields(SST::Statistics::StatisticOutput *) override {}
 
   static bool isLoaded(){
     return loaded_;

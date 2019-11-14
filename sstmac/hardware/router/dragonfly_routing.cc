@@ -381,7 +381,6 @@ class DragonflyUGALRouter : public DragonflyValiantRouter {
     uint32_t seed = netsw_->now().time.ticks();
     uint32_t attempt = 0;
     int new_g = dst_g;
-    // TODOWARNING bool go_valiant = false;
     auto hdr = pkt->rtrHeader<header>();
     int min_port = group_ports_[dst_g][group_port_rotaters_[dst_g]];
     if (dfly_->g() > 2){ //can't do this unless I have an intermediate group!
