@@ -44,35 +44,12 @@ Questions? Contact sst-macro-help@sandia.gov
 #include "computeVisitor.h"
 #include "computePragma.h"
 #include "replacePragma.h"
-#include "printAll.h"
 #include "validateScope.h"
 #include "astVisitor.h"
 
 using namespace clang;
 using namespace clang::driver;
 using namespace clang::tooling;
-
-struct GlobalVarReplacer
-{
-  bool hasReplacement(const DeclRefExpr* expr){
-    return visitor->isGlobal(const_cast<DeclRefExpr*>(expr));
-  }
-  std::string getReplacement(const DeclRefExpr* expr){
-    return visitor->needGlobalReplacement(const_cast<NamedDecl*>(expr->getFoundDecl()));
-  }
-
-  template <class T>
-  bool hasReplacement(T*  /*t*/){
-    return false;
-  }
-
-  template <class T>
-  std::string getReplacement(T*  /*t*/){
-    return "";
-  }
-
-  SkeletonASTVisitor* visitor;
-};
 
 void
 ComputeVisitor::visitAccessDeclRefExpr(DeclRefExpr* expr, MemoryLocation& mloc)
@@ -622,13 +599,10 @@ ComputeVisitor::getTripCount(ForLoopSpec* spec)
   Expr* max = spec->increment ? spec->predicateMax : spec->init;
   Expr* min = spec->increment ? spec->init : spec->predicateMax;
 
-  GlobalVarReplacer repl;
-  repl.visitor = this->context;
-
   std::stringstream os;
   os << "((";
   if (max){
-    printAll(max,os,repl);
+    os << context->printWithGlobalsReplaced(max);
   } else {
     os << "0";
   }
@@ -636,13 +610,13 @@ ComputeVisitor::getTripCount(ForLoopSpec* spec)
   if (min){
     os << "-";
     os << "(";
-    printAll(min,os,repl);
+    os << context->printWithGlobalsReplaced(min);
     os << ")";
   }
   os << ")";
   if (spec->stride){
     os << "/ (";
-    printAll(spec->stride,os,repl);
+    os << context->printWithGlobalsReplaced(spec->stride);
     os << ")";
   }
   return os.str();

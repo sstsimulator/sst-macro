@@ -277,17 +277,16 @@ HaloExchange* initHaloExchange(Domain* domain)
 /// \param [in] iAxis     Axis index.
 /// \param [in, out] data Pointer to data that will be passed to the load and
 ///                       unload functions
+#pragma sst replace comdMalloc 0
 void exchangeData(LinkCell* boxes, HaloExchange* haloExchange, void* data, int iAxis)
 {
    enum HaloFaceOrder faceM = 2*iAxis;
    enum HaloFaceOrder faceP = faceM+1;
 
-#pragma sst start_replace comdMalloc 0
    char* sendBufM = comdMalloc(haloExchange->bufCapacity);
    char* sendBufP = comdMalloc(haloExchange->bufCapacity);
    char* recvBufM = comdMalloc(haloExchange->bufCapacity);
    char* recvBufP = comdMalloc(haloExchange->bufCapacity);
-#pragma sst stop_replace comdMalloc
 
    int nSendM = haloExchange->loadBuffer(haloExchange->parms, data, faceM, sendBufM);
    int nSendP = haloExchange->loadBuffer(haloExchange->parms, data, faceP, sendBufP);

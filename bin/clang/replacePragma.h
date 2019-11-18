@@ -66,38 +66,15 @@ class SSTReplacePragma : public SSTPragma {
     return match_;
   }
 
-  std::list<const clang::Expr*> run(clang::Stmt* s);
-  void run(clang::Stmt* s, clang::Rewriter& r);
+  std::set<const clang::Expr*> run(clang::Stmt* s);
+
   void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg) override;
   void activate(clang::Decl *d, clang::Rewriter &r, PragmaConfig &cfg) override;
  private:
   void run(clang::Stmt* s, clang::Rewriter& rw, std::list<const clang::Expr*>& replaced);
-  void activateFunctionDecl(clang::FunctionDecl* d, clang::Rewriter& r);
-  void activateVarDecl(clang::VarDecl* d, clang::Rewriter& r);
-  void activateCXXRecordDecl(clang::CXXRecordDecl* d, clang::Rewriter& r);
-};
-
-class SSTStartReplacePragma : public SSTReplacePragma {
- public:
-  SSTStartReplacePragma(clang::SourceLocation loc, clang::CompilerInstance& CI,
-                        const std::list<clang::Token>& tokens) :
-    SSTReplacePragma(loc,CI,tokens){}
-
-  void activate(clang::Rewriter&, PragmaConfig& cfg) override {
-    cfg.replacePragmas[match_] = this;
-  }
-};
-
-class SSTStopReplacePragma : public SSTPragma {
- public:
-  SSTStopReplacePragma(const std::string& fxn) :
-    fxn_(fxn){}
-
-  void activate(clang::Stmt*  /*s*/, clang::Rewriter&  /*r*/, PragmaConfig& cfg) override {
-    cfg.replacePragmas.erase(fxn_);
-  }
- private:
-  std::string fxn_;
+  void activateFunctionDecl(clang::FunctionDecl* d, clang::Rewriter& r, PragmaConfig& cfg);
+  void activateVarDecl(clang::VarDecl* d, clang::Rewriter& r, PragmaConfig& cfg);
+  void activateCXXRecordDecl(clang::CXXRecordDecl* d, clang::Rewriter& r, PragmaConfig& cfg);
 };
 
 class SSTInsteadPragma : public SSTPragma {
