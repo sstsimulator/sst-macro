@@ -44,7 +44,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include "computePragma.h"
 #include "computeVisitor.h"
-#include "recurseAll.h"
 #include "dataFlow.h"
 #include "computeLoops.h"
 #include "validateScope.h"
