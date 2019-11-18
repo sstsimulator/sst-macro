@@ -45,49 +45,20 @@ Questions? Contact sst-macro-help@sandia.gov
 #define bin_clang_validate_scope_h
 
 #include "clangHeaders.h"
-#include "recurseAll.h"
 #include "astVisitor.h"
 #include "util.h"
 #include <sstream>
 
-struct VariableScope {
-  clang::SourceLocation start;
-  clang::SourceLocation stop;
-  SkeletonASTVisitor* astContext;
-  bool inScope(const clang::DeclRefExpr* expr){
-    if (astContext->isGlobal(expr)){
-      return true;
-    }
+struct VariableScopeVisitor : public clang::RecursiveASTVisitor<VariableScopeVisitor>
+{
+  VariableScopeVisitor(SkeletonASTVisitor* context, clang::CompilerInstance& ci,
+                       clang::SourceLocation start, clang::SourceLocation stop) :
+    context_(context), CI_(ci), start_(start), stop_(stop)
+  {
 
-    if (stop.isInvalid()){
-      return false; //well crap, null scope
-    }
-
-    clang::SourceLocation loc = getStart(expr->getFoundDecl());
-    return loc > start && loc < stop;
-  }
-};
-
-struct ValidateScope {
-  bool operator()(const clang::Expr* /*e*/, 
-                  ExprRole /*role*/,
-                  clang::CompilerInstance& /*CI*/, 
-                  VariableScope& /*scope*/){
-    return false;
   }
 
-  bool operator()(const clang::Stmt* /*s*/, 
-                  ExprRole /*role*/,
-                  clang::CompilerInstance& /*CI*/, 
-                  VariableScope& /*scope*/){
-    //do nothing
-    return false; //but don't stop recursing
-  }
-
-  bool operator()(const clang::DeclRefExpr* expr, 
-                  ExprRole /*role*/,
-                  clang::CompilerInstance& CI, 
-                  VariableScope& scope){
+  bool VisitDeclRefExpr(clang::DeclRefExpr* expr){
     const clang::ValueDecl* d = expr->getDecl();
 
     //some types we skip
@@ -98,19 +69,38 @@ struct ValidateScope {
       default: break;
     }
 
-    if (!scope.inScope(expr)){
+    if (!inScope(expr)){
       std::stringstream sstr;
       sstr << "control variable '" << d->getNameAsString()
            << "' declared at "
-           << getStartLocString(d, CI)
+           << getStartLocString(d, CI_)
            << " of type " << d->getDeclKindName()
            << " which is inside skeletonized block starting at "
-           << scope.stop.printToString(CI.getSourceManager())
+           << stop_.printToString(CI_.getSourceManager())
            << " - must use #pragma sst replace";
-      errorAbort(expr, CI, sstr.str());
+      errorAbort(expr, CI_, sstr.str());
     }
     return false;
   }
+
+  bool inScope(const clang::DeclRefExpr* expr){
+    if (context_->isGlobal(expr)){
+      return true;
+    }
+
+    if (stop_.isInvalid()){
+      return true; //well crap, null scope
+    }
+
+    clang::SourceLocation loc = getStart(expr->getFoundDecl());
+    return loc > start_ && loc < stop_;
+  }
+
+ private:
+  clang::CompilerInstance& CI_;
+  clang::SourceLocation start_;
+  clang::SourceLocation stop_;
+  SkeletonASTVisitor* context_;
 };
 
 #endif
