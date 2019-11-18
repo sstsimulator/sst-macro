@@ -44,7 +44,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include "computeVisitor.h"
 #include "computePragma.h"
 #include "replacePragma.h"
-#include "recurseAll.h"
 #include "printAll.h"
 #include "validateScope.h"
 #include "astVisitor.h"
@@ -562,13 +561,9 @@ ComputeVisitor::validateLoopControlExpr(Expr* rhs)
 {
   //we may have issues if the rhs references variables
   //that are scoped inside the loop
-  VariableScope scope;
-  scope.astContext = context;
-  scope.start = getStart(context->getTopLevelScope());
-  //this is the START of the compute block
-  //but also the END of the allowed scope for usable variables
-  scope.stop = scopeStartLine;
-  recurseAll<ValidateScope,NullVisit>(rhs, CI, scope);
+  VariableScopeVisitor scope{context, CI,
+        getStart(context->getTopLevelScope()), scopeStartLine};
+  scope.TraverseStmt(rhs);
 }
 
 void

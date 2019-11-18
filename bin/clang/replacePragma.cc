@@ -42,7 +42,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 #include "replacePragma.h"
-#include "recurseAll.h"
 #include "astVisitor.h"
 #include <sstream>
 #include <list>
