@@ -241,6 +241,7 @@ class FirstPassASTVisitor : public clang::RecursiveASTVisitor<FirstPassASTVisito
 
 class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor> {
   friend class SkeletonASTConsumer;
+  friend struct PragmaActivateGuard;
   using Parent=clang::RecursiveASTVisitor<SkeletonASTVisitor>;
  private:
   struct AnonRecord {
@@ -273,6 +274,90 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     ArrayInfo() : isFxnStatic(false), needsDeref(true) {}
   };
 
+
+  /** These should always index by the canonical decl */
+  struct GlobalReplacement {
+    //used at beginning of function so that variable can be reused
+    //without redoing all the lookup work
+    std::string reusableText;
+    //used in ctors and other contexts when variable must be directly
+    //accessed inline and cannot use a cached version
+    std::string inlineUseText;
+    //whether the replacement text should be appended to the variable name
+    //or replace the variable name entirely
+    bool append;
+    GlobalReplacement(const std::string& reusable,
+                      const std::string& oneOff,
+                      bool app) :
+      reusableText(reusable),
+      inlineUseText(oneOff),
+      append(app)
+    {}
+  };
+
+  struct GlobalVariableReplacement {
+    ArrayInfo* arrayInfo;
+    AnonRecord* anonRecord;
+    std::string scopeUniqueVarName;
+    bool useAccessor;
+    bool isFxnStatic;
+    bool needFullNamespace;
+    std::string typeStr;
+    std::string retType;
+    std::string classScope;
+    bool threadLocal;
+
+    GlobalVariableReplacement(const std::string& uniqueName,
+                              bool useAcc, bool isStatic, bool needNs, bool tls) :
+      arrayInfo(nullptr),
+      anonRecord(nullptr),
+      scopeUniqueVarName(uniqueName),
+      useAccessor(useAcc),
+      isFxnStatic(isStatic),
+      needFullNamespace(needNs),
+      threadLocal(tls)
+    {
+    }
+
+    ~GlobalVariableReplacement(){
+      if (arrayInfo) delete arrayInfo;
+      if (anonRecord) delete anonRecord;
+    }
+
+  };
+
+  struct GlobalStandin {
+    bool fxnStatic;
+    bool threadLocal;
+    std::string replText;
+    GlobalStandin() : fxnStatic(false), threadLocal(false) {}
+  };
+
+  typedef enum {
+    Global, //regular global variable (C-style)
+    FileStatic,
+    CxxStatic, //c++ static class variable
+    FxnStatic
+  } GlobalVariable_t;
+
+  struct cArrayConfig {
+    std::string fundamentalTypeString;
+    clang::QualType fundamentalType;
+    std::stringstream arrayIndices;
+  };
+
+  struct ReplaceGlobalsPrinterHelper : public clang::PrinterHelper {
+    ReplaceGlobalsPrinterHelper(SkeletonASTVisitor* parent) :
+      parent_(parent)
+    {
+    }
+
+    bool handledStmt(clang::Stmt *E, clang::raw_ostream &OS) override;
+
+   private:
+    SkeletonASTVisitor* parent_;
+  };
+
   static bool indexIsSet(int idx){
     return idx != IndexResetter;
   }
@@ -293,8 +378,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     foundCMain_(false), 
     refactorMain_(true),
     keepGlobals_(false),
-    pragmaConfig_(cfg),
-    reconstructCount_(0)
+    pragmaConfig_(cfg)
   {
     initHeaders();
     initReservedNames();
@@ -337,6 +421,9 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   bool isGlobal(const clang::DeclRefExpr* expr) const {
     return globals_.find(mainDecl(expr)) != globals_.end();
   }
+
+  friend struct ReplaceGlobalsPrinterHelper;
+  std::string printWithGlobalsReplaced(clang::Stmt* stmt);
 
   void registerNewKeywords(std::ostream& os);
 
@@ -643,44 +730,6 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   clang::CXXConstructExpr* getCtor(clang::VarDecl* vd);
 
  private:
-  //whether we are allowed to use global variables in statements
-  //or if they are disallowed because they would break deglobalizer
-  clang::Decl* currentTopLevelScope_;
-  clang::Rewriter& rewriter_;
-  clang::CompilerInstance* ci_;
-  std::map<clang::RecordDecl*,clang::TypedefDecl*> typedefStructs_;
-  SSTPragmaList& pragmas_;
-  bool visitingGlobal_;
-  std::set<clang::FunctionDecl*> templateDefinitions_;
-  std::list<clang::CXXConstructorDecl*> ctorContexts_;
-  GlobalVarNamespace& globalNs_;
-  GlobalVarNamespace* currentNs_;
-
-  /** These should always index by the canonical decl */
-  struct GlobalReplacement {
-    //used at beginning of function so that variable can be reused
-    //without redoing all the lookup work
-    std::string reusableText;
-    //used in ctors and other contexts when variable must be directly
-    //accessed inline and cannot use a cached version
-    std::string inlineUseText;
-    //whether the replacement text should be appended to the variable name
-    //or replace the variable name entirely
-    bool append;
-    GlobalReplacement(const std::string& reusable,
-                      const std::string& oneOff,
-                      bool app) :
-      reusableText(reusable), 
-      inlineUseText(oneOff),
-      append(app)
-    {}
-  };
-
-  std::map<const clang::Decl*,GlobalReplacement> globals_;
-  std::set<const clang::Decl*> variableTemplates_;
-  std::map<const clang::Decl*,std::string> scopedNames_;
-
-
   static inline const clang::Decl* mainDecl(const clang::Decl* d){
     return d->getCanonicalDecl();
   }
@@ -795,37 +844,6 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     }
   }
 
-  struct GlobalVariableReplacement {
-    ArrayInfo* arrayInfo;
-    AnonRecord* anonRecord;
-    std::string scopeUniqueVarName;
-    bool useAccessor;
-    bool isFxnStatic;
-    bool needFullNamespace;
-    std::string typeStr;
-    std::string retType;
-    std::string classScope;
-    bool threadLocal;
-
-    GlobalVariableReplacement(const std::string& uniqueName,
-                              bool useAcc, bool isStatic, bool needNs, bool tls) :
-      arrayInfo(nullptr),
-      anonRecord(nullptr),
-      scopeUniqueVarName(uniqueName),
-      useAccessor(useAcc),
-      isFxnStatic(isStatic),
-      needFullNamespace(needNs),
-      threadLocal(tls)
-    {
-    }
-
-    ~GlobalVariableReplacement(){
-      if (arrayInfo) delete arrayInfo;
-      if (anonRecord) delete anonRecord;
-    }
-
-  };
-
   GlobalVariableReplacement setupGlobalReplacement(clang::VarDecl* vd, const std::string& namePrefix,
                           bool useAccessor, bool isFxnStatic, bool needFullNs);
 
@@ -836,80 +854,6 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   bool setupFunctionStaticCpp(clang::VarDecl* D, const std::string& scopePrefix);
   bool setupFunctionStaticC(clang::VarDecl* D, const std::string& scopePrefix);
 
-  std::set<std::string> globalsDeclared_;
-  bool useAllHeaders_;
-  int insideCxxMethod_;
-
-  std::map<clang::FunctionDecl*, std::map<std::string, int>> staticFxnVarCounts_;
-  std::list<clang::FunctionDecl*> fxnContexts_;
-  std::list<clang::CXXRecordDecl*> classContexts_;
-  std::list<clang::Stmt*> loopContexts_; //both fors and whiles
-  std::list<clang::Stmt*> stmtContexts_;
-  std::list<clang::Decl*> assignments_;
-  std::list<clang::Expr*> activeDerefs_;
-  std::list<clang::IfStmt*> activeIfs_;
-  //most deletions are tracked through exceptions
-  //however, sometimes a call expr must "lookahead" and delete arguments before
-  //they are traversed in the natural course of AST traversal
-  //note here any arguments that are modified/deleted
-  std::set<clang::Expr*> deletedArgs_;
-  std::list<clang::MemberExpr*> memberAccesses_;
-  std::map<clang::Stmt*,clang::Stmt*> extendedReplacements_;
-  std::set<clang::DeclContext*> innerStructTagsDeclared_;
-
-  /**
-   * @brief dependentStaticMembers_
-   * Static variables of template classes that lead to
-   * CXXDependentScopeMemberExpr in which a global variable cannot be recognized
-   * because it is hidden behind template parameters
-   */
-  std::map<std::string,clang::VarDecl*> dependentStaticMembers_;
-
-  std::list<std::list<std::pair<clang::SourceRange,std::string>>> stmtReplacements_;
-
-  std::list<clang::VarDecl*> activeDecls_;
-  std::list<clang::Expr*> activeInits_;
-
-  int numRelocations_;
-
-  typedef enum { LHS, RHS } BinOpSide;
-  std::vector<std::pair<clang::BinaryOperator*,BinOpSide>> binOps_;
-  int activeBinOpIdx_;
-
-  std::list<clang::ParmVarDecl*> activeFxnParams_;
-
-  bool foundCMain_;
-  bool refactorMain_;
-  std::string mainName_;
-  bool keepGlobals_;
-  std::set<std::string> ignoredHeaders_;
-  std::set<std::string> reservedNames_;
-  PragmaConfig& pragmaConfig_;
-  std::set<clang::DeclRefExpr*> alreadyReplaced_;
-  std::set<std::string> globalVarWhitelist_;
-  ASTVisitorCmdLine opts_;
-
-  std::map<unsigned, std::pair<clang::VarDecl*,std::string>> declsToInsertAfter_;
-
-  friend struct PragmaActivateGuard;
-
-  struct GlobalStandin {
-    bool fxnStatic;
-    bool threadLocal;
-    std::string replText;
-    GlobalStandin() : fxnStatic(false), threadLocal(false) {}
-  };
-
-  std::map<const clang::Decl*,GlobalStandin> globalStandins_;
-  std::list<int> initIndices_;
-  std::list<clang::FieldDecl*> activeFieldDecls_;
-  std::list<std::set<const clang::Decl*>> globalsTouched_;
-  std::set<std::string> sstmacFxnPrepends_;
-
-  typedef void (SkeletonASTVisitor::*MPI_Call)(clang::CallExpr* expr);
-  std::map<std::string, MPI_Call> mpiCalls_;
-
- private:
   template <class Lambda>
   void goIntoContext(clang::Stmt* stmt, Lambda&& l){
     stmtContexts_.push_back(stmt);
@@ -992,13 +936,6 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     return !fxnContexts_.empty();
   }
 
-  typedef enum {
-    Global, //regular global variable (C-style)
-    FileStatic,
-    CxxStatic, //c++ static class variable
-    FxnStatic
-  } GlobalVariable_t;
-
    /**
     * @brief checkAnonStruct See if the type of the variable is an
     *       an anonymous union or struct. Fill in info in rec if so.
@@ -1032,12 +969,6 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    */
   void declareSSTExternVars(clang::SourceLocation insertLoc);
 
-  struct cArrayConfig {
-    std::string fundamentalTypeString;
-    clang::QualType fundamentalType;
-    std::stringstream arrayIndices;
-  };
-
   void traverseFunctionBody(clang::Stmt* s);
 
   bool doTraverseLambda(clang::LambdaExpr* expr);
@@ -1046,61 +977,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
 
   void setFundamentalTypes(clang::QualType qt, cArrayConfig& cfg);
 
-  struct ReconstructedType {
-    int typeIndex;
-    std::list<clang::QualType> fundamentalFieldTypes;
-    std::list<const clang::RecordDecl*> classFieldTypes;
-    std::list<const clang::RecordDecl*> newClassFieldTypes;
-    std::list<std::pair<std::string,std::string>> arrayTypes;
-    std::set<const clang::RecordDecl*> structDependencies;
-  };
-
-  struct ReplaceGlobalsPrinterHelper : public clang::PrinterHelper {
-    ReplaceGlobalsPrinterHelper(SkeletonASTVisitor* parent) :
-      parent_(parent)
-    {
-    }
-
-    bool handledStmt(clang::Stmt *E, clang::raw_ostream &OS) override;
-
-   private:
-    SkeletonASTVisitor* parent_;
-  };
-
-  friend struct ReplaceGlobalsPrinterHelper;
-  std::string printWithGlobalsReplaced(clang::Stmt* stmt);
-
   bool maybePrintGlobalReplacement(clang::VarDecl* vd, llvm::raw_ostream& os);
-
-  std::unordered_set<std::string> validHeaders_;
-
-  int reconstructCount_;
-
-  void reconstructType(clang::SourceLocation typeDeclCutoff,
-                      clang::QualType qt, ReconstructedType& rt,
-                      std::map<const clang::RecordDecl*, ReconstructedType>& newTypes);
-
-  void reconstructType(clang::SourceLocation typeDeclCutoff,
-                      const clang::RecordDecl* rd, ReconstructedType& rt,
-                      std::map<const clang::RecordDecl*, ReconstructedType>& newTypes);
-
-  void addRecordField(clang::SourceLocation typeDeclCutoff,
-                     const clang::RecordDecl* rd, ReconstructedType& rt,
-                     std::map<const clang::RecordDecl*, ReconstructedType>& newTypes);
-
-  void addReconstructionDependency(clang::SourceLocation typeDeclCutoff,
-                                   const clang::Type* ty, ReconstructedType& rt);
-
-
-  void addTypeReconstructionText(const clang::RecordDecl* rd, ReconstructedType& rt,
-                                std::map<const clang::RecordDecl*, ReconstructedType>& newTypes,
-                                std::set<const clang::RecordDecl*>& alreadyDone,
-                                std::ostream& os);
-
-  std::string getTypeNameForSizing(clang::SourceLocation typeDeclCutoff, clang::QualType qt,
-                                  std::map<const clang::RecordDecl*, ReconstructedType>& newTypes);
-
-  std::string getRecordTypeName(const clang::RecordDecl* rd);
 
   void arrayFxnPointerTypedef(clang::VarDecl* D, SkeletonASTVisitor::ArrayInfo* info,
                               std::stringstream& sstr);
@@ -1113,6 +990,89 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    * @return
    */
   const clang::Decl* getOriginalDeclaration(clang::VarDecl* vd);
+
+ private:
+  std::unordered_set<std::string> validHeaders_;
+  std::set<std::string> globalsDeclared_;
+  bool useAllHeaders_;
+  int insideCxxMethod_;
+
+  std::map<clang::FunctionDecl*, std::map<std::string, int>> staticFxnVarCounts_;
+  std::list<clang::FunctionDecl*> fxnContexts_;
+  std::list<clang::CXXRecordDecl*> classContexts_;
+  std::list<clang::Stmt*> loopContexts_; //both fors and whiles
+  std::list<clang::Stmt*> stmtContexts_;
+  std::list<clang::Decl*> assignments_;
+  std::list<clang::Expr*> activeDerefs_;
+  std::list<clang::IfStmt*> activeIfs_;
+  //most deletions are tracked through exceptions
+  //however, sometimes a call expr must "lookahead" and delete arguments before
+  //they are traversed in the natural course of AST traversal
+  //note here any arguments that are modified/deleted
+  std::set<clang::Expr*> deletedArgs_;
+  std::list<clang::MemberExpr*> memberAccesses_;
+  std::map<clang::Stmt*,clang::Stmt*> extendedReplacements_;
+  std::set<clang::DeclContext*> innerStructTagsDeclared_;
+
+  /**
+   * @brief dependentStaticMembers_
+   * Static variables of template classes that lead to
+   * CXXDependentScopeMemberExpr in which a global variable cannot be recognized
+   * because it is hidden behind template parameters
+   */
+  std::map<std::string,clang::VarDecl*> dependentStaticMembers_;
+
+  std::list<std::list<std::pair<clang::SourceRange,std::string>>> stmtReplacements_;
+
+  std::list<clang::VarDecl*> activeDecls_;
+  std::list<clang::Expr*> activeInits_;
+
+  int numRelocations_;
+
+  typedef enum { LHS, RHS } BinOpSide;
+  std::vector<std::pair<clang::BinaryOperator*,BinOpSide>> binOps_;
+  int activeBinOpIdx_;
+
+  std::list<clang::ParmVarDecl*> activeFxnParams_;
+
+  bool foundCMain_;
+  bool refactorMain_;
+  std::string mainName_;
+  bool keepGlobals_;
+  std::set<std::string> ignoredHeaders_;
+  std::set<std::string> reservedNames_;
+  PragmaConfig& pragmaConfig_;
+  std::set<clang::DeclRefExpr*> alreadyReplaced_;
+  std::set<std::string> globalVarWhitelist_;
+  ASTVisitorCmdLine opts_;
+
+  std::map<unsigned, std::pair<clang::VarDecl*,std::string>> declsToInsertAfter_;
+  std::map<const clang::Decl*,GlobalStandin> globalStandins_;
+  std::list<int> initIndices_;
+  std::list<clang::FieldDecl*> activeFieldDecls_;
+  std::list<std::set<const clang::Decl*>> globalsTouched_;
+  std::set<std::string> sstmacFxnPrepends_;
+
+  typedef void (SkeletonASTVisitor::*MPI_Call)(clang::CallExpr* expr);
+  std::map<std::string, MPI_Call> mpiCalls_;
+
+  //whether we are allowed to use global variables in statements
+  //or if they are disallowed because they would break deglobalizer
+  clang::Decl* currentTopLevelScope_;
+  clang::Rewriter& rewriter_;
+  clang::CompilerInstance* ci_;
+  std::map<clang::RecordDecl*,clang::TypedefDecl*> typedefStructs_;
+  SSTPragmaList& pragmas_;
+  bool visitingGlobal_;
+  std::set<clang::FunctionDecl*> templateDefinitions_;
+  std::list<clang::CXXConstructorDecl*> ctorContexts_;
+  GlobalVarNamespace& globalNs_;
+  GlobalVarNamespace* currentNs_;
+
+  std::map<const clang::Decl*,GlobalReplacement> globals_;
+  std::set<const clang::Decl*> variableTemplates_;
+  std::map<const clang::Decl*,std::string> scopedNames_;
+
 };
 
 struct PragmaActivateGuard {

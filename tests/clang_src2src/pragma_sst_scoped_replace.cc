@@ -5,14 +5,14 @@ int fxn()
 #pragma sst compute
   for (i=0; i < 5; ++i){
     int count = i;
-#pragma sst replace count 6
+#pragma sst loop_count 6
     for (int j=0; j < count; ++j){
     }
   }
 #pragma sst compute
   for (i=0; i < 5; ++i){
-#pragma sst replace count 6
     int count = i;
+#pragma sst loop_count 6
     for (int j=0; j < count; ++j){
     }
   }

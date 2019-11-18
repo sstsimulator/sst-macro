@@ -924,6 +924,7 @@ void CalcFBHourglassForceForElems( Domain &domain,
 
 /******************************************/
 
+#pragma sst replace Allocate nullptr
 static inline
 void CalcHourglassControlForElems(Domain& domain,
                                   Real_t determ[], Real_t hgcoef)
@@ -931,14 +932,12 @@ void CalcHourglassControlForElems(Domain& domain,
    Index_t numElem = domain.numElem() ;
    Index_t numElem8 = numElem * 8 ;
 
-#pragma sst start_replace Allocate nullptr
    Real_t *dvdx = Allocate<Real_t>(numElem8) ;
    Real_t *dvdy = Allocate<Real_t>(numElem8) ;
    Real_t *dvdz = Allocate<Real_t>(numElem8) ;
    Real_t *x8n  = Allocate<Real_t>(numElem8) ;
    Real_t *y8n  = Allocate<Real_t>(numElem8) ;
    Real_t *z8n  = Allocate<Real_t>(numElem8) ;
- #pragma sst stop_replace Allocate nullptr
 
    /* start loop over elements */
 #pragma omp parallel for firstprivate(numElem)
