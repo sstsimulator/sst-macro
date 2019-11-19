@@ -52,17 +52,12 @@ Questions? Contact sst-macro-help@sandia.gov
 class ComputeVisitor  {
  public:
   //97 = 'a', for debug printing
-  ComputeVisitor(clang::CompilerInstance& c, SSTPragmaList& plist, ComputeVisitor*  /*par*/,
-                 SkeletonASTVisitor* ctxt) :
+  ComputeVisitor() :
     idCount(97), 
-    currentGeneration(1), 
-    CI(c), 
-    pragmas(plist), 
-    context(ctxt)
+    currentGeneration(1)
   {}
 
-  void replaceStmt(clang::Stmt* stmt, clang::Rewriter& r, Loop& loop, PragmaConfig& cfg,
-                   const std::string& nthread);
+  void replaceStmt(clang::Stmt* stmt, Loop& loop, const std::string& nthread);
 
   void setContext(clang::Stmt* stmt);
 
@@ -80,10 +75,7 @@ class ComputeVisitor  {
   uint32_t currentGeneration; //0 is sentinel for not inited
   std::map<MemoryLocation,AccessHistory,MemoryLocationCompare> arrays;
   std::map<clang::NamedDecl*,Variable> variables;
-  clang::CompilerInstance& CI;
-  PragmaConfig& pragmaCfg;
   clang::SourceLocation scopeStartLine;
-  SkeletonASTVisitor* context;
 
   Variable& getVariable(clang::NamedDecl* decl){
     Variable& var = variables[decl];

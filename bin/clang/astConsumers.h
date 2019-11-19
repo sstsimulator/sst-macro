@@ -51,7 +51,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 class SkeletonASTConsumer : public clang::ASTConsumer {
  public:
-  SkeletonASTConsumer(clang::Rewriter &R, FirstPassASTVisitor& fp, SkeletonASTVisitor& r) :
+  SkeletonASTConsumer(FirstPassASTVisitor& fp, SkeletonASTVisitor& r) :
     skeletonVisitor_(r),
     firstPassVisitor_(fp)
   {

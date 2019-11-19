@@ -154,3 +154,4 @@ sstmac_compute_loop4(uint64_t isize, uint64_t jsize, uint64_t ksize, uint64_t ls
   sstmac::sw::OperatingSystem::currentThread()->parentApp()
     ->computeLoop(num_loops, nflops_per_loop, nintops_per_loop, bytes_per_loop);
 }
+

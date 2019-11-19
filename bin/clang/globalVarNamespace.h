@@ -52,6 +52,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstream>
 #include "clangHeaders.h"
 #include "util.h"
+#include "clangGlobals.h"
 
 struct GlobalVarNamespace
 {
@@ -91,9 +92,9 @@ struct GlobalVarNamespace
     memoizationModels[name] = model;
   }
 
-  const std::string& uniqueFilePrefix(clang::CompilerInstance* ci, clang::SourceLocation loc){
+  const std::string& uniqueFilePrefix(clang::SourceLocation loc){
     if (filenamePrefix.empty()){
-      filenamePrefix = makeCxxName(ci->getSourceManager().getFilename(loc).str());
+      filenamePrefix = makeCxxName(CompilerGlobals::SM().getFilename(loc).str());
     }
     return filenamePrefix;
   }
@@ -112,8 +113,8 @@ struct GlobalVarNamespace
     return ns;
   }
 
-  const char* filePrefix(clang::CompilerInstance* ci, clang::SourceLocation loc) {
-    return testPrefix ? testPrefix : uniqueFilePrefix(ci, loc).c_str();
+  const char* filePrefix(clang::SourceLocation loc) {
+    return testPrefix ? testPrefix : uniqueFilePrefix(loc).c_str();
   }
 
   bool genSSTCode(std::ostream& os, const std::string& indent){

@@ -68,15 +68,13 @@ class ReplaceAction : public clang::ASTFrontendAction {
   CreateASTConsumer(clang::CompilerInstance& CI, clang::StringRef /* file */) override; 
 
  private:
-  void initPragmas(clang::CompilerInstance& CI, pragmas::Mode m);
+  void initPragmas();
 
-  clang::Rewriter rewriter_;
   GlobalVarNamespace globalNs_;
-  clang::CompilerInstance* ci_ = nullptr;
-  PragmaConfig prgConfig_;
   SSTPragmaList pragmaList_;
   FirstPassASTVisitor first_pass_visitor_;
   SkeletonASTVisitor skeleton_visitor_;
+  clang::CompilerInstance* ci_;
 };
 
 #endif

@@ -74,7 +74,7 @@ SkeletonASTConsumer::HandleTopLevelDecl(DeclGroupRef DR)
           allDecls_.push_back(d);
         }
         if (isNullWhitelisted(fd->getNameAsString())){
-          skeletonVisitor_.pragmaConfig_.nullSafeFunctions[fd] = nullptr;
+          CompilerGlobals::pragmaConfig.nullSafeFunctions[fd] = nullptr;
         }
       }
       break;
@@ -82,6 +82,7 @@ SkeletonASTConsumer::HandleTopLevelDecl(DeclGroupRef DR)
       allDecls_.push_back(d);
       break;
     }
+    CompilerGlobals::pragmaConfig.visitor.firstPass = &firstPassVisitor_;
     firstPassVisitor_.TraverseDecl(d);
     //delay processing to force all template instances to be generated
     //visitor_.setTopLevelScope(d);
@@ -97,6 +98,7 @@ SkeletonASTConsumer::HandleTopLevelDecl(DeclGroupRef DR)
 void
 SkeletonASTConsumer::run()
 {
+  CompilerGlobals::pragmaConfig.visitor.skeleton = &skeletonVisitor_;
   try {
     for (Decl* d : allDecls_){
       skeletonVisitor_.setTopLevelScope(d);
@@ -110,7 +112,7 @@ SkeletonASTConsumer::run()
     //e.deleted->dump();
     std::string error = std::string("unhandled delete exception on expression")
         + " of type " + e.deleted->getStmtClassName();
-    internalError(getStart(e.deleted), skeletonVisitor_.getCompilerInstance(), error);
+    internalError(getStart(e.deleted), error);
   }
 
 }

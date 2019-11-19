@@ -65,8 +65,8 @@ clang::LangOptions* sst::activeLangOpts = nullptr;
 clang::Sema* sst::activeSema = nullptr;
 
 ReplaceAction::ReplaceAction() :
-  skeleton_visitor_(pragmaList_, rewriter_, globalNs_, prgConfig_),
-  first_pass_visitor_(pragmaList_, rewriter_, prgConfig_)
+  skeleton_visitor_(pragmaList_, globalNs_),
+  first_pass_visitor_(pragmaList_)
 {
 }
 
@@ -90,11 +90,10 @@ class DeleteOpenMPPragma : public PragmaHandler
 
 std::unique_ptr<clang::ASTConsumer>
 ReplaceAction::CreateASTConsumer(clang::CompilerInstance& CI, clang::StringRef /* file */) {
-  rewriter_.setSourceMgr(CI.getSourceManager(), CI.getLangOpts());
-  skeleton_visitor_.setCompilerInstance(CI);
-  first_pass_visitor_.setCompilerInstance(CI);
-  initPragmas(CI, ASTVisitorCmdLine::mode);
-  return llvm::make_unique<SkeletonASTConsumer>(rewriter_, first_pass_visitor_, skeleton_visitor_);
+  CompilerGlobals::rewriter.setSourceMgr(CI.getSourceManager(), CI.getLangOpts());
+  CompilerGlobals::ci = &CI;
+  initPragmas();
+  return llvm::make_unique<SkeletonASTConsumer>(first_pass_visitor_, skeleton_visitor_);
 }
 
 void
@@ -105,6 +104,8 @@ ReplaceAction::ExecuteAction()
   ASTContext& Ctx = ci_->getASTContext();
   ASTConsumer& Consumer = ci_->getASTConsumer();
   Sema& S = ci_->getSema();
+  CompilerGlobals::setup(ci_);
+
 
   sst::activeCompiler = ci_;
   sst::activeASTContext = &Ctx;
@@ -126,8 +127,8 @@ ReplaceAction::ExecuteAction()
   for (auto&& pair : PragmaRegisterMap::namespaces()){
     SSTPragmaNamespace* ns = pair.second;
     for (auto&& name : ns->names()){
-      PragmaHandlerFactoryBase* factory = ns->getFactory(ASTVisitorCmdLine::mode, name);
-      auto* handler = factory->getHandler(skeleton_visitor_.getPragmas(), *ci_, skeleton_visitor_);
+      PragmaHandlerFactoryBase* factory = ns->getFactory(CompilerGlobals::mode, name);
+      auto* handler = factory->getHandler(skeleton_visitor_.getPragmas());
       ci_->getPreprocessor().AddPragmaHandler(ns->name(), handler);
     }
   }
@@ -170,16 +171,16 @@ struct PragmaPPCallback : public PPCallbacks {
 };
 
 void
-ReplaceAction::initPragmas(CompilerInstance& CI, pragmas::Mode  /*m*/)
+ReplaceAction::initPragmas()
 {
   /** Need this to figure out begin location of #pragma */
-  CI.getPreprocessor().addPPCallbacks(llvm::make_unique<PragmaPPCallback>());
+  CompilerGlobals::CI().getPreprocessor().addPPCallbacks(llvm::make_unique<PragmaPPCallback>());
 }
 
 void
 ReplaceAction::EndSourceFileAction()
 {
-  SourceManager &SM = rewriter_.getSourceMgr();
+  SourceManager &SM = CompilerGlobals::SM();
   std::string sourceFile = SM.getFileEntryForID(SM.getMainFileID())->getName().str();
   std::string sstSourceFile, sstGlobalFile;
   std::size_t lastSlashPos = sourceFile.find_last_of('/');
@@ -198,7 +199,7 @@ ReplaceAction::EndSourceFileAction()
 #else
   llvm::raw_fd_ostream fs(sstSourceFile, rc, llvm::sys::fs::F_RW);
 #endif
-  rewriter_.getEditBuffer(rewriter_.getSourceMgr().getMainFileID()).write(fs);
+  CompilerGlobals::rewriter.getEditBuffer(CompilerGlobals::rewriter.getSourceMgr().getMainFileID()).write(fs);
   fs.close();
 
 
@@ -219,7 +220,7 @@ ReplaceAction::EndSourceFileAction()
            << "extern \"C\" const char exe_main_name[] = \"" << appname << "\";\n";
     }
 
-    for(auto const& pair : prgConfig_.globalCppFunctionsToWrite){
+    for(auto const& pair : CompilerGlobals::pragmaConfig.globalCppFunctionsToWrite){
       ofs << pair.second << "\n";
     }
   } else {
