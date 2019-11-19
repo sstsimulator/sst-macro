@@ -52,7 +52,7 @@ using namespace clang::driver;
 using namespace clang::tooling;
 
 int main(int argc, const char** argv) {
-  CommonOptionsParser firstOp(argc, argv, ASTVisitorCmdLine::sstmacCategoryOpt);
+  CommonOptionsParser firstOp(argc, argv, CompilerGlobals::sstmacCategoryOpt);
   //we parse the original source, modify the pp-ed source
   ClangTool Tool(firstOp.getCompilations(), firstOp.getSourcePathList());
   int rc = Tool.run(newFrontendActionFactory<ReplaceAction>().get());

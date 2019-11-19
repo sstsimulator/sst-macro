@@ -51,11 +51,9 @@ class SSTReplacePragma : public SSTPragma {
   std::string match_;
   std::string replacement_;
  public:
-  SSTReplacePragma(clang::SourceLocation loc, clang::CompilerInstance& CI,
-                   const std::list<clang::Token>& tokens);
+  SSTReplacePragma(clang::SourceLocation loc, const std::list<clang::Token>& tokens);
 
   static std::string parse(clang::SourceLocation loc,
-      clang::CompilerInstance& CI,
       const std::list<clang::Token>& tokens, std::ostream& os);
 
   const std::string& replacement() const {
@@ -68,20 +66,20 @@ class SSTReplacePragma : public SSTPragma {
 
   std::set<const clang::Expr*> run(clang::Stmt* s);
 
-  void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg) override;
-  void activate(clang::Decl *d, clang::Rewriter &r, PragmaConfig &cfg) override;
+  void activate(clang::Stmt *s) override;
+  void activate(clang::Decl *d) override;
  private:
-  void run(clang::Stmt* s, clang::Rewriter& rw, std::list<const clang::Expr*>& replaced);
-  void activateFunctionDecl(clang::FunctionDecl* d, clang::Rewriter& r, PragmaConfig& cfg);
-  void activateVarDecl(clang::VarDecl* d, clang::Rewriter& r, PragmaConfig& cfg);
-  void activateCXXRecordDecl(clang::CXXRecordDecl* d, clang::Rewriter& r, PragmaConfig& cfg);
+  void run(clang::Stmt* s, std::list<const clang::Expr*>& replaced);
+  void activateFunctionDecl(clang::FunctionDecl* d);
+  void activateVarDecl(clang::VarDecl* d);
+  void activateCXXRecordDecl(clang::CXXRecordDecl* d);
 };
 
 class SSTInsteadPragma : public SSTPragma {
  public:
   SSTInsteadPragma(const std::string& repl) : repl_(repl) {}
 
-  void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg) override;
+  void activate(clang::Stmt *s) override;
 
  private:
   std::string repl_;
@@ -95,11 +93,11 @@ class SSTInitPragma : public SSTPragma {
     return init_;
   }
 
-  void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg) override;
+  void activate(clang::Stmt *s) override;
 
  private:
-  void activateDeclStmt(clang::DeclStmt* s, clang::Rewriter& r);
-  void activateBinaryOperator(clang::BinaryOperator* op, clang::Rewriter& r);
+  void activateDeclStmt(clang::DeclStmt* s);
+  void activateBinaryOperator(clang::BinaryOperator* op);
   std::string init_;
 };
 
