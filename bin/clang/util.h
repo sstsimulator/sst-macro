@@ -49,6 +49,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <clangtidymacros.h>
 
 #include <iostream>
+#include "clangGlobals.h"
+
 
 struct PrettyPrinter
 {
@@ -97,31 +99,29 @@ struct PrettyPrinter
 bool isCxx(const std::string& filename);
 bool isValidSrc(const std::string& filename);
 
+
+CLANG_ANALYZER_NO_RETURN
+void errorAbort(const clang::Stmt* s, const std::string& error);
+CLANG_ANALYZER_NO_RETURN
+void errorAbort(const clang::Decl* d, const std::string& error);
+CLANG_ANALYZER_NO_RETURN
+void errorAbort(clang::SourceLocation loc, const std::string& error);
+
 CLANG_ANALYZER_NO_RETURN
 void internalError(const std::string& error);
-
 CLANG_ANALYZER_NO_RETURN
-void internalError(clang::SourceLocation loc, clang::CompilerInstance& CI, const std::string& error);
+void internalError(const clang::Stmt* s, const std::string& error);
 CLANG_ANALYZER_NO_RETURN
-void errorAbort(clang::SourceLocation loc, clang::CompilerInstance& CI, const std::string& error);
-
-void warn(clang::SourceLocation loc, clang::CompilerInstance& CI, const std::string& warning);
-
-void warn(const clang::Stmt* s, clang::CompilerInstance& CI, const std::string& error);
-void warn(const clang::Decl* decl, clang::CompilerInstance& CI, const std::string& error);
-
+void internalError(const clang::Decl* decl, const std::string& error);
 CLANG_ANALYZER_NO_RETURN
-void errorAbort(const clang::Stmt* s, clang::CompilerInstance& CI, const std::string& error);
-CLANG_ANALYZER_NO_RETURN
-void errorAbort(const clang::Decl* decl, clang::CompilerInstance& CI, const std::string& error);
+void internalError(clang::SourceLocation loc, const std::string& error);
 
-CLANG_ANALYZER_NO_RETURN
-void internalError(const clang::Stmt* s, clang::CompilerInstance& CI, const std::string& error);
-CLANG_ANALYZER_NO_RETURN
-void internalError(const clang::Decl* decl, clang::CompilerInstance& CI, const std::string& error);
+void warn(clang::SourceLocation loc, const std::string& warning);
+void warn(const clang::Stmt* s, const std::string& error);
+void warn(const clang::Decl* decl, const std::string& error);
 
-void insertBefore(const clang::Stmt* s, clang::Rewriter& r, const std::string& text);
-void insertAfter(const clang::Stmt* s, clang::Rewriter& r, const std::string& text);
+void insertBefore(const clang::Stmt* s, const std::string& text);
+void insertAfter(const clang::Stmt* s, const std::string& text);
 
 inline bool operator<=(const clang::SourceLocation &LHS, const clang::SourceLocation &RHS) {
   return LHS < RHS || LHS == RHS;
@@ -137,6 +137,15 @@ inline bool operator>=(const clang::SourceLocation &LHS, const clang::SourceLoca
 
 std::string makeCxxName(const std::string& name);
 
+void replace(clang::SourceRange rng, const std::string& repl);
+
+void replace(const clang::Stmt* s, const std::string& repl);
+
+void replace(const clang::Decl* d, const std::string& repl);
+
+void replace(const clang::Decl* d, clang::Rewriter& r,
+             const std::string& repl, clang::CompilerInstance& CI);
+
 void replace(clang::SourceRange rng, clang::Rewriter& r,
              const std::string& repl, clang::CompilerInstance& CI);
 
@@ -146,16 +155,16 @@ void replace(const clang::Stmt* s, clang::Rewriter& r,
 void replace(const clang::Decl* d, clang::Rewriter& r,
              const std::string& repl, clang::CompilerInstance& CI);
 
-static inline std::string getString(clang::SourceLocation loc, clang::CompilerInstance& CI){
-  return loc.printToString(CI.getSourceManager());
+static inline std::string getString(clang::SourceLocation loc){
+  return loc.printToString(CompilerGlobals::SM());
 }
 
-static inline std::string getStartLocString(const clang::Expr* e, clang::CompilerInstance& CI){
-  return getString(getStart(e), CI);
+static inline std::string getStartLocString(const clang::Expr* e){
+  return getString(getStart(e));
 }
 
-static inline std::string getStartLocString(const clang::Decl* d, clang::CompilerInstance& CI){
-  return getString(getStart(d), CI);
+static inline std::string getStartLocString(const clang::Decl* d){
+  return getString(getStart(d));
 }
 
 std::string getLiteralDataAsString(const clang::Token& tok);

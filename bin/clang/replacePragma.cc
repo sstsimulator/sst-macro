@@ -84,12 +84,12 @@ class ReplacementPragmaVisitor : public RecursiveASTVisitor<ReplacementPragmaVis
 {
   using Parent=RecursiveASTVisitor<ReplacementPragmaVisitor>;
  public:
-  ReplacementPragmaVisitor(const std::string& match, CompilerInstance& CI) :
-    matchText_(match), ci_(CI)
+  ReplacementPragmaVisitor(const std::string& match) :
+    matchText_(match)
   {
   }
 
-  bool TraverseDeclStmt(DeclStmt* stmt, DataRecursionQueue* queue = nullptr){
+  bool TraverseDeclStmt(DeclStmt* stmt, DataRecursionQueue* = nullptr){
     if (stmt->isSingleDecl() && stmt->getSingleDecl()->getKind() == Decl::Var){
       const Decl* d = stmt->getSingleDecl();
       const VarDecl* vd = cast<const VarDecl>(d);
@@ -97,8 +97,7 @@ class ReplacementPragmaVisitor : public RecursiveASTVisitor<ReplacementPragmaVis
         if (vd->hasInit()) {
           replaced_.insert(vd->getInit());
         } else {
-          errorAbort(getStart(stmt), ci_,
-            "replace pragma applied to declaration with no initializer");
+          errorAbort(getStart(stmt), "replace pragma applied to declaration with no initializer");
         }
       }
     }
@@ -145,37 +144,36 @@ class ReplacementPragmaVisitor : public RecursiveASTVisitor<ReplacementPragmaVis
  private:
   std::string matchText_;
   std::set<const Expr*> replaced_;
-  clang::CompilerInstance& ci_;
 
 };
 
 std::set<const Expr*>
 SSTReplacePragma::run(Stmt *s)
 {
-  ReplacementPragmaVisitor visitor(match_, *CI);
+  ReplacementPragmaVisitor visitor(match_);
   visitor.TraverseStmt(s);
   return visitor.replaced();
 }
 
 void
-SSTReplacePragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
+SSTReplacePragma::activate(Stmt *s)
 {
   std::set<const Expr*> replaced = run(s);
   for (const Expr* e: replaced){
-    replace(e,r,replacement_,*CI);
+    replace(e,replacement_);
   }
 }
 
 
 void
-SSTReplacePragma::activate(Decl *d, Rewriter &r, PragmaConfig & /*cfg*/)
+SSTReplacePragma::activate(Decl *d)
 {
-#define repl_case(kind,d,rw,cfg) \
-  case Decl::kind: activate##kind##Decl(cast<kind##Decl>(d), rw, cfg); break
+#define repl_case(kind,d) \
+  case Decl::kind: activate##kind##Decl(cast<kind##Decl>(d)); break
   switch(d->getKind()){
-    repl_case(Function,d,r,cfg);
-    repl_case(Var,d,r,cfg);
-    repl_case(CXXRecord,d,r,cfg);
+    repl_case(Function,d);
+    repl_case(Var,d);
+    repl_case(CXXRecord,d);
     default:
       break;
   }
@@ -183,101 +181,95 @@ SSTReplacePragma::activate(Decl *d, Rewriter &r, PragmaConfig & /*cfg*/)
 }
 
 void
-SSTReplacePragma::activateFunctionDecl(FunctionDecl *d, Rewriter &r, PragmaConfig& cfg)
+SSTReplacePragma::activateFunctionDecl(FunctionDecl *d)
 {
-  if (d->hasBody()) activate(d->getBody(), r, cfg);
+  if (d->hasBody()) activate(d->getBody());
 }
 
 void
-SSTReplacePragma::activateVarDecl(VarDecl *d, Rewriter &r, PragmaConfig& cfg)
+SSTReplacePragma::activateVarDecl(VarDecl *d)
 {
-  if (d->hasInit()) activate(d->getInit(), r, cfg);
+  if (d->hasInit()) activate(d->getInit());
 }
 
 void
-SSTReplacePragma::activateCXXRecordDecl(CXXRecordDecl *d, Rewriter &r, PragmaConfig& cfg)
+SSTReplacePragma::activateCXXRecordDecl(CXXRecordDecl *d)
 {
-  if (d->hasBody()) activate(d->getBody(), r, cfg);
+  if (d->hasBody()) activate(d->getBody());
 }
 
 void
-SSTInitPragma::activate(Stmt *s, Rewriter &r, PragmaConfig & /*cfg*/)
+SSTInitPragma::activate(Stmt *s)
 {
-#define repl_case(cls,s,rw) \
-  case Stmt::cls##Class: activate##cls(cast<cls>(s), rw); break
+#define repl_case(cls,s) \
+  case Stmt::cls##Class: activate##cls(cast<cls>(s)); break
   switch(s->getStmtClass()){
-    repl_case(DeclStmt,s,r);
-    repl_case(BinaryOperator,s,r);
+    repl_case(DeclStmt,s);
+    repl_case(BinaryOperator,s);
     default:
-      errorAbort(s, *CI,
-                 "pragma init not applied to initialization statement");
+      errorAbort(s, "pragma init not applied to initialization statement");
   }
 #undef repl_case
 }
 
 void
-SSTInitPragma::activateBinaryOperator(BinaryOperator* op, Rewriter& r)
+SSTInitPragma::activateBinaryOperator(BinaryOperator* op)
 {
-  replace(op->getRHS(), r, init_, *CI);
+  replace(op->getRHS(), init_);
   throw StmtDeleteException(op);
 }
 
 void
-SSTInsteadPragma::activate(Stmt *s, Rewriter &r, PragmaConfig & /*cfg*/)
+SSTInsteadPragma::activate(Stmt *s)
 {
-  replace(s, r, repl_, *CI);
+  replace(s, repl_);
   throw StmtDeleteException(s);
 }
 
 void
-SSTInitPragma::activateDeclStmt(DeclStmt* s, Rewriter& r)
+SSTInitPragma::activateDeclStmt(DeclStmt* s)
 {
   if (!s->isSingleDecl()){
-    errorAbort(s, *CI,
-               "pragma init cannot apply to multiple declaration");
+    errorAbort(s, "pragma init cannot apply to multiple declaration");
   }
   Decl* d = s->getSingleDecl();
   if (!isa<VarDecl>(d)){
-    errorAbort(s, *CI,
-               "pragma init only applies to variable declarations");
+    errorAbort(s, "pragma init only applies to variable declarations");
   }
   VarDecl* vd = cast<VarDecl>(d);
   if (!vd->hasInit()){
-    errorAbort(s, *CI,
-               "pragma init applied to variable without initializer");
+    errorAbort(s, "pragma init applied to variable without initializer");
   }
-  replace(vd->getInit(), r, init_, *CI);
+  replace(vd->getInit(), init_);
   throw StmtDeleteException(s);
 }
 
 std::string
-SSTReplacePragma::parse(SourceLocation loc,
-    CompilerInstance& CI, const std::list<Token>& tokens, std::ostream& os)
+SSTReplacePragma::parse(SourceLocation loc, const std::list<Token>& tokens, std::ostream& os)
 {
   if (tokens.size() < 2){
-    errorAbort(loc, CI, "pragma replace requires both a function and replacement text");
+    errorAbort(loc, "pragma replace requires both a function and replacement text");
   }
   const Token& fxn = tokens.front();
   if (!fxn.is(tok::identifier)){
-    errorAbort(loc, CI, "pragma replace got invalid function name");
+    errorAbort(loc, "pragma replace got invalid function name");
   }
 
   auto iter = tokens.begin(); ++iter; //skip front
   auto end = tokens.end();
-  SSTPragma::tokenStreamToString(iter,end,os,CI);
+  SSTPragma::tokenStreamToString(iter,end,os);
 
   return fxn.getIdentifierInfo()->getNameStart();
 }
 
-SSTReplacePragma::SSTReplacePragma(SourceLocation loc, CompilerInstance& CI,
-    const std::list<Token> &tokens)
+SSTReplacePragma::SSTReplacePragma(SourceLocation loc, const std::list<Token> &tokens)
 {
   std::stringstream sstr;
-  match_ = parse(loc, CI, tokens, sstr);
+  match_ = parse(loc, tokens, sstr);
   replacement_ = sstr.str();
 }
 
-using namespace pragmas;
+using namespace modes;
 
 static PragmaRegister<SSTStringPragmaShim, SSTInsteadPragma, true> insteadPragma(
     "sst", "instead", SKELETONIZE | PUPPETIZE | SHADOWIZE);

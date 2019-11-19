@@ -51,9 +51,8 @@ Questions? Contact sst-macro-help@sandia.gov
 
 struct VariableScopeVisitor : public clang::RecursiveASTVisitor<VariableScopeVisitor>
 {
-  VariableScopeVisitor(SkeletonASTVisitor* context, clang::CompilerInstance& ci,
-                       clang::SourceLocation start, clang::SourceLocation stop) :
-    context_(context), CI_(ci), start_(start), stop_(stop)
+  VariableScopeVisitor(clang::SourceLocation start, clang::SourceLocation stop) :
+    start_(start), stop_(stop)
   {
 
   }
@@ -73,18 +72,18 @@ struct VariableScopeVisitor : public clang::RecursiveASTVisitor<VariableScopeVis
       std::stringstream sstr;
       sstr << "control variable '" << d->getNameAsString()
            << "' declared at "
-           << getStartLocString(d, CI_)
+           << getStartLocString(d)
            << " of type " << d->getDeclKindName()
            << " which is inside skeletonized block starting at "
-           << stop_.printToString(CI_.getSourceManager())
+           << stop_.printToString(CompilerGlobals::SM())
            << " - must use #pragma sst replace";
-      errorAbort(expr, CI_, sstr.str());
+      errorAbort(expr, sstr.str());
     }
     return false;
   }
 
   bool inScope(const clang::DeclRefExpr* expr){
-    if (context_->isGlobal(expr)){
+    if (CompilerGlobals::pragmaConfig.visitor.skeleton->isGlobal(expr)){
       return true;
     }
 
@@ -97,10 +96,8 @@ struct VariableScopeVisitor : public clang::RecursiveASTVisitor<VariableScopeVis
   }
 
  private:
-  clang::CompilerInstance& CI_;
   clang::SourceLocation start_;
   clang::SourceLocation stop_;
-  SkeletonASTVisitor* context_;
 };
 
 #endif

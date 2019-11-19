@@ -53,49 +53,64 @@ Questions? Contact sst-macro-help@sandia.gov
 clang::LangOptions Printing::langOpts;
 clang::PrintingPolicy Printing::policy(Printing::langOpts);
 
-llvm::cl::OptionCategory ASTVisitorCmdLine::sstmacCategoryOpt("SST/Macro options");
-llvm::cl::opt<std::string> ASTVisitorCmdLine::includeListOpt("system-includes",
+llvm::cl::OptionCategory CompilerGlobals::sstmacCategoryOpt("SST/Macro options");
+llvm::cl::opt<std::string> CompilerGlobals::includeListOpt("system-includes",
   llvm::cl::desc("Give the list of default system include paths for the pre-processing compiler"),
   llvm::cl::value_desc("list:of:paths"),
   llvm::cl::cat(sstmacCategoryOpt),
   llvm::cl::ValueRequired);
-llvm::cl::opt<bool> ASTVisitorCmdLine::skeletonizeOpt("skeletonize",
+llvm::cl::opt<bool> CompilerGlobals::skeletonizeOpt("skeletonize",
   llvm::cl::desc("Run skeletonization source-to-source"),
   llvm::cl::cat(sstmacCategoryOpt));
-llvm::cl::opt<bool> ASTVisitorCmdLine::memoizeOpt("memoize",
+llvm::cl::opt<bool> CompilerGlobals::memoizeOpt("memoize",
   llvm::cl::desc("Run memoization source-to-source"),
   llvm::cl::cat(sstmacCategoryOpt));
-llvm::cl::opt<bool> ASTVisitorCmdLine::encapsulateOpt("encapsulate",
+llvm::cl::opt<bool> CompilerGlobals::encapsulateOpt("encapsulate",
   llvm::cl::desc("Run skeletonization source-to-source"),
   llvm::cl::cat(sstmacCategoryOpt));
-llvm::cl::opt<bool> ASTVisitorCmdLine::shadowizeOpt("shadowize",
+llvm::cl::opt<bool> CompilerGlobals::shadowizeOpt("shadowize",
   llvm::cl::desc("Run memoization source-to-source"),
   llvm::cl::cat(sstmacCategoryOpt));
-llvm::cl::opt<bool> ASTVisitorCmdLine::puppetizeOpt("puppetize",
+llvm::cl::opt<bool> CompilerGlobals::puppetizeOpt("puppetize",
   llvm::cl::desc("Run skeletonization source-to-source"),
   llvm::cl::cat(sstmacCategoryOpt));
-llvm::cl::opt<bool> ASTVisitorCmdLine::verboseOpt("verbose",
+llvm::cl::opt<bool> CompilerGlobals::verboseOpt("verbose",
   llvm::cl::desc("Print verbose source-to-source output"),
   llvm::cl::cat(sstmacCategoryOpt));
 static llvm::cl::alias verboseAliasOpt("v",
-  llvm::cl::aliasopt(ASTVisitorCmdLine::verboseOpt),
-  llvm::cl::cat(ASTVisitorCmdLine::sstmacCategoryOpt));
-llvm::cl::opt<bool> ASTVisitorCmdLine::refactorMainOpt("refactor-main",
+  llvm::cl::aliasopt(CompilerGlobals::verboseOpt),
+  llvm::cl::cat(CompilerGlobals::sstmacCategoryOpt));
+llvm::cl::opt<bool> CompilerGlobals::refactorMainOpt("refactor-main",
   llvm::cl::desc("Refactor main, rerouting to SST/macro main wrapper"),
-  llvm::cl::cat(ASTVisitorCmdLine::sstmacCategoryOpt));
-llvm::cl::opt<bool> ASTVisitorCmdLine::noRefactorMainOpt("no-refactor-main",
+  llvm::cl::cat(CompilerGlobals::sstmacCategoryOpt));
+llvm::cl::opt<bool> CompilerGlobals::noRefactorMainOpt("no-refactor-main",
   llvm::cl::desc("Do not refactor main, leaving symbol as is"),
-  llvm::cl::cat(ASTVisitorCmdLine::sstmacCategoryOpt));
+  llvm::cl::cat(CompilerGlobals::sstmacCategoryOpt));
 
-pragmas::Mode ASTVisitorCmdLine::mode;
-int ASTVisitorCmdLine::modeMask;
-bool ASTVisitorCmdLine::refactorMain = true;
-std::list<std::string> ASTVisitorCmdLine::includePaths;
+modes::Mode CompilerGlobals::mode;
+int CompilerGlobals::modeMask;
+bool CompilerGlobals::refactorMain = true;
+std::list<std::string> CompilerGlobals::includePaths;
 
 using namespace clang;
 using namespace clang::driver;
 using namespace clang::tooling;
-using namespace pragmas;
+using namespace modes;
+
+/**
+ * @brief isFxnPointerForm
+ * @param qt
+ * @return Whether a type is a function pointer type and is implicit such as (void)(*funcvar)(int);
+ *         rather than typedef void(*functype)(int); functype funcvar;
+ */
+static bool isFxnPointerForm(QualType qt)
+{
+  //typedefs need no special treatment
+  bool isTypeDef = isa<TypedefType>(qt.getTypePtr());
+  if (isTypeDef) return false;
+
+  return qt->isFunctionPointerType() || qt->isFunctionProtoType();
+}
 
 static std::string appendText(clang::Expr* expr, const std::string& toAppend)
 {
@@ -106,8 +121,9 @@ static std::string appendText(clang::Expr* expr, const std::string& toAppend)
 }
 
 void
-ASTVisitorCmdLine::setup()
+CompilerGlobals::setup(clang::CompilerInstance* CI)
 {
+  ci = CI;
   int skeletonize = 0;
   const char* skelStr = getenv("SSTMAC_SKELETONIZE");
   if (skelStr){
@@ -181,6 +197,7 @@ ASTVisitorCmdLine::setup()
     exit(EXIT_FAILURE);
   }
 
+  using namespace modes;
   if (modeSum == 0){
     mode = ENCAPSULATE_MODE;
   } else {
@@ -299,13 +316,13 @@ SkeletonASTVisitor::initReservedNames()
 void
 SkeletonASTVisitor::registerNewKeywords(std::ostream& os)
 {
-  if (pragmaConfig_.newParams.empty()){
+  if (CompilerGlobals::pragmaConfig.newParams.empty()){
     return;
   }
 
   os << "\n#include <sprockit/keyword_registration.h>"
      << "\nRegisterKeywords(";
-  for (auto& str : pragmaConfig_.newParams){
+  for (auto& str : CompilerGlobals::pragmaConfig.newParams){
     os << "\n{\"" << str << "\", \"new keyword\" },";
   }
   os << "\n);";
@@ -338,7 +355,7 @@ SkeletonASTVisitor::shouldVisitDecl(VarDecl* D)
   }
 
   SourceLocation startLoc = getStart(D);
-  PresumedLoc ploc = ci_->getSourceManager().getPresumedLoc(startLoc);
+  PresumedLoc ploc = CompilerGlobals::SM().getPresumedLoc(startLoc);
   SourceLocation headerLoc = ploc.getIncludeLoc();
 
   //ignore eli variables
@@ -391,7 +408,7 @@ SkeletonASTVisitor::shouldVisitDecl(VarDecl* D)
         //just ignore all headers in default system paths
         //we are inside a header
         bool match = false;
-        for (auto&& path : opts_.includePaths){
+        for (auto&& path : CompilerGlobals::includePaths){
           if (path.size() < fullpath.size()){
             bool substr_match = true;
             for (int i=0; i < path.size(); ++i){
@@ -416,7 +433,7 @@ SkeletonASTVisitor::shouldVisitDecl(VarDecl* D)
       }
     } else {
       //we have been given explicitly a list of valid headers
-      warn(startLoc, *ci_, "bad header path location, you probably abused and misused #line in your file");
+      warn(startLoc, "bad header path location, you probably abused and misused #line in your file");
         return false;
     }
   }
@@ -443,7 +460,7 @@ SkeletonASTVisitor::TraverseCXXDeleteExpr(CXXDeleteExpr* expr, DataRecursionQueu
 {
   activeBinOpIdx_ = IndexResetter;
 
-  if (opts_.modeActive(SKELETONIZE | SHADOWIZE)){
+  if (CompilerGlobals::modeActive(modes::SKELETONIZE | modes::SHADOWIZE)){
     goIntoContext(expr, [&]{
       TraverseStmt(expr->getArgument());
     });
@@ -505,8 +522,7 @@ SkeletonASTVisitor::VisitCXXOperatorCallExpr(CXXOperatorCallExpr* expr)
   if (isa<MemberExpr>(implicitThis)){
     MemberExpr* me = cast<MemberExpr>(implicitThis);
     if (isNullVariable(me->getMemberDecl())){
-      errorAbort(expr, *ci_,
-                 "operator used on null variable");
+      errorAbort(expr, "operator used on null variable");
     }
   }
   return true;
@@ -516,7 +532,7 @@ void
 SkeletonASTVisitor::executeCurrentReplacements()
 {
   for (auto& pair : stmtReplacements_.back()){
-    ::replace(pair.first, rewriter_, pair.second, *ci_);
+    ::replace(pair.first, pair.second);
   }
 }
 
@@ -525,7 +541,7 @@ SkeletonASTVisitor::replace(SourceRange rng, const std::string& repl)
 {
   if (stmtContexts_.empty()){
     //go ahead an immediately do the replacement
-    ::replace(rng, rewriter_, repl, *ci_);
+    ::replace(rng, repl);
   } else {
     //we can foobar things if we do the replacement immediately
     //in traversing, a null variable or other trigger might delete the statement we are working on
@@ -567,7 +583,7 @@ SkeletonASTVisitor::checkNullAssignments(clang::NamedDecl* src, bool hasReplacem
           //oooh - not good
           std::string error = "member " + member->getNameAsString()
               + " is assigned to null_variable, but is not a null_variable itself";
-          errorAbort(expr, *ci_, error);
+          errorAbort(expr, error);
         }
       } else if (lhs->getStmtClass() == Stmt::DeclRefExprClass){
         if (!outermost)  outermost = binOp;
@@ -593,8 +609,7 @@ SkeletonASTVisitor::replaceNullVariableConnectedContext(Expr* expr, const std::s
     if(binOp->getOpcode() == BO_Assign && side != LHS && !repl.empty()){
         toDel = getUnderlyingExpr(binOp->getRHS());
     }
-
-    ::replace(toDel, rewriter_, repl, *ci_);
+    ::replace(toDel, repl);
     //pass the delete up to the owner
     throw StmtDeleteException(toDel);
   }
@@ -648,9 +663,9 @@ SkeletonASTVisitor::nullDereferenceError(Expr* expr, const std::string& varName)
   sstr << "null_variable " << varName << " used in dereference";
   for (Stmt* s : loopContexts_){
     sstr << "\nconsider skeletonizing with pragma sst compute here: "
-         << getStart(s).printToString(ci_->getSourceManager());
+         << getStart(s).printToString(CompilerGlobals::SM());
   }
-  errorAbort(expr, *ci_, sstr.str());
+  errorAbort(expr, sstr.str());
 }
 
 void
@@ -679,8 +694,7 @@ SkeletonASTVisitor::visitNullVariable(Expr* expr, NamedDecl* nd)
         Stmt* loop = loopContexts_.front();
         if (loop->getStmtClass() == Stmt::ForStmtClass){
           ForStmt* forLoop = cast<ForStmt>(loop);
-          SSTComputePragma::replaceForStmt(forLoop, *ci_, pragmas_, rewriter_,
-                                           pragmaConfig_, this, "");
+          SSTComputePragma::replaceForStmt(forLoop, "");
         } else {
           nullDereferenceError(expr, nd->getNameAsString());
         }
@@ -710,11 +724,11 @@ SkeletonASTVisitor::visitNullVariable(Expr* expr, NamedDecl* nd)
             << " in function ";
         if (!fxnName.empty()){
           sstr << fxnName << " declared at "
-               << fxnDeclLoc.printToString(ci_->getSourceManager());
+               << fxnDeclLoc.printToString(CompilerGlobals::SM());
         }
         if (nullVarPrg->isTransitive())
           addTransitiveNullInformation(nd, sstr, nullVarPrg);
-        errorAbort(expr, *ci_, sstr.str());
+        errorAbort(expr, sstr.str());
       }
     }
   }
@@ -725,8 +739,7 @@ SkeletonASTVisitor::visitNullVariable(Expr* expr, NamedDecl* nd)
     replaceNullVariableConnectedContext(expr, nullVarPrg->getReplacement());
   } else if (!activeIfs_.empty()){
     if (activeIfs_.size() > 1){
-      errorAbort(activeIfs_.back(), *ci_,
-                 "internal error: cannot handle nested if-stmts with null variables");
+      errorAbort(activeIfs_.back(), "internal error: cannot handle nested if-stmts with null variables");
     }
     IfStmt* s  = activeIfs_.back();
     nullifyIfStmt(s,nd);
@@ -745,7 +758,7 @@ SkeletonASTVisitor::visitNullVariable(Expr* expr, NamedDecl* nd)
         if (!isNullVariable(rnd->getCanonicalDecl())){
           std::string warning = "assigning to null " + nd->getNameAsString()
               + " directly from a non-null variable - skeletonization might be missed";
-          warn(getStart(bop), *ci_, warning);
+          warn(getStart(bop), warning);
         }
       }
     }
@@ -761,7 +774,7 @@ SkeletonASTVisitor::visitNullVariable(Expr* expr, NamedDecl* nd)
            << " and passed to a function with no replacement specified ";
       if (nullVarPrg->isTransitive())
         addTransitiveNullInformation(nd, sstr, nullVarPrg);
-      errorAbort(expr, *ci_, sstr.str());
+      errorAbort(expr, sstr.str());
     }
     replaceNullVariableConnectedContext(expr, "");
   }
@@ -812,7 +825,7 @@ SkeletonASTVisitor::VisitDeclRefExpr(DeclRefExpr* expr)
 void
 SkeletonASTVisitor::visitCollective(CallExpr *expr)
 {
-  if (opts_.modeActive(SKELETONIZE | SHADOWIZE)){
+  if (CompilerGlobals::modeActive(modes::SKELETONIZE | modes::SHADOWIZE)){
       //first buffer argument to nullptr
       if (expr->getArg(0)->getType()->isPointerType()){
         //make sure this isn't a shortcut function without buffers
@@ -829,7 +842,7 @@ SkeletonASTVisitor::visitCollective(CallExpr *expr)
 void
 SkeletonASTVisitor::visitReduce(CallExpr *expr)
 {
-  if (opts_.modeActive(SKELETONIZE | SHADOWIZE)){
+  if (CompilerGlobals::modeActive(modes::SKELETONIZE | modes::SHADOWIZE)){
     //first buffer argument to nullptr
     if (expr->getArg(0)->getType()->isPointerType()){
       //make sure this isn't a shortcut function without buffers
@@ -846,7 +859,7 @@ SkeletonASTVisitor::visitReduce(CallExpr *expr)
 void
 SkeletonASTVisitor::visitPt2Pt(CallExpr *expr)
 {
-  if (opts_.modeActive(SKELETONIZE | SHADOWIZE)){
+  if (CompilerGlobals::modeActive(SKELETONIZE | SHADOWIZE)){
     //first buffer argument to nullptr
     if (expr->getArg(0)->getType()->isPointerType()){
       //make sure this isn't a shortcut function without buffers
@@ -884,7 +897,7 @@ SkeletonASTVisitor::TraverseCXXMemberCallExpr(CXXMemberCallExpr* expr, DataRecur
   if (clsName == "mpi_api"){
     FunctionDecl* decl = expr->getDirectCallee();
     if (!decl){
-      errorAbort(expr, *ci_, "invalid MPI call");
+      errorAbort(expr, "invalid MPI call");
     }
     auto iter = mpiCalls_.find(decl->getNameAsString());
     if (iter != mpiCalls_.end()){
@@ -896,8 +909,7 @@ SkeletonASTVisitor::TraverseCXXMemberCallExpr(CXXMemberCallExpr* expr, DataRecur
   goIntoContext(expr, [&]{
     Expr* ue = getUnderlyingExpr(const_cast<Expr*>(expr->getCallee()));
     if (ue->getStmtClass() != Stmt::MemberExprClass){
-      internalError(getStart(expr), *ci_,
-                    "base of CXXMemberCallExpr is not a MemberExpr");
+      internalError(getStart(expr), "base of CXXMemberCallExpr is not a MemberExpr");
     }
     InsertGuard<Stmt,Stmt> ig(extendedReplacements_, ue, expr);
     //TraverseStmt(expr->getImplicitObjectArgument());
@@ -926,7 +938,7 @@ SkeletonASTVisitor::replaceNullWithEmptyType(QualType type, Expr* toRepl)
   }
 
   if (type->isReferenceType()){
-    errorAbort(toRepl, *ci_, "cannot create empty reference for null_variable");
+    errorAbort(toRepl, "cannot create empty reference for null_variable");
   }
 
   std::string repl;
@@ -936,7 +948,7 @@ SkeletonASTVisitor::replaceNullWithEmptyType(QualType type, Expr* toRepl)
     repl = GetAsString(type) + "()";
   }
 
-  ::replace(toRepl, rewriter_, repl, *ci_);
+  ::replace(toRepl, repl);
 }
 
 void
@@ -1016,29 +1028,13 @@ SkeletonASTVisitor::TraverseCallExpr(CallExpr* expr, DataRecursionQueue*  /*queu
     PragmaActivateGuard pag(expr, this);
     if (pag.skipVisit()) return true;
 
-    DeclRefExpr* baseFxn = nullptr;
-    bool changeCall = opts_.modeActive(SKELETONIZE | SHADOWIZE);
-    if (changeCall && !pragmaConfig_.replacePragmas.empty()){
-      Expr* fxn = getUnderlyingExpr(const_cast<Expr*>(expr->getCallee()));
-      if (fxn->getStmtClass() == Stmt::DeclRefExprClass){
-        //this is a basic function call
-        baseFxn = cast<DeclRefExpr>(fxn);
-        std::string fxnName = baseFxn->getFoundDecl()->getNameAsString();
-        for (auto& pair : pragmaConfig_.replacePragmas){
-          SSTReplacePragma* replPrg = static_cast<SSTReplacePragma*>(pair.second);
-          if (replPrg->fxn() == fxnName){
-            replPrg->activate(expr, rewriter_, pragmaConfig_);
-            return true;
-          }
-        }
-      }
-    } else if (changeCall) {
+    if (CompilerGlobals::modeActive(SKELETONIZE | SHADOWIZE)) {
       Expr* fxn = getUnderlyingExpr(const_cast<Expr*>(expr->getCallee()));
       if (fxn->getStmtClass() == Stmt::DeclRefExprClass){
         DeclRefExpr* dref = cast<DeclRefExpr>(fxn);
         std::string fxnName = dref->getFoundDecl()->getNameAsString();
         if (sstmacFxnPrepends_.find(fxnName) != sstmacFxnPrepends_.end()){
-          insertBefore(expr->getCallee(), rewriter_, "sstmac_");
+          insertBefore(expr->getCallee(), "sstmac_");
         }
 
         auto iter = mpiCalls_.find(fxnName);
@@ -1124,17 +1120,6 @@ SkeletonASTVisitor::arrayFxnPointerTypedef(VarDecl* D, SkeletonASTVisitor::Array
   sstr << "typedef " << typedefText;
 }
 
-static bool isFxnPointerForm(QualType qt)
-{
-  //typedefs need no special treatment
-  bool isTypeDef = isa<TypedefType>(qt.getTypePtr());
-  if (isTypeDef) return false;
-
-  return qt->isFunctionPointerType() || qt->isFunctionProtoType();
-}
-
-
-
 SkeletonASTVisitor::ArrayInfo*
 SkeletonASTVisitor::checkArray(VarDecl* D)
 {
@@ -1161,8 +1146,7 @@ SkeletonASTVisitor::checkArray(VarDecl* D)
            << cfg.arrayIndices.str();
 
       if (cfg.fundamentalTypeString == "anon"){
-        errorAbort(D, *ci_,
-                   "anonymous struct used in array declaration - cannot refactor");
+        errorAbort(D, "anonymous struct used in array declaration - cannot refactor");
       }
     }
 
@@ -1188,8 +1172,7 @@ SkeletonASTVisitor::checkArray(VarDecl* D)
         arrayFxnPointerTypedef(D, info, sstr);
       } else {
         if (cfg.fundamentalTypeString == "anon"){
-          errorAbort(D, *ci_,
-                     "anonymous struct used in array declaration - cannot refactor");
+          errorAbort(D, "anonymous struct used in array declaration - cannot refactor");
         }
         sstr << "typedef " << cfg.fundamentalTypeString
              << " " << info->typedefName
@@ -1382,7 +1365,7 @@ SkeletonASTVisitor::doTraverseLambda(LambdaExpr* expr)
               std::string error = "finding capture target of "
                   + vd->getNameAsString() + " lead to bad expression type "
                   + needed->getStmtClassName();
-              errorAbort(vd, *ci_, error);
+              errorAbort(vd, error);
             }
           }
         }
@@ -1412,13 +1395,13 @@ SkeletonASTVisitor::getEndLoc(SourceLocation searchStart)
   SourceLocation newLoc = searchStart;
   while (numTries < 1000){
     Token res;
-    Lexer::getRawToken(newLoc, res, ci_->getSourceManager(), ci_->getLangOpts());
+    Lexer::getRawToken(newLoc, res, CompilerGlobals::SM(), CompilerGlobals::CI().getLangOpts());
     if (res.getKind() == tok::semi){
       return newLoc.getLocWithOffset(1);
     } else {
       //JJW 1/22/2018
       //Need to change it to do this - D->getEndLoc() is incorrect for string literal inits
-      SourceLocation next = Lexer::getLocForEndOfToken(newLoc, 1, ci_->getSourceManager(), Printing::langOpts);
+      SourceLocation next = Lexer::getLocForEndOfToken(newLoc, 1, CompilerGlobals::SM(), Printing::langOpts);
       if (next == newLoc){
         newLoc = newLoc.getLocWithOffset(1);
       } else {
@@ -1427,19 +1410,18 @@ SkeletonASTVisitor::getEndLoc(SourceLocation searchStart)
     }
     ++numTries;
   }
-  errorAbort(searchStart, *ci_,
-    "unable to locate end of variable declaration");
+  errorAbort(searchStart, "unable to locate end of variable declaration");
   return SourceLocation();
 }
 
 void
 SkeletonASTVisitor::checkFunctionPragma(FunctionDecl* fd)
 {
-  auto iter = pragmaConfig_.functionPragmas.find(fd->getCanonicalDecl());
-  if (iter != pragmaConfig_.functionPragmas.end()){
+  auto iter = CompilerGlobals::pragmaConfig.functionPragmas.find(fd->getCanonicalDecl());
+  if (iter != CompilerGlobals::pragmaConfig.functionPragmas.end()){
     auto& set = iter->second;
     for (SSTPragma* prg : set){
-      prg->activate(fd, rewriter_, pragmaConfig_);
+      prg->activate(fd);
     }
   }
 }
@@ -1448,7 +1430,7 @@ void
 SkeletonASTVisitor::deleteStmt(Stmt *s)
 {
   //go straight to replace, don't delay this
-  ::replace(s, rewriter_, "", *ci_);
+  ::replace(s, "");
 }
 
 
@@ -1499,7 +1481,7 @@ SkeletonASTVisitor::getTemplatePrefixString(std::ostream& os, TemplateParameterL
       pp.os << "got bad template parameter - has incorrect Clang Decl kind: "
           << nd->getDeclKindName() << "\n";
       pp.print(nd);
-      internalError(nd, *ci_, pp.os.str());
+      internalError(nd, pp.os.str());
     }
   }
   os << "> ";
@@ -1612,7 +1594,7 @@ SkeletonASTVisitor::getVariableNameLocationEnd(VarDecl* D)
   int numTries = 0;
   while (numTries < 100000){
     Token res;
-    Lexer::getRawToken(loc, res, ci_->getSourceManager(), ci_->getLangOpts());
+    Lexer::getRawToken(loc, res, CompilerGlobals::SM(), CompilerGlobals::CI().getLangOpts());
     std::string next;
     if (res.getKind() == tok::identifier){
       next = res.getIdentifierInfo()->getName().str();
@@ -1620,10 +1602,10 @@ SkeletonASTVisitor::getVariableNameLocationEnd(VarDecl* D)
       next = res.getRawIdentifier().str();
     }
     if (!next.empty() && next == D->getNameAsString()){
-      return Lexer::getLocForEndOfToken(loc, 0, ci_->getSourceManager(), Printing::langOpts);
+      return Lexer::getLocForEndOfToken(loc, 0, CompilerGlobals::SM(), Printing::langOpts);
     }
     //super annoying that I have to do this
-    SourceLocation nextLoc = Lexer::getLocForEndOfToken(loc, 1, ci_->getSourceManager(), Printing::langOpts);
+    SourceLocation nextLoc = Lexer::getLocForEndOfToken(loc, 1, CompilerGlobals::SM(), Printing::langOpts);
     if (nextLoc == loc){
       loc = loc.getLocWithOffset(1);
     } else {
@@ -1631,8 +1613,7 @@ SkeletonASTVisitor::getVariableNameLocationEnd(VarDecl* D)
     }
     ++numTries;
   }
-  internalError(getStart(D), *ci_,
-    "unable to locate variable name");
+  internalError(getStart(D), "unable to locate variable name");
   return SourceLocation();
 }
 
@@ -1646,7 +1627,7 @@ SkeletonASTVisitor::TraverseUnresolvedLookupExpr(clang::UnresolvedLookupExpr* ex
       VarTemplateDecl* vtd = cast<VarTemplateDecl>(nd);
       VarDecl* vd = vtd->getCanonicalDecl()->getTemplatedDecl();
       if (variableTemplates_.find(vd) != variableTemplates_.end()){
-        rewriter_.InsertText(getEnd(expr).getLocWithOffset(1), "()", false);
+        CompilerGlobals::rewriter.InsertText(getEnd(expr).getLocWithOffset(1), "()", false);
         return true;
       }
     }
@@ -1681,7 +1662,7 @@ SkeletonASTVisitor::finalize()
     clang::VarDecl* D = declPair.first;
 
     SourceLocation declEnd = getEndLoc(getEnd(D));
-    rewriter_.InsertText(declEnd, declPair.second);
+    CompilerGlobals::rewriter.InsertText(declEnd, declPair.second);
 
     /**
     bool hasTypeDecl = false;
@@ -1718,20 +1699,19 @@ SkeletonASTVisitor::TraverseVarDecl(VarDecl* D)
   PragmaActivateGuard pag(D, this);
   if (pag.skipVisit()) return true;
 
-  if (pragmaConfig_.makeNoChanges){
-    pragmaConfig_.makeNoChanges = false;
+  if (CompilerGlobals::pragmaConfig.makeNoChanges){
+    CompilerGlobals::pragmaConfig.makeNoChanges = false;
     return true;
   }
 
-  if (pragmaConfig_.nullifyDeclarationsPragma){
-    SSTNullVariablePragma* prg = pragmaConfig_.nullifyDeclarationsPragma->generate(D, *ci_);
-    prg->CI = ci_;
+  if (CompilerGlobals::pragmaConfig.nullifyDeclarationsPragma){
+    SSTNullVariablePragma* prg = CompilerGlobals::pragmaConfig.nullifyDeclarationsPragma->generate(D);
     pag.reactivate(D, prg);
   }
 
   if (D->getDescribedVarTemplate()){
     if (D->isStaticDataMember()){
-      internalError(D, *ci_, "Do not yet support static members of described var template");
+      internalError(D, "Do not yet support static members of described var template");
       /**
       const CXXRecordDecl* crd = cast<const CXXRecordDecl>(D->getDeclContext());
       VarTemplateDecl* vtd = D->getDescribedVarTemplate();
@@ -1822,8 +1802,7 @@ SkeletonASTVisitor::TraverseVarDecl(VarDecl* D)
         replace(D->getInit(), "nullptr");
       }
     } else {
-      errorAbort(D, *ci_,
-                 "null_variable can only be applied to pointer");
+      errorAbort(D, "null_variable can only be applied to pointer");
     }
     return true;
   }
@@ -1863,7 +1842,7 @@ SkeletonASTVisitor::visitVarDecl(VarDecl* D)
   }
 
   //memoization should do no refactoring of global variables
-  if (opts_.modeActive(MEMOIZE))
+  if (CompilerGlobals::modeActive(MEMOIZE))
     return false;
 
   bool skipInit = false;
@@ -1887,7 +1866,7 @@ SkeletonASTVisitor::replaceMain(clang::FunctionDecl* mainFxn)
 {
   if (!mainFxn->getDefinition()) return;
 
-  SourceManager &SM = rewriter_.getSourceMgr();
+  SourceManager &SM = CompilerGlobals::SM();
   std::string sourceFile = SM.getFileEntryForID(SM.getMainFileID())->getName().str();
   std::string suffix2 = sourceFile.substr(sourceFile.size()-2,2);
   bool isC = suffix2 == ".c";
@@ -1946,8 +1925,8 @@ SkeletonASTVisitor::addInContextGlobalDeclarations(clang::Stmt* body)
         sstr << gs.replText << "; ";
       }
     }
-    insertBefore(body, rewriter_, sstr.str());
-    insertAfter(body, rewriter_, " }");
+    insertBefore(body, sstr.str());
+    insertAfter(body, " }");
   }
 }
 
@@ -1962,7 +1941,7 @@ SkeletonASTVisitor::traverseFunctionBody(clang::Stmt* s)
 bool
 SkeletonASTVisitor::TraverseFunctionDecl(clang::FunctionDecl* D)
 {
-  if (D->isMain() && opts_.refactorMain){
+  if (D->isMain() && CompilerGlobals::refactorMain){
     replaceMain(D);
   } else if (D->isTemplateInstantiation()   
            || !D->isThisDeclarationADefinition()){
@@ -1975,7 +1954,7 @@ SkeletonASTVisitor::TraverseFunctionDecl(clang::FunctionDecl* D)
         if (!D->isInlined()){
           SourceLocation start = D->getReturnTypeSourceRange().getBegin();
           if (start.isValid()){
-            rewriter_.InsertText(start, " inline ", false);
+            CompilerGlobals::rewriter.InsertText(start, " inline ", false);
           }
         }
       }
@@ -2116,20 +2095,20 @@ SkeletonASTVisitor::TraverseCXXMethodDecl(CXXMethodDecl *D)
 bool
 SkeletonASTVisitor::VisitDependentScopeDeclRefExpr(DependentScopeDeclRefExpr* expr)
 {
-  if (!pragmaConfig_.dependentScopeGlobal.empty()){
+  if (!CompilerGlobals::pragmaConfig.dependentScopeGlobal.empty()){
     //we have been told about a global variable that cannot be recongized
     //because it is a dependent scope expression
     std::string memberName = expr->getDeclName().getAsString();
-    if (memberName == pragmaConfig_.dependentScopeGlobal){
+    if (memberName == CompilerGlobals::pragmaConfig.dependentScopeGlobal){
       auto iter = dependentStaticMembers_.find(memberName);
       if (iter == dependentStaticMembers_.end()){
         std::string warning = "variable " + memberName
             + " tagged as global, but there are no know globals with that name";
-        warn(getStart(expr), *ci_, warning);
+        warn(getStart(expr), warning);
       }
       std::string repl = appendText(expr, "_getter()");
-      ::replace(expr, rewriter_, repl, *ci_);
-      pragmaConfig_.dependentScopeGlobal.clear();
+      ::replace(expr, repl);
+      CompilerGlobals::pragmaConfig.dependentScopeGlobal.clear();
       return true; //skip checks below
       //std::string error = "pragma gloçbal name " + pragmaConfig_.dependentScopeGlobal
       //    + " does not match found member name " + memberName;
@@ -2142,10 +2121,10 @@ SkeletonASTVisitor::VisitDependentScopeDeclRefExpr(DependentScopeDeclRefExpr* ex
     clang::VarDecl* vd = iter->second;
     std::string warning = "member " + vd->getNameAsString()
         + " used in dependent scope matches global variable at "
-        + getStartLocString(vd, *ci_)
+        + getStartLocString(vd)
         + ". I can't tell if this is a global variable. If it is "
         "please let me know by using #pragma sst global " + vd->getNameAsString();
-    warn(expr, *ci_, warning);
+    warn(expr, warning);
   }
 
 
@@ -2155,20 +2134,20 @@ SkeletonASTVisitor::VisitDependentScopeDeclRefExpr(DependentScopeDeclRefExpr* ex
 bool
 SkeletonASTVisitor::VisitCXXDependentScopeMemberExpr(clang::CXXDependentScopeMemberExpr* expr)
 {
-  if (!pragmaConfig_.dependentScopeGlobal.empty()){
+  if (!CompilerGlobals::pragmaConfig.dependentScopeGlobal.empty()){
     //we have been told about a global variable that cannot be recongized
     //because it is a dependent scope expression
     std::string memberName = expr->getMember().getAsString();
-    if (memberName == pragmaConfig_.dependentScopeGlobal){
+    if (memberName == CompilerGlobals::pragmaConfig.dependentScopeGlobal){
       auto iter = dependentStaticMembers_.find(memberName);
       if (iter == dependentStaticMembers_.end()){
         std::string warning = "variable " + memberName
             + " tagged as global, but there are no know globals with that name";
-        warn(getStart(expr), *ci_, warning);
+        warn(getStart(expr), warning);
       }
       std::string repl = appendText(expr, "_getter()");
-      ::replace(expr, rewriter_, repl, *ci_);
-      pragmaConfig_.dependentScopeGlobal.clear();
+      ::replace(expr, repl);
+      CompilerGlobals::pragmaConfig.dependentScopeGlobal.clear();
       return true; //skip checks below
       //std::string error = "pragma gloçbal name " + pragmaConfig_.dependentScopeGlobal
       //    + " does not match found member name " + memberName;
@@ -2181,10 +2160,10 @@ SkeletonASTVisitor::VisitCXXDependentScopeMemberExpr(clang::CXXDependentScopeMem
     clang::VarDecl* vd = iter->second;
     std::string warning = "member " + vd->getNameAsString()
         + " used in dependent scope matches global variable at "
-        + getStartLocString(vd, *ci_)
+        + getStartLocString(vd)
         + ". I can't tell if this is a global variable. If it is "
         "please let me know by using #pragma sst global " + vd->getNameAsString();
-    warn(getStart(expr), *ci_, warning);
+    warn(getStart(expr), warning);
   }
 
 
@@ -2195,7 +2174,7 @@ bool
 SkeletonASTVisitor::TraverseCompoundStmt(CompoundStmt* stmt, DataRecursionQueue*  /*queue*/)
 {
   try {
-    PushGuard<CompoundStmt*> pg(pragmaConfig_.stmtBlocks, stmt);
+    PushGuard<CompoundStmt*> pg(CompilerGlobals::pragmaConfig.stmtBlocks, stmt);
     PragmaActivateGuard pag(stmt, this);
     if (!pag.skipVisit()){
       auto end = stmt->body_end();
@@ -2390,7 +2369,7 @@ bool
 SkeletonASTVisitor::TraverseForStmt(ForStmt *S, DataRecursionQueue*  /*queue*/)
 {
   if (fxnContexts_.empty()){
-    errorAbort(S, *ci_, "Traversing ForStmt with no function context");
+    errorAbort(S, "Traversing ForStmt with no function context");
   }
 
   FunctionDecl* fd = fxnContexts_.back();
@@ -2459,15 +2438,13 @@ SkeletonASTVisitor::VisitTypedefDecl(TypedefDecl* D)
   if (ty->isStructureType()){
     auto str_ty = ty->getAsStructureType();
     if (!str_ty){
-      errorAbort(D, *ci_,
-                 "structure type did not return a record declaration");
+      errorAbort(D, "structure type did not return a record declaration");
     }
     typedefStructs_[str_ty->getDecl()] = D;
   } else if (ty->isUnionType()){
     auto un_ty = ty->getAsUnionType();
     if (!un_ty){
-      errorAbort(D, *ci_,
-                 "union type did not return a record declaration");
+      errorAbort(D, "union type did not return a record declaration");
     }
     typedefStructs_[un_ty->getDecl()] = D;
   }
@@ -2493,19 +2470,19 @@ SkeletonASTVisitor::TraverseDecl(Decl *D)
 PragmaActivateGuard::~PragmaActivateGuard()
 {
   for (SSTPragma* prg : myPragmas_){
-    prg->deactivate(pragmaConfig_);
+    prg->deactivate();
   }
 
-  pragmaConfig_.pragmaDepth--;
+  CompilerGlobals::pragmaConfig.pragmaDepth--;
 }
 
 void
-PragmaActivateGuard::deletePragmaText(SSTPragma *prg, CompilerInstance& ci)
+PragmaActivateGuard::deletePragmaText(SSTPragma *prg)
 {
   //eliminate the pragma text
   if (prg->depth == 0){
     SourceRange rng(prg->pragmaDirectiveLoc, prg->endPragmaLoc);
-    ::replace(rng, rewriter_, "", ci);
+    ::replace(rng, "");
   }
 }
 
@@ -2514,13 +2491,13 @@ SkeletonASTVisitor::propagateNullness(Decl* target, Decl* src)
 {
   //yep, it does
   if (target->getKind() != Decl::Var){
-    errorAbort(target, *ci_, "propagate nullness to declaration that isn't a variable");
+    errorAbort(target, "propagate nullness to declaration that isn't a variable");
   }
   VarDecl* vd = cast<VarDecl>(target);
   //VarDecl* svd = cast<VarDecl>(src);
   //propagate the null-ness to this new variable
   SSTNullVariablePragma* oldPragma = getNullVariable(src);
-  SSTNullVariablePragma*& existing = pragmaConfig_.nullVariables[vd];
+  SSTNullVariablePragma*& existing = CompilerGlobals::pragmaConfig.nullVariables[vd];
   if (!existing){
     existing = oldPragma->clone();
     existing->setTransitive(oldPragma);
@@ -2532,12 +2509,11 @@ SkeletonASTVisitor::nullifyIfStmt(IfStmt* if_stmt, Decl*  /*d*/)
 {
   //oooooh, not good - I could really foobar things here
   //crash and burn and tell programmer to fix it
-  warn(if_stmt, *ci_,
-       "null variables used as predicate in if-statement - "
+  warn(if_stmt, "null variables used as predicate in if-statement - "
        "this could produce undefined behavior - forcing always false");
   IfStmt* ifs = cast<IfStmt>(if_stmt);
   //force the replacement
-  ::replace(ifs->getCond(), rewriter_, "0", *ci_);
+  ::replace(ifs->getCond(), "0");
   throw StmtDeleteException(ifs);
 }
 
@@ -2550,7 +2526,7 @@ SkeletonASTVisitor::replaceNullVariableStmt(Stmt* s, const std::string& repl)
     toRepl = iter->second;
     extendedReplacements_.erase(iter);
   }
-  ::replace(toRepl->getSourceRange(), rewriter_, repl, *ci_);
+  ::replace(toRepl->getSourceRange(), repl);
   return toRepl;
 }
 
@@ -2665,9 +2641,9 @@ SkeletonASTVisitor::maybeReplaceGlobalUse(DeclRefExpr* expr, SourceRange replRng
     if (variableTemplates_.find(search) != variableTemplates_.end()){
       //convert access to a call operator
       //really weird that I need to do this + 1
-      rewriter_.InsertText(getEnd(expr).getLocWithOffset(1), "()", false);
+      CompilerGlobals::rewriter.InsertText(getEnd(expr).getLocWithOffset(1), "()", false);
     } else if (vtsd->isStaticDataMember()) {
-      internalError(expr, *ci_, "failed replacing static template member");
+      internalError(expr, "failed replacing static template member");
     }
     break; //proceed
   }
@@ -2737,7 +2713,7 @@ FirstPassASTVisitor::VisitStmt(Stmt *s)
 bool
 FirstPassASTVisitor::TraverseFunctionDecl(FunctionDecl *fd, DataRecursionQueue* queue)
 {
-  PushGuard<FunctionDecl*> pg(pragmaConfig_.fxnContexts, fd);
+  PushGuard<FunctionDecl*> pg(CompilerGlobals::pragmaConfig.fxnContexts, fd);
   Parent::TraverseFunctionDecl(fd);
   return true;
 }
@@ -2745,15 +2721,12 @@ FirstPassASTVisitor::TraverseFunctionDecl(FunctionDecl *fd, DataRecursionQueue* 
 bool
 FirstPassASTVisitor::TraverseCompoundStmt(CompoundStmt* cs, DataRecursionQueue* queue)
 {
-  PushGuard<CompoundStmt*> pg(pragmaConfig_.stmtBlocks, cs);
+  PushGuard<CompoundStmt*> pg(CompilerGlobals::pragmaConfig.stmtBlocks, cs);
   Parent::TraverseCompoundStmt(cs);
   return true;
 }
 
-FirstPassASTVisitor::FirstPassASTVisitor(SSTPragmaList& prgs, clang::Rewriter& rw, PragmaConfig& cfg) :
-  pragmas_(prgs), 
-  pragmaConfig_(cfg),
-  rewriter_(rw)
+FirstPassASTVisitor::FirstPassASTVisitor(SSTPragmaList& prgs) :
+  pragmas_(prgs)
 {
-  opts_.setup();
 }
