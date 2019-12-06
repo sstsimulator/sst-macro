@@ -357,7 +357,7 @@ SSTMemoizeComputePragma::activate(Stmt *s)
     }
   }
 
-  CompilerGlobals::pragmaConfig.astVisitor->getActiveNamespace()->addMemoization(token_, model_);
+  CompilerGlobals::pragmaConfig.visitor.skeleton->getActiveNamespace()->addMemoization(token_, model_);
   doReplace(getStart(s), getEnd(s), s,
             false, true, args, nullptr);
 }
@@ -379,7 +379,7 @@ SSTMemoizeComputePragma::activate(Decl *d)
     token_ = fd->getNameAsString();
   }
 
-  CompilerGlobals::pragmaConfig.astVisitor->getActiveNamespace()->addMemoization(token_, model_);
+  CompilerGlobals::pragmaConfig.visitor.skeleton->getActiveNamespace()->addMemoization(token_, model_);
 
   auto iter = CompilerGlobals::pragmaConfig.functionPragmas.find(fd->getCanonicalDecl());
   if (iter == CompilerGlobals::pragmaConfig.functionPragmas.end()){

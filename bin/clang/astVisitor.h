@@ -1031,12 +1031,6 @@ struct PragmaActivateGuard {
   {
   }
 
-  void reactivate(clang::Decl* d, SSTPragma* prg){
-    ++CompilerGlobals::pragmaConfig.pragmaDepth;
-    myPragmas_.push_back(prg);
-    prg->activate(d);
-  }
-
   ~PragmaActivateGuard();
 
   bool skipVisit() const {
@@ -1051,8 +1045,6 @@ struct PragmaActivateGuard {
     skipVisit_(false),
     pragmas_(pragmas)
   {
-    ++CompilerGlobals::pragmaConfig.pragmaDepth;
-
     myPragmas_ = [&]{
       auto tmp = pragmas_.getMatches<T>(t, firstPass);
       if(doVisit){

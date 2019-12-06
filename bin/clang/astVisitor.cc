@@ -1704,11 +1704,6 @@ SkeletonASTVisitor::TraverseVarDecl(VarDecl* D)
     return true;
   }
 
-  if (CompilerGlobals::pragmaConfig.nullifyDeclarationsPragma){
-    SSTNullVariablePragma* prg = CompilerGlobals::pragmaConfig.nullifyDeclarationsPragma->generate(D);
-    pag.reactivate(D, prg);
-  }
-
   if (D->getDescribedVarTemplate()){
     if (D->isStaticDataMember()){
       internalError(D, "Do not yet support static members of described var template");
@@ -2472,8 +2467,6 @@ PragmaActivateGuard::~PragmaActivateGuard()
   for (SSTPragma* prg : myPragmas_){
     prg->deactivate();
   }
-
-  CompilerGlobals::pragmaConfig.pragmaDepth--;
 }
 
 void

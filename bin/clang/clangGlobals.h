@@ -57,14 +57,6 @@ namespace clang {
   class Sema;
 }
 
-namespace sst {
-  extern clang::CompilerInstance *activeCompiler;
-  extern clang::ASTContext *activeASTContext;
-  extern clang::SourceManager *activeSourceManger;
-  extern clang::LangOptions *activeLangOpts;
-  extern clang::Sema *activeSema;
-}
-
 namespace modes {
 
 enum ModeMask {
@@ -91,7 +83,6 @@ class FirstPassASTVisitor;
 struct SSTPragma;
 class SSTReplacePragma;
 class SSTNullVariablePragma;
-class SSTNullVariableGeneratorPragma;
 struct PragmaConfig {
   std::map<clang::Decl*,SSTNullVariablePragma*> nullVariables;
   std::map<clang::FunctionDecl*,std::set<SSTPragma*>> functionPragmas;
@@ -100,7 +91,6 @@ struct PragmaConfig {
   std::set<std::string> newParams;
   std::string dependentScopeGlobal;
   std::string computeMemorySpec;
-  std::list<std::pair<SSTNullVariablePragma*,clang::TypedefDecl*>> pendingTypedefs;
   std::list<clang::FunctionDecl*> fxnContexts;
   std::map<clang::IfStmt*,std::string> predicatedBlocks;
   std::list<clang::CompoundStmt*> stmtBlocks;
@@ -125,11 +115,7 @@ struct PragmaConfig {
     return stmtBlocks.back()->body_end();
   }
 
-  int pragmaDepth = 0;
-
   bool makeNoChanges = false;
-  SkeletonASTVisitor* astVisitor = nullptr;
-  SSTNullVariableGeneratorPragma* nullifyDeclarationsPragma = nullptr;
 
   PragmaConfig() = default;
 };
@@ -165,6 +151,15 @@ struct CompilerGlobals {
   }
   static clang::SourceManager& SM() {
     return ci->getSourceManager();
+  }
+  static clang::ASTContext& ASTContext() {
+    return ci->getASTContext();
+  }
+  static const clang::LangOptions& LangOpts() {
+    return ci->getLangOpts();
+  }
+  static clang::Sema& Sema() {
+    return ci->getSema();
   }
 
   static std::list<std::string> includePaths;

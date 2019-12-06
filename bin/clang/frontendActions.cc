@@ -58,12 +58,6 @@ using namespace clang;
 using namespace clang::driver;
 using namespace clang::tooling;
 
-clang::CompilerInstance* sst::activeCompiler = nullptr;
-clang::ASTContext* sst::activeASTContext = nullptr;
-clang::SourceManager* sst::activeSourceManger = nullptr;
-clang::LangOptions* sst::activeLangOpts = nullptr;
-clang::Sema* sst::activeSema = nullptr;
-
 ReplaceAction::ReplaceAction() :
   skeleton_visitor_(pragmaList_, globalNs_),
   first_pass_visitor_(pragmaList_)
@@ -101,17 +95,9 @@ ReplaceAction::ExecuteAction()
 {
   if (!ci_->hasSema()) ci_->createSema(getTranslationUnitKind(), nullptr);
 
-  ASTContext& Ctx = ci_->getASTContext();
   ASTConsumer& Consumer = ci_->getASTConsumer();
   Sema& S = ci_->getSema();
   CompilerGlobals::setup(ci_);
-
-
-  sst::activeCompiler = ci_;
-  sst::activeASTContext = &Ctx;
-  sst::activeSourceManger = &ci_->getSourceManager();
-  sst::activeLangOpts = &ci_->getLangOpts();
-  sst::activeSema = &S;
 
   //bool PrintStats = false;
   // Also turn on collection of stats inside of the Sema object.

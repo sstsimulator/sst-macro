@@ -285,6 +285,7 @@ echo "CFLAGS             $CFLAGS"
 echo "CXXFLAGS           $CXXFLAGS $SST_CXXFLAGS $STD_CXXFLAGS"
 echo "CPPFLAGS           $CPPFLAGS"
 echo "LDFLAGS            $LDFLAGS"
+echo "C++ Standard       $cxxstd"
 echo
 
 echo "User Space Threading:"
@@ -302,14 +303,11 @@ echo "  Thread Affinity  $with_cpu_affinity"
 echo
 
 echo "MAC SDK            $enable_sdk"
-echo "SUMI MPI           $install_sumi_mpi"
 echo "SST Core           $have_integrated_core"
 echo "Clang Autoskeleton $found_clang"
-echo "Clang c++17        $found_clang17"
 echo "OTF2 Replay        $build_otf2"
-echo "MPI Timeline Stats $enable_mpi_timeline"
 echo "MPI Sync Stats     $with_comm_sync_stats"
-echo "Graphviz Trace     $enable_graphviz"
+echo "Call Graph Viz     $enable_call_graph"
 echo "Sanity Checking    $enable_sanity_check"
 if test -z "$vtk_path"; then
 echo "VTK                no"
