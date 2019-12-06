@@ -77,7 +77,7 @@ std::string generateUniqueFunctionName(clang::SourceLocation const &Loc,
   Prefix += (Prefix.empty() ? "f" : "") + std::to_string(counter++);
   Prefix += "_" + Decl->getNameAsString() + "_";
 
-  auto &SM = *sst::activeSourceManger;
+  auto &SM = CompilerGlobals::SM();
   std::string path = SM.getFilename(Loc).str();
   Prefix += cleanPath(path) + std::to_string(SM.getPresumedLineNumber(Loc));
 
@@ -107,12 +107,12 @@ auto getAllRequestedVarDecls(
   memoizationAutoMatcher(SD);
 
   auto FoundVariables =
-      VariableNames ? matchNamedUsedVariables(SD, *sst::activeASTContext,
+      VariableNames ? matchNamedUsedVariables(SD, CompilerGlobals::ASTContext(),
                                               *VariableNames)
-                    : matchNonLocalUsedVariables(SD, *sst::activeASTContext);
+                    : matchNonLocalUsedVariables(SD, CompilerGlobals::ASTContext());
 
   if (MetaVariableNames) { // Maybe empty
-    matchNamedMetaVariables(SD, *sst::activeASTContext,
+    matchNamedMetaVariables(SD, CompilerGlobals::ASTContext(),
                             *MetaVariableNames);
   }
 
@@ -150,15 +150,14 @@ getFuncBodyGenerator(StmtDecl const *SD,
     return printCaptureBody;
   }
 
-  errorAbort(SD, *sst::activeCompiler,
-             "Memoize Type(" + type +
+  errorAbort(SD, "Memoize Type(" + type +
                  ") was not reconized in SSTMemoizePragma.\n");
 
   return {};
 }
 
 clang::NamedDecl const *getNonNullParentDecl(clang::Stmt const *S) {
-  return getNonNull(getParentDecl(S, *sst::activeASTContext));
+  return getNonNull(getParentDecl(S, CompilerGlobals::ASTContext()));
 }
 
 } // namespace
@@ -168,7 +167,7 @@ MemoizationStrings::MemoizationStrings(
     std::string const &name, std::vector<Variable> const &Variables,
     std::function<std::string(std::vector<Variable> const &)> fn) {
 
-  std::string externC = sst::activeLangOpts->CPlusPlus ? "extern \"C\" " : "";
+  std::string externC = CompilerGlobals::LangOpts().CPlusPlus ? "extern \"C\" " : "";
 
   decleration_ =
       externC + "void " + name + "(" +
@@ -189,14 +188,12 @@ MemoizationStrings::MemoizationStrings(
                 "){" + fn(Variables) + "}";
 }
 
-SSTMemoizePragma::SSTMemoizePragma(clang::SourceLocation Loc,
-                                   clang::CompilerInstance &CI,
+SSTMemoizePragma::SSTMemoizePragma(clang::SourceLocation /*Loc*/,
                                    PragmaArgMap &&PragmaStrings)
     : VariableNames_(parseKeyword(PragmaStrings, "variables")),
       MetaVariableNames_(parseKeyword(PragmaStrings, "meta_variables")) {}
 
-void SSTMemoizePragma::activate(clang::Stmt *S, clang::Rewriter &R,
-                                PragmaConfig &Cfg) {
+void SSTMemoizePragma::activate(clang::Stmt *S) {
   // Since we are a statement we will need to find the decl in which we were
   // declared, if it doesn't have a name then this throws.  Usually that would
   // mean it was the translation unit decl.
@@ -207,7 +204,7 @@ void SSTMemoizePragma::activate(clang::Stmt *S, clang::Rewriter &R,
   std::vector<Variable> Variables;
   for (auto Var :
        getAllRequestedVarDecls(S, VariableNames_, MetaVariableNames_)) {
-    Variables.emplace_back(Var, *sst::activeASTContext);
+    Variables.emplace_back(Var, CompilerGlobals::ASTContext());
   }
 
   // Name for the new memoization function we are going to write.
@@ -215,15 +212,14 @@ void SSTMemoizePragma::activate(clang::Stmt *S, clang::Rewriter &R,
   auto FuncBodyGen = getFuncBodyGenerator(S, CaptureType_);
   Strings_ = MemoizationStrings(FuncName, Variables, FuncBodyGen);
 
-  R.InsertTextBefore(getStart(ParentDecl), Strings_.getDecleration() + "\n");
-  R.InsertTextBefore(getStart(S), Strings_.getCallsite() + "\n");
+  CompilerGlobals::rewriter.InsertTextBefore(getStart(ParentDecl), Strings_.getDecleration() + "\n");
+  CompilerGlobals::rewriter.InsertTextBefore(getStart(S), Strings_.getCallsite() + "\n");
 } // namespace memoize
 
-void SSTMemoizePragma::activate(clang::Decl *D, clang::Rewriter &R,
-                                PragmaConfig &Cfg) { }
+void SSTMemoizePragma::activate(clang::Decl *D) { }
 
-void SSTMemoizePragma::deactivate(PragmaConfig &cfg) {
-  auto &vec = cfg.globalCppFunctionsToWrite;
+void SSTMemoizePragma::deactivate() {
+  auto &vec = CompilerGlobals::pragmaConfig.globalCppFunctionsToWrite;
   auto pragma = static_cast<SSTPragma *>(this);
 
   if (std::none_of(vec.begin(), vec.end(), [](auto const &pragma_string) {
@@ -237,4 +233,4 @@ void SSTMemoizePragma::deactivate(PragmaConfig &cfg) {
 } // namespace memoize
 
 static PragmaRegister<SSTArgMapPragmaShim, memoize::SSTMemoizePragma, true>
-    annotatePragma("sst", "memoize", pragmas::MEMOIZE);
+    annotatePragma("sst", "memoize", modes::MEMOIZE);

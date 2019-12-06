@@ -66,33 +66,30 @@ private:
 
 namespace detail {
 ToolInfo
-getToolInfo(clang::SourceLocation Loc, clang::CompilerInstance &CI,
+getToolInfo(clang::SourceLocation Loc,
             std::map<std::string, std::list<std::string>> &&PragmaStrings);
 }
 
 class SSTAnnotatePragmaImpl : public SSTPragma {
 public:
-  SSTAnnotatePragmaImpl(clang::CompilerInstance &CI, annotate::ToolInfo &&Ti)
-      : Sm(CI.getSourceManager()), Ctx(CI.getASTContext()), Ti_(std::move(Ti)) {
+  SSTAnnotatePragmaImpl(annotate::ToolInfo &&Ti)
+      : Ctx(CompilerGlobals::CI().getASTContext()), Ti_(std::move(Ti)) {
   }
 
-  void activate(clang::Stmt *S, clang::Rewriter &R, PragmaConfig &Cfg) override;
-  void activate(clang::Decl *D, clang::Rewriter &R, PragmaConfig &Cfg) override;
+  void activate(clang::Stmt *S) override;
+  void activate(clang::Decl *D) override;
 
-  clang::SourceManager &getSourceManager() { return Sm; }
   clang::ASTContext &getAstContext() { return Ctx; }
 
-  clang::SourceManager const &getSourceManager() const { return Sm; }
   clang::ASTContext const &getAstContext() const { return Ctx; }
 
 private:
-  void activatePuppetize(clang::Stmt *S, clang::Rewriter &R, PragmaConfig &Cfg);
-  void activateShadowize(clang::Stmt *S, clang::Rewriter &R, PragmaConfig &Cfg);
+  void activatePuppetize(clang::Stmt *S);
+  void activateShadowize(clang::Stmt *S);
 
-  void activatePuppetize(clang::Decl *D, clang::Rewriter &R, PragmaConfig &Cfg);
-  void activateShadowize(clang::Decl *D, clang::Rewriter &R, PragmaConfig &Cfg);
+  void activatePuppetize(clang::Decl *D);
+  void activateShadowize(clang::Decl *D);
 
-  clang::SourceManager &Sm;
   clang::ASTContext &Ctx;
   ToolInfo Ti_;
 };
@@ -101,10 +98,8 @@ template <typename Derived>
 class SSTAnnotatePragmaBase : public SSTAnnotatePragmaImpl {
 public:
   SSTAnnotatePragmaBase(
-      clang::SourceLocation Loc, clang::CompilerInstance &CI,
-      std::map<std::string, std::list<std::string>> &&PragmaStrings)
-      : SSTAnnotatePragmaImpl(CI,
-                              Derived::getToolInfo(std::move(Loc), CI,
+      clang::SourceLocation Loc, std::map<std::string, std::list<std::string>> &&PragmaStrings)
+      : SSTAnnotatePragmaImpl(Derived::getToolInfo(std::move(Loc),
                                                    std::move(PragmaStrings))) {}
 };
 
@@ -114,15 +109,15 @@ class SSTAnnotatePragma
     : public annotate::SSTAnnotatePragmaBase<SSTAnnotatePragma> {
 public:
   SSTAnnotatePragma(
-      clang::SourceLocation Loc, clang::CompilerInstance &CI,
+      clang::SourceLocation Loc,
       std::map<std::string, std::list<std::string>> &&PragmaStrings)
-      : SSTAnnotatePragmaBase<SSTAnnotatePragma>(std::move(Loc), CI,
+      : SSTAnnotatePragmaBase<SSTAnnotatePragma>(std::move(Loc),
                                                  std::move(PragmaStrings)) {}
 
   static annotate::ToolInfo
-  getToolInfo(clang::SourceLocation Loc, clang::CompilerInstance &CI,
+  getToolInfo(clang::SourceLocation Loc,
               std::map<std::string, std::list<std::string>> &&PragmaStrings) {
-    return annotate::detail::getToolInfo(std::move(Loc), CI,
+    return annotate::detail::getToolInfo(std::move(Loc),
                                          std::move(PragmaStrings));
   }
 };

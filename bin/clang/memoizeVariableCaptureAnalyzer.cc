@@ -94,7 +94,7 @@ getLoopInitVar(ForStmt const *FS) {
             )
           )
         )
-      , *FS, *sst::activeASTContext);
+      , *FS, CompilerGlobals::ASTContext());
   // clang-format on
   //
   Expr const *Exp = nullptr;
@@ -135,7 +135,7 @@ getLoopCondition(ForStmt const *FS, VarDecl const *LoopInit) {
               )
             )
           )
-        ), *FS, *sst::activeASTContext), "ID"));
+        ), *FS, CompilerGlobals::ASTContext()), "ID"));
   // clang-format on
 }
 
@@ -218,7 +218,7 @@ auto getLoopVars = forEachDescendant(declStmt(forEach(varDecl().bind("LoopDeclar
               ).bind("InnerExpr")
             )
         )
-        , *FS, *sst::activeASTContext);  // FS is a ForStmt
+        , *FS, CompilerGlobals::ASTContext());  // FS is a ForStmt
 
   // auto BN =
   //     match(stmt(
@@ -251,13 +251,13 @@ auto getLoopVars = forEachDescendant(declStmt(forEach(varDecl().bind("LoopDeclar
 
   llvm::errs() << "\n\nConditionsExpr\n";
   for (auto const &exp : ::detail::toPtrSet<Expr>(BN, "ConditionExpr")) {
-    exp->dumpPretty(*sst::activeASTContext);
+    exp->dumpPretty(CompilerGlobals::ASTContext());
     llvm::errs() << "\n";
   }
 
   llvm::errs() << "\nInner Exprs\n";
   for (auto const &exp : ::detail::toPtrSet<Expr>(BN, "InnerExpr")) {
-    exp->dumpPretty(*sst::activeASTContext);
+    exp->dumpPretty(CompilerGlobals::ASTContext());
     llvm::errs() << "\n";
   }
 

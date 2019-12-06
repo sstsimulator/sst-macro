@@ -166,16 +166,15 @@ namespace annotate {
 namespace detail {
 
 annotate::ToolInfo
-getToolInfo(clang::SourceLocation Loc, clang::CompilerInstance &CI,
-            std::map<std::string, std::list<std::string>> &&PragmaStrings) {
+getToolInfo(clang::SourceLocation Loc, std::map<std::string, std::list<std::string>> &&PragmaStrings) {
 
   auto ToolStrIter = PragmaStrings.find("tool");
   if (ToolStrIter == PragmaStrings.end()) {
-    errorAbort(Loc, CI, "AnnotatePragma requires a tool argument");
+    errorAbort(Loc, "AnnotatePragma requires a tool argument");
   }
 
   if (PragmaStrings.size() > 1) {
-    Loc.print(llvm::errs(), CI.getSourceManager());
+    Loc.print(llvm::errs(), CompilerGlobals::SM());
     llvm::errs()
         << "\nWarning AnnotatePragma is ignoring arguments that do not "
            "match tool:\n";
@@ -191,69 +190,54 @@ getToolInfo(clang::SourceLocation Loc, clang::CompilerInstance &CI,
 }
 } // namespace detail
 
-void SSTAnnotatePragmaImpl::activate(clang::Stmt *S, clang::Rewriter &R,
-                                     PragmaConfig &Cfg) {
-  using namespace pragmas;
+void SSTAnnotatePragmaImpl::activate(clang::Stmt *S) {
   switch (getActiveMode()) {
-  case Mode::PUPPETIZE_MODE:
-    return activatePuppetize(S, R, Cfg);
-  case Mode::SHADOWIZE_MODE:
-    return activateShadowize(S, R, Cfg);
+  case modes::PUPPETIZE_MODE:
+    return activatePuppetize(S);
+  case modes::SHADOWIZE_MODE:
+    return activateShadowize(S);
   default:
-    errorAbort(startPragmaLoc, *CI,
-               "Annotation Pragmas only support modes: Puppetize, Shadowize ");
+    errorAbort(startPragmaLoc, "Annotation Pragmas only support modes: Puppetize, Shadowize ");
   }
 }
 
-void SSTAnnotatePragmaImpl::activate(clang::Decl *D, clang::Rewriter &R,
-                                     PragmaConfig &Cfg) {
-  using namespace pragmas;
+void SSTAnnotatePragmaImpl::activate(clang::Decl *D) {
   switch (getActiveMode()) {
-  case Mode::PUPPETIZE_MODE:
-    return activatePuppetize(D, R, Cfg);
-  case Mode::SHADOWIZE_MODE:
-    return activateShadowize(D, R, Cfg);
+  case modes::PUPPETIZE_MODE:
+    return activatePuppetize(D);
+  case modes::SHADOWIZE_MODE:
+    return activateShadowize(D);
   default:
-    errorAbort(startPragmaLoc, *CI,
-               "Annotation Pragmas only support modes: Puppetize, Shadowize");
+    errorAbort(startPragmaLoc, "Annotation Pragmas only support modes: Puppetize, Shadowize");
   }
 }
 
-void SSTAnnotatePragmaImpl::activatePuppetize(clang::Stmt *S,
-                                              clang::Rewriter &R,
-                                              PragmaConfig &Cfg) {
+void SSTAnnotatePragmaImpl::activatePuppetize(clang::Stmt *S) {
   if (auto ParentFunc = getParentFunctionDecl(S, Ctx)) {
-    R.InsertTextBefore(getStart(ParentFunc),
-                       annotationStr(Ti_.Name(), Ti_.Args(), getLines(Sm, S)));
+    CompilerGlobals::rewriter.InsertTextBefore(getStart(ParentFunc),
+                       annotationStr(Ti_.Name(), Ti_.Args(), getLines(CompilerGlobals::SM(), S)));
     S->dumpColor();
   } else {
-    errorAbort(getStart(S), Cfg.astVisitor->getCompilerInstance(),
-               "Couldn't find a parent function for the statement");
+    errorAbort(getStart(S), "Couldn't find a parent function for the statement");
   }
 }
 
-void SSTAnnotatePragmaImpl::activatePuppetize(clang::Decl *D,
-                                              clang::Rewriter &R,
-                                              PragmaConfig &Cfg) {
+void SSTAnnotatePragmaImpl::activatePuppetize(clang::Decl *D) {
   auto LocalD = D; // If D is not a function decl get the function
   if (auto TD = llvm::dyn_cast<clang::FunctionTemplateDecl>(LocalD)) {
     LocalD = TD->getAsFunction();
   }
 
-  R.InsertTextBefore(getStart(LocalD), annotationStr(Ti_.Name(), Ti_.Args(),
-                                                     getLines(Sm, LocalD)));
+  CompilerGlobals::rewriter.InsertTextBefore(getStart(LocalD), annotationStr(Ti_.Name(), Ti_.Args(),
+                                                     getLines(CompilerGlobals::SM(), LocalD)));
 }
 
-void SSTAnnotatePragmaImpl::activateShadowize(clang::Stmt *S,
-                                              clang::Rewriter &R,
-                                              PragmaConfig &Cfg) {}
+void SSTAnnotatePragmaImpl::activateShadowize(clang::Stmt *S) {}
 
-void SSTAnnotatePragmaImpl::activateShadowize(clang::Decl *D,
-                                              clang::Rewriter &R,
-                                              PragmaConfig &Cfg) {}
+void SSTAnnotatePragmaImpl::activateShadowize(clang::Decl *D) {}
 
 } // namespace annotate
 
 static PragmaRegister<SSTArgMapPragmaShim, SSTAnnotatePragma, true>
     annotatePragma("sst", "placeholder",
-                   pragmas::MEMOIZE | pragmas::SKELETONIZE);
+                   modes::MEMOIZE | modes::SKELETONIZE);
