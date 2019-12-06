@@ -237,16 +237,21 @@ SSTPragmaHandler::configure(bool delOnUse, Token&  /*PragmaTok*/, Preprocessor& 
   maxPragmaDepth++;
   fsp->deleteOnUse = delOnUse;
   fsp->name = getName();
-  //fsp->startPragmaLoc = PragmaTok.getLocation();
-  PP.EnableBacktrackAtThisPos(); //this controls the backtrack
+  //we need the source location of the statement beyond this pragma
+  //this means lexing the next token and getting its end location
+  //store our current position so we can rollback
+  PP.EnableBacktrackAtThisPos();
+  //the call to lex might trigger another pragma handler if we have stacked pragmas
+  //this function might therefore recurse into another call to SSTPragmaHandler::configure
   Token pragmaTarget;
-  PP.Lex(pragmaTarget); //this might hit another pragma
-  //fsp->endPragmaLoc = pragmaTarget.getLocation();
+  PP.Lex(pragmaTarget);
   fsp->targetLoc = pragmaTarget.getEndLoc();
+  //rollback to our previous position to not upset the lexer
   PP.Backtrack();
   if (pragmaDepth == 1){ //this is the top pragma
     //if we hit multiple pragmas, we might have redundant tokens
     //becaue of recursion weirdness in the lexer
+    //I do not understand this behavior
     for (int i=1; i < maxPragmaDepth; ++i){
       Token throwAway;
       PP.Lex(throwAway);
@@ -1101,10 +1106,6 @@ static PragmaRegister<SSTTokenListPragmaShim, SSTNullTypePragma, true> nullTypeP
     "sst", "null_type", SKELETONIZE | SHADOWIZE);
 static PragmaRegister<SSTTokenListPragmaShim, SSTNullVariablePragma, true> nullVariablePragma(
     "sst", "null_variable", SKELETONIZE | SHADOWIZE);
-static PragmaRegister<SSTTokenListPragmaShim, SSTNullVariableGeneratorPragma, true> nullVariableGenPragma(
-    "sst", "start_null_variable", SKELETONIZE | SHADOWIZE);
-static PragmaRegister<SSTNoArgsPragmaShim, SSTNullVariableStopPragma, true> nullVarStopPragma(
-    "sst", "stop_null_variable", SKELETONIZE | SHADOWIZE);
 static PragmaRegister<SSTStringPragmaShim, SSTEmptyPragma, true> emptyPragma(
     "sst", "empty", SKELETONIZE | SHADOWIZE);
 static PragmaRegister<SSTStringPragmaShim, SSTGlobalVariablePragma, true> globalPragma(

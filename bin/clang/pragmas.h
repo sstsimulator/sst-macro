@@ -533,34 +533,6 @@ class SSTNullVariablePragma : public SSTPragma {
   bool skelComputes_;
 };
 
-class SSTNullVariableStopPragma : public SSTPragma {
- public:
-  SSTNullVariableStopPragma(){}
-
-  void activate(clang::Stmt* s) override {
-    CompilerGlobals::pragmaConfig.nullifyDeclarationsPragma = nullptr;
-  }
-};
-
-class SSTNullVariableGeneratorPragma : public SSTPragma {
- public:
-  SSTNullVariableGeneratorPragma(clang::SourceLocation loc, const std::list<clang::Token>& tokens) :
-    tokens_(tokens)
-  {
-  }
-
-  SSTNullVariablePragma* generate(clang::Decl* d) const {
-    return new SSTNullVariablePragma(getStart(d), tokens_);
-  }
-
-  void activate(clang::Stmt* s) override {
-    CompilerGlobals::pragmaConfig.nullifyDeclarationsPragma = this;
-  }
-
- private:
-  std::list<clang::Token> tokens_;
-};
-
 class SSTNullTypePragma : public SSTNullVariablePragma
 {
  public:

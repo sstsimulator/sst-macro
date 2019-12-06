@@ -54,10 +54,10 @@ public:
       clang::SourceLocation Loc, clang::CompilerInstance &CI,
       std::map<std::string, std::list<std::string>> &&PragmaStrings)
       : annotate::SSTAnnotatePragmaBase<SSTOmpPuppetPragma>(
-            std::move(Loc), CI, std::move(PragmaStrings)) {}
+            std::move(Loc), std::move(PragmaStrings)) {}
 
   static annotate::ToolInfo
-  getToolInfo(clang::SourceLocation Loc, clang::CompilerInstance &CI,
+  getToolInfo(clang::SourceLocation Loc,
               std::map<std::string, std::list<std::string>> &&PragmaStrings) {
     return {"memtrace", {"omp", "args", "list"}};
   }
