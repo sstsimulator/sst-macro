@@ -50,36 +50,6 @@ using namespace clang;
 using namespace clang::driver;
 using namespace clang::tooling;
 
-class ChildReplacedVisitor : public RecursiveASTVisitor<ChildReplacedVisitor>
-{
- public:
-  ChildReplacedVisitor(clang::Expr* parent, std::set<const Expr*>& toReplace) :
-     parent_(parent), toReplace_(toReplace), childReplaced_(false)
-  {
-  }
-
-  bool childReplaced() const {
-    return childReplaced_;
-  }
-
-  bool VisitStmt(clang::Stmt* stmt){
-    for (auto* expr : toReplace_){
-      if (stmt == expr){
-        toReplace_.erase(expr);
-        toReplace_.insert(parent_);
-        childReplaced_ = true;
-        return false;
-      }
-    }
-    return true;
-  }
-
- private:
-  bool childReplaced_;
-  clang::Expr* parent_;
-  std::set<const Expr*>& toReplace_;
-};
-
 class ReplacementPragmaVisitor : public RecursiveASTVisitor<ReplacementPragmaVisitor>
 {
   using Parent=RecursiveASTVisitor<ReplacementPragmaVisitor>;
@@ -89,13 +59,36 @@ class ReplacementPragmaVisitor : public RecursiveASTVisitor<ReplacementPragmaVis
   {
   }
 
+  bool start(Stmt* s){
+    try {
+      return Parent::TraverseStmt(s);
+    } catch (StmtDeleteException& e) {
+      //we traversed something other than a compound stmt or declstmt
+      exceptions_.emplace_back(e.deleted);
+    }
+    return true;
+  }
+
+  bool TraverseCompoundStmt(CompoundStmt* stmt, DataRecursionQueue* = nullptr){
+    for (auto iter = stmt->body_begin(); iter != stmt->body_end(); ++iter){
+      try {
+        Stmt* s = *iter;
+        TraverseStmt(s);
+      } catch (StmtDeleteException& e) {
+        *iter = zeroExpr(getStart(stmt));
+      }
+    }
+    return true;
+  }
+
   bool TraverseDeclStmt(DeclStmt* stmt, DataRecursionQueue* = nullptr){
     if (stmt->isSingleDecl() && stmt->getSingleDecl()->getKind() == Decl::Var){
-      const Decl* d = stmt->getSingleDecl();
-      const VarDecl* vd = cast<const VarDecl>(d);
+      Decl* d = stmt->getSingleDecl();
+      VarDecl* vd = cast<VarDecl>(d);
       if (vd->getNameAsString() == matchText_){
         if (vd->hasInit()) {
           replaced_.insert(vd->getInit());
+          vd->setInit(zeroExpr(getStart(stmt)));
         } else {
           errorAbort(getStart(stmt), "replace pragma applied to declaration with no initializer");
         }
@@ -119,11 +112,17 @@ class ReplacementPragmaVisitor : public RecursiveASTVisitor<ReplacementPragmaVis
   bool TraverseArraySubscriptExpr(ArraySubscriptExpr* expr, DataRecursionQueue* queue = nullptr){
     if (matchingDeclRef(expr->getBase())){
       replaced_.insert(expr);
+      throw StmtDeleteException(expr);
       return true;
     } else {
-      Parent::TraverseArraySubscriptExpr(expr);
-      ChildReplacedVisitor vis(expr, replaced_);
-      vis.TraverseStmt(expr);
+      try {
+        Parent::TraverseArraySubscriptExpr(expr);
+      } catch (StmtDeleteException& e) {
+        //chained subscripts need to propagate up
+        replaced_.erase(cast<Expr>(e.deleted));
+        replaced_.insert(expr);
+        throw StmtDeleteException(expr);
+      }
       return true;
     }
   }
@@ -131,6 +130,7 @@ class ReplacementPragmaVisitor : public RecursiveASTVisitor<ReplacementPragmaVis
   bool TraverseCallExpr(CallExpr* expr, DataRecursionQueue* queue = nullptr){
     if (matchingDeclRef(expr->getCallee())){
       replaced_.insert(expr);
+      throw StmtDeleteException(expr);
       return true;
     } else {
       return Parent::TraverseCallExpr(expr);
@@ -141,27 +141,33 @@ class ReplacementPragmaVisitor : public RecursiveASTVisitor<ReplacementPragmaVis
     return replaced_;
   }
 
+  void maybeThrowException(){
+    if (!exceptions_.empty()){
+      throw exceptions_[0];
+    }
+  }
+
  private:
   std::string matchText_;
   std::set<const Expr*> replaced_;
+  std::vector<StmtDeleteException> exceptions_;
 
 };
-
-std::set<const Expr*>
-SSTReplacePragma::run(Stmt *s)
-{
-  ReplacementPragmaVisitor visitor(match_);
-  visitor.TraverseStmt(s);
-  return visitor.replaced();
-}
 
 void
 SSTReplacePragma::activate(Stmt *s)
 {
-  std::set<const Expr*> replaced = run(s);
-  for (const Expr* e: replaced){
+  ReplacementPragmaVisitor visitor(match_);
+  visitor.start(s);
+
+  for (const Expr* e: visitor.replaced()){
     replace(e,replacement_);
   }
+
+  //depending on the case, we may need to notify the parent AST node
+  //that a deletion or something happened that should void further
+  //visits to this node
+  visitor.maybeThrowException();
 }
 
 
@@ -183,19 +189,34 @@ SSTReplacePragma::activate(Decl *d)
 void
 SSTReplacePragma::activateFunctionDecl(FunctionDecl *d)
 {
-  if (d->hasBody()) activate(d->getBody());
+  if (d->hasBody()){
+    PushGuard<FunctionDecl*> pg(CompilerGlobals::astContextLists.enclosingFunctionDecls, d);
+    //we are replacing expressions in the function body
+    //do NOT set the body to null, many expressions may remain valid
+    activate(d->getBody());
+  }
 }
 
 void
 SSTReplacePragma::activateVarDecl(VarDecl *d)
 {
-  if (d->hasInit()) activate(d->getInit());
+  if (d->hasInit()){
+    try {
+      activate(d->getInit());
+    } catch (StmtDeleteException& e) {
+      d->setInit(nullptr);
+    }
+  }
 }
 
 void
 SSTReplacePragma::activateCXXRecordDecl(CXXRecordDecl *d)
 {
-  if (d->hasBody()) activate(d->getBody());
+  if (d->hasBody()){
+    auto* body = d->getBody();
+    if (body) activate(d->getBody());
+    //do NOT set the body to null, many expressions may remain valid
+  }
 }
 
 void
@@ -216,7 +237,7 @@ void
 SSTInitPragma::activateBinaryOperator(BinaryOperator* op)
 {
   replace(op->getRHS(), init_);
-  throw StmtDeleteException(op);
+  op->setRHS(zeroExpr(getStart(op->getRHS())));
 }
 
 void
@@ -241,6 +262,7 @@ SSTInitPragma::activateDeclStmt(DeclStmt* s)
     errorAbort(s, "pragma init applied to variable without initializer");
   }
   replace(vd->getInit(), init_);
+  vd->setInit(nullptr);
   throw StmtDeleteException(s);
 }
 
