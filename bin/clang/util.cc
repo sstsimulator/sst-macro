@@ -50,6 +50,10 @@ using namespace clang::driver;
 using namespace clang::tooling;
 
 PragmaConfig CompilerGlobals::pragmaConfig;
+ASTContextLists CompilerGlobals::astContextLists;
+ASTMarkings CompilerGlobals::astMarkings;
+ToolInfoRegistration CompilerGlobals::toolInfoRegistration;
+
 CompilerInstance* CompilerGlobals::ci;
 Rewriter CompilerGlobals::rewriter;
 
@@ -131,8 +135,12 @@ internalError(const std::string &error){
 void
 internalError(SourceLocation loc, const std::string &error)
 {
-  std::string newError = "internal error: " + error;
-	 
+  std::string errorStr;
+  llvm::raw_string_ostream os(errorStr);
+  loc.print(os, CompilerGlobals::SM());
+  os << ": internal error: " + error;
+  std::cerr << os.str() << std::endl;
+  exit(EXIT_FAILURE);
 }
 
 void internalError(const clang::Stmt* s, const std::string& error)
@@ -259,6 +267,18 @@ Expr* tokenToExpr(DeclContext* ctx, const Token& tok, clang::SourceLocation loc)
       std::string varName = getLiteralDataAsString(tok);
       return nameToExpr(ctx, varName, loc);
     }
+    case tok::kw_true: {
+      llvm::APInt api(32, 1);
+      IntegerLiteral* ilit = IntegerLiteral::Create(ctx->getParentASTContext(), api,
+                                                    ctx->getParentASTContext().IntTy, loc);
+      return ilit;
+    }
+    case tok::kw_false: {
+      llvm::APInt api(32, 0);
+      IntegerLiteral* ilit = IntegerLiteral::Create(ctx->getParentASTContext(), api,
+                                                    ctx->getParentASTContext().IntTy, loc);
+      return ilit;
+    }
     case tok::numeric_constant: {
       std::string valueText = getLiteralDataAsString(tok);
       if (valueText.find('.') == std::string::npos){
@@ -281,6 +301,23 @@ Expr* tokenToExpr(DeclContext* ctx, const Token& tok, clang::SourceLocation loc)
     default:
       return nullptr;
   }
+}
+
+Expr* zeroExpr(clang::SourceLocation loc)
+{
+  if (CompilerGlobals::astContextLists.enclosingFunctionDecls.empty()){
+    internalError(loc, "no active DeclContext - cannot make zeroExpr");
+  }
+
+  FunctionDecl* fd = CompilerGlobals::astContextLists.enclosingFunctionDecls.back();
+  if (!fd){
+    internalError(loc, "have null DeclContext - cannot make zeroExpr");
+  }
+
+  llvm::APInt api(32, 0);
+  IntegerLiteral* ilit = IntegerLiteral::Create(fd->getParentASTContext(), api,
+                                                fd->getParentASTContext().IntTy, loc);
+  return ilit;
 }
 
 void getLiteralDataAsString(const Token &tok, std::ostream &os)

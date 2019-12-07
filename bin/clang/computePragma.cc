@@ -66,7 +66,7 @@ void
 SSTLoopCountPragma::transformWhileLoop(Stmt* s)
 {
   WhileStmt* ws = cast<WhileStmt>(s);
-  FunctionDecl* fd = CompilerGlobals::pragmaConfig.fxnContexts.back();
+  FunctionDecl* fd = CompilerGlobals::astContextLists.enclosingFunctionDecls.back();
   Expr* loop_count = tokenToExpr(fd, loopCountToken_, getStart(ws->getCond()));
   IdentifierInfo* II = &CompilerGlobals::CI().getPreprocessor().getIdentifierTable().get("loop_variable");
   TypeSourceInfo *TInfo = fd->getASTContext().getTrivialTypeSourceInfo(loop_count->getType(), getStart(ws->getCond()));
@@ -113,8 +113,8 @@ SSTLoopCountPragma::transformWhileLoop(Stmt* s)
   ForStmt* fs = new (fd->getASTContext()) ForStmt(fd->getASTContext(), init_stmt, cond_stmt, loopVar, inc_stmt,
                      ws->getBody(), getStart(ws), getStart(ws->getCond()), getEnd(ws->getCond()));
 
-  auto iter = CompilerGlobals::pragmaConfig.findStmtBlockMatch(ws);
-  if (iter == CompilerGlobals::pragmaConfig.currentStmtBlockEnd()){
+  auto iter = CompilerGlobals::astContextLists.findStmtBlockMatch(ws);
+  if (iter == CompilerGlobals::astContextLists.currentStmtBlockEnd()){
     internalError(ws, "while-stmt is not part of an enclosing CompountStmt");
   }
   *iter = fs;
@@ -124,7 +124,7 @@ void
 SSTLoopCountPragma::transformForLoop(Stmt* s)
 {
   ForStmt* fs = cast<ForStmt>(s);
-  FunctionDecl* fd = CompilerGlobals::pragmaConfig.fxnContexts.back();
+  FunctionDecl* fd = CompilerGlobals::astContextLists.enclosingFunctionDecls.back();
   Expr* loop_count = tokenToExpr(fd, loopCountToken_, getStart(fs->getCond()));
   IdentifierInfo* II = &CompilerGlobals::CI().getPreprocessor().getIdentifierTable().get("loop_variable");
   TypeSourceInfo *TInfo = fd->getASTContext().getTrivialTypeSourceInfo(loop_count->getType(), getStart(fs->getInit()));
@@ -211,7 +211,6 @@ SSTComputePragma::activate(Stmt *stmt)
       break;
   }
 #undef scase
-  CompilerGlobals::pragmaConfig.computeMemorySpec = ""; //clear any specs
   throw StmtDeleteException(stmt);
 }
 
@@ -228,7 +227,6 @@ SSTComputePragma::activate(Decl* d)
       break;
   }
 #undef dcase
-  CompilerGlobals::pragmaConfig.computeMemorySpec = ""; //clear any specs
   throw DeclDeleteException(d);
 }
 
@@ -283,156 +281,9 @@ SSTComputePragma::visitForStmt(ForStmt *stmt)
 }
 
 void
-SSTMemoizeComputePragma::doReplace(SourceLocation startInsert, SourceLocation finalInsert, Stmt* fullStmt,
-                                   bool insertStartAfter, bool insertFinalAfter,
-                                   Expr** callArgs, const ParmVarDecl** callParams)
-{
-  std::string argsStr;
-  if (!fxnArgInputs_.empty()){
-    if (!callArgs && !callParams){
-      internalError(startInsert, "have function args, but no call args or call params");
-    }
-    //this better be a function call
-    PrettyPrinter pp;
-    for (int idx : fxnArgInputs_){
-      pp.os << ",";
-      if (callArgs) pp.print(callArgs[idx]);
-      else          pp.os << callParams[idx]->getNameAsString();
-    }
-    argsStr = pp.str();
-  } else if (!inputs_.empty()) {
-    std::stringstream args_sstr;
-    for (auto& str : inputs_){
-      args_sstr << "," << str;
-    }
-    argsStr = args_sstr.str();
-  }
-
-  if (CompilerGlobals::mode == modes::MEMOIZE_MODE){
-    PresumedLoc ploc = CompilerGlobals::SM().getPresumedLoc(startInsert);
-    int line = ploc.getLine();
-
-    std::stringstream start_sstr;
-    start_sstr << "int sstmac_thr_tag" << line << " = sstmac_start_memoize("
-       << "\"" << token_ << "\",\"" << model_ << "\"" << "); ";
-    CompilerGlobals::rewriter.InsertText(startInsert, start_sstr.str(), insertStartAfter);
-    std::stringstream finish_sstr;
-    finish_sstr << "; sstmac_finish_memoize" << inputs_.size() << "("
-                << "sstmac_thr_tag" << line << ","
-                << "\"" << token_ << "\"" << argsStr << ");";
-
-    if (insertFinalAfter) finalInsert = finalInsert.getLocWithOffset(1);
-    CompilerGlobals::rewriter.InsertText(finalInsert, finish_sstr.str(), insertFinalAfter);
-  } else {
-    std::stringstream sstr;
-    sstr << "{ sstmac_compute_memoize" << inputs_.size() << "("
-       << "\"" << token_ << "\"" << argsStr << "); }";
-    if (skeletonize_){
-      SourceRange rng(startInsert, finalInsert);
-      replace(rng, sstr.str());
-      throw StmtDeleteException(fullStmt);
-    } else {
-      CompilerGlobals::rewriter.InsertText(startInsert, sstr.str(), insertStartAfter);
-    }
-  }
-}
-
-void
-SSTMemoizeComputePragma::activate(Stmt *s)
-{
-  Expr** args = nullptr;
-  if (!fxnArgInputs_.empty()){
-    CallExpr* expr = nullptr;
-    switch (s->getStmtClass()){
-    case Stmt::CallExprClass:
-    case Stmt::CXXMemberCallExprClass:
-      expr = cast<CallExpr>(s);
-      args = expr->getArgs();
-      //doReplace(getStart(s), s->getLocEnd(), s,
-      //          false, true, r, expr->getArgs(), nullptr);
-      break;
-      break;
-    default:
-      internalError(getStart(expr), "memoize pragma activated on statement that is not a call expression");
-    }
-  }
-
-  CompilerGlobals::pragmaConfig.visitor.skeleton->getActiveNamespace()->addMemoization(token_, model_);
-  doReplace(getStart(s), getEnd(s), s,
-            false, true, args, nullptr);
-}
-
-void
-SSTMemoizeComputePragma::activate(Decl *d)
-{
-  FunctionDecl* fd = nullptr;
-  switch(d->getKind()){
-  case Decl::Function:
-  case Decl::CXXMethod:
-    fd = cast<FunctionDecl>(d);
-    break;
-  default:
-    errorAbort(d, "memoize pragma applied to declaration that is not a function");
-  }
-
-  if (!givenName_){
-    token_ = fd->getNameAsString();
-  }
-
-  CompilerGlobals::pragmaConfig.visitor.skeleton->getActiveNamespace()->addMemoization(token_, model_);
-
-  auto iter = CompilerGlobals::pragmaConfig.functionPragmas.find(fd->getCanonicalDecl());
-  if (iter == CompilerGlobals::pragmaConfig.functionPragmas.end()){
-    CompilerGlobals::pragmaConfig.functionPragmas[fd->getCanonicalDecl()].insert(this);
-    //first time hitting the function decl -  configure it
-    //don't do modifications yet
-    //just in case this gets called twice for a weird reason
-    fxnArgInputs_.clear();
-    for (auto& str : inputs_){
-      bool found = false;
-      for (int i=0; i < fd->getNumParams(); ++i){
-        ParmVarDecl* pvd = fd->getParamDecl(i);
-        if (pvd->getNameAsString() == str){
-          found = true;
-          fxnArgInputs_.push_back(i);
-          break;
-        }
-      }
-      if (!found){
-        std::string error = "memoization input " + str
-            + " to function declaration could not be matched to any parameter";
-        errorAbort(d, error);
-      }
-    }
-  }
-
-  if (fd->isThisDeclarationADefinition() && fd->getBody()){
-    if (fd->getBody()->getStmtClass() != Stmt::CompoundStmtClass){
-      internalError(fd, "function decl body is not a compound statement");
-    }
-
-    if (written_.find(fd) == written_.end()){
-      CompoundStmt* cs = cast<CompoundStmt>(fd->getBody());
-      std::vector<const ParmVarDecl*> params(fd->getNumParams());
-      for (int i=0; i < fd->getNumParams(); ++i){
-        params[i] = fd->getParamDecl(i);
-      }
-      bool replaceBody = skeletonize_ && CompilerGlobals::mode != modes::MEMOIZE_MODE;
-      if (cs->body_front()){
-        doReplace(replaceBody ? getStart(cs) : getStart(cs->body_front()),
-                  getEnd(cs), cs,
-                  false, false, nullptr, params.data());
-      }
-      written_.insert(fd);
-    }
-
-  }
-}
-
-void
 SSTMemoryPragma::activate(Stmt *s)
 {
-  CompilerGlobals::pragmaConfig.computeMemorySpec = memSpec_;
+  CompilerGlobals::astMarkings.computeMemoryOverrides[s] = memSpec_;
 }
 
 
@@ -498,62 +349,6 @@ SSTOpenMPParallelPragma::SSTOpenMPParallelPragma(SourceLocation loc, const std::
   : SSTComputePragma(numThreads(loc,tokens))
 { 
 }
-
-SSTMemoizeComputePragma::SSTMemoizeComputePragma(clang::SourceLocation loc,
-                                                 std::map<std::string, std::list<std::string>>&& in_args)
-{
-  auto args = in_args;
-  auto iter = args.find("skeletonize");
-  if (iter != args.end()){
-    std::string val = iter->second.front();
-    if (val == "true"){
-      skeletonize_ = true;
-    } else if (val == "false"){
-      skeletonize_ = false;
-    } else {
-      errorAbort(loc,"skeletonize argument must be true/false");
-    }
-    args.erase(iter);
-  }
-
-  iter = args.find("inputs");
-  std::list<std::string> inputs;
-  if (iter != args.end()){
-    inputs_ = std::move(iter->second);
-    args.erase(iter);
-  }
-
-  std::string model = "null";
-  iter = args.find("model");
-  if (iter != args.end()){
-    model_ = iter->second.front();
-    args.erase(iter);
-  }
-
-  std::string name;
-  iter = args.find("name");
-  if (iter != args.end()){
-    token_ = iter->second.front();
-    args.erase(iter);
-    givenName_ = true;
-  } else {
-    PresumedLoc ploc = CompilerGlobals::SM().getPresumedLoc(loc);
-    std::stringstream token_sstr;
-    token_sstr << ploc.getFilename() << ":" << ploc.getLine();
-    token_ = token_sstr.str();
-  }
-
-  if (!args.empty()){
-    //we got passed an invalid argument
-    std::stringstream sstr;
-    sstr << "got invalid args for memoize pragma: ";
-    for (auto& pair : args){
-      sstr << pair.first << ",";
-    }
-    errorAbort(loc, sstr.str());
-  }
-}
-
 
 using namespace modes;
 

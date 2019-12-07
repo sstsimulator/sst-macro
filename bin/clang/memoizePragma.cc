@@ -219,7 +219,7 @@ void SSTMemoizePragma::activate(clang::Stmt *S) {
 void SSTMemoizePragma::activate(clang::Decl *D) { }
 
 void SSTMemoizePragma::deactivate() {
-  auto &vec = CompilerGlobals::pragmaConfig.globalCppFunctionsToWrite;
+  auto &vec = CompilerGlobals::toolInfoRegistration.globalCppFunctionsToWrite;
   auto pragma = static_cast<SSTPragma *>(this);
 
   if (std::none_of(vec.begin(), vec.end(), [](auto const &pragma_string) {

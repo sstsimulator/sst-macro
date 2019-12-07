@@ -83,7 +83,7 @@ struct VariableScopeVisitor : public clang::RecursiveASTVisitor<VariableScopeVis
   }
 
   bool inScope(const clang::DeclRefExpr* expr){
-    if (CompilerGlobals::pragmaConfig.visitor.skeleton->isGlobal(expr)){
+    if (CompilerGlobals::visitor.skeleton->isGlobal(expr)){
       return true;
     }
 
