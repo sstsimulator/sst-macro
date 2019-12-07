@@ -83,28 +83,21 @@ class FirstPassASTVisitor;
 struct SSTPragma;
 class SSTReplacePragma;
 class SSTNullVariablePragma;
-struct PragmaConfig {
-  std::map<clang::Decl*,SSTNullVariablePragma*> nullVariables;
-  std::map<clang::FunctionDecl*,std::set<SSTPragma*>> functionPragmas;
-  std::map<const clang::DeclContext*,SSTNullVariablePragma*> nullSafeFunctions;
-  std::vector<std::pair<SSTPragma*, std::string>> globalCppFunctionsToWrite;
-  std::set<std::string> newParams;
-  std::string dependentScopeGlobal;
-  std::string computeMemorySpec;
-  std::list<clang::FunctionDecl*> fxnContexts;
-  std::map<clang::IfStmt*,std::string> predicatedBlocks;
-  std::list<clang::CompoundStmt*> stmtBlocks;
-  union {
-    SkeletonASTVisitor* skeleton;
-    FirstPassASTVisitor* firstPass;
-  } visitor;
 
+/**
+ * @brief The ASTContextLists struct
+ * This contains data structures that keep track of the enclosing context
+ * of the currently being visited statement
+ */
+struct ASTContextLists {
+  std::list<clang::FunctionDecl*> enclosingFunctionDecls;
+  std::list<clang::CompoundStmt*> compoundStmtBlocks;
   clang::CompoundStmt::body_iterator currentStmtBlockBegin(){
-    return stmtBlocks.back()->body_begin();
+    return compoundStmtBlocks.back()->body_begin();
   }
 
   clang::CompoundStmt::body_iterator findStmtBlockMatch(clang::Stmt* s){
-    clang::CompoundStmt* block = stmtBlocks.back();
+    clang::CompoundStmt* block = compoundStmtBlocks.back();
     for (auto* iter = block->body_begin(); iter != block->body_end(); ++iter){
       if (*iter == s) return iter;
     }
@@ -112,9 +105,35 @@ struct PragmaConfig {
   }
 
   clang::CompoundStmt::body_iterator currentStmtBlockEnd(){
-    return stmtBlocks.back()->body_end();
+    return compoundStmtBlocks.back()->body_end();
   }
+};
 
+/**
+ * @brief The ASTMarkings struct
+ * This contains data structures that keep track of specifing annotations or markings
+ * on specific AST nodes that are required for correct mutations or rewrites later
+ */
+struct ASTMarkings {
+  std::map<clang::Decl*,SSTNullVariablePragma*> nullVariables;
+  std::map<const clang::DeclContext*,SSTNullVariablePragma*> nullSafeFunctions;
+  std::map<clang::Stmt*, std::string> computeMemoryOverrides;
+  std::map<clang::IfStmt*,std::string> predicatedBlocks;
+  std::string dependentScopeGlobal;
+};
+
+/**
+ * @brief The ToolInfoRegistration struct
+ * This contains data structures that keep track of things that must be registered
+ * in a separate .cpp file and linked in. These are usually things like global variable
+ * registrations with the simulator.
+ */
+struct ToolInfoRegistration {
+  std::vector<std::pair<SSTPragma*, std::string>> globalCppFunctionsToWrite;
+  std::set<std::string> extraInputFileParams;
+};
+
+struct PragmaConfig {
   bool makeNoChanges = false;
 
   PragmaConfig() = default;
@@ -125,6 +144,9 @@ struct CompilerGlobals {
   static modes::Mode mode;
   static int modeMask;
   static PragmaConfig pragmaConfig;
+  static ASTContextLists astContextLists;
+  static ASTMarkings astMarkings;
+  static ToolInfoRegistration toolInfoRegistration;
   static clang::Rewriter rewriter;
 
   static bool modeActive(int mask){
@@ -133,6 +155,19 @@ struct CompilerGlobals {
 
   static int getActiveMode(){
     return mode;
+  }
+
+  static union {
+    SkeletonASTVisitor* skeleton;
+    FirstPassASTVisitor* firstPass;
+  } visitor;
+
+  static void setVisitor(SkeletonASTVisitor& v){
+    visitor.skeleton = &v;
+  }
+
+  static void setVisitor(FirstPassASTVisitor& v){
+    visitor.firstPass = &v;
   }
 
   static llvm::cl::OptionCategory sstmacCategoryOpt;

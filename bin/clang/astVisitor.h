@@ -168,6 +168,10 @@ class FirstPassASTVisitor : public clang::RecursiveASTVisitor<FirstPassASTVisito
 
   FirstPassASTVisitor(SSTPragmaList& pragmas);
 
+  void startTopLevelDecl(clang::Decl* d){}
+  void finishTopLevelDecl(clang::Decl* d){}
+  void finalizePass(){}
+
   bool VisitDecl(clang::Decl* d);
   bool VisitStmt(clang::Stmt* s);
 
@@ -337,8 +341,6 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     initReservedNames();
     initMPICalls();
   }
-
-  void finalize();
 
   /**
    * @brief delayedInsertBefore Totally obnoxious that I have to do this
@@ -604,6 +606,10 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     return pragmas_;
   }
 
+  void startTopLevelDecl(clang::Decl* d);
+  void finishTopLevelDecl(clang::Decl* d);
+  void finalizePass();
+
   void setVisitingGlobal(bool flag){
     visitingGlobal_ = flag;
   }
@@ -763,8 +769,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   }
 
   bool insideTemplateFxn() const {
-    if (fxnContexts_.empty()) return false;
-    clang::FunctionDecl* fd = fxnContexts_.back();
+    if (CompilerGlobals::astContextLists.enclosingFunctionDecls.empty()) return false;
+    clang::FunctionDecl* fd = CompilerGlobals::astContextLists.enclosingFunctionDecls.back();
     return fd->isDependentContext();
   }
 
@@ -811,20 +817,20 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   }
 
   bool isNullVariable(clang::Decl* d) const {
-    return CompilerGlobals::pragmaConfig.nullVariables.find(d) !=
-            CompilerGlobals::pragmaConfig.nullVariables.end();
+    return CompilerGlobals::astMarkings.nullVariables.find(d) !=
+            CompilerGlobals::astMarkings.nullVariables.end();
   }
 
   bool isValidAssignment(clang::Decl* lhs, clang::Expr* rhs);
 
   bool isNullSafeFunction(const clang::DeclContext* dc) const {
-    return CompilerGlobals::pragmaConfig.nullSafeFunctions.find(dc) !=
-          CompilerGlobals::pragmaConfig.nullSafeFunctions.end();
+    return CompilerGlobals::astMarkings.nullSafeFunctions.find(dc) !=
+          CompilerGlobals::astMarkings.nullSafeFunctions.end();
   }
 
   SSTNullVariablePragma* getNullVariable(clang::Decl* d) const {
-    auto iter = CompilerGlobals::pragmaConfig.nullVariables.find(d);
-    if (iter != CompilerGlobals::pragmaConfig.nullVariables.end()){
+    auto iter = CompilerGlobals::astMarkings.nullVariables.find(d);
+    if (iter != CompilerGlobals::astMarkings.nullVariables.end()){
       return iter->second;
     }
     return nullptr;
@@ -846,7 +852,6 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   void visitCollective(clang::CallExpr* expr);
   void visitReduce(clang::CallExpr* expr);
   void visitPt2Pt(clang::CallExpr* expr);
-  void checkFunctionPragma(clang::FunctionDecl* fd);
   bool checkDeclStaticClassVar(clang::VarDecl* D);
   bool checkInstanceStaticClassVar(clang::VarDecl* D);
   bool checkStaticFxnVar(clang::VarDecl* D);
@@ -870,7 +875,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   }
 
   bool insideFxn() const {
-    return !fxnContexts_.empty();
+    return !CompilerGlobals::astContextLists.enclosingFunctionDecls.empty();
   }
 
    /**
@@ -947,7 +952,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   //however, sometimes a call expr must "lookahead" and delete arguments before
   //they are traversed in the natural course of AST traversal
   //note here any arguments that are modified/deleted
-  std::set<clang::Expr*> deletedArgs_;
+  std::set<clang::Expr*> deletedArgsCurrentCallExpr_;
   std::list<clang::MemberExpr*> memberAccesses_;
   std::map<clang::Stmt*,clang::Stmt*> extendedReplacements_;
   typedef enum { LHS, RHS } BinOpSide;
@@ -986,7 +991,6 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::list<std::set<const clang::Decl*>> globalsTouched_;
   std::list<clang::VarDecl*> activeDecls_;
   std::list<clang::Expr*> activeInits_;
-  std::list<clang::FunctionDecl*> fxnContexts_;
   std::list<clang::CXXRecordDecl*> classContexts_;
   std::list<clang::Stmt*> loopContexts_; //both fors and whiles
   std::list<clang::Stmt*> stmtContexts_;

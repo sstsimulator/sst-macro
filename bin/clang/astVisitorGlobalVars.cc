@@ -365,7 +365,7 @@ SkeletonASTVisitor::setupFunctionStaticCpp(VarDecl* D, const std::string& scopeP
     internalError(D, "static function variables in template functions not yet supported");
   }
 
-  FunctionDecl* outerFxn = fxnContexts_.front();
+  FunctionDecl* outerFxn = CompilerGlobals::astContextLists.enclosingFunctionDecls.front();
   SourceLocation fxnStart = getStart(outerFxn);
 
   GlobalVariableReplacement var = setupGlobalReplacement(D, scopePrefix, false, true, false);
@@ -410,7 +410,7 @@ SkeletonASTVisitor::setupFunctionStaticCpp(VarDecl* D, const std::string& scopeP
 bool
 SkeletonASTVisitor::setupFunctionStaticC(VarDecl* D, const std::string& scopePrefix)
 {
-  FunctionDecl* outerFxn = fxnContexts_.front();
+  FunctionDecl* outerFxn = CompilerGlobals::astContextLists.enclosingFunctionDecls.front();
   SourceLocation fxnStart = getStart(outerFxn);
 
   GlobalVariableReplacement var = setupGlobalReplacement(D, scopePrefix, false, true, false);
@@ -489,7 +489,7 @@ SkeletonASTVisitor::checkGlobalVar(VarDecl* D)
 bool
 SkeletonASTVisitor::checkStaticFxnVar(VarDecl *D)
 {
-  FunctionDecl* outerFxn = fxnContexts_.front();
+  FunctionDecl* outerFxn = CompilerGlobals::astContextLists.enclosingFunctionDecls.front();
   std::stringstream prefix_sstr;
   prefix_sstr << "_" << outerFxn->getNameAsString();
 

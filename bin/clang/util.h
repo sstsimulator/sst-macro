@@ -170,6 +170,8 @@ static inline std::string getStartLocString(const clang::Decl* d){
 std::string getLiteralDataAsString(const clang::Token& tok);
 void getLiteralDataAsString(const clang::Token &tok, std::ostream& os);
 
+clang::Expr* zeroExpr(clang::SourceLocation loc);
+
 clang::Expr* tokenToExpr(clang::DeclContext* ctx,
                          const clang::Token& tok, clang::SourceLocation loc);
 

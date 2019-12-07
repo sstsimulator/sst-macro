@@ -97,7 +97,7 @@ class SSTLoopCountPragma : public SSTPragma {
 
   void activate(clang::Stmt *s) override;
 
-  bool firstPass(const clang::Stmt* s) const override {
+  bool firstPass() const override {
     return true;
   }
 
@@ -106,32 +106,6 @@ class SSTLoopCountPragma : public SSTPragma {
   void transformForLoop(clang::Stmt* s);
   clang::Token loopCountToken_;
   std::string loopCount_;
-};
-
-class SSTMemoizeComputePragma : public SSTPragma
-{
- public:
-  SSTMemoizeComputePragma(clang::SourceLocation loc, std::map<std::string, std::list<std::string>>&& in_args);
-
-  bool firstPass(const clang::Decl * /*d*/) const override {
-    return true;
-  }
-
-  void activate(clang::Stmt *s) override;
-  void activate(clang::Decl *d) override;
-
- private:
-  void doReplace(clang::SourceLocation startInsert, clang::SourceLocation finalInsert, clang::Stmt* stmt,
-                 bool insertStartAfter, bool insertFinalAfter,
-                 clang::Expr** callArgs, const clang::ParmVarDecl** callParams);
-
-  std::string token_;
-  std::string model_;
-  bool skeletonize_;
-  std::list<std::string> inputs_;
-  bool givenName_;
-  std::list<int> fxnArgInputs_;
-  std::set<clang::Decl*> written_;
 };
 
 class SSTOpenMPParallelPragma : public SSTComputePragma

@@ -91,6 +91,7 @@ modes::Mode CompilerGlobals::mode;
 int CompilerGlobals::modeMask;
 bool CompilerGlobals::refactorMain = true;
 std::list<std::string> CompilerGlobals::includePaths;
+decltype(CompilerGlobals::visitor) CompilerGlobals::visitor;
 
 using namespace clang;
 using namespace clang::driver;
@@ -316,13 +317,13 @@ SkeletonASTVisitor::initReservedNames()
 void
 SkeletonASTVisitor::registerNewKeywords(std::ostream& os)
 {
-  if (CompilerGlobals::pragmaConfig.newParams.empty()){
+  if (CompilerGlobals::toolInfoRegistration.extraInputFileParams.empty()){
     return;
   }
 
   os << "\n#include <sprockit/keyword_registration.h>"
      << "\nRegisterKeywords(";
-  for (auto& str : CompilerGlobals::pragmaConfig.newParams){
+  for (auto& str : CompilerGlobals::toolInfoRegistration.extraInputFileParams){
     os << "\n{\"" << str << "\", \"new keyword\" },";
   }
   os << "\n);";
@@ -345,6 +346,20 @@ SkeletonASTVisitor::initHeaders()
       validHeaders_.insert(line);
     }
   }
+}
+
+void
+SkeletonASTVisitor::startTopLevelDecl(Decl *d)
+{
+  setTopLevelScope(d);
+  bool isGlobalVar = isa<VarDecl>(d);
+  setVisitingGlobal(isGlobalVar);
+}
+
+void
+SkeletonASTVisitor::finishTopLevelDecl(Decl *d)
+{
+  setVisitingGlobal(false); //and reset
 }
 
 bool
@@ -833,8 +848,8 @@ SkeletonASTVisitor::visitCollective(CallExpr *expr)
         replace(expr->getArg(3), "nullptr");
         //rewriter_.ReplaceText(expr->getArg(0)->getSourceRange(), "nullptr");
         //rewriter_.ReplaceText(expr->getArg(3)->getSourceRange(), "nullptr");
-        deletedArgs_.insert(expr->getArg(0));
-        deletedArgs_.insert(expr->getArg(3));
+        deletedArgsCurrentCallExpr_.insert(expr->getArg(0));
+        deletedArgsCurrentCallExpr_.insert(expr->getArg(3));
       }
   }
 }
@@ -850,8 +865,8 @@ SkeletonASTVisitor::visitReduce(CallExpr *expr)
       replace(expr->getArg(1), "nullptr");
       //rewriter_.ReplaceText(expr->getArg(0)->getSourceRange(), "nullptr");
       //rewriter_.ReplaceText(expr->getArg(1)->getSourceRange(), "nullptr");
-      deletedArgs_.insert(expr->getArg(0));
-      deletedArgs_.insert(expr->getArg(1));
+      deletedArgsCurrentCallExpr_.insert(expr->getArg(0));
+      deletedArgsCurrentCallExpr_.insert(expr->getArg(1));
     }
   }
 }
@@ -865,7 +880,7 @@ SkeletonASTVisitor::visitPt2Pt(CallExpr *expr)
       //make sure this isn't a shortcut function without buffers
       replace(expr->getArg(0), "nullptr");
       //rewriter_.ReplaceText(expr->getArg(0)->getSourceRange(), "nullptr");
-      deletedArgs_.insert(expr->getArg(0));
+      deletedArgsCurrentCallExpr_.insert(expr->getArg(0));
     }
   }
 }
@@ -920,7 +935,7 @@ SkeletonASTVisitor::TraverseCXXMemberCallExpr(CXXMemberCallExpr* expr, DataRecur
       activeBinOpIdx_ = IndexResetter;
       Expr* arg = expr->getArg(i);
       //this did not get modified
-      if (deletedArgs_.find(arg) == deletedArgs_.end()){
+      if (deletedArgsCurrentCallExpr_.find(arg) == deletedArgsCurrentCallExpr_.end()){
         TraverseStmt(expr->getArg(i));
       }
     }
@@ -1054,12 +1069,12 @@ SkeletonASTVisitor::TraverseCallExpr(CallExpr* expr, DataRecursionQueue*  /*queu
         if (fd && i < fd->getNumParams()){
           PushGuard<ParmVarDecl*> pg(activeFxnParams_, fd->getParamDecl(i));
           Expr* arg = expr->getArg(i);
-          if (deletedArgs_.find(arg) == deletedArgs_.end()){
+          if (deletedArgsCurrentCallExpr_.find(arg) == deletedArgsCurrentCallExpr_.end()){
             TraverseStmt(arg);
           }
         } else {
           Expr* arg = expr->getArg(i);
-          if (deletedArgs_.find(arg) == deletedArgs_.end()){
+          if (deletedArgsCurrentCallExpr_.find(arg) == deletedArgsCurrentCallExpr_.end()){
             TraverseStmt(arg);
           }
         }
@@ -1415,18 +1430,6 @@ SkeletonASTVisitor::getEndLoc(SourceLocation searchStart)
 }
 
 void
-SkeletonASTVisitor::checkFunctionPragma(FunctionDecl* fd)
-{
-  auto iter = CompilerGlobals::pragmaConfig.functionPragmas.find(fd->getCanonicalDecl());
-  if (iter != CompilerGlobals::pragmaConfig.functionPragmas.end()){
-    auto& set = iter->second;
-    for (SSTPragma* prg : set){
-      prg->activate(fd);
-    }
-  }
-}
-
-void
 SkeletonASTVisitor::deleteStmt(Stmt *s)
 {
   //go straight to replace, don't delay this
@@ -1654,7 +1657,7 @@ SkeletonASTVisitor::TraverseVarTemplateDecl(VarTemplateDecl* D)
 }
 
 void
-SkeletonASTVisitor::finalize()
+SkeletonASTVisitor::finalizePass()
 {
   for (auto& pair : declsToInsertAfter_){
     auto& declPair = pair.second;
@@ -1963,10 +1966,9 @@ SkeletonASTVisitor::TraverseFunctionDecl(clang::FunctionDecl* D)
   }
 
   try {
+    PushGuard<FunctionDecl*> pg(CompilerGlobals::astContextLists.enclosingFunctionDecls, D);
     PragmaActivateGuard pag(D, this, D->isThisDeclarationADefinition());
-    checkFunctionPragma(D);
     if (!pag.skipVisit() && D->getBody()){
-      PushGuard<FunctionDecl*> pg(fxnContexts_, D);
       traverseFunctionBody(D->getBody());
     }
   } catch (StmtDeleteException& e) {
@@ -2044,7 +2046,7 @@ SkeletonASTVisitor::TraverseFunctionTemplateDecl(FunctionTemplateDecl *D)
 bool
 SkeletonASTVisitor::TraverseCXXDestructorDecl(CXXDestructorDecl* D)
 {
-  PushGuard<FunctionDecl*> pg(fxnContexts_, D);
+  PushGuard<FunctionDecl*> pg(CompilerGlobals::astContextLists.enclosingFunctionDecls, D);
   Parent::TraverseCXXDestructorDecl(D);
   return true;
 }
@@ -2057,7 +2059,7 @@ SkeletonASTVisitor::TraverseCXXConstructorDecl(CXXConstructorDecl *D)
 
   IncrementGuard ig(insideCxxMethod_);
   PushGuard<CXXConstructorDecl*> pg(ctorContexts_, D);
-  PushGuard<FunctionDecl*> pgf(fxnContexts_, D);
+  PushGuard<FunctionDecl*> pgf(CompilerGlobals::astContextLists.enclosingFunctionDecls, D);
   for (auto *I : D->inits()) {
     TraverseConstructorInitializer(I);
   }
@@ -2077,7 +2079,7 @@ SkeletonASTVisitor::TraverseCXXMethodDecl(CXXMethodDecl *D)
     PragmaActivateGuard pag(D, this);
     if (D->isThisDeclarationADefinition() && !pag.skipVisit()) {
       IncrementGuard ig(insideCxxMethod_);
-      PushGuard<FunctionDecl*> pg(fxnContexts_, D);
+      PushGuard<FunctionDecl*> pg(CompilerGlobals::astContextLists.enclosingFunctionDecls, D);
       traverseFunctionBody(D->getBody());
     }
   } catch (DeclDeleteException& e) {
@@ -2090,11 +2092,11 @@ SkeletonASTVisitor::TraverseCXXMethodDecl(CXXMethodDecl *D)
 bool
 SkeletonASTVisitor::VisitDependentScopeDeclRefExpr(DependentScopeDeclRefExpr* expr)
 {
-  if (!CompilerGlobals::pragmaConfig.dependentScopeGlobal.empty()){
+  if (!CompilerGlobals::astMarkings.dependentScopeGlobal.empty()){
     //we have been told about a global variable that cannot be recongized
     //because it is a dependent scope expression
     std::string memberName = expr->getDeclName().getAsString();
-    if (memberName == CompilerGlobals::pragmaConfig.dependentScopeGlobal){
+    if (memberName == CompilerGlobals::astMarkings.dependentScopeGlobal){
       auto iter = dependentStaticMembers_.find(memberName);
       if (iter == dependentStaticMembers_.end()){
         std::string warning = "variable " + memberName
@@ -2103,7 +2105,7 @@ SkeletonASTVisitor::VisitDependentScopeDeclRefExpr(DependentScopeDeclRefExpr* ex
       }
       std::string repl = appendText(expr, "_getter()");
       ::replace(expr, repl);
-      CompilerGlobals::pragmaConfig.dependentScopeGlobal.clear();
+      CompilerGlobals::astMarkings.dependentScopeGlobal.clear();
       return true; //skip checks below
       //std::string error = "pragma gloçbal name " + pragmaConfig_.dependentScopeGlobal
       //    + " does not match found member name " + memberName;
@@ -2129,11 +2131,11 @@ SkeletonASTVisitor::VisitDependentScopeDeclRefExpr(DependentScopeDeclRefExpr* ex
 bool
 SkeletonASTVisitor::VisitCXXDependentScopeMemberExpr(clang::CXXDependentScopeMemberExpr* expr)
 {
-  if (!CompilerGlobals::pragmaConfig.dependentScopeGlobal.empty()){
+  if (!CompilerGlobals::astMarkings.dependentScopeGlobal.empty()){
     //we have been told about a global variable that cannot be recongized
     //because it is a dependent scope expression
     std::string memberName = expr->getMember().getAsString();
-    if (memberName == CompilerGlobals::pragmaConfig.dependentScopeGlobal){
+    if (memberName == CompilerGlobals::astMarkings.dependentScopeGlobal){
       auto iter = dependentStaticMembers_.find(memberName);
       if (iter == dependentStaticMembers_.end()){
         std::string warning = "variable " + memberName
@@ -2142,7 +2144,7 @@ SkeletonASTVisitor::VisitCXXDependentScopeMemberExpr(clang::CXXDependentScopeMem
       }
       std::string repl = appendText(expr, "_getter()");
       ::replace(expr, repl);
-      CompilerGlobals::pragmaConfig.dependentScopeGlobal.clear();
+      CompilerGlobals::astMarkings.dependentScopeGlobal.clear();
       return true; //skip checks below
       //std::string error = "pragma gloçbal name " + pragmaConfig_.dependentScopeGlobal
       //    + " does not match found member name " + memberName;
@@ -2169,12 +2171,19 @@ bool
 SkeletonASTVisitor::TraverseCompoundStmt(CompoundStmt* stmt, DataRecursionQueue*  /*queue*/)
 {
   try {
-    PushGuard<CompoundStmt*> pg(CompilerGlobals::pragmaConfig.stmtBlocks, stmt);
+    PushGuard<CompoundStmt*> pg(CompilerGlobals::astContextLists.compoundStmtBlocks, stmt);
     PragmaActivateGuard pag(stmt, this);
     if (!pag.skipVisit()){
       auto end = stmt->body_end();
       for (auto iter=stmt->body_begin(); iter != end; ++iter){
-        TraverseStmt(*iter);
+        Stmt* s = *iter;
+        try {
+          TraverseStmt(s);
+        } catch (StmtDeleteException& e) {
+          //this statement has been blown up by a pragma
+          //remove it from future consideration
+          *iter = zeroExpr(getStart(s));
+        }
       }
     }
   } catch (StmtDeleteException& e) {
@@ -2363,12 +2372,9 @@ SkeletonASTVisitor::TraverseWhileStmt(WhileStmt* S, DataRecursionQueue*  /*queue
 bool
 SkeletonASTVisitor::TraverseForStmt(ForStmt *S, DataRecursionQueue*  /*queue*/)
 {
-  if (fxnContexts_.empty()){
+  if (CompilerGlobals::astContextLists.enclosingFunctionDecls.empty()){
     errorAbort(S, "Traversing ForStmt with no function context");
   }
-
-  FunctionDecl* fd = fxnContexts_.back();
-
 
   try {
     PragmaActivateGuard pag(S, this);
@@ -2390,24 +2396,6 @@ SkeletonASTVisitor::TraverseForStmt(ForStmt *S, DataRecursionQueue*  /*queue*/)
 bool
 SkeletonASTVisitor::TraverseArraySubscriptExpr(ArraySubscriptExpr* expr, DataRecursionQueue*  /*queue*/)
 {
-  /**
-  Expr* base = getUnderlyingExpr(expr->getBase());
-  if (base->getStmtClass() == Expr::DeclRefExprClass){
-    DeclRefExpr* dref = cast<DeclRefExpr>(base);
-    if (isNullVariable(dref->getFoundDecl())){
-      if (stmt_contexts_.empty()){
-        errorAbort(expr, *ci_,
-                   "array subscript applied to null variable");
-      } else {
-        Stmt* toDel = stmt_contexts_.front();
-        deleteStmt(toDel);
-        //break out, stmt is gone
-        throw StmtDeleteException(toDel);
-      }
-    }
-  }
-  */
-
   PushGuard<Expr*> pg(activeDerefs_, expr);
   TraverseStmt(expr->getBase());
   TraverseStmt(expr->getIdx());
@@ -2490,7 +2478,7 @@ SkeletonASTVisitor::propagateNullness(Decl* target, Decl* src)
   //VarDecl* svd = cast<VarDecl>(src);
   //propagate the null-ness to this new variable
   SSTNullVariablePragma* oldPragma = getNullVariable(src);
-  SSTNullVariablePragma*& existing = CompilerGlobals::pragmaConfig.nullVariables[vd];
+  SSTNullVariablePragma*& existing = CompilerGlobals::astMarkings.nullVariables[vd];
   if (!existing){
     existing = oldPragma->clone();
     existing->setTransitive(oldPragma);
@@ -2706,7 +2694,7 @@ FirstPassASTVisitor::VisitStmt(Stmt *s)
 bool
 FirstPassASTVisitor::TraverseFunctionDecl(FunctionDecl *fd, DataRecursionQueue* queue)
 {
-  PushGuard<FunctionDecl*> pg(CompilerGlobals::pragmaConfig.fxnContexts, fd);
+  PushGuard<FunctionDecl*> pg(CompilerGlobals::astContextLists.enclosingFunctionDecls, fd);
   Parent::TraverseFunctionDecl(fd);
   return true;
 }
@@ -2714,7 +2702,7 @@ FirstPassASTVisitor::TraverseFunctionDecl(FunctionDecl *fd, DataRecursionQueue* 
 bool
 FirstPassASTVisitor::TraverseCompoundStmt(CompoundStmt* cs, DataRecursionQueue* queue)
 {
-  PushGuard<CompoundStmt*> pg(CompilerGlobals::pragmaConfig.stmtBlocks, cs);
+  PushGuard<CompoundStmt*> pg(CompilerGlobals::astContextLists.compoundStmtBlocks, cs);
   Parent::TraverseCompoundStmt(cs);
   return true;
 }

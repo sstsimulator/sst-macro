@@ -44,6 +44,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include "pragmas.h"
 #include "astVisitor.h"
+#include "util.h"
 #include <sstream>
 
 using namespace clang;
@@ -347,13 +348,6 @@ SSTPragma::getSingleString(const std::list<Token>& tokens)
 void
 SSTDeletePragma::activate(clang::Stmt* s){
   replace(s,"");
-  switch(s->getStmtClass()){
-  case Stmt::ForStmtClass:
-  case Stmt::CompoundStmtClass:
-    break;
-  default:
-    break;
-  }
   throw StmtDeleteException(s);
 }
 
@@ -369,14 +363,13 @@ SSTEmptyPragma::activate(clang::Decl* d){
   sstr << "{" << body_;
   if (body_.size()) sstr << ";";
   sstr << "}";
-#define prg_case(x,d) case Decl::x: replace(cast<x##Decl>(d)->getBody(), sstr.str()); break
-  switch (d->getKind()){
-    prg_case(Function,d);
-    prg_case(CXXMethod,d);
-    default:
-      break;
+
+  if (d->getKind() == Decl::Function ||
+      d->getKind() == Decl::CXXMethod){
+    FunctionDecl* fd = cast<FunctionDecl>(d);
+    replace(fd->getBody(), sstr.str());
   }
-#undef prg_case
+
   throw DeclDeleteException(d);
 }
 
@@ -481,6 +474,10 @@ SSTAssumeTruePragma::activate(Stmt *s)
 {
   IfStmt* ifs = cast<IfStmt>(s);
   replace(ifs->getCond(), "true");
+  FunctionDecl* fd = CompilerGlobals::astContextLists.enclosingFunctionDecls.back();
+  Token tok; tok.setKind(tok::kw_true);
+  Expr* trueConstant = tokenToExpr(fd, tok, getStart(ifs->getCond()));
+  ifs->setCond(trueConstant);
 }
 
 void
@@ -488,6 +485,10 @@ SSTAssumeFalsePragma::activate(Stmt *s)
 {
   IfStmt* ifs = cast<IfStmt>(s);
   replace(ifs->getCond(), "false");
+  FunctionDecl* fd = CompilerGlobals::astContextLists.enclosingFunctionDecls.back();
+  Token tok; tok.setKind(tok::kw_false);
+  Expr* falseConstant = tokenToExpr(fd, tok, getStart(ifs->getCond()));
+  ifs->setCond(falseConstant);
 }
 
 
@@ -497,7 +498,7 @@ SSTBranchPredictPragma::activate(Stmt *s)
   if (s->getStmtClass() != Stmt::IfStmtClass){
     errorAbort(s, "predicate pragma not applied to if statement");
   }
-  CompilerGlobals::pragmaConfig.predicatedBlocks[cast<IfStmt>(s)] = prediction_;
+  CompilerGlobals::astMarkings.predicatedBlocks[cast<IfStmt>(s)] = prediction_;
 }
 
 void
@@ -508,7 +509,7 @@ SSTOverheadPragma::activate(Stmt *s)
        << paramName_
        << "\");";
   CompilerGlobals::rewriter.InsertText(getStart(s), sstr.str(), false);
-  CompilerGlobals::pragmaConfig.newParams.insert(paramName_);
+  CompilerGlobals::toolInfoRegistration.extraInputFileParams.insert(paramName_);
 }
 
 void
@@ -549,6 +550,7 @@ SSTMallocPragma::visitBinaryOperator(BinaryOperator *op)
   pp.print(op->getLHS());
   pp.os << " = 0"; //don't know why - but okay, semicolon not needed
   replace(op, pp.os.str());
+  op->setRHS(zeroExpr(getStart(op)));
 }
 
 void
@@ -565,6 +567,7 @@ SSTMallocPragma::visitDeclStmt(DeclStmt *stmt)
     std::stringstream sstr;
     sstr << type << " " << name << " = 0;"; //don't know why - but okay, semicolon needed
     replace(stmt, sstr.str());
+    vd->setInit(zeroExpr(getStart(stmt)));
   } else {
     errorAbort(stmt, "sst malloc pragma applied to non-variable declaration");
   }
@@ -608,13 +611,14 @@ SSTReturnPragma::activate(Decl* d)
   }
   std::string repl = "{ return " + repl_ + "; }";
   replace(fd->getBody(), repl);
+  fd->setBody(nullptr);
   throw DeclDeleteException(d);
 }
 
 void
 SSTGlobalVariablePragma::activate(Stmt* s)
 {
-  CompilerGlobals::pragmaConfig.dependentScopeGlobal = name_;
+  CompilerGlobals::astMarkings.dependentScopeGlobal = name_;
 }
 
 void
@@ -715,7 +719,7 @@ SSTNullVariablePragma::doActivate(Decl* d)
     FunctionDecl* fd = cast<FunctionDecl>(d);
     if (nullSafe_){
       //this function is completely null safe
-      CompilerGlobals::pragmaConfig.nullSafeFunctions[fd] = this;
+      CompilerGlobals::astMarkings.nullSafeFunctions[fd] = this;
       return; //my work here is done
     }
 
@@ -727,7 +731,7 @@ SSTNullVariablePragma::doActivate(Decl* d)
     for (int i=0; i < fd->getNumParams(); ++i){
       ParmVarDecl* pvd = fd->getParamDecl(i);
       if (targetNames_.find(pvd->getNameAsString()) != targetNames_.end()){
-        CompilerGlobals::pragmaConfig.nullVariables[pvd] = this;
+        CompilerGlobals::astMarkings.nullVariables[pvd] = this;
         ++numHits;;
       }
     }
@@ -741,7 +745,7 @@ SSTNullVariablePragma::doActivate(Decl* d)
     }
     //no parameters matched target name
   } else {
-    CompilerGlobals::pragmaConfig.nullVariables[d] = this;
+    CompilerGlobals::astMarkings.nullVariables[d] = this;
   }
 }
 
@@ -795,9 +799,9 @@ static void addFields(RecordDecl* rd, bool defaultNull,
       FieldDecl* fd = cast<FieldDecl>(d);
       auto iter = fields.find(fd->getName());
       if (iter == fields.end()){
-        if (defaultNull) CompilerGlobals::pragmaConfig.nullVariables[fd] = prg;
+        if (defaultNull) CompilerGlobals::astMarkings.nullVariables[fd] = prg;
       } else {
-        if (!defaultNull) CompilerGlobals::pragmaConfig.nullVariables[fd] = prg;
+        if (!defaultNull) CompilerGlobals::astMarkings.nullVariables[fd] = prg;
         fields.erase(iter);
       }
     }

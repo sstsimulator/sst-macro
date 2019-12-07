@@ -59,6 +59,14 @@ std::uintptr_t pragmaID() noexcept {
   return std::uintptr_t(&pragmaID);               
 }  
 
+namespace pragmas {
+  enum PassType {
+    MODIFY_AST = 1,
+    ANALYZE = 2,
+    REWRITE = 4
+  };
+}
+
 using PragmaArgMap = std::map<std::string, std::list<std::string>>;
 struct SSTPragmaList;
 struct SSTPragma {
@@ -94,11 +102,7 @@ struct SSTPragma {
    * @param d tag parameter, whether declarations should be visited first pass
    * @return
    */
-  virtual bool firstPass(const clang::Decl*  /*d*/) const {
-    return false;
-  }
-
-  virtual bool firstPass(const clang::Stmt*  /*s*/) const {
+  virtual bool firstPass() const {
     return false;
   }
 
@@ -149,7 +153,7 @@ struct SSTPragmaList {
       bool match = p->matches<T>(t);
       if (match){
         if (firstPass){
-          if (p->firstPass(t)){
+          if (p->firstPass()){
             pragmas.erase(tmp);
             ret.push_back(p);
           }
@@ -367,8 +371,9 @@ struct SSTPragmaNamespace {
 
 };
 
-template <template <class U, typename...> class PragmaType, class T, bool deleteOnUse, 
-         typename ...PragmaTypeArgs>
+template <template <class U, typename...> class PragmaType, class T,
+          bool deleteOnUse,
+          typename ...PragmaTypeArgs>
 struct PragmaRegister {
 
   PragmaRegister(const std::string& ns, const std::string& name, int modeMask){
@@ -437,7 +442,7 @@ class SSTNullVariablePragma : public SSTPragma {
     return ret;
   }
 
-  bool firstPass(const clang::Decl*  /*d*/) const override {
+  bool firstPass() const override {
     return true;
   }
 
@@ -634,7 +639,7 @@ class SSTBranchPredictPragma : public SSTPragma {
   const std::string& prediction() const {
     return prediction_;
   }
-  bool firstPass(const clang::Stmt *s) const override {
+  bool firstPass() const override {
     return true;
   }
  private:
@@ -692,7 +697,7 @@ class SSTNonnullFieldsPragma : public SSTNullVariablePragma {
  private:
   void activate(clang::Stmt *stmt) override;
   void activate(clang::Decl* d) override;
-  bool firstPass(const clang::Decl* d) const override { return false; }
+  bool firstPass() const override { return false; }
   std::set<std::string> nonnullFields_;
 
 };
@@ -702,7 +707,7 @@ class SSTNullFieldsPragma : public SSTNullVariablePragma {
   SSTNullFieldsPragma(clang::SourceLocation loc, const std::list<clang::Token>& tokens);
 
  private:
-  bool firstPass(const clang::Decl* d) const override { return false; }
+  bool firstPass() const override { return false; }
   void activate(clang::Stmt *stmt) override;
   void activate(clang::Decl* d) override;
 

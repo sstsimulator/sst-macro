@@ -60,7 +60,40 @@ class SkeletonASTConsumer : public clang::ASTConsumer {
 
   bool HandleTopLevelDecl(clang::DeclGroupRef DR) override;
 
-  void run();
+  template <class Visitor>
+  void runPass(Visitor& v){
+    CompilerGlobals::setVisitor(v);
+    auto iter = allDecls_.begin();
+    while (iter != allDecls_.end()){
+      auto tmp = iter++;
+      clang::Decl* d = *tmp;
+
+      v.startTopLevelDecl(d);
+      try {
+        v.TraverseDecl(d);
+      } catch (StmtDeleteException& e) {
+        std::string error = std::string("unhandled delete exception on expression")
+            + " of type " + e.deleted->getStmtClassName();
+        internalError(getStart(e.deleted), error);
+      } catch (DeclDeleteException& e) {
+        if (e.deleted != d){
+          std::string error = std::string("unhandled delete exception on declaration")
+            + " of type " + e.deleted->getDeclKindName();
+          internalError(getStart(e.deleted), error);
+        } else {
+          //top-level declaration deleted
+          //stop visiting this declaration
+          allDecls_.erase(tmp);
+        }
+      }
+      v.finishTopLevelDecl(d);
+    }
+    v.finalizePass();
+  }
+
+  void runFirstPass();
+
+  void runSkeletonPass();
 
  private:
   void initNullWhitelist();

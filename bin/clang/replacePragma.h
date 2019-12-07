@@ -64,8 +64,6 @@ class SSTReplacePragma : public SSTPragma {
     return match_;
   }
 
-  std::set<const clang::Expr*> run(clang::Stmt* s);
-
   void activate(clang::Stmt *s) override;
   void activate(clang::Decl *d) override;
  private:

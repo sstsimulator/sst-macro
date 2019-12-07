@@ -373,8 +373,8 @@ ComputeVisitor::visitBodyCallExpr(CallExpr* expr, Loop::Body& body)
 void
 ComputeVisitor::visitBodyIfStmt(IfStmt *stmt, Loop::Body &body)
 {
-  auto iter = CompilerGlobals::pragmaConfig.predicatedBlocks.find(stmt);
-  if (iter == CompilerGlobals::pragmaConfig.predicatedBlocks.end()){
+  auto iter = CompilerGlobals::astMarkings.predicatedBlocks.find(stmt);
+  if (iter == CompilerGlobals::astMarkings.predicatedBlocks.end()){
     warn(stmt, "if-stmt inside compute block has no prediction hint - assuming always false");
     if (stmt->getElse()){
       addOperations(stmt->getElse(), body);
@@ -537,7 +537,7 @@ ComputeVisitor::validateLoopControlExpr(Expr* rhs)
 {
   //we may have issues if the rhs references variables
   //that are scoped inside the loop
-  SourceLocation start = getStart(CompilerGlobals::pragmaConfig.visitor.skeleton->getTopLevelScope());
+  SourceLocation start = getStart(CompilerGlobals::visitor.skeleton->getTopLevelScope());
   VariableScopeVisitor scope{start, scopeStartLine};
   scope.TraverseStmt(rhs);
 }
@@ -595,7 +595,7 @@ ComputeVisitor::visitInitialBinaryOperator(clang::BinaryOperator* op, ForLoopSpe
 std::string
 ComputeVisitor::getTripCount(ForLoopSpec* spec)
 {
-  auto* context = CompilerGlobals::pragmaConfig.visitor.skeleton;
+  auto* context = CompilerGlobals::visitor.skeleton;
   Expr* max = spec->increment ? spec->predicateMax : spec->init;
   Expr* min = spec->increment ? spec->init : spec->predicateMax;
 
@@ -670,10 +670,11 @@ ComputeVisitor::replaceStmt(Stmt* stmt, Loop& loop, const std::string& nthread)
   std::stringstream sstr;
   sstr << "{ uint64_t flops=0; uint64_t readBytes=0; uint64_t writeBytes=0; uint64_t intops=0; ";
   addLoopContribution(sstr, loop);
-  if (CompilerGlobals::pragmaConfig.computeMemorySpec.size() != 0){
-    //overwrite the static analysis
-    sstr << "readBytes=" << CompilerGlobals::pragmaConfig.computeMemorySpec << ";";
+  auto iter = CompilerGlobals::astMarkings.computeMemoryOverrides.find(stmt);
+  if (iter != CompilerGlobals::astMarkings.computeMemoryOverrides.end()){
+    sstr << "readBytes=" << iter->second << ";";
   }
+
   if (nthread.empty()){
     sstr << "sstmac_compute_detailed(flops,intops,readBytes); }";
   } else {
