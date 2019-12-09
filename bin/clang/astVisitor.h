@@ -57,14 +57,15 @@ Questions? Contact sst-macro-help@sandia.gov
 static constexpr int IndexResetter = -1;
 
 /**
- * Exception-safe pushing back on a list
+ * Exception-safe pushing back and popping back on a list
+ * within a given function to add/remove things from a context list
  * Forces clean up even if exceptions get thrown
  */
 template <class T>
 struct PushGuard {
   template <class U>
   PushGuard(std::list<T>& theList, U&& t) : myList(theList) {
-    myList.push_back(t);
+    myList.push_back(std::forward<U>(t));
   }
 
   ~PushGuard(){ myList.pop_back(); }
