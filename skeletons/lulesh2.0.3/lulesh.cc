@@ -661,7 +661,7 @@ void CalcFBHourglassForceForElems( Domain &domain,
    Index_t numElem8 = numElem * 8 ;
 
    Real_t *fx_elem; 
-   Real_t *fy_elem;
+   Real_t *fy_elem; 
    Real_t *fz_elem; 
 
 #pragma sst replace Allocate nullptr

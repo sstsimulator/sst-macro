@@ -216,8 +216,7 @@ static Expr* nameToExpr(DeclContext* ctx, const std::string& name, clang::Source
 {
   std::vector<NamedDecl*> matches;
   for (auto* d : ctx->decls()){
-    if (isa<NamedDecl>(d)){
-      NamedDecl* nd = cast<NamedDecl>(d);
+    if (auto* nd = dyn_cast<NamedDecl>(d)){
       if (nd->getNameAsString() == name){
         matches.push_back(nd);
       }
@@ -227,6 +226,10 @@ static Expr* nameToExpr(DeclContext* ctx, const std::string& name, clang::Source
   if (!matches.empty()){
     NamedDecl* nd = matches.back();
     VarDecl* vd = cast<VarDecl>(nd);
+    if (!vd){
+      std::string error = std::string("name ") + name + " + does not map to VarDecl in construction expr";
+      internalError(getStart(nd), error);
+    }
 
     DeclRefExpr* dref = DeclRefExpr::Create(
         ctx->getParentASTContext(),
@@ -253,25 +256,21 @@ Expr* tokenToExpr(DeclContext* ctx, const Token& tok, clang::SourceLocation loc)
       return nameToExpr(ctx, varName, loc);
     }
     case tok::string_literal: {
-      std::stringstream sstr;
-      getLiteralDataAsString(tok, sstr);
-      std::string varName = sstr.str();
+      std::string varName = getLiteralDataAsString(tok);
       return nameToExpr(ctx, varName, loc);
     }
     case tok::numeric_constant: {
-      std::stringstream sstr;
-      getLiteralDataAsString(tok, sstr);
-      std::string valueText = sstr.str();
-      if (valueText.find(".") == std::string::npos){
+      std::string valueText = getLiteralDataAsString(tok);
+      if (valueText.find('.') == std::string::npos){
         //make an integer literal
-        int i = std::atoi(valueText.c_str());
+        int i = std::stoi(valueText.c_str());
         //just assume 32 bit integer for now
         llvm::APInt api(32, i, true);
         IntegerLiteral* ilit = IntegerLiteral::Create(ctx->getParentASTContext(), api,
                                                       ctx->getParentASTContext().IntTy, loc);
         return ilit;
       } else {
-        double d = std::atof(valueText.c_str());
+        double d = std::stof(valueText.c_str());
         llvm::APFloat apf(d);
         FloatingLiteral* flit = FloatingLiteral::Create(ctx->getParentASTContext(), apf, true,
                                                         ctx->getParentASTContext().DoubleTy, loc);
