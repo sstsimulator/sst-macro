@@ -72,15 +72,15 @@ SkeletonASTConsumer::HandleTopLevelDecl(DeclGroupRef DR)
         //possibly - we need to make sure to only add the function once
         if (fd->isThisDeclarationADefinition()){
           //also, we only really care about the definition anyway
-          allDecls_.push_back(d);
+          allTopLevelDecls_.push_back(d);
         }
         if (isNullWhitelisted(fd->getNameAsString())){
-          CompilerGlobals::astMarkings.nullSafeFunctions[fd] = nullptr;
+          CompilerGlobals::astNodeMetadata.nullSafeFunctions[fd] = nullptr;
         }
       }
       break;
      default:
-      allDecls_.push_back(d);
+      allTopLevelDecls_.push_back(d);
       break;
     }
   }
