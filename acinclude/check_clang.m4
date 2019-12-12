@@ -35,6 +35,9 @@ AC_DEFUN([CHECK_CLANG_LLVM], [
   CLANG_INSTALL_DIR=$clang
 
   if test "$clang" != "no"; then
+    if test "$clang" = "yes"; then
+      AC_MSG_ERROR([--with-clang option requires an explicit path to Clang installation root: --with-clang=<CLANG_ROOT>])
+    fi
     SAVE_LDFLAGS=$LDFLAGS
     SAVE_CPPFLAGS=$CPPFLAGS
     SAVE_CXXFLAGS=$CXXFLAGS
@@ -69,6 +72,7 @@ AC_DEFUN([CHECK_CLANG_LLVM], [
 
   if test "X$found_clang" = "Xno"; then
     AM_CONDITIONAL(HAVE_CLANG, false)
+    AM_CONDITIONAL(CLANG_NEED_LIBCPP,false)
   else
     AM_CONDITIONAL(HAVE_CLANG, true)
     offset=`$srcdir/bin/config_tools/get_offsetof_macro $CXX`
@@ -85,6 +89,14 @@ AC_DEFUN([CHECK_CLANG_LLVM], [
     LLVM_SYSTEM_LIBS="$CLANG_LIBTOOLING_SYSTEM_LIBS"
     LLVM_CPPFLAGS="$CLANG_CPPFLAGS"
     LLVM_LDFLAGS="$CLANG_LDFLAGS"
+
+    clang_version=`$clang/bin/clang --version | head -n 1 | cut -d ' ' -f 3`
+    clang_major_version=`echo $clang_version | cut -d '.' -f 1`
+    if test "$clang_major_version" = "9"; then
+      AM_CONDITIONAL(CLANG_NEED_LIBCPP,true)
+    else
+      AM_CONDITIONAL(CLANG_NEED_LIBCPP,false)
+    fi
 
     clang_compatibility=`$srcdir/bin/config_tools/check_clang_compatibility $CXX $clang $srcdir/bin/config_tools/clang_version_test.cc $CXXFLAGS $SST_CXXFLAGS $STD_CXXFLAGS`
 
