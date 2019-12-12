@@ -110,11 +110,11 @@ struct ASTContextLists {
 };
 
 /**
- * @brief The ASTMarkings struct
+ * @brief The ASTNodeMetadata struct
  * This contains data structures that keep track of specifing annotations or markings
  * on specific AST nodes that are required for correct mutations or rewrites later
  */
-struct ASTMarkings {
+struct ASTNodeMetadata {
   std::map<clang::Decl*,SSTNullVariablePragma*> nullVariables;
   std::map<const clang::DeclContext*,SSTNullVariablePragma*> nullSafeFunctions;
   std::map<clang::Stmt*, std::string> computeMemoryOverrides;
@@ -145,7 +145,7 @@ struct CompilerGlobals {
   static int modeMask;
   static PragmaConfig pragmaConfig;
   static ASTContextLists astContextLists;
-  static ASTMarkings astMarkings;
+  static ASTNodeMetadata astNodeMetadata;
   static ToolInfoRegistration toolInfoRegistration;
   static clang::Rewriter rewriter;
 

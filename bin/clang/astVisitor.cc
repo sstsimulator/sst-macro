@@ -349,7 +349,7 @@ SkeletonASTVisitor::initHeaders()
 }
 
 void
-SkeletonASTVisitor::startTopLevelDecl(Decl *d)
+SkeletonASTVisitor::preVisitTopLevelDecl(Decl *d)
 {
   setTopLevelScope(d);
   bool isGlobalVar = isa<VarDecl>(d);
@@ -357,7 +357,7 @@ SkeletonASTVisitor::startTopLevelDecl(Decl *d)
 }
 
 void
-SkeletonASTVisitor::finishTopLevelDecl(Decl *d)
+SkeletonASTVisitor::postVisitTopLevelDecl(Decl *d)
 {
   setVisitingGlobal(false); //and reset
 }
@@ -2092,11 +2092,11 @@ SkeletonASTVisitor::TraverseCXXMethodDecl(CXXMethodDecl *D)
 bool
 SkeletonASTVisitor::VisitDependentScopeDeclRefExpr(DependentScopeDeclRefExpr* expr)
 {
-  if (!CompilerGlobals::astMarkings.dependentScopeGlobal.empty()){
+  if (!CompilerGlobals::astNodeMetadata.dependentScopeGlobal.empty()){
     //we have been told about a global variable that cannot be recongized
     //because it is a dependent scope expression
     std::string memberName = expr->getDeclName().getAsString();
-    if (memberName == CompilerGlobals::astMarkings.dependentScopeGlobal){
+    if (memberName == CompilerGlobals::astNodeMetadata.dependentScopeGlobal){
       auto iter = dependentStaticMembers_.find(memberName);
       if (iter == dependentStaticMembers_.end()){
         std::string warning = "variable " + memberName
@@ -2105,7 +2105,7 @@ SkeletonASTVisitor::VisitDependentScopeDeclRefExpr(DependentScopeDeclRefExpr* ex
       }
       std::string repl = appendText(expr, "_getter()");
       ::replace(expr, repl);
-      CompilerGlobals::astMarkings.dependentScopeGlobal.clear();
+      CompilerGlobals::astNodeMetadata.dependentScopeGlobal.clear();
       return true; //skip checks below
       //std::string error = "pragma gloçbal name " + pragmaConfig_.dependentScopeGlobal
       //    + " does not match found member name " + memberName;
@@ -2131,11 +2131,11 @@ SkeletonASTVisitor::VisitDependentScopeDeclRefExpr(DependentScopeDeclRefExpr* ex
 bool
 SkeletonASTVisitor::VisitCXXDependentScopeMemberExpr(clang::CXXDependentScopeMemberExpr* expr)
 {
-  if (!CompilerGlobals::astMarkings.dependentScopeGlobal.empty()){
+  if (!CompilerGlobals::astNodeMetadata.dependentScopeGlobal.empty()){
     //we have been told about a global variable that cannot be recongized
     //because it is a dependent scope expression
     std::string memberName = expr->getMember().getAsString();
-    if (memberName == CompilerGlobals::astMarkings.dependentScopeGlobal){
+    if (memberName == CompilerGlobals::astNodeMetadata.dependentScopeGlobal){
       auto iter = dependentStaticMembers_.find(memberName);
       if (iter == dependentStaticMembers_.end()){
         std::string warning = "variable " + memberName
@@ -2144,7 +2144,7 @@ SkeletonASTVisitor::VisitCXXDependentScopeMemberExpr(clang::CXXDependentScopeMem
       }
       std::string repl = appendText(expr, "_getter()");
       ::replace(expr, repl);
-      CompilerGlobals::astMarkings.dependentScopeGlobal.clear();
+      CompilerGlobals::astNodeMetadata.dependentScopeGlobal.clear();
       return true; //skip checks below
       //std::string error = "pragma gloçbal name " + pragmaConfig_.dependentScopeGlobal
       //    + " does not match found member name " + memberName;
@@ -2478,7 +2478,7 @@ SkeletonASTVisitor::propagateNullness(Decl* target, Decl* src)
   //VarDecl* svd = cast<VarDecl>(src);
   //propagate the null-ness to this new variable
   SSTNullVariablePragma* oldPragma = getNullVariable(src);
-  SSTNullVariablePragma*& existing = CompilerGlobals::astMarkings.nullVariables[vd];
+  SSTNullVariablePragma*& existing = CompilerGlobals::astNodeMetadata.nullVariables[vd];
   if (!existing){
     existing = oldPragma->clone();
     existing->setTransitive(oldPragma);

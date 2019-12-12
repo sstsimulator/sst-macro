@@ -168,8 +168,8 @@ class FirstPassASTVisitor : public clang::RecursiveASTVisitor<FirstPassASTVisito
 
   FirstPassASTVisitor(SSTPragmaList& pragmas);
 
-  void startTopLevelDecl(clang::Decl* d){}
-  void finishTopLevelDecl(clang::Decl* d){}
+  void preVisitTopLevelDecl(clang::Decl* d){}
+  void postVisitTopLevelDecl(clang::Decl* d){}
   void finalizePass(){}
 
   bool VisitDecl(clang::Decl* d);
@@ -606,8 +606,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     return pragmas_;
   }
 
-  void startTopLevelDecl(clang::Decl* d);
-  void finishTopLevelDecl(clang::Decl* d);
+  void preVisitTopLevelDecl(clang::Decl* d);
+  void postVisitTopLevelDecl(clang::Decl* d);
   void finalizePass();
 
   void setVisitingGlobal(bool flag){
@@ -817,20 +817,20 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   }
 
   bool isNullVariable(clang::Decl* d) const {
-    return CompilerGlobals::astMarkings.nullVariables.find(d) !=
-            CompilerGlobals::astMarkings.nullVariables.end();
+    return CompilerGlobals::astNodeMetadata.nullVariables.find(d) !=
+            CompilerGlobals::astNodeMetadata.nullVariables.end();
   }
 
   bool isValidAssignment(clang::Decl* lhs, clang::Expr* rhs);
 
   bool isNullSafeFunction(const clang::DeclContext* dc) const {
-    return CompilerGlobals::astMarkings.nullSafeFunctions.find(dc) !=
-          CompilerGlobals::astMarkings.nullSafeFunctions.end();
+    return CompilerGlobals::astNodeMetadata.nullSafeFunctions.find(dc) !=
+          CompilerGlobals::astNodeMetadata.nullSafeFunctions.end();
   }
 
   SSTNullVariablePragma* getNullVariable(clang::Decl* d) const {
-    auto iter = CompilerGlobals::astMarkings.nullVariables.find(d);
-    if (iter != CompilerGlobals::astMarkings.nullVariables.end()){
+    auto iter = CompilerGlobals::astNodeMetadata.nullVariables.find(d);
+    if (iter != CompilerGlobals::astNodeMetadata.nullVariables.end()){
       return iter->second;
     }
     return nullptr;

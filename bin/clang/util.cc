@@ -51,7 +51,7 @@ using namespace clang::tooling;
 
 PragmaConfig CompilerGlobals::pragmaConfig;
 ASTContextLists CompilerGlobals::astContextLists;
-ASTMarkings CompilerGlobals::astMarkings;
+ASTNodeMetadata CompilerGlobals::astNodeMetadata;
 ToolInfoRegistration CompilerGlobals::toolInfoRegistration;
 
 CompilerInstance* CompilerGlobals::ci;
