@@ -173,14 +173,23 @@ struct SSTPragmaList {
 class SSTPragmaHandler : public clang::PragmaHandler {
 
  public:
+#if CLANG_VERSION_MAJOR >= 9
+  void HandlePragma(clang::Preprocessor &PP,
+                    clang::PragmaIntroducer Introducer,
+                    clang::Token &PragmaTok) override;
+#else
   void HandlePragma(clang::Preprocessor &PP,
                     clang::PragmaIntroducerKind Introducer,
                     clang::Token &PragmaTok) override;
+#endif
 
   bool deleteOnUse() const {
     return deleteOnUse_;
   }
 
+ private:
+  void handlePragmaImpl(clang::Preprocessor &PP,
+                        clang::Token &PragmaTok);
 
  protected:
   SSTPragmaHandler(const std::string& name,

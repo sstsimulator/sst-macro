@@ -79,7 +79,11 @@ class DeleteOpenMPPragma : public PragmaHandler
 {
  public:
   DeleteOpenMPPragma() : PragmaHandler("omp") {}
+#if CLANG_VERSION_MAJOR >= 9
+  void HandlePragma(Preprocessor &PP, PragmaIntroducer Introducer, Token &FirstToken) override {}
+#else
   void HandlePragma(Preprocessor &PP, PragmaIntroducerKind Introducer, Token &FirstToken) override {}
+#endif
 };
 
 std::unique_ptr<clang::ASTConsumer>

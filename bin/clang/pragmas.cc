@@ -264,7 +264,7 @@ SSTPragmaHandler::configure(bool delOnUse, Token&  /*PragmaTok*/, Preprocessor& 
 }
 
 void
-SSTPragmaHandler::HandlePragma(Preprocessor &PP, PragmaIntroducerKind  /*Introducer*/, Token& PragmaTok)
+SSTPragmaHandler::handlePragmaImpl(Preprocessor& PP, Token& PragmaTok)
 {
   std::list<Token> tokens;
   Token next; PP.Lex(next);
@@ -281,6 +281,20 @@ SSTPragmaHandler::HandlePragma(Preprocessor &PP, PragmaIntroducerKind  /*Introdu
 
   configure(deleteOnUse_, PragmaTok, PP, fsp);
 }
+
+#if CLANG_VERSION_MAJOR >= 9
+void
+SSTPragmaHandler::HandlePragma(Preprocessor &PP, PragmaIntroducer  /*Introducer*/, Token& PragmaTok)
+{
+  handlePragmaImpl(PP, PragmaTok);
+}
+#else
+void
+SSTPragmaHandler::HandlePragma(Preprocessor &PP, PragmaIntroducerKind  /*Introducer*/, Token& PragmaTok)
+{
+  handlePragmaImpl(PP, PragmaTok);
+}
+#endif
 
 std::map<std::string, std::list<std::string>>
 SSTPragma::getMap(SourceLocation loc, const std::list<clang::Token>& tokens)
