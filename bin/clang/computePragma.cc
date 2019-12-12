@@ -53,6 +53,12 @@ using namespace clang;
 using namespace clang::driver;
 using namespace clang::tooling;
 
+#if CLANG_VERSION_MAJOR >= 7
+  #define UnaryOperatorCtor(...) UnaryOperator(__VA_ARGS__, false)
+#else
+  #define UnaryOperatorCtor(...) UnaryOperator(__VA_ARGS__)
+#endif
+
 SSTLoopCountPragma::SSTLoopCountPragma(SourceLocation loc, const std::list<clang::Token>& tokens)
 {
   if (tokens.size() != 1){
@@ -107,7 +113,8 @@ SSTLoopCountPragma::transformWhileLoop(Stmt* s)
      VK_LValue,
      loopVar);
 
-  UnaryOperator* inc_stmt = new (fd->getASTContext()) UnaryOperator(inc_ref, UO_PostInc, loop_count->getType(),
+
+  UnaryOperator* inc_stmt = new (fd->getASTContext()) UnaryOperatorCtor(inc_ref, UO_PostInc, loop_count->getType(),
                                                           VK_RValue, OK_Ordinary, getStart(ws->getCond()));
 
   ForStmt* fs = new (fd->getASTContext()) ForStmt(fd->getASTContext(), init_stmt, cond_stmt, loopVar, inc_stmt,
@@ -165,7 +172,7 @@ SSTLoopCountPragma::transformForLoop(Stmt* s)
      VK_LValue,
      loopVar);
 
-  UnaryOperator* inc_stmt = new (fd->getASTContext()) UnaryOperator(inc_ref, UO_PostInc, loop_count->getType(),
+  UnaryOperator* inc_stmt = new (fd->getASTContext()) UnaryOperatorCtor(inc_ref, UO_PostInc, loop_count->getType(),
                                                           VK_RValue, OK_Ordinary, getStart(fs->getInc()));
 
   fs->setInit(init_stmt);
