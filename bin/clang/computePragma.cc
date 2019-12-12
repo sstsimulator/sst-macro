@@ -283,7 +283,7 @@ SSTComputePragma::visitForStmt(ForStmt *stmt)
 void
 SSTMemoryPragma::activate(Stmt *s)
 {
-  CompilerGlobals::astMarkings.computeMemoryOverrides[s] = memSpec_;
+  CompilerGlobals::astNodeMetadata.computeMemoryOverrides[s] = memSpec_;
 }
 
 

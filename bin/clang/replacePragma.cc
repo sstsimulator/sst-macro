@@ -82,7 +82,7 @@ class ReplacementPragmaVisitor : public RecursiveASTVisitor<ReplacementPragmaVis
   }
 
   bool TraverseDeclStmt(DeclStmt* stmt, DataRecursionQueue* = nullptr){
-    if (stmt->isSingleDecl() && stmt->getSingleDecl()->getKind() == Decl::Var){
+    if (stmt->isSingleDecl() && isa<VarDecl>(stmt->getSingleDecl())){
       Decl* d = stmt->getSingleDecl();
       VarDecl* vd = cast<VarDecl>(d);
       if (vd->getNameAsString() == matchText_){
@@ -213,8 +213,7 @@ void
 SSTReplacePragma::activateCXXRecordDecl(CXXRecordDecl *d)
 {
   if (d->hasBody()){
-    auto* body = d->getBody();
-    if (body) activate(d->getBody());
+    activate(d->getBody());
     //do NOT set the body to null, many expressions may remain valid
   }
 }

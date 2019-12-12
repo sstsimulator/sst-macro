@@ -63,12 +63,12 @@ class SkeletonASTConsumer : public clang::ASTConsumer {
   template <class Visitor>
   void runPass(Visitor& v){
     CompilerGlobals::setVisitor(v);
-    auto iter = allDecls_.begin();
-    while (iter != allDecls_.end()){
+    auto iter = allTopLevelDecls_.begin();
+    while (iter != allTopLevelDecls_.end()){
       auto tmp = iter++;
       clang::Decl* d = *tmp;
 
-      v.startTopLevelDecl(d);
+      v.preVisitTopLevelDecl(d);
       try {
         v.TraverseDecl(d);
       } catch (StmtDeleteException& e) {
@@ -83,10 +83,10 @@ class SkeletonASTConsumer : public clang::ASTConsumer {
         } else {
           //top-level declaration deleted
           //stop visiting this declaration
-          allDecls_.erase(tmp);
+          allTopLevelDecls_.erase(tmp);
         }
       }
-      v.finishTopLevelDecl(d);
+      v.postVisitTopLevelDecl(d);
     }
     v.finalizePass();
   }
@@ -106,7 +106,7 @@ class SkeletonASTConsumer : public clang::ASTConsumer {
 
   FirstPassASTVisitor& firstPassVisitor_;
 
-  std::list<clang::Decl*> allDecls_;
+  std::list<clang::Decl*> allTopLevelDecls_;
 
   std::set<std::string> nullWhitelist_;
 

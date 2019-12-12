@@ -373,8 +373,8 @@ ComputeVisitor::visitBodyCallExpr(CallExpr* expr, Loop::Body& body)
 void
 ComputeVisitor::visitBodyIfStmt(IfStmt *stmt, Loop::Body &body)
 {
-  auto iter = CompilerGlobals::astMarkings.predicatedBlocks.find(stmt);
-  if (iter == CompilerGlobals::astMarkings.predicatedBlocks.end()){
+  auto iter = CompilerGlobals::astNodeMetadata.predicatedBlocks.find(stmt);
+  if (iter == CompilerGlobals::astNodeMetadata.predicatedBlocks.end()){
     warn(stmt, "if-stmt inside compute block has no prediction hint - assuming always false");
     if (stmt->getElse()){
       addOperations(stmt->getElse(), body);
@@ -670,8 +670,8 @@ ComputeVisitor::replaceStmt(Stmt* stmt, Loop& loop, const std::string& nthread)
   std::stringstream sstr;
   sstr << "{ uint64_t flops=0; uint64_t readBytes=0; uint64_t writeBytes=0; uint64_t intops=0; ";
   addLoopContribution(sstr, loop);
-  auto iter = CompilerGlobals::astMarkings.computeMemoryOverrides.find(stmt);
-  if (iter != CompilerGlobals::astMarkings.computeMemoryOverrides.end()){
+  auto iter = CompilerGlobals::astNodeMetadata.computeMemoryOverrides.find(stmt);
+  if (iter != CompilerGlobals::astNodeMetadata.computeMemoryOverrides.end()){
     sstr << "readBytes=" << iter->second << ";";
   }
 
