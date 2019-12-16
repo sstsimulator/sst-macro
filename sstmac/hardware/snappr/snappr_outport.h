@@ -62,6 +62,8 @@ struct SnapprPortArbitrator {
 
   virtual void addCredits(int vl, uint32_t credits) = 0;
 
+  virtual SnapprPacket* popDeadlockCheck(int vl){ return nullptr; }
+
   virtual SnapprPacket* pop(uint64_t cycle) = 0;
 
   virtual bool empty() const = 0;
@@ -111,6 +113,7 @@ struct SnapprOutPort {
 
   std::string toString() const;
 
+  void deadlockCheck(int vl);
 
   void handle(Event* ev);
 
@@ -188,6 +191,7 @@ struct SnapprOutPort {
   std::string portName_;
   int number_;
   TailNotifier* notifier_;
+  std::set<int> deadlocked_vls_;
 
 };
 

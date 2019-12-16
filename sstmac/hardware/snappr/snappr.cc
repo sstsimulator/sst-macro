@@ -70,7 +70,8 @@ SnapprPacket::SnapprPacket(
   offset_(offset),
   qos_(qos),
   priority_(0),
-  inport_(-1)
+  inport_(-1),
+  deadlocked_(false)
 {
 }
 

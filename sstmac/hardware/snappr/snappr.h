@@ -90,6 +90,14 @@ class SnapprPacket :
     return arrival_;
   }
 
+  void setDeadlocked() {
+    deadlocked_ = true;
+  }
+
+  bool deadlocked() const {
+    return deadlocked_;
+  }
+
   void setArrival(Timestamp time) {
     arrival_ = time;
   }
@@ -188,6 +196,8 @@ class SnapprPacket :
   int inport_; //used for sending credits
 
   int input_vl_;
+
+  bool deadlocked_;
 
 };
 
