@@ -169,6 +169,12 @@ SubComponent::setup()
 #if SSTMAC_INTEGRATED_SST_CORE
 #else
 void
+LocalLink::deliver(Event *ev)
+{
+  handler_->handle(ev);
+}
+
+void
 LocalLink::send(TimeDelta delay, Event *ev)
 {
   Timestamp arrival = mgr_->now() + delay + latency_;
@@ -200,6 +206,11 @@ IpcLink::send(TimeDelta delay, Event *ev)
 }
 
 void
+IpcLink::deliver(Event* ev){
+  spkt_abort_printf("IpcLink: cannot direct deliver events");
+}
+
+void
 MultithreadLink::send(TimeDelta delay, Event* ev)
 {
   ExecutionEvent* qev = new HandlerExecutionEvent(ev, handler_);
@@ -209,6 +220,11 @@ MultithreadLink::send(TimeDelta delay, Event* ev)
   qev->setSeqnum(seqnum_++);
   qev->setLink(linkId_);
   dst_mgr_->multithreadSchedule(mgr_->pendingSlot(), mgr_->thread(), qev);
+}
+
+void
+MultithreadLink::deliver(Event* ev){
+  spkt_abort_printf("MultithreadLink: cannot direct deliver events");
 }
 #endif
 

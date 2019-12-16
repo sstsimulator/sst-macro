@@ -175,11 +175,28 @@ SnapprSwitch::queueLength(int port, int  /*vc*/) const
 void
 SnapprSwitch::deadlockCheck()
 {
+  int max_vl = qos_levels_*num_vc_;
+  for (int vl=0; vl < max_vl; ++vl){
+    deadlockCheck(vl);
+  }
+}
+
+void
+SnapprSwitch::deadlockCheck(int vl)
+{
+  for (auto& p : outports_){
+    p.deadlockCheck(vl);
+  }
 }
 
 void
 SnapprSwitch::handlePayload(SnapprPacket* pkt, int inport)
 {
+  if (pkt->deadlocked()){
+    deadlockCheck(pkt->virtualLane());
+    return;
+  }
+
   pkt->setInport(inport);
   pkt->saveInputVirtualLane();
   router_->route(pkt);

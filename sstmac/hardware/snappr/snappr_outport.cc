@@ -180,6 +180,25 @@ SnapprOutPort::scheduleArbitration()
 }
 
 void
+SnapprOutPort::deadlockCheck(int vl)
+{
+#if !SSTMAC_INTEGRATED_SST_CORE
+  auto iter = deadlocked_vls_.find(vl);
+  if (iter != deadlocked_vls_.end()){
+    spkt_abort_printf("Found deadlocked VL %d", vl);
+  }
+  deadlocked_vls_.insert(vl);
+
+  auto* pkt = arb_->popDeadlockCheck(vl);
+  if (pkt){
+    std::cerr << "Deadlocked on PORT=" << number_ <<   " VL=" << vl << ": " << pkt->toString() << std::endl;
+    pkt->setDeadlocked();
+    link->deliver(pkt);
+  }
+#endif
+}
+
+void
 SnapprOutPort::requestArbitration()
 {
 #if SSTMAC_SANITY_CHECK
@@ -298,6 +317,16 @@ struct FifoPortArbitrator : public SnapprPortArbitrator
       vl.pending.push(pkt);
       port_debug("FIFO %p VL %d stalling with %u credits - packet %s",
                  this, pkt->virtualLane(), vl.credits, pkt->toString().c_str());
+    }
+  }
+
+  SnapprPacket* popDeadlockCheck(int vl) override {
+    VirtualLane& v = vls_[vl];
+    if (!v.pending.empty()){
+      SnapprPacket* pkt = v.pending.front();
+      return pkt;
+    } else {
+      return nullptr;
     }
   }
 

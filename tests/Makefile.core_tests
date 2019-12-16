@@ -54,6 +54,7 @@ CORETESTS+= \
   test_core_apps_ping_all_fattree4 \
   test_core_apps_ping_all_fattree_tapered
 
+#  test_core_apps_ping_all_torus_pos_snappr \
 #  test_core_apps_ping_all_fat_tree_snappr \
 #  test_core_apps_distributed_service 
 

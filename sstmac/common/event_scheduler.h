@@ -122,6 +122,8 @@ class EventLink {
 
   virtual void send(TimeDelta delay, Event *ev) = 0;
 
+  virtual void deliver(Event* ev) = 0;
+
   uint64_t id() const {
     return linkId_;
   }
@@ -501,6 +503,8 @@ class LocalLink : public EventLink {
     return handler_->toString();
   }
 
+  void deliver(Event* ev) override;
+
   void send(TimeDelta delay, Event* ev) override;
 
  protected:
@@ -519,6 +523,8 @@ class MultithreadLink : public LocalLink {
   {
     setMinThreadLatency(latency);
   }
+
+  void deliver(Event* ev) override;
 
   void send(TimeDelta delay, Event *ev) override;
 
@@ -547,6 +553,8 @@ class IpcLink : public EventLink {
     return "ipc link";
   }
 
+  void deliver(Event* ev) override;
+
   void send(TimeDelta delay, Event* ev) override;
 
  private:
@@ -572,6 +580,10 @@ class SubLink : public EventLink
 
   std::string toString() const override {
     return "sub link";
+  }
+
+  void deliver(Event* ev) override {
+    handler_->handle(ev);
   }
 
   void send(TimeDelta delay, Event *ev) override {

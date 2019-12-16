@@ -354,19 +354,22 @@ class TorusUGALRouter : public TorusValiantRouter {
  * Simple router that routes all traffic in the same direction, making
  * it easier to create specific congestion scenarios
  */
-class TorusNoWrapRouter : public Router {
+class TorusPositiveRouter : public Router {
  public:
-  struct header : public Packet::Header {};
+  struct header : public Packet::Header {
+     char wrapped : 1;
+     int num_hops;
+  };
 
   SST_ELI_REGISTER_DERIVED(
    Router,
-   TorusNoWrapRouter,
+   TorusPositiveRouter,
    "macro",
-   "torus_no_wrap",
+   "torus_positive",
    SST_ELI_ELEMENT_VERSION(1,0,0),
    "a routing algorithm that routes all traffic in the +direction")
 
-  TorusNoWrapRouter(SST::Params& params,
+  TorusPositiveRouter(SST::Params& params,
                       Topology* top, NetworkSwitch* netsw)
    : Router(params, top, netsw)
   {
@@ -375,11 +378,11 @@ class TorusNoWrapRouter : public Router {
   }
 
   std::string toString() const override {
-    return "torus no wrap router";
+    return "torus positive router";
   }
 
   int numVC() const override {
-    return 1;
+    return 2;
   }
 
  void minimalRoute(SwitchId dst, header* hdr){
@@ -387,17 +390,25 @@ class TorusNoWrapRouter : public Router {
    auto& dimensions_ = torus_->dimensions();
    int div = 1;
    int ndim = dimensions_.size();
-   hdr->deadlock_vc = 0;
    for (int i=0; i < ndim; ++i){
      int srcX = (src / div) % dimensions_[i];
      int dstX = (dst / div) % dimensions_[i];
-     if (srcX < dstX){
+     int nextX = (srcX + 1) % dimensions_[i];
+     int maxX = dimensions_[i] - 1;
+     if (srcX != dstX){
+       if (srcX == maxX){
+         //we are wrapping around
+         hdr->wrapped = 1;
+         hdr->deadlock_vc = 1;
+       } else { //nothing special
+         hdr->deadlock_vc = hdr->wrapped ? 1 : 0;
+       }
+       if (nextX == dstX){
+         hdr->wrapped = 0; //reset for next dim
+       }
        hdr->edge_port = torus_->convertToPort(i, Torus::pos);
        return;
-     } else if (dstX < srcX){
-       hdr->edge_port = torus_->convertToPort(i, Torus::neg);
-       return;
-     } //else skip to the next dim
+     }
      div *= dimensions_[i];
    }
    sprockit::abort("torus: failed to route correctly on torus");

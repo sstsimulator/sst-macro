@@ -117,6 +117,8 @@ class SnapprSwitch :
 
   std::vector<SnapprInPort> inports_;
 
+  void deadlockCheck(int vl);
+
   Router* router_;
 
   double link_bw_;
