@@ -118,7 +118,6 @@ sstmac_clang_LDFLAGS = $(CLANG_LDFLAGS) \
  -lclangAST \
  -lclangASTMatchers \
  -lclangBasic \
- -lclang-cpp \
  -lclangDriver \
  -lclangEdit \
  -lclangFormat \
@@ -133,6 +132,11 @@ sstmac_clang_LDFLAGS = $(CLANG_LDFLAGS) \
  -lclangToolingCore \
  @CLANG_LIBTOOLING_LIBS@ \
  @CLANG_LIBTOOLING_SYSTEM_LIBS@
+
+if CLANG_NEED_LIPCPP
+sstmac_clang_LDFLAGS += -lclang-cpp
+endif
+
 endif
 
 
