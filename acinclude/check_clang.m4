@@ -69,7 +69,7 @@ AC_DEFUN([CHECK_CLANG_LLVM], [
 
   if test "X$found_clang" = "Xno"; then
     AM_CONDITIONAL(HAVE_CLANG, false)
-    AM_CONDITIONAL(CLANG_NEED_LIPCPP,false)
+    AM_CONDITIONAL(CLANG_NEED_LIBCPP,false)
   else
     AM_CONDITIONAL(HAVE_CLANG, true)
     offset=`$srcdir/bin/config_tools/get_offsetof_macro $CXX`
@@ -90,9 +90,9 @@ AC_DEFUN([CHECK_CLANG_LLVM], [
     clang_version=`$clang/bin/clang --version | head -n 1 | cut -d ' ' -f 3`
     clang_major_version=`echo $clang_version | cut -d '.' -f 1`
     if test "$clang_major_version" = "9"; then
-      AM_CONDITIONAL(CLANG_NEED_LIPCPP,true)
+      AM_CONDITIONAL(CLANG_NEED_LIBCPP,true)
     else
-      AM_CONDITIONAL(CLANG_NEED_LIPCPP,false)
+      AM_CONDITIONAL(CLANG_NEED_LIBCPP,false)
     fi
 
     clang_compatibility=`$srcdir/bin/config_tools/check_clang_compatibility $CXX $clang $srcdir/bin/config_tools/clang_version_test.cc $CXXFLAGS $SST_CXXFLAGS $STD_CXXFLAGS`
