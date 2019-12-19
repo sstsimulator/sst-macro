@@ -182,6 +182,11 @@ namespace strings {
 /// by replacement
 std::string replace_all(std::string const &str, std::string const& match,
                         std::string const& replacement);
+
+/// Function that runs replace_all on every pair in the map of replacements
+std::string replace_all(std::string const &str,
+    std::map<std::string, std::string> const& replacements);
+
 } // namespace strings
 } // namespace sst
 

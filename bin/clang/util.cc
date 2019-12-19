@@ -367,5 +367,16 @@ std::string replace_all(std::string const &str, std::string const& match,
   return result_string;
 }
 
+std::string replace_all(std::string const &str,
+    std::map<std::string, std::string> const& replacements) {
+
+  std::string result = str;
+  for(auto const& pair : replacements){
+    result = replace_all(result, pair.first, pair.second);
+  }
+
+  return result;
+}
+
 } // namespace strings
 } // namespace sst
