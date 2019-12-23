@@ -44,6 +44,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include "util.h"
 #include <sstream>
+#include <cstring>
 
 using namespace clang;
 using namespace clang::driver;
@@ -336,3 +337,46 @@ std::string getLiteralDataAsString(const Token &tok)
   return sstr.str();
 }
 
+
+namespace sst {
+namespace strings {
+
+std::string replace_all(std::string const &str, std::string const& match, 
+                      std::string const& replacement) {
+  const auto match_len = match.size();
+  const auto replacement_len = replacement.size();
+
+  // Copy the input
+  std::string result_string = str;
+
+  // Need to keep track of where to pick the search back up so that we don't
+  // end up in an infinite loop if the replacement string contains the match as
+  // a substring.
+  auto search_start_pos = 0;
+
+  for(;;){
+    auto match_start_position = result_string.find(match, search_start_pos);
+    if (match_start_position != std::string::npos) {
+      result_string.replace(match_start_position, match_len, replacement);
+      search_start_pos = match_start_position + replacement_len;
+    } else {
+      break;
+    }
+  }
+
+  return result_string;
+}
+
+std::string replace_all(std::string const &str,
+    std::map<std::string, std::string> const& replacements) {
+
+  std::string result = str;
+  for(auto const& pair : replacements){
+    result = replace_all(result, pair.first, pair.second);
+  }
+
+  return result;
+}
+
+} // namespace strings
+} // namespace sst
