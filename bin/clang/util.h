@@ -48,6 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include "clangHeaders.h"
 #include <clangtidymacros.h>
 
+#include <string>
 #include <iostream>
 #include "clangGlobals.h"
 
@@ -175,5 +176,18 @@ clang::Expr* zeroExpr(clang::SourceLocation loc);
 clang::Expr* tokenToExpr(clang::DeclContext* ctx,
                          const clang::Token& tok, clang::SourceLocation loc);
 
+namespace sst {
+namespace strings {
+/// Function that returns a string that is a copy of str with match replaced
+/// by replacement
+std::string replace_all(std::string const &str, std::string const& match,
+                        std::string const& replacement);
+
+/// Function that runs replace_all on every pair in the map of replacements
+std::string replace_all(std::string const &str,
+    std::map<std::string, std::string> const& replacements);
+
+} // namespace strings
+} // namespace sst
 
 #endif
