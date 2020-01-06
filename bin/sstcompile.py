@@ -11,6 +11,8 @@ def addPreprocess(ctx, sourceFile, outputFile, args, cmds):
   ppArgs.extend(ctx.compilerFlags)
   ppArgs.append("-E")
   ppArgs.append(sourceFile)
+  if args.O:
+    ppArgs.append("-O%s" % args.O)
   cmds.append([outputFile,ppArgs,[]]) #pipe file, no extra temps
 
 def addEmitLlvm(ctx, sourceFile, outputFile, args, cmds):
@@ -23,6 +25,8 @@ def addEmitLlvm(ctx, sourceFile, outputFile, args, cmds):
     "-o",
     outputFile
   ]
+  if args.O:
+    cmds.append("-O%s" % args.O)
   cmds.append([None,cmdArr,[outputFile]])
 
 def addLlvmOptPass(ctx, llFile, llvmPass, args, cmds):
@@ -124,6 +128,8 @@ def addSrc2SrcCompile(ctx, sourceFile, outputFile, args, cmds):
     cmdArr.append(tmpTarget)
     cmdArr.append("-c")
     cmdArr.append(srcRepl)
+    if args.O:
+      cmdArr.append("-O%s" % args.O)
     cmds.append([None,cmdArr,[tmpTarget]])
 
   cxxInitObjFile = addPrefix("sstGlobals.", outputFile)
@@ -137,6 +143,8 @@ def addSrc2SrcCompile(ctx, sourceFile, outputFile, args, cmds):
   ]
   cxxInitCmdArr.extend(ctx.cxxFlags)
   cxxInitCmdArr.extend(ctx.cppFlags)
+  if args.O:
+    cxxInitCmdArr.append("-O%s" % args.O)
   cmds.append([None,cxxInitCmdArr,[cxxInitObjFile]])
 
   mergeCmdArr = [
