@@ -16,11 +16,7 @@ bin_PROGRAMS =
 dist_bin_SCRIPTS = \
   findHeaders \
   sst++ \
-  libsst++ \
-  dsst++ \
   sstcc \
-  libsstcc \
-  dsstcc \
   sstcclib.py \
   sstccutils.py \
   sstcompile.py \
