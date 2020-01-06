@@ -3,7 +3,6 @@ helpText = """The following environmental variables can be defined for the SST c
 SSTMAC_VERBOSE=0 or 1:        produce verbose output from the SST compiler (default 0)
 SSTMAC_DELETE_TEMPS=0 or 1:   remove all temp source-to-source files (default 1)
 SSTMAC_DELETE_TEMP_OFILES=0 or 1:   remove all temporary object files (default 1)
-SSTMAC_SRC2SRC=0 or 1: run a source-to-source pass converting globals to TLS (default 1)
 SSTMAC_CONFIG=0: running automake, cmake - skip certain steps to fool build system
 """
 
@@ -139,6 +138,11 @@ def runAllCmds(cmds, verbose, doDeleteTemps, doDeleteObjects, clangBin):
 
 
 class Context:
+  SKELETONIZE = 0
+  MEMOIZE = 1
+  COMPONENT = 2
+  NONE = 3
+
   def __init__(self):
     self.cxxFlags = []
     self.cFlags = []
@@ -153,8 +157,33 @@ class Context:
     self.cxx = None
     self.compiler = None
     self.clangArgs = []
+    self.mode = self.NONE
+    self.replacementIncludes = []
+    self.sstCore = False
+    self.hasClang = False
 
-def run(typ, extraLibs="", makeLibrary=False, redefineSymbols=True, runClang=True):
+  def simulateMode(self):
+    return self.mode == self.SKELETONIZE
+
+  def srcToSrc(self):
+    return self.hasClang and self.simulateMode()
+
+  def modeString(self):
+    if self.mode == self.SKELETONIZE: return "SKELETONIZE"
+    if self.mode == self.MEMOIZE:     return "MEMOIZE"
+    if self.mode == self.COMPONENT:   return "COMPONENT"
+    if self.mode == self.NONE:        return "NONE"
+
+  def setMode(self, mode):
+    if self.mode != self.NONE:
+      sys.exit("Mode already set to %s - undefined behavior to also use --sst_component" % self.modeString())
+    self.mode = mode
+
+  def setDefaultMode(self, mode):
+    if self.mode == self.NONE:
+      self.mode = mode
+
+def run(typ, extraLibs=""):
   import os
   import sys
   import platform
@@ -170,29 +199,18 @@ def run(typ, extraLibs="", makeLibrary=False, redefineSymbols=True, runClang=Tru
   from sstccutils import cleanFlag, getProcTree, swapSuffix
 
   ctx = Context()
+  ctx.sstCore = sstCore
   ctx.cc = spackcc if spackcc else cc
   ctx.cxx = spackcxx if spackcxx else cxx
   ctx.typ = typ
 
   needfPIC = "fPIC" in sstCxxFlagsStr
 
-  memoizing = False
-  if os.environ.has_key("SSTMAC_MEMOIZE"):
-    val = int(os.environ["SSTMAC_MEMOIZE"])
-    memoizing = bool(val)
-
-  skeletonizing = False
-  if os.environ.has_key("SSTMAC_SKELETONIZE"):
-    val = int(os.environ["SSTMAC_SKELETONIZE"])
-    skeletonizing = bool(val)
-
   sstmacExe = cleanFlag(os.path.join(prefix, "bin", "sstmac"))
 
-  if not sstCore:
-    ctx.libs.append('-lsstmac')
-    ctx.libs.append('-lsprockit')
-    ctx.libs.append('-lundumpi')
-  
+  ctx.sstCore = sstCore
+  ctx.hasClang = bool(clangCppFlagsStr)
+
   verbose = False     #whether to print verbose output
   delTempFiles = True #whether to delete all temp files created
   #whether to make a shared object for loading 
@@ -225,7 +243,6 @@ def run(typ, extraLibs="", makeLibrary=False, redefineSymbols=True, runClang=Tru
     if numCmakes > 1:
         makeBashExe = True
 
-  haveClangSrcToSrc = bool(clangCppFlagsStr)
 
   for entry in sstCppFlags:
     clean = cleanFlag(entry)
@@ -238,9 +255,9 @@ def run(typ, extraLibs="", makeLibrary=False, redefineSymbols=True, runClang=Tru
                     help="the linker/compilation target")
   parser.add_argument('--keep-exe', default=False, action="store_true",
                     help="whether to create an executable script or build a loadable shared object")
-  parser.add_argument('--skeletonize', default="", type=str,
+  parser.add_argument('--skeletonize', type=str,
                     help="whether to activate skeletonization mode, stripping compute and mem allocation. Can take a list of LLVM passes as argument.")
-  parser.add_argument('--memoize', default=False, type=str,
+  parser.add_argument('--memoize', type=str,
                     help="whether to activate memoization mode that instruments and records execution. Can take a list of LLVM passes as argument.")
   parser.add_argument('-I', action="append", type=str, help="an include path", default=[])
   parser.add_argument('-W', action="append", type=str, help="activate a particular warning", default=[])
@@ -260,13 +277,21 @@ def run(typ, extraLibs="", makeLibrary=False, redefineSymbols=True, runClang=Tru
   parser.add_argument('--no-integrated-cpp', default=False, action="store_true", help="whether to skip preprocessing")
 
   parser.add_argument("-fvisibility", type=str, help="control the visibility of certain symbols")
+  parser.add_argument("--host-cxx", type=str, help="override the C++ compiler used underneath from the one used to build SST/macro")
+  parser.add_argument("--host-cc", type=str, help="override the C compiler used underneath from the one used to build SST/macro")
   
   args, extraArgs = parser.parse_known_args()
 
-  if "SSTMAC_COMPONENT_BUILD" in os.environ:
-    flag = int(os.environ["SSTMAC_COMPONENT_BUILD"])
-    if flag:
-      args.sst_component = True
+  #it is possible to override the host compilers use to do preprocessing/compilation
+  if args.host_cxx:
+    cxx = args.host_cxx
+  elif "SSTMAC_CXX" in os.environ:
+    cxx = os.environ["SSTMAC_CXX"]
+
+  if args.host_cc:
+    cc = args.host_cc
+  elif "SSTMAC_CC" in os.environ:
+    cc = os.environ["SSTMAC_CC"]
 
   if args.no_integrated_cpp:
     sys.exit("SST compiler wrapper cannot handle --no-integrated-cpp flag")
@@ -275,18 +300,51 @@ def run(typ, extraLibs="", makeLibrary=False, redefineSymbols=True, runClang=Tru
   if args.fvisibility and args.fvisibility != "hidden": 
     ctx.compilerFlags.append("-fvisibility=%s" % args.fvisibility)
 
-  if args.skeletonize: ctx.clangArgs.append("--skeletonize")
-# if args.memoize: clangArgs.append("--memoize")
+  skeletonizing = False
+  if os.environ.has_key("SSTMAC_SKELETONIZE"):
+    val = int(os.environ["SSTMAC_SKELETONIZE"])
+    skeletonizing = bool(val)
+  if skeletonizing or (not args.skeletonize is None):
+    ctx.clangArgs.append("--skeletonize")
+    ctx.setMode(ctx.SKELETONIZE)
+
+  memoizing = False
+  if os.environ.has_key("SSTMAC_MEMOIZE"):
+    val = int(os.environ["SSTMAC_MEMOIZE"])
+    memoizing = bool(val)
+  if memoizing or (not args.memoize is None):
+    ctx.clangArgs.append("--memoize")
+    ctx.setMode(ctx.MEMOIZE)
+
+  if args.sst_component:
+    ctx.setMode(ctx.COMPONENT)
+
+  #unless told otherwise, I am skeletonizinng
+  ctx.setDefaultMode(ctx.SKELETONIZE)
+  from sstcompile import addModeDefines
+  addModeDefines(ctx, args)
+
+  from sstlink import addModeLinks
+  addModeLinks(ctx, args)
   
   #this is probably cmake being a jack-donkey during configure, overwrite it
   if args.std == "c++98": args.std = "c++1y"
 
-  if redefineSymbols and not args.sst_component:
+  #if we are in simulate mode, we have to create the "replacement" environment
+  #we do this by rerouting all the headers to SST/macro headers
+  if ctx.simulateMode():
     repldir = os.path.join(cleanFlag(includeDir), "sstmac", "replacements")
     repldir = cleanFlag(repldir)
     args.I.append(os.path.join(prefix, "include", "sumi"))
-    ctx.defines.append("SSTMAC=1")
     args.I.insert(0,repldir)
+
+    #also force inclusion of wrappers
+    if typ == "c++":
+      ctx.directIncludes.append("cstdint")
+    else:
+      ctx.directIncludes.append("stdint.h")
+    ctx.directIncludes.append("sstmac/compute.h")
+    ctx.directIncludes.append("sstmac/skeleton.h")
 
   sysargs = sys.argv[1:]
   asmFiles = False
@@ -320,22 +378,6 @@ def run(typ, extraLibs="", makeLibrary=False, redefineSymbols=True, runClang=Tru
     ctx.cxxFlags.append("-fPIC")
     ctx.cFlags.append("-fPIC")
 
-  if args.sst_component: #shut down everything special
-    runClang = False
-    memoizing = False
-    skeletonizing = False
-    args.memoize = False
-    args.skeletonize = False
-  else: #oh, okay, building a skeleton
-    #always indicate that we are compiling an external skeleton app
-    ctx.defines.append("SSTMAC_EXTERNAL")
-
-  if (runClang and haveClangSrcToSrc) or args.sst_component:
-    ctx.defines.append("SSTMAC_NO_REFACTOR_MAIN")
-
-  if memoizing or args.memoize or args.sst_component:
-    ctx.defines.append("SSTMAC_NO_REPLACEMENTS")
-
   #for now, just assume any time an exe name "conftest"
   #is being built, it comes from configure
   if args.output == "conftest":
@@ -345,24 +387,6 @@ def run(typ, extraLibs="", makeLibrary=False, redefineSymbols=True, runClang=Tru
     flag = cleanFlag(entry)
     if flag:
       ctx.ldFlags.append(flag)
-
-
-  
-  if sstCore:
-    ctx.defines.append("SSTMAC_EXTERNAL_SKELETON")
-
-  if typ == "c++":
-    ctx.directIncludes.append("cstdint")
-  else:
-    ctx.directIncludes.append("stdint.h")
-  ctx.directIncludes.append("sstmac/compute.h")
-  ctx.directIncludes.append("sstmac/skeleton.h")
-
-  src2src = True
-  if "SSTMAC_SRC2SRC" in os.environ:
-    src2src = int(os.environ["SSTMAC_SRC2SRC"])
-
-  runClang = haveClangSrcToSrc and src2src and runClang and not args.sst_component
 
 
   sstparser = argparse.ArgumentParser(description='Process flags for the SST/macro compiler wrapper')
@@ -385,8 +409,9 @@ def run(typ, extraLibs="", makeLibrary=False, redefineSymbols=True, runClang=Tru
     ctx.ld = cxx
     ctx.compilerFlags = ctx.cxxFlags
     if args.std:
-      if sstCxxArgs.std and args.std != sstCxxArgs.std:
-        sys.stderr.write("WARNING: SST compiled with %s, but app compiled with %s - choosing app's version\n" % (sstCxxArgs.std, args.std))
+#        let's turn off this warning for now
+#      if sstCxxArgs.std and args.std != sstCxxArgs.std:
+#        sys.stderr.write("WARNING: SST compiled with %s, but app compiled with %s - choosing app's version\n" % (sstCxxArgs.std, args.std))
       ctx.cxxFlags.append("-std=%s" % args.std)
     elif sstCxxArgs.std:
       ctx.cxxFlags.append("-std=%s" % sstCxxArgs.std)
@@ -395,7 +420,7 @@ def run(typ, extraLibs="", makeLibrary=False, redefineSymbols=True, runClang=Tru
     ctx.compilerFlags = ctx.cxxFlags[:]
   elif typ.lower() == "c":
     ctx.compiler = cc
-    if runClang:
+    if ctx.hasClang:
       #always use c++ for linking since we are bringing a bunch of sstmac C++ into the game
       ctx.ld = cxx
     else:
@@ -452,7 +477,8 @@ def run(typ, extraLibs="", makeLibrary=False, redefineSymbols=True, runClang=Tru
 
   runLinker = not args.preprocess and not args.compile
 
-  from sstcompile import addSrc2SrcCompile, addComponentCompile, addCompile, addPreprocess
+  from sstcompile import addSrc2SrcCompile, addComponentCompile
+  from sstcompile import addCompile, addPreprocess
   from sstlink import addLink
 
   #the format of the entry in the cmd arr is as follows
@@ -478,9 +504,9 @@ def run(typ, extraLibs="", makeLibrary=False, redefineSymbols=True, runClang=Tru
       srcName = os.path.split(srcFile)[-1]
       target = swapSuffix("o", srcName)
     generatedObjects.append(target)
-    if runClang:
+    if ctx.srcToSrc():
       addSrc2SrcCompile(ctx, srcFile, target, args, cmds)
-    elif args.sst_component:
+    elif ctx.mode == ctx.COMPONENT:
       addComponentCompile(ctx, srcFile, target, args, cmds)
     else:
       addCompile(ctx, srcFile, target, args, cmds)
