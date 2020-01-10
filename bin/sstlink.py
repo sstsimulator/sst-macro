@@ -6,7 +6,7 @@ def addLink(ctx, ldTarget, args, cmds, objects, toExe=False):
   ldpathMaker = "-Wl,-rpath,%s/lib" % prefix
   linkCmdArr = [ctx.ld, ldpathMaker] 
   linkCmdArr.extend(ctx.ldFlags)
-  if not args.sst_component and not toExe:
+  if not toExe:
     linkCmdArr.extend(soFlagsStr.split())
   linkCmdArr.extend(ctx.libs)
   linkCmdArr.extend(ctx.compilerFlags)
