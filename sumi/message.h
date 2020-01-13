@@ -234,14 +234,24 @@ class Message : public sstmac::hw::NetworkMessage
     return recv_sync_delay_;
   }
 
+  sstmac::TimeDelta sendSyncDelay() const {
+    return send_sync_delay_;
+  }
+
   void addRecvSyncDelay(sstmac::TimeDelta delay) {
     recv_sync_delay_ += delay;
+  }
+
+  void setSendSyncDelay(sstmac::TimeDelta delay) {
+    send_sync_delay_ = delay;
   }
 
  private:
   sstmac::Timestamp arrived_;
 
   sstmac::TimeDelta recv_sync_delay_;
+
+  sstmac::TimeDelta send_sync_delay_;
 
 
 };

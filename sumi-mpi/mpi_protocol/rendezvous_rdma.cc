@@ -61,6 +61,32 @@ RendezvousProtocol::RendezvousProtocol(SST::Params& params, MpiQueue* queue) :
   header_qos_ = params.find<int>("rendezvous_header_qos", default_qos);
   rdma_get_qos_ = params.find<int>("rendezvous_rdma_get_qos", default_qos);
   ack_qos_ = params.find<int>("rendezvous_ack_qos", default_qos);
+
+  if (params.contains("catch_up_qos")){
+    auto sync_bw = params.find<SST::UnitAlgebra>("catch_up_sync_bandwidth_cutoff");
+    sync_byte_delay_catch_up_cutoff_ = sstmac::TimeDelta(sync_bw.getValue().inverse().toDouble());
+    auto quiesce_bw = params.find<SST::UnitAlgebra>("catch_up_quiesce_bandwidth_cutoff");
+    quiesce_byte_delay_catch_up_cutoff_ = sstmac::TimeDelta(quiesce_bw.getValue().inverse().toDouble());
+    catch_up_qos_ = params.find<int>("catch_up_qos");
+  } else {
+    catch_up_qos_ = -1;
+  }
+}
+
+void
+RendezvousProtocol::newOutstanding()
+{
+  if (numOutstanding_ == 0){
+    lastQuiesce_ = queue_->now();
+    minPartnerQuiesce_ = lastQuiesce_;
+  }
+  ++numOutstanding_;
+}
+
+void
+RendezvousProtocol::finishedOutstanding()
+{
+  --numOutstanding_;
 }
 
 RendezvousGet::~RendezvousGet()
@@ -93,9 +119,11 @@ RendezvousGet::start(void* buffer, int src_rank, int dst_rank, sstmac::sw::TaskI
                            sumi::Message::no_ack, queue_->pt2ptCqId(), sumi::Message::pt2pt, header_qos_,
                            src_rank, dst_rank, type->id,  tag, comm, seq_id,
                            count, type->packed_size(), send_buf, RENDEZVOUS_GET);
+  msg->setMinQuiesce(minPartnerQuiesce_);
   send_flows_.emplace(std::piecewise_construct,
                       std::forward_as_tuple(msg->flowId()),
                       std::forward_as_tuple(req, buffer, send_buf));
+  newOutstanding();
 }
 
 void
@@ -112,7 +140,8 @@ RendezvousGet::incomingAck(MpiMessage *msg)
   if (s.req->activeWait()){
     sstmac::TimeDelta active_delay = mpi_->activeDelay(s.req->waitStart());
     mpi_->logMessageDelay(msg, msg->payloadSize(), 2,
-                          msg->recvSyncDelay(), active_delay);
+                          msg->recvSyncDelay(), active_delay,
+                          queue_->now() - lastQuiesce_);
   }
 
   if (s.original && s.original != s.temporary){
@@ -122,11 +151,13 @@ RendezvousGet::incomingAck(MpiMessage *msg)
   s.req->complete();
   send_flows_.erase(iter);
   delete msg;
+  finishedOutstanding();
 }
 
 void
 RendezvousGet::incoming(MpiMessage* msg)
 {
+  minPartnerQuiesce_ = std::min(minPartnerQuiesce_, msg->minQuiesce());
   mpi_queue_protocol_debug("RDMA get incoming %s", msg->toString().c_str());
   switch(msg->sstmac::hw::NetworkMessage::type()){
   case sstmac::hw::NetworkMessage::payload: {
@@ -166,16 +197,24 @@ RendezvousGet::incomingHeader(MpiMessage* msg)
 void
 RendezvousGet::incoming(MpiMessage *msg, MpiQueueRecvRequest* req)
 {
+  newOutstanding();
   mpi_queue_protocol_debug("RDMA get matched payload %s", msg->toString().c_str());
 
-  logRecvDelay(0, msg, req);
   sstmac::Timestamp now = mpi_->now();
-  if (now > msg->timeArrived()){
-    sstmac::TimeDelta sync_delay = now - msg->timeArrived();
-    msg->addRecvSyncDelay(sync_delay);
+  sstmac::TimeDelta timeSinceQuiesce = now - minPartnerQuiesce_;//lastQuiesce_;
+  logRecvDelay(0, timeSinceQuiesce, msg, req);
+  msg->addRecvSyncDelay(now - msg->timeArrived());
+  msg->setSendSyncDelay(now - msg->timeStarted());
+
+  int qos_to_use = rdma_get_qos_;
+  if (catch_up_qos_ >= 0){
+    sstmac::TimeDelta maxQuiesceDelay = quiesce_byte_delay_catch_up_cutoff_ * msg->payloadSize();
+    if (maxQuiesceDelay < timeSinceQuiesce){
+      qos_to_use = catch_up_qos_;
+    }
   }
 
-  mpi_->pinRdma(msg->payloadBytes());
+  mpi_->pinRdma(msg->payloadSize());
   mpi_queue_action_debug(
     queue_->api()->commWorld()->rank(),
     "found matching request for %s",
@@ -183,9 +222,10 @@ RendezvousGet::incoming(MpiMessage *msg, MpiQueueRecvRequest* req)
 
   recv_flows_[msg->flowId()] = req;
   msg->advanceStage();
+  msg->setMinQuiesce(minPartnerQuiesce_);
   mpi_->rdmaGetRequestResponse(msg, msg->payloadSize(), req->recv_buffer_, msg->partnerBuffer(),
                    queue_->pt2ptCqId(), software_ack_ ? sumi::Message::no_ack : queue_->pt2ptCqId(),
-                   rdma_get_qos_);
+                   qos_to_use);
 
 }
 
@@ -200,8 +240,8 @@ RendezvousGet::incomingPayload(MpiMessage* msg)
   MpiQueueRecvRequest* req = iter->second;
   recv_flows_.erase(iter);
 
-  logRecvDelay(1, msg, req);
   sstmac::Timestamp now = mpi_->now();
+  logRecvDelay(1, now - minPartnerQuiesce_, msg, req);
   if (now > msg->timeArrived()){
     sstmac::TimeDelta sync_delay = now - msg->timeArrived();
     msg->addRecvSyncDelay(sync_delay);
@@ -216,6 +256,7 @@ RendezvousGet::incomingPayload(MpiMessage* msg)
   } else {
     delete msg;
   }
+  finishedOutstanding();
 }
 
 }

@@ -145,7 +145,7 @@ MpiApi::MpiApi(SST::Params& params, sstmac::sw::App* app,
 #if !SSTMAC_INTEGRATED_SST_CORE
   std::string subname = sprockit::printf("app%d.rank%d", app->aid(), app->tid());
   delays_ = app->os()->node()->registerMultiStatistic<int,int,int,int,uint64_t,
-      double,double,double,double,double,double>(params, "delays", subname);
+      double,double,double,double,double,double,double,double,double>(params, "delays", subname);
 #endif
 
 #ifdef SSTMAC_OTF2_ENABLED
@@ -593,16 +593,24 @@ CallGraphCreateTag(active);
 void
 MpiApi::logMessageDelay(Message *msg, uint64_t bytes, int stage,
                         sstmac::TimeDelta sync_delay,
-                        sstmac::TimeDelta active_delay)
+                        sstmac::TimeDelta active_delay,
+                        sstmac::TimeDelta time_since_quiesce)
 {
 #if !SSTMAC_INTEGRATED_SST_CORE
   current_call_.idle += sync_delay;
 
   if (crossed_comm_world_barrier_){
     delays_->addData(msg->sender(), msg->recver(), msg->classType(), stage, bytes,
-                     msg->recvSyncDelay().sec(), msg->injectionDelay().sec(),
-                     msg->congestionDelay().sec(), msg->minDelay().sec(),
-                     sync_delay.sec(), active_delay.sec());
+      msg->sendSyncDelay().sec(), //the time between send arriving and recver matching
+      msg->recvSyncDelay().sec(), //the time between recver posting and send matching
+      msg->injectionDelay().sec(), //the congestion delay on injection
+      msg->congestionDelay().sec(), //the congestion delay on network
+      msg->minDelay().sec(), //the minimum delay the message could have had with no congestion
+      sync_delay.sec(), //the delay due to sync actually seen by application (not overlapped)
+      active_delay.sec(), //the delay due to network actually seen by application
+      time_since_quiesce.sec(),
+      now().sec()
+    ); //how long since the last "quiet" network state
   }
 #endif
 }
