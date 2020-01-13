@@ -254,7 +254,8 @@ class Transport {
   }
 
   virtual void logMessageDelay(Message *msg, uint64_t size, int stage,
-                               sstmac::TimeDelta sync_delay, sstmac::TimeDelta active_delay);
+                               sstmac::TimeDelta sync_delay, sstmac::TimeDelta active_delay,
+                               sstmac::TimeDelta time_since_quiesce = sstmac::TimeDelta());
 
   void startCollectiveMessageLog();
 

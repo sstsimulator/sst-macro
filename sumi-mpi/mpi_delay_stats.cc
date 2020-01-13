@@ -12,14 +12,18 @@ DelayStats::DelayStats(SST::BaseComponent* comp, const std::string& name,
 
 void
 DelayStats::addData_impl(int src, int dst, int type, int stage, uint64_t bytes,
-                         double sync_delay, double contention_delay,
+                         double send_sync_delay, double recv_sync_delay,
+                         double contention_delay,
                          double comm_delay, double min_delay, 
-                         double active_sync_delay, double active_delay)
+                         double active_sync_delay, double active_delay,
+                         double time_since_quiesce, double time)
 {
   messages_.emplace_back(src,dst,type,stage,bytes,
-                         sync_delay, contention_delay,
+                         send_sync_delay, recv_sync_delay,
+                         contention_delay,
                          comm_delay, min_delay, 
-                         active_sync_delay, active_delay);
+                         active_sync_delay, active_delay, 
+                         time_since_quiesce, time);
 }
 
 void
@@ -44,7 +48,7 @@ DelayStatsOutput::startOutputGroup(sstmac::StatisticGroup *grp)
 {
   auto outfile = grp->name + ".csv";
   out_.open(outfile);
-  out_ << "component,src,dst,type,stage,size,sync,injection,network,min,active_sync,active_total";
+  out_ << "component,src,dst,type,stage,size,send_sync,recv_sync,injection,network,min,active_sync,active_total,quiesce_time,time";
 }
 
 void
@@ -65,12 +69,15 @@ DelayStatsOutput::output(SST::Statistics::StatisticBase* statistic, bool  /*endO
          << "," << m.type
          << "," << m.stage
          << "," << m.length
-         << "," << m.sync_delay
+         << "," << m.send_sync_delay
+         << "," << m.recv_sync_delay
          << "," << m.inj_delay
          << "," << m.contention_delay
          << "," << m.min_delay
          << "," << m.active_sync_delay
          << "," << m.active_delay
+         << "," << m.time_since_quiesce
+         << "," << m.time
     ;
   }
 }

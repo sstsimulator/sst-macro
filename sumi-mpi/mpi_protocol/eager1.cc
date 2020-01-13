@@ -103,7 +103,7 @@ Eager1::incomingPayload(MpiMessage* msg)
 void
 Eager1::incoming(MpiMessage *msg, MpiQueueRecvRequest* req)
 {
-  logRecvDelay(1, msg, req);
+  logRecvDelay(1, sstmac::TimeDelta(), msg, req);
   if (req->recv_buffer_){
     char* temp_recv_buf = (char*) msg->localBuffer();
 #if SSTMAC_SANITY_CHECK

@@ -59,6 +59,12 @@ using namespace clang::tooling;
   #define UnaryOperatorCtor(...) UnaryOperator(__VA_ARGS__)
 #endif
 
+#if CLANG_VERSION_MAJOR >= 5
+  #define BinaryOperatorCtor(...) BinaryOperator(__VA_ARGS__, FPOptions())
+#else
+  #define BinaryOperatorCtor(...) BinaryOperator(__VA_ARGS__, false)
+#endif
+
 SSTLoopCountPragma::SSTLoopCountPragma(SourceLocation loc, const std::list<clang::Token>& tokens)
 {
   if (tokens.size() != 1){
@@ -98,9 +104,9 @@ SSTLoopCountPragma::transformWhileLoop(Stmt* s)
      VK_LValue,
      loopVar);
 
-  BinaryOperator* cond_stmt = new (fd->getASTContext()) BinaryOperator(cond_ref, loop_count, BO_LT,
+  BinaryOperator* cond_stmt = new (fd->getASTContext()) BinaryOperatorCtor(cond_ref, loop_count, BO_LT,
                                              fd->getASTContext().IntTy, VK_RValue,
-                                             OK_Ordinary, getStart(ws->getCond()), FPOptions());
+                                             OK_Ordinary, getStart(ws->getCond()));
 
   DeclRefExpr* inc_ref = DeclRefExpr::Create(
      fd->getASTContext(),
@@ -157,9 +163,9 @@ SSTLoopCountPragma::transformForLoop(Stmt* s)
      VK_LValue,
      loopVar);
 
-  BinaryOperator* cond_stmt = new (fd->getASTContext()) BinaryOperator(cond_ref, loop_count, BO_LT,
+  BinaryOperator* cond_stmt = new (fd->getASTContext()) BinaryOperatorCtor(cond_ref, loop_count, BO_LT,
                                              fd->getASTContext().IntTy, VK_RValue,
-                                             OK_Ordinary, getStart(fs->getCond()), FPOptions());
+                                             OK_Ordinary, getStart(fs->getCond()));
 
   DeclRefExpr* inc_ref = DeclRefExpr::Create(
      fd->getASTContext(),

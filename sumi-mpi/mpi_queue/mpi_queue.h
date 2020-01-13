@@ -114,7 +114,7 @@ class MpiQueue
 
   void memcopy(uint64_t bytes);
 
-  double now() const;
+  sstmac::Timestamp now() const;
 
   void finalizeRecv(MpiMessage* msg,
                 MpiQueueRecvRequest* req);

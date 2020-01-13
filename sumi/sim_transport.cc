@@ -213,7 +213,8 @@ Transport::activeDelay(sstmac::Timestamp start)
 void
 Transport::logMessageDelay(Message * /*msg*/, uint64_t /*bytes*/, int /*stage*/,
                            sstmac::TimeDelta /*sync_delay*/, 
-                           sstmac::TimeDelta /*active_delay*/)
+                           sstmac::TimeDelta /*active_delay*/,
+                           sstmac::TimeDelta /*time since quiesce*/)
 {
 }
 

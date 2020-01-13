@@ -153,9 +153,9 @@ MpiQueue::deleteStatics()
 {
 }
 
-double
+sstmac::Timestamp
 MpiQueue::now() const {
-  return api_->now().sec();
+  return api_->now();
 }
 
 MpiQueue::~MpiQueue() throw ()

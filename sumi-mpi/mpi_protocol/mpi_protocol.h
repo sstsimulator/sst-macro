@@ -88,7 +88,8 @@ class MpiProtocol : public sprockit::printable {
 
   void* fillSendBuffer(int count, void *buffer, MpiType *typeobj);
 
-  void logRecvDelay(int stage, MpiMessage* msg, MpiQueueRecvRequest* req);
+  void logRecvDelay(int stage, sstmac::TimeDelta timeSinceQuiesce,
+                    MpiMessage* msg, MpiQueueRecvRequest* req);
 };
 
 /**
@@ -177,7 +178,18 @@ class RendezvousProtocol : public MpiProtocol
   int header_qos_;
   int rdma_get_qos_;
   int ack_qos_;
+  sstmac::Timestamp lastQuiesce_;
+  sstmac::Timestamp minPartnerQuiesce_;
 
+  sstmac::TimeDelta sync_byte_delay_catch_up_cutoff_;
+  sstmac::TimeDelta quiesce_byte_delay_catch_up_cutoff_;
+  int catch_up_qos_;
+
+  void newOutstanding();
+  void finishedOutstanding();
+
+ private:
+  int numOutstanding_;
 };
 
 

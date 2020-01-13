@@ -84,7 +84,7 @@ Eager0::start(void* buffer, int src_rank, int dst_rank, sstmac::sw::TaskId tid, 
 void
 Eager0::incoming(MpiMessage *msg, MpiQueueRecvRequest *req)
 {
-  logRecvDelay(1, msg, req);
+  logRecvDelay(1, sstmac::TimeDelta(), msg, req);
   if (req->recv_buffer_){
 #if SSTMAC_SANITY_CHECK
     if (!msg->smsgBuffer()){
