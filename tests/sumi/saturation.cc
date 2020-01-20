@@ -230,7 +230,7 @@ main(int argc, char** argv)
   ++num_finished;
 
   if (num_finished == nproc) {
-    std::cout << sprockit::printf("Average latency: %10.5f ms\n", average_latency_ms);
+    std::cout << sprockit::sprintf("Average latency: %10.5f ms\n", average_latency_ms);
   }
   return 0;
 }

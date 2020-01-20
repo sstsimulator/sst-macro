@@ -221,7 +221,7 @@ class MpiQueue
 
 #define mpi_queue_action_debug(rank, ...) \
   mpi_debug(rank, sprockit::dbg::mpi_queue, \
-   " [queue] %s", sprockit::printf(__VA_ARGS__).c_str())
+   " [queue] %s", sprockit::sprintf(__VA_ARGS__).c_str())
 
 //for local use in mpi queue object
 #define mpi_queue_debug(...) \

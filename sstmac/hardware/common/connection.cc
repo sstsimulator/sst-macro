@@ -76,7 +76,7 @@ class timestamp_prefix_fxn :
 
   std::string str() {
     double t = mgr_->now().sec() * mult_;
-    return sprockit::printf("T=%14.8f %s:", t, units_.c_str());
+    return sprockit::sprintf("T=%14.8f %s:", t, units_.c_str());
   }
 
  private:

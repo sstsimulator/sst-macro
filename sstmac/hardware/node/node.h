@@ -70,7 +70,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 DeclareDebugSlot(node);
 #define node_debug(...) \
-  debug_printf(sprockit::dbg::node, "Node %d: %s", int(addr()), sprockit::printf(__VA_ARGS__).c_str())
+  debug_printf(sprockit::dbg::node, "Node %d: %s", int(addr()), sprockit::sprintf(__VA_ARGS__).c_str())
 
 namespace sstmac {
 namespace hw {

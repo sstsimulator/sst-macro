@@ -57,7 +57,7 @@ Questions? Contact sst-macro-help@sandia.gov
 RegisterDebugSlot(partition);
 
 #define part_debug(...) \
-  debug_printf(sprockit::dbg::partition, "Rank %d: %s", me_, sprockit::printf(__VA_ARGS__).c_str())
+  debug_printf(sprockit::dbg::partition, "Rank %d: %s", me_, sprockit::sprintf(__VA_ARGS__).c_str())
 
 namespace sstmac {
 

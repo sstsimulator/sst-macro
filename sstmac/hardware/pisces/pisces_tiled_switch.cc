@@ -257,7 +257,7 @@ PiscesTiledSwitch::handlePayload(Event *ev)
 std::string
 PiscesTiledSwitch::toString() const
 {
-  return sprockit::printf("pisces tiled switch %d", int(my_addr_));
+  return sprockit::sprintf("pisces tiled switch %d", int(my_addr_));
 }
 
 LinkHandler*

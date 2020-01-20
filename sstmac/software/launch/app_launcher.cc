@@ -129,13 +129,13 @@ StartAppRequest::serialize_order(serializer &ser)
 std::string
 StartAppRequest::toString() const
 {
-  return sprockit::printf("start_app_event: app=%d task=%d node=%d", aid(), tid(), toaddr());
+  return sprockit::sprintf("start_app_event: app=%d task=%d node=%d", aid(), tid(), toaddr());
 }
 
 std::string
 JobStopRequest::toString() const
 {
-  return sprockit::printf("job_stop_event: app=%d task=%d node=%d", aid(), tid(), fromaddr());
+  return sprockit::sprintf("job_stop_event: app=%d task=%d node=%d", aid(), tid(), fromaddr());
 }
 
 

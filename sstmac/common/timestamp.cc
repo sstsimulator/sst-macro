@@ -255,7 +255,7 @@ std::ostream& operator<<(std::ostream &os, const TimeDelta &t)
 std::string
 to_printf_type(TimeDelta t)
 {
-  return sprockit::printf("%8.4e msec", t.msec());
+  return sprockit::sprintf("%8.4e msec", t.msec());
 }
 
 } // end of namespace sstmac

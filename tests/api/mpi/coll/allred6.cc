@@ -17,10 +17,10 @@ void mysum( void *cinPtr, void *coutPtr, int *count, MPI_Datatype *dtype );
 void mysum( void *cinPtr, void *coutPtr, int *count, MPI_Datatype * /*dtype*/ )
 {
     const int *cin = (const int *)cinPtr;
-    int       *cout = (int *)coutPtr;
+    int       *out = (int *)coutPtr;
     int        i, n = *count;
     for (i=0; i<n; i++) 
-	cout[i] += cin[i];
+  out[i] += cin[i];
 }
 int allred6( int argc, char *argv[] )
 {

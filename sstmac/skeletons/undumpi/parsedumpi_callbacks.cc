@@ -323,7 +323,7 @@ ParsedumpiCallbacks::getMpitype(dumpi_datatype id)
       mpitype_[id] = MpiType::builtins[size].id;
       printf("Remapped dumpi type %d to builtin of size %d\n", id, size);
     } else {
-      cerrn << sprockit::printf("Warning: no match for datatype id %d - assuming double\n", int(id));
+      cerrn << sprockit::sprintf("Warning: no match for datatype id %d - assuming double\n", int(id));
       mpitype_[id] = MPI_DOUBLE;
     }
     return mpitype_[id];

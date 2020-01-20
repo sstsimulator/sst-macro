@@ -118,7 +118,7 @@ JobLauncher::addLaunchRequests(SST::Params& params)
   int last_used_aid = 0;
   SST::Params all_app_params = params.find_scoped_params("app");
   while (keep_going || aid < 10){
-    std::string name = sprockit::printf("app%d",aid);
+    std::string name = sprockit::sprintf("app%d",aid);
     SST::Params app_params = params.find_scoped_params(name);
     if (!app_params.empty()){
       SST::Params app_params = params.find_scoped_params(name);

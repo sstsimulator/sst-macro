@@ -199,7 +199,7 @@ Thread::Thread(SSTMAC_MAYBE_UNUSED SST::Params& params, SoftwareId sid, Operatin
   cpumask_ = ~(cpumask_);
 
 #if !SSTMAC_INTEGRATED_SST_CORE
-  auto subname = sprockit::printf("app%d.rank%d.thread%d",
+  auto subname = sprockit::sprintf("app%d.rank%d.thread%d",
                                   sid.app_, sid.task_, sid.thread_);
 #if SSTMAC_HAVE_CALL_GRAPH
   auto* cg_stat = os->node()->registerStatistic<void>(params, "call_graph", subname);

@@ -60,6 +60,7 @@ nobase_library_include_HEADERS += \
   set \
   string \
   vector \
+  stdio.h \
   signal.h \
   sstmac_pthread_clear.h \
   time.h \

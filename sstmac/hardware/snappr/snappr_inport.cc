@@ -13,7 +13,7 @@ SnapprInPort::handle(Event *ev)
 std::string
 SnapprInPort::toString() const
 {
-  return sprockit::printf("SNAPPR InPort %d", number);
+  return sprockit::sprintf("SNAPPR InPort %d", number);
 }
 
 }

@@ -70,7 +70,7 @@ DeclareDebugSlot(nic);
 
 #define nic_debug(...) \
   debug_printf(sprockit::dbg::nic, "NIC on node %d: %s", \
-    int(addr()), sprockit::printf(__VA_ARGS__).c_str())
+    int(addr()), sprockit::sprintf(__VA_ARGS__).c_str())
 
 namespace sstmac {
 namespace hw {

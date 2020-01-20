@@ -110,7 +110,7 @@ class StatHistogram : public SST::Statistics::MultiStatistic<BinType,CountType>
     fields_.push_back(statOutput->registerField<int>("numBins"));
     fields_.push_back(statOutput->registerField<double>("binSize"));
     for (int i=0; i < counts_.size(); ++i){
-      std::string name = sprockit::printf("bin%d", i);
+      std::string name = sprockit::sprintf("bin%d", i);
       fields_.push_back(statOutput->registerField<uint64_t>(name.c_str()));
     }
   }

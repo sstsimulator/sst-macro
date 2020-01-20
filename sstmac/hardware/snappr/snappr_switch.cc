@@ -118,7 +118,7 @@ SnapprSwitch::SnapprSwitch(uint32_t id, SST::Params& params) :
   switch_debug("initializing with %d VCs and %" PRIu32 " total credits",
                num_vc_, credits);
   for (int i=0; i < top_->maxNumPorts(); ++i){
-    std::string subId = sprockit::printf("Switch:%d.Port:%d", addr(), i);
+    std::string subId = sprockit::sprintf("Switch:%d.Port:%d", addr(), i);
     std::string portName = top_->portTypeName(addr(), i);
     outports_.emplace_back(link_params, arbtype, subId, portName, i,
                            byte_delay, congestion, flow_control, this);
@@ -224,7 +224,7 @@ SnapprSwitch::handlePayload(SnapprPacket* pkt, int inport)
 std::string
 SnapprSwitch::toString() const
 {
-  return sprockit::printf("snappr switch %d", int(my_addr_));
+  return sprockit::sprintf("snappr switch %d", int(my_addr_));
 }
 
 LinkHandler*

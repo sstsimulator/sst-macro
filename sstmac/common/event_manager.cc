@@ -63,7 +63,7 @@ Questions? Contact sst-macro-help@sandia.gov
 RegisterDebugSlot(event_manager);
 
 #define prll_debug(...) \
-  debug_printf(sprockit::dbg::parallel, "LP %d: %s", rt_->me(), sprockit::printf(__VA_ARGS__).c_str())
+  debug_printf(sprockit::dbg::parallel, "LP %d: %s", rt_->me(), sprockit::sprintf(__VA_ARGS__).c_str())
 
 namespace sstmac {
 

@@ -70,7 +70,7 @@ SculpinPacket::SculpinPacket(
 std::string
 SculpinPacket::toString() const
 {
-  return sprockit::printf("pkt bytes=%" PRIu32 " flow %" PRIu64 ": %s",
+  return sprockit::sprintf("pkt bytes=%" PRIu32 " flow %" PRIu64 ": %s",
                           numBytes(), flowId(), flow()
                           ? flow()->toString().c_str()
                           : "no payload");

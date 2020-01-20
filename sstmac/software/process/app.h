@@ -239,6 +239,17 @@ class App : public Thread
     return app_rc_;
   }
 
+  FILE* stdOutFile(){
+    return stdout_;
+  }
+
+  FILE* stdErrFile(){
+    return stderr_;
+  }
+
+  std::ostream& coutStream();
+  std::ostream& cerrStream();
+
  protected:
   friend class Thread;
 
@@ -293,6 +304,11 @@ class App : public Thread
   static std::map<int, dlopen_entry> dlopens_;
 
   static int app_rc_;
+
+  std::ofstream cout_;
+  std::ofstream cerr_;
+  FILE* stdout_;
+  FILE* stderr_;
 
 };
 

@@ -371,25 +371,45 @@ SkeletonASTVisitor::setupFunctionStaticCpp(VarDecl* D, const std::string& scopeP
   GlobalVariableReplacement var = setupGlobalReplacement(D, scopePrefix, false, true, false);
   std::string replText = "int __sizeof_" + var.scopeUniqueVarName + " = sizeof(void*); "
       " extern int __offset_" + var.scopeUniqueVarName + "; "
-      " void init_" + var.scopeUniqueVarName + "(void* ptr){ "
+      " extern \"C\" void init_" + var.scopeUniqueVarName + "(void* ptr){ "
       "   void** ptrptr = (void**) ptr; "
       "   *ptrptr = nullptr; "
       "}";
+
   CompilerGlobals::rewriter.InsertText(fxnStart, replText, false);
 
   std::string initializer;
-  if (D->hasInit()){
-    initializer = printWithGlobalsReplaced(D->getInit());
-    switch(D->getInit()->getStmtClass()){
-     case Stmt::InitListExprClass:
-     case Stmt::CXXConstructExprClass:
-       break;
-     default:
-      initializer = "{ " + initializer + " }";
-      break;
+  if (var.arrayInfo){
+    //create a temp that is the original object initialzed
+    //the *x = expr syntax is not valid for certain initializations
+    initializer = "sstmac_" + var.scopeUniqueVarName + "= ("
+        + var.arrayInfo->typedefName + "*) new char[sizeof(" + var.typeStr + ")];";
+    if (D->hasInit()){
+      initializer += var.arrayInfo->typedefName + " initer_" + var.scopeUniqueVarName
+                    + "=" + printWithGlobalsReplaced(D->getInit()) + ";";
+      //then memcopy from it into the original
+      initializer += " memcpy(sstmac_" + var.scopeUniqueVarName + ", initer_" + var.scopeUniqueVarName
+                  + ", sizeof(" + var.arrayInfo->typedefName + "));";
     }
-    initializer = "sstmac_" + var.scopeUniqueVarName + "= new " + var.typeStr + initializer + ";";
+  } else {
+    std::string ctor;
+    if (D->hasInit()){
+      ctor = printWithGlobalsReplaced(D->getInit());
+      switch(D->getInit()->getStmtClass()){
+       case Stmt::InitListExprClass:
+       case Stmt::CXXConstructExprClass:
+         break;
+       default:
+        ctor = "{ " + ctor + " }";
+        break;
+      }
+    } else {
+      ctor = "{}";
+    }
+    initializer = "sstmac_" + var.scopeUniqueVarName + "= new " + var.typeStr + ctor + ";";
   }
+
+
 
   std::string initText =
    "void** ptrsstmac_" + var.scopeUniqueVarName

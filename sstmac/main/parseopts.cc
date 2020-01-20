@@ -146,7 +146,7 @@ parseOpts(int argc, char **argv, opts &oo)
         //this set an input flag
         break;
       case 'e': {
-        std::string param_name = sprockit::printf("node.app%d.exe", app_exe_num);
+        std::string param_name = sprockit::sprintf("node.app%d.exe", app_exe_num);
         oo.params->addParamOverride(param_name, optarg);
         app_exe_num++;
         break;
@@ -165,7 +165,7 @@ parseOpts(int argc, char **argv, opts &oo)
         activateDebugs(optarg);
         break;
       case 'n' :
-        oo.params->addParamOverride("node.app1.launch_cmd", sprockit::printf("aprun -n %s -N 1", optarg));
+        oo.params->addParamOverride("node.app1.launch_cmd", sprockit::sprintf("aprun -n %s -N 1", optarg));
         break;
       case 'A' :
         oo.params->addParamOverride("node.app1.name", optarg);

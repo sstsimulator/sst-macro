@@ -110,11 +110,11 @@ class Library
   }
 
   static std::string standardAppLibname(const char* prefix, TaskId tid){
-    return sprockit::printf("%s-%d", prefix, tid);
+    return sprockit::sprintf("%s-%d", prefix, tid);
   }
 
   static std::string standardAppPrefix(const char* prefix, AppId aid){
-    return sprockit::printf("%s-%d", prefix, aid);
+    return sprockit::sprintf("%s-%d", prefix, aid);
   }
 
  protected:

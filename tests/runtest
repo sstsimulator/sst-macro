@@ -206,7 +206,7 @@ def checkValgrind(tmpFile):
     "key::operator new",
     "jump_fcontext",
     "mpi_comm::add_request",
-    "sprockit::printf",
+    "sprockit::sprintf",
     "stack_alloc::alloc",
     "total heap usage",
     "vfprintf_l",
