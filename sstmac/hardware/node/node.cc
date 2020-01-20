@@ -216,7 +216,7 @@ Node::execute(ami::SERVICE_FUNC  /*func*/, Event*  /*data*/)
 std::string
 Node::toString() const
 {
-  return sprockit::printf("node(%d)", int(my_addr_));
+  return sprockit::sprintf("node(%d)", int(my_addr_));
 }
 
 void

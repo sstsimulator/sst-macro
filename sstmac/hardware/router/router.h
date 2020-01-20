@@ -63,7 +63,7 @@ DeclareDebugSlot(router)
 #define rter_debug(...) \
   debug_printf(sprockit::dbg::router, \
     "Router on switch %d: %s", int(my_addr_), \
-    sprockit::printf(__VA_ARGS__).c_str())
+    sprockit::sprintf(__VA_ARGS__).c_str())
 
 
 namespace sstmac {

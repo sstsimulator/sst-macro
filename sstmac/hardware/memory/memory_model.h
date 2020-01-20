@@ -55,7 +55,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 DeclareDebugSlot(memory)
 #define mem_debug(...) \
-    debug_printf(sprockit::dbg::memory, "Memory on Node %d: %s", int(nodeid_), sprockit::printf(__VA_ARGS__).c_str())
+    debug_printf(sprockit::dbg::memory, "Memory on Node %d: %s", int(nodeid_), sprockit::sprintf(__VA_ARGS__).c_str())
 
 namespace sstmac {
 namespace hw {

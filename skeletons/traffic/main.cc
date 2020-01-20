@@ -72,11 +72,11 @@ static uint32_t crc32_for_byte(uint32_t r) {
   return r ^ (uint32_t)0xFF000000L;
 }
 
-static uint32_t crc_table[0x100];
-static bool crc_inited = false;
 uint32_t crc32(const void *data, size_t n_bytes)
 {
   uint32_t crc = 11;
+  static uint32_t crc_table[0x100];
+  static bool crc_inited = false;
   if(!crc_inited){
     for(size_t i = 0; i < 0x100; ++i){
       crc_table[i] = crc32_for_byte(i);

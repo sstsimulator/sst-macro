@@ -85,7 +85,24 @@ MakeDebugSlot(app_compute);
 
 void sstmac_app_loaded(int /*aid*/){}
 
+extern "C" FILE* sstmac_stdout(){
+  return sstmac::sw::Thread::current()->parentApp()->stdOutFile();
+}
+
+extern "C" FILE* sstmac_stderr(){
+  return sstmac::sw::Thread::current()->parentApp()->stdErrFile();
+}
+
 namespace sstmac {
+
+std::ostream& cout_wrapper(){
+  return sw::Thread::current()->parentApp()->coutStream();
+}
+
+std::ostream& cerr_wrapper(){
+  return sw::Thread::current()->parentApp()->cerrStream();
+}
+
 namespace sw {
 
 std::unique_ptr<std::map<std::string, App::main_fxn>> UserAppCxxFullMain::main_fxns_;
@@ -162,7 +179,7 @@ App::dlopenCheck(int aid, SST::Params& params, bool check_name)
           std::string given_name = params.find<std::string>("name");
           /**
           if (given_name != std::string(str_name)){
-            std::cout << sprockit::printf("App %d loaded from exe %s. "
+            std::cout << sprockit::sprintf("App %d loaded from exe %s. "
                "User-specified name '%s' overriding default name",
                aid, libname.c_str(), given_name.c_str()) << std::endl;
           }
@@ -279,6 +296,63 @@ App::App(SST::Params& params, SoftwareId sid,
     }
     apis_[alias] = apis_[name];
   }
+
+  std::string stdout_str = params.find<std::string>("stdout", "stdout");
+  std::string stderr_str = params.find<std::string>("stderr", "stderr");
+  std::string cout_str = params.find<std::string>("cout", "cout");
+  std::string cerr_str = params.find<std::string>("cerr", "cerr");
+
+  if (stdout_str == "stdout"){
+    stdout_ = stdout;
+  } else if (stdout_str == "app"){
+    std::string name = sprockit::sprintf("stdout.app%d", sid.app_);
+    stdout_ = fopen(name.c_str(), "a");
+  } else if (stdout_str == "rank"){
+    std::string name = sprockit::sprintf("stdout.app%d.%d", sid.app_, sid.task_);
+    stdout_ = fopen(name.c_str(), "w");
+  } else {
+    //this must be a filename
+    stdout_ = fopen(stdout_str.c_str(), "a");
+  }
+
+  if (stderr_str == "stderr"){
+    stderr_ = stderr;
+  } else if (stdout_str == "app"){
+    std::string name = sprockit::sprintf("stderr.app%d", sid.app_);
+    stderr_ = fopen(name.c_str(), "a");
+  } else if (stdout_str == "rank"){
+    std::string name = sprockit::sprintf("stderr.app%d.%d", sid.app_, sid.task_);
+    stderr_ = fopen(name.c_str(), "w");
+  } else {
+    //this must be a filename
+    stderr_ = fopen(stderr_str.c_str(), "a");
+  }
+
+  if (cout_str == "cout"){
+    //do nothing - by doing nothing we will return cout later
+  } else if (cout_str == "app") {
+    std::string name = sprockit::sprintf("cout.app%d", sid.app_);
+    cout_.open(name);
+  } else if (cout_str == "rank") {
+    std::string name = sprockit::sprintf("cout.app%d.%d", sid.app_, sid.task_);
+    cout_.open(name);
+  } else {
+    //this must be a filename
+    cout_.open(cout_str);
+  }
+
+  if (cerr_str == "cerr"){
+    //do nothing - by doing nothing we will return cout later
+  } else if (cerr_str == "app") {
+    std::string name = sprockit::sprintf("cerr.app%d", sid.app_);
+    cerr_.open(name);
+  } else if (cerr_str == "rank") {
+    std::string name = sprockit::sprintf("cerr.app%d.%d", sid.app_, sid.task_);
+    cerr_.open(cerr_str);
+  } else {
+    //this must be a filename
+    cerr_.open(cerr_str);
+  }
 }
 
 App::~App()
@@ -288,6 +362,25 @@ App::~App()
   if (compute_lib_) delete compute_lib_;
   if (globals_storage_) delete[] globals_storage_;
 }
+
+std::ostream&
+App::coutStream(){
+  if (cout_.is_open()){
+    return cout_;
+  } else {
+    return std::cout;
+  }
+}
+
+std::ostream&
+App::cerrStream(){
+  if (cerr_.is_open()){
+    return cerr_;
+  } else {
+    return std::cerr;
+  }
+}
+
 
 int
 App::putenv(char* input)

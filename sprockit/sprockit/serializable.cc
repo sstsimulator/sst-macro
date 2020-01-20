@@ -77,7 +77,7 @@ serializable_factory::add_builder(serializable_builder* builder, const char* nam
   builder_map& bmap = *builders_;
   serializable_builder*& current = bmap[hash];
   if (current != 0){
-    std::cerr << sprockit::printf(
+    std::cerr << sprockit::sprintf(
       "amazingly %s and %s both hash to same serializable id %u",
       current->name(), builder->name(), hash) << std::endl;
     ::abort();

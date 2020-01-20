@@ -75,7 +75,7 @@ Cascade::Cascade(SST::Params& params) :
 
   //can never have more group connections than groups
   if (group_con_ >= g_){
-    cerr0 << sprockit::printf("WARNING: requested %d group connections, "
+    cerr0 << sprockit::sprintf("WARNING: requested %d group connections, "
                         "but max allowable is %d for %d groups - resetting value\n",
                         group_con_, g_-1, g_);
     group_con_ = g_ - 1;

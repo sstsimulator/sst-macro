@@ -206,7 +206,7 @@ DagCollective::start()
 void
 DagCollective::deadlockCheck()
 {
-  std::cout << sprockit::printf("%s collective deadlocked on rank %d, tag %d",
+  std::cout << sprockit::sprintf("%s collective deadlocked on rank %d, tag %d",
                   tostr(type_), my_api_->rank(), tag_) << std::endl;
 
   actor_map::iterator it, end = my_actors_.end();

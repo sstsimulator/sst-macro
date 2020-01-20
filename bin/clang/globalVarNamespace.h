@@ -129,7 +129,7 @@ struct GlobalVarNamespace
       //   << ",\"" << name << "\""
       //   << "," << std::boolalpha << var.isThreadLocal
       //   << ");\n";
-      if (!var.isCpp){
+      if (!var.isCpp || var.isFxnStatic){
         //we have to register the init function
         os << indent << "extern \"C\" void init_" << name << "(void*);\n"
           << "sstmac::CppGlobalRegisterGuard "

@@ -53,7 +53,7 @@ namespace sprockit {
 class ser_buffer_overrun : public SpktError {
  public:
   ser_buffer_overrun(int maxsize) :
-    SpktError(sprockit::printf("serialization overrun buffer of size %d", maxsize))
+    SpktError(sprockit::sprintf("serialization overrun buffer of size %d", maxsize))
   {
   }
 };

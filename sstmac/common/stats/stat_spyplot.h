@@ -91,7 +91,7 @@ class StatSpyplot : public SST::Statistics::MultiStatistic<Dst,Count>
 
   void registerOutputFields(SST::Statistics::StatisticFieldsOutput* output) override {
     for (int i=0; i < n_dst_; ++i){
-      auto str = sprockit::printf("spy%d", i);
+      auto str = sprockit::sprintf("spy%d", i);
       fields_[i] = output->registerField<uint64_t>(str.c_str());
     }
   }

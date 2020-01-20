@@ -54,8 +54,8 @@ Questions? Contact sst-macro-help@sandia.gov
   fxn(__VA_ARGS__); \
   t_stop = sstmac_now(); \
   t_total = t_stop - t_start; \
-  std::string fxn_name = sprockit::printf("T(%s)", #fxn); \
-  std::cout << sprockit::printf("%10s = %12.8f ms\n", fxn_name.c_str(), 1e3*t_total); \
+  std::string fxn_name = sprockit::sprintf("T(%s)", #fxn); \
+  std::cout << sprockit::sprintf("%10s = %12.8f ms\n", fxn_name.c_str(), 1e3*t_total); \
 }
 
 

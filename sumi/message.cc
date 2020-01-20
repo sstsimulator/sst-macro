@@ -57,7 +57,7 @@ Message::~Message()
 std::string
 Message::toString() const
 {
-  return sprockit::printf("message %s %d->%d",
+  return sprockit::sprintf("message %s %d->%d",
             tostr(class_), sender_, recver_);
 }
 

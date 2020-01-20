@@ -59,7 +59,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #define event_debug(...) \
   debug_printf(sprockit::dbg::parallel, "manager %d:%d %s", \
-    rt_->me(), thread_id_, sprockit::printf(__VA_ARGS__).c_str())
+    rt_->me(), thread_id_, sprockit::sprintf(__VA_ARGS__).c_str())
 
 RegisterDebugSlot(EventManager_time_vote);
 
@@ -70,7 +70,7 @@ RegisterKeywords(
 
 #define epoch_debug(...) \
   debug_printf(sprockit::dbg::EventManager_time_vote, \
-    "LP %d: %s", rt_->me(), sprockit::printf(__VA_ARGS__).c_str()); fflush(stdout)
+    "LP %d: %s", rt_->me(), sprockit::sprintf(__VA_ARGS__).c_str()); fflush(stdout)
 
 #if SSTMAC_DEBUG_THREAD_EVENTS
 DeclareDebugSlot(thread_events)

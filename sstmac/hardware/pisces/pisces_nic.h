@@ -81,7 +81,7 @@ class PiscesNIC : public NIC
   PiscesNIC(uint32_t id, SST::Params& params, Node* parent);
 
   std::string toString() const override {
-    return sprockit::printf("packet flow nic(%d)", int(addr()));
+    return sprockit::sprintf("packet flow nic(%d)", int(addr()));
   }
 
   void init(unsigned int phase) override;

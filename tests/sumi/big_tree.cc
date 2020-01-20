@@ -149,9 +149,9 @@ test_allgather_payload(int nelems)
     for (int i=0; i < nelems; ++i, ++bufptr, ++idx){
       int test_elem = *bufptr;
       if (test_elem != p){
-        std::cout << sprockit::printf("FAILED: allgather rank %d, section %d\n", rank, p);
+        std::cout << sprockit::sprintf("FAILED: allgather rank %d, section %d\n", rank, p);
       }
-      //std::cout << sprockit::printf("T[%d][%d] = %d\n", rank, idx, test_elem);
+      //std::cout << sprockit::sprintf("T[%d][%d] = %d\n", rank, idx, test_elem);
     }
   }
 
@@ -203,7 +203,7 @@ test_dynamic_tree_vote()
   }
 
   if (dmsg->vote() != answer){
-    cerrn << sprockit::printf("got final vote %d on rank %d, but answer is %d\n",
+    cerrn << sprockit::sprintf("got final vote %d on rank %d, but answer is %d\n",
         dmsg->vote(), comm_rank(), answer);
   }
 

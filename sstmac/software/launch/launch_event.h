@@ -65,7 +65,7 @@ class LaunchRequest : public hw::NetworkMessage
   } type_t;
 
   std::string toString() const override {
-    return sprockit::printf("launch event app=%d task=%d node=%d",
+    return sprockit::sprintf("launch event app=%d task=%d node=%d",
                             aid(), tid_, toaddr());
   }
 

@@ -253,14 +253,14 @@ Topology::cartTopology() const
 std::string
 Topology::nodeLabel(NodeId nid) const
 {
-  return sprockit::printf("%d", nid);
+  return sprockit::sprintf("%d", nid);
 }
 
 
 std::string
 Topology::switchLabel(SwitchId sid) const
 {
-  return sprockit::printf("%d", sid);
+  return sprockit::sprintf("%d", sid);
 }
 
 std::string

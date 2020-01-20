@@ -297,12 +297,12 @@ class DebugRegisterSlot {
 //GCC then complains about format string vulnerabilities
 #define debug_printf(slot_bitmask, ...) \
   if (::sprockit::Debug::slotActive(slot_bitmask)){ \
-    ::sprockit::Debug::printDebugString(::sprockit::printf(__VA_ARGS__)); \
+    ::sprockit::Debug::printDebugString(::sprockit::sprintf(__VA_ARGS__)); \
   }
 
 #define conditional_debug_printf(slot_bitmask, cond, ...) \
   if (::sprockit::Debug::slotActive(slot_bitmask && (cond))){ \
-    ::sprockit::Debug::printDebugString(::sprockit::printf(__VA_ARGS__)); \
+    ::sprockit::Debug::printDebugString(::sprockit::sprintf(__VA_ARGS__)); \
   }
 
 #endif

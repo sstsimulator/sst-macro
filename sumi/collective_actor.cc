@@ -66,7 +66,7 @@ using namespace sprockit::dbg;
 std::string
 Action::toString() const
 {
-  return sprockit::printf("action %s r=%d,p=%d,o=%d,n=%d",
+  return sprockit::sprintf("action %s r=%d,p=%d,o=%d,n=%d",
      Action::tostr(type),
      round, partner, offset, nelems);
 }
@@ -78,7 +78,7 @@ debug_print(const char* info, const std::string& rank_str,
 {
   if (!buffer) return;
 
-  std::cout << sprockit::printf("Rank %s, partner %d, round=%d, %s %p [%2d:%2d] = { ",
+  std::cout << sprockit::sprintf("Rank %s, partner %d, round=%d, %s %p [%2d:%2d] = { ",
       rank_str.c_str(), partner, round, info, buffer, offset, offset + nelems);
   char* tmp = (char*) buffer;
   for (int i=0; i < nelems; ++i, tmp += type_size){
@@ -94,7 +94,7 @@ debug_print(const char* info, const std::string& rank_str,
       elem = *elemPtr;
     }
 
-    std::cout << sprockit::printf("%2d ", elem);
+    std::cout << sprockit::sprintf("%2d ", elem);
   }
   std::cout << " }\n";
 }
@@ -122,13 +122,13 @@ std::string
 CollectiveActor::rankStr(int dom_rank) const
 {
   int global_rank =  comm_->commToGlobalRank(dom_rank);
-  return sprockit::printf("%d=%d", global_rank, dom_rank);
+  return sprockit::sprintf("%d=%d", global_rank, dom_rank);
 }
 
 std::string
 CollectiveActor::rankStr() const
 {
-  return sprockit::printf("%d=%d", my_api_->rank(), dom_me_);
+  return sprockit::sprintf("%d=%d", my_api_->rank(), dom_me_);
 }
 
 int
@@ -486,17 +486,17 @@ DagCollectiveActor::doRecv(Action* ac)
 void
 DagCollectiveActor::deadlockCheck() const
 {
-  std::cout << sprockit::printf("  deadlocked actor %d of %d on tag %d",
+  std::cout << sprockit::sprintf("  deadlocked actor %d of %d on tag %d",
     dom_me_, dom_nproc_, tag_) << std::endl;
 
   for (Action* ac : completed_actions_){
-    std::cout << sprockit::printf("    Rank %s: completed action %s partner %d round %d",
+    std::cout << sprockit::sprintf("    Rank %s: completed action %s partner %d round %d",
                       rankStr().c_str(), Action::tostr(ac->type), ac->partner, ac->round) << std::endl;
   }
 
   for (auto& pair : active_comms_){
     Action* ac = pair.second;
-    std::cout << sprockit::printf("    Rank %s: active %s",
+    std::cout << sprockit::sprintf("    Rank %s: active %s",
                     rankStr().c_str(), ac->toString().c_str()) << std::endl;
   }
 
@@ -507,13 +507,13 @@ DagCollectiveActor::deadlockCheck() const
     Action::details(id, ty, r, p);
     auto range = pending_comms_.equal_range(id);
     if (range.first != range.second){
-      std::cout << sprockit::printf("    Rank %s: waiting on action %s partner %d round %d",
+      std::cout << sprockit::sprintf("    Rank %s: waiting on action %s partner %d round %d",
                       rankStr().c_str(), Action::tostr(ty), p, r) << std::endl;
     }
 
     for (auto rit=range.first; rit != range.second; ++rit){
       Action* ac = rit->second;
-      std::cout << sprockit::printf("      Rank %s: pending %s partner %d round %d join counter %d",
+      std::cout << sprockit::sprintf("      Rank %s: pending %s partner %d round %d join counter %d",
                     rankStr().c_str(), Action::tostr(ac->type), ac->partner, ac->round, ac->join_counter)
                 << std::endl;
     }

@@ -14,7 +14,7 @@ template <class T>
 void
 A<T>::fxn(){
 
-  this->x_getter().fxn();
+ this->x_getter().fxn();
   B var;
 }
 
@@ -24,4 +24,5 @@ decltype(A<int>::x) var;extern int __offset_var; int __sizeof_var = sizeof(B);st
 
 extern int __sizeof_var;
 int __offset_var = 0;extern int __sizeof_x;
-int __offset_x = 0;
+int __offset_x = 0;extern "C" void init_x(void*);
+sstmac::CppGlobalRegisterGuard x_sstmac_ctor(__offset_x, __sizeof_x, false, "x", init_x);

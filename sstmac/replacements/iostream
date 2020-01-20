@@ -10,6 +10,24 @@
 #endif
 
 #include_next <iostream>
+#include <sstream> //have to do this...
+
+namespace sstmac {
+
+std::ostream& cout_wrapper();
+std::ostream& cerr_wrapper();
+
+}
+
+namespace std {
+
+using sstmac::cout_wrapper;
+using sstmac::cerr_wrapper;
+
+}
+
+#define cout cout_wrapper()
+#define cerr cerr_wrapper()
 
 #ifdef IOSTREAM_OWNS_STL
 #undef IOSTREAM_OWNS_STL

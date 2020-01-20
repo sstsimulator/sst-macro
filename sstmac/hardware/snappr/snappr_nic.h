@@ -84,7 +84,7 @@ class SnapprNIC :
   SnapprNIC(uint32_t id, SST::Params& params, Node* parent);
 
   std::string toString() const override {
-    return sprockit::printf("snappr nic(%d)", int(addr()));
+    return sprockit::sprintf("snappr nic(%d)", int(addr()));
   }
 
   void init(unsigned int phase) override;

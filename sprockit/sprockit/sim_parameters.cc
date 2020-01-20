@@ -159,13 +159,13 @@ ParamAssign::operator double() const
 void
 ParamAssign::operator=(int x)
 {
-  param_ = sprockit::printf("%d", x); 
+  param_ = sprockit::sprintf("%d", x); 
 }
 
 void
 ParamAssign::operator=(double x)
 {
-  param_ = sprockit::printf("%f", x); 
+  param_ = sprockit::sprintf("%f", x); 
 }
 
 double
@@ -209,7 +209,7 @@ ParamAssign::set(const std::string& str)
 const std::string&
 ParamAssign::setValue(double x, const char* units)
 {
-  param_ = sprockit::printf("%f%s", x, units);
+  param_ = sprockit::sprintf("%f%s", x, units);
   return param_;
 }
 
@@ -234,7 +234,7 @@ ParamAssign::setFrequency(double x, const char* units)
 const std::string&
 ParamAssign::setByteLength(long x, const char* units)
 {
-  param_ = sprockit::printf("%ld%s", x, units);
+  param_ = sprockit::sprintf("%ld%s", x, units);
   return param_;
 }
 
@@ -332,26 +332,26 @@ SimParameters::copyOptionalParam(const std::string &oldname, const std::string &
 void
 SimParameters::addParamOverride(const std::string &key, double val, const char* units)
 {
-  addParamOverride(key, printf("%20.8f%s", val, units));
+  addParamOverride(key, sprockit::sprintf("%20.8f%s", val, units));
 }
 
 
 void
 SimParameters::addParamOverride(const std::string &key, double val)
 {
-  addParamOverride(key, printf("%20.8f", val));
+  addParamOverride(key, sprockit::sprintf("%20.8f", val));
 }
 
 void
 SimParameters::addParamOverride(const std::string &key, int val)
 {
-  addParamOverride(key, printf("%d", val));
+  addParamOverride(key, sprockit::sprintf("%d", val));
 }
 
 void
 SimParameters::addParamOverrideRecursive(const std::string &key, int val)
 {
-  std::string valStr = printf("%d", val);
+  std::string valStr = sprockit::sprintf("%d", val);
   addParamOverrideRecursive(key, valStr);
 }
 
@@ -586,7 +586,7 @@ SimParameters::getFreqParam(const std::string &key)
 double
 SimParameters::getOptionalFreqParam(const std::string &key, double def)
 {
-  std::string freq_str = printf("%eHz", def);
+  std::string freq_str = sprockit::sprintf("%eHz", def);
   std::string param_value_str = getOptionalParam(key, freq_str);
   return get_freq_from_str(param_value_str.c_str(), key.c_str());
 }
@@ -601,7 +601,7 @@ SimParameters::getByteLengthParam(const std::string &key)
 long
 SimParameters::getOptionalByteLengthParam(const std::string& key, long length)
 {
-  std::string length_str = printf("%ldB", length);
+  std::string length_str = sprockit::sprintf("%ldB", length);
   std::string param_value_str = getOptionalParam(key, length_str);
   return get_byte_length_from_str(param_value_str.c_str(), key.c_str());
 }
@@ -629,7 +629,7 @@ SimParameters::getOptionalBandwidthParam(const std::string &key, const std::stri
 double
 SimParameters::getOptionalBandwidthParam(const std::string &key, double def)
 {
-  std::string bwstr = printf("%ebytes/sec", def);
+  std::string bwstr = sprockit::sprintf("%ebytes/sec", def);
   return getOptionalBandwidthParam(key, bwstr);
 }
 

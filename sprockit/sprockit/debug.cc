@@ -224,13 +224,13 @@ normalize_string(const std::string& thestr,
 void
 Debug::printAllDebugSlots(std::ostream& os)
 {
-  std::string indent = printf("%22s", "");
+  std::string indent = sprockit::sprintf("%22s", "");
   os << "Valid debug flags are:\n";
   std::map<std::string, std::string>::iterator it, end = docstrings_->end();
   for (it = docstrings_->begin(); it != end; ++it){
     const std::string& flag = it->first;
     const std::string& docstring = it->second;
-    os << sprockit::printf("  %20s\n", flag.c_str());
+    os << sprockit::sprintf("  %20s\n", flag.c_str());
     normalize_string(docstring, indent, os, 80);
     os << "\n";
   }

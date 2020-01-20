@@ -4,7 +4,7 @@
 #include <string>
 
 namespace sprockit {
-std::string printf(const char* fmt, ...);
+std::string sprintf(const char* fmt, ...);
 }
 
 #endif

@@ -13,7 +13,7 @@
 
 #define pkt_debug(...) \
   debug_printf(sprockit::dbg::snappr, "snappr port %s:%d %s", \
-    portName_.c_str(), number_, sprockit::printf(__VA_ARGS__).c_str())
+    portName_.c_str(), number_, sprockit::sprintf(__VA_ARGS__).c_str())
 
 
 #define port_debug(...) \
@@ -65,7 +65,7 @@ SnapprOutPort::handle(Event *ev)
 std::string
 SnapprOutPort::toString() const
 {
-  return sprockit::printf("SNAPPR OutPort %d", number_);
+  return sprockit::sprintf("SNAPPR OutPort %d", number_);
 }
 
 void

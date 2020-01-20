@@ -71,7 +71,7 @@ StackAlloc::init(SST::Params& params)
   if (stack_rem != 0){
     sstmac_global_stacksize += (4096 - stack_rem);
   }
-  std::string chunk = sprockit::printf("%dB", 8*sstmac_global_stacksize);
+  std::string chunk = sprockit::sprintf("%dB", 8*sstmac_global_stacksize);
   suggested_chunk_ = params.find<SST::UnitAlgebra>("stack_chunk_size", chunk).getRoundedValue();
   stacksize_ = sstmac_global_stacksize;
 

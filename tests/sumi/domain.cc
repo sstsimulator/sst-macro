@@ -89,7 +89,7 @@ run_test(Communicator* dom, int todie, int nproc_live, int context, int tag)
     int correct = rmap.denseRank(global_rank);
     if (dst[i] != correct){
       for (int j=0; j < nproc_live; ++j){
-        std::cerr << sprockit::printf("A[%d] = %d\n", j, dst[j]);
+        std::cerr << sprockit::sprintf("A[%d] = %d\n", j, dst[j]);
       }
       spkt_throw_printf(sprockit::ValueError,
         "Rank %d A[%d] = %d != %d for global rank %d, sparse rank %d on test nproc=%d,tag=%d",
@@ -168,7 +168,7 @@ test_allgather(Communicator* dom, int tag)
     for (int i=0; i < nelems; ++i, ++bufptr, ++idx){
       int test_elem = *bufptr;
       if (test_elem != p){
-        std::cout << sprockit::printf("FAILED: allgather rank %d, section %d\n",
+        std::cout << sprockit::sprintf("FAILED: allgather rank %d, section %d\n",
             rank, p);
       }
       //std::cout << sprockit::spktprintf("T[%d][%d] = %d\n", rank, idx, test_elem);

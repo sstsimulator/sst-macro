@@ -122,7 +122,7 @@ PiscesSwitch::PiscesSwitch(uint32_t id, SST::Params& params)
   out_buffers_.resize(num_ports);
   for (int src_outport=0; src_outport < num_ports; ++src_outport){
     double scale_factor = top_->portScaleFactor(my_addr_, src_outport);
-    std::string bufname = sprockit::printf(
+    std::string bufname = sprockit::sprintf(
         "%s:port%d",top_->switchIdToName(my_addr_).c_str(), src_outport);
     PiscesBuffer* out_buffer = new PiscesBuffer(link_params, bufname, componentId(),
               arbType_, link_bw_ * scale_factor, mtu_, this, router_->numVC());
@@ -136,7 +136,7 @@ PiscesSwitch::PiscesSwitch(uint32_t id, SST::Params& params)
     InputPort& inp = inports_[i];
     inp.port = i;
     inp.parent = this;
-    std::string subname = sprockit::printf("%s:port%d",
+    std::string subname = sprockit::sprintf("%s:port%d",
              top_->switchIdToName(my_addr_).c_str(), inp.port);
     inp.recv_bytes_ = registerStatistic<uint64_t>("recv_bytes", subname);
   }
@@ -167,12 +167,12 @@ PiscesSwitch::connectOutput(
   auto* out_buffer = out_buffers_[src_outport];
   double scale_factor = top_->portScaleFactor(my_addr_, src_outport);
   int buffer_inport = 0;
-  std::string out_port_name = sprockit::printf("buffer-out%d", src_outport);
+  std::string out_port_name = sprockit::sprintf("buffer-out%d", src_outport);
   auto out_link = allocateSubLink(out_port_name, TimeDelta(), this, //don't put latency on xbar
                 newLinkHandler(out_buffer, &PiscesBuffer::handlePayload));
   xbar_->setOutput(src_outport, buffer_inport, std::move(out_link), link_credits_ * scale_factor);
 
-  std::string in_port_name = sprockit::printf("xbar-credit%d", src_outport);
+  std::string in_port_name = sprockit::sprintf("xbar-credit%d", src_outport);
   auto in_link = allocateSubLink(in_port_name, TimeDelta(), this, xbar_->creditHandler()); //don't put latency on internal credits
   out_buffer->setInput(buffer_inport, src_outport, std::move(in_link));
   out_buffers_[src_outport] = out_buffer;
@@ -209,7 +209,7 @@ PiscesSwitch::queueLength(int port, int vc) const
 std::string
 PiscesSwitch::toString() const
 {
-  return sprockit::printf("packet flow switch %d", int(my_addr_));
+  return sprockit::sprintf("packet flow switch %d", int(my_addr_));
 }
 
 void

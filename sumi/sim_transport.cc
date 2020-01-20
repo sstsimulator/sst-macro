@@ -269,7 +269,7 @@ SimTransport::SimTransport(SST::Params& params, sstmac::sw::App* parent, SST::Co
   server->registerProc(rank_, this);
 
 #if !SSTMAC_INTEGRATED_SST_CORE
-  std::string subname = sprockit::printf("app%d.rank%d", parent->aid(), parent->tid());
+  std::string subname = sprockit::sprintf("app%d.rank%d", parent->aid(), parent->tid());
   auto* spy = comp->registerMultiStatistic<int,uint64_t>(params, "spy_bytes", subname);
   spy_bytes_ = dynamic_cast<sstmac::StatSpyplot<int,uint64_t>*>(spy);
 #endif

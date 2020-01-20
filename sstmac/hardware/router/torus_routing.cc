@@ -52,7 +52,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <cmath>
 
 #define ftree_rter_debug(...) \
-  rter_debug("fat tree: %s", sprockit::printf(__VA_ARGS__).c_str())
+  rter_debug("fat tree: %s", sprockit::sprintf(__VA_ARGS__).c_str())
 
 namespace sstmac {
 namespace hw {

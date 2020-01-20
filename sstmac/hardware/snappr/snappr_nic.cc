@@ -63,7 +63,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #define pkt_debug(...) \
   debug_printf(sprockit::dbg::snappr | sprockit::dbg::nic, "snappr NIC on node %d: %s", \
-    int(addr()), sprockit::printf(__VA_ARGS__).c_str())
+    int(addr()), sprockit::sprintf(__VA_ARGS__).c_str())
 
 
 namespace sstmac {
@@ -91,7 +91,7 @@ SnapprNIC::SnapprNIC(uint32_t id, SST::Params& params, Node* parent) :
   flow_control_ = inj_params.find<bool>("flow_control", true);
   inj_byte_delay_ = TimeDelta(inj_params.find<SST::UnitAlgebra>("bandwidth").getValue().inverse().toDouble());
   for (int i=0; i < num_ports; ++i){
-    std::string subId = sprockit::printf("NIC%d:%d", addr(), i);
+    std::string subId = sprockit::sprintf("NIC%d:%d", addr(), i);
     outports_.emplace_back(inj_params, arbtype, subId, "NIC_send", i, inj_byte_delay_,
                            true/*always need congestion on NIC*/, flow_control_, NIC::parent());
     SnapprOutPort& p = outports_[i];

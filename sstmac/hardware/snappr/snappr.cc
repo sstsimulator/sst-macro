@@ -78,7 +78,7 @@ SnapprPacket::SnapprPacket(
 std::string
 SnapprPacket::toString() const
 {
-  return sprockit::printf("pkt bytes=%" PRIu32 " flow=%" PRIu64 " offset=%" PRIu64 ": %s",
+  return sprockit::sprintf("pkt bytes=%" PRIu32 " flow=%" PRIu64 " offset=%" PRIu64 ": %s",
                           numBytes(), flowId(), offset_,
                           (flow() ? flow()->toString().c_str() : "no payload"));
 
@@ -100,7 +100,7 @@ SnapprPacket::serialize_order(serializer& ser)
 
 std::string
 SnapprCredit::toString() const {
-  return sprockit::printf("credit bytes=%" PRIu32 " port=%d", num_bytes_, port_);
+  return sprockit::sprintf("credit bytes=%" PRIu32 " port=%d", num_bytes_, port_);
 }
 
 void
