@@ -59,8 +59,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <fstream>
 
 const std::vector<int> primes = { 17, 19, 103, 107, 59, 41, 37 };
-static const int warmup = 10;
-static const int nrepeat = 40;
+static int warmup = 10;
+static int nrepeat = 40;
 
 void usage(std::ostream& os){
   os << "usage: ./run <num_senders> <num_recvers> <send_seed> <recv_seed>" << std::endl;
@@ -72,11 +72,11 @@ static uint32_t crc32_for_byte(uint32_t r) {
   return r ^ (uint32_t)0xFF000000L;
 }
 
+static uint32_t crc_table[0x100];
+static bool crc_inited = false;
 uint32_t crc32(const void *data, size_t n_bytes)
 {
   uint32_t crc = 11;
-  static uint32_t crc_table[0x100];
-  static bool crc_inited = false;
   if(!crc_inited){
     for(size_t i = 0; i < 0x100; ++i){
       crc_table[i] = crc32_for_byte(i);
@@ -172,32 +172,19 @@ int main(int argc, char** argv)
   std::string infile;
   bool go_big(false);
   bool randomizing(true);
-  int num_sends = 10;
   extern char* optarg;
-  //extern int optind, optopt;
-
-  for(int i=0; i<argc; ++i) {
-    std::cerr << "arg[" << i << "] = " << argv[i] << "\n";
-  }
-
   optind = 1;
-  std::cerr << getopt(argc, argv, "f:n:b") << "\n";
 
   int opt;
-  optind = 1;
-  while ((opt = getopt(argc, argv, "f:n:b")) != -1) {
-    std::cerr << "opt: " << opt << "\n";
+  while ((opt = getopt(argc, argv, "f:b:")) != -1) {
     switch (opt) {
       case 'f':
         infile = std::string(optarg);
-        std::cerr << "infile: " << infile << "\n";
         randomizing = false;
         break;
       case 'b':
         go_big = true;
-        break;
-      case 'n':
-        num_sends = atoi(optarg);
+        nrepeat = atoi(optarg);
         break;
       case '?':
         break;
@@ -207,19 +194,23 @@ int main(int argc, char** argv)
   }
 
   if (go_big) {
+    warmup = 25;
     buffer_sizes.clear();
     buffer_sizes = {1048576};
-    total_num_sends.clear();
-    total_num_sends = {num_sends};
     window_num_sends.clear();
-    window_num_sends = {2};
+    window_num_sends = {64};
+    total_num_sends.clear();
+    total_num_sends = {64};
   }
 
   MPI_Request reqs[100];
   MPI_Init(&argc, &argv);
- #pragma sst new
-  char* buffer = new char[max_buffer_size];
+  
+  char* buffer;
+#ifndef SSTMAC
+  posix_memalign((void**)&buffer, sysconf(_SC_PAGESIZE), max_buffer_size);
   ::memset(buffer, 0, max_buffer_size);
+#endif
 
   int rank, nproc;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -426,8 +417,12 @@ int main(int argc, char** argv)
 
 void send_traffic(int partner, int niter, int buffer_size, int num_sends, int window_size,
            MPI_Request* reqs, void* buffer){
-  for (int i=0 ; i < niter; ++i){
+  for (int i=0; i < niter; ++i){
     int num_windows = num_sends / window_size;
+    if (num_sends % window_size) {
+      std::cerr << "num_sends % window_size must be zero (window_size=" << window_size << ")" << std::endl;
+      MPI_Abort(MPI_COMM_WORLD,0);
+    }
     for (int w=0; w < num_windows; ++w){
       for (int send=0; send < window_size; ++send){
         int tag = i;
@@ -446,16 +441,15 @@ void send_traffic(int recver, MPI_Request* reqs, void* buffer, std::vector<doubl
                   std::vector<int>& buffer_sizes, std::vector<int>& total_num_sends, std::vector<int>& window_num_sends){
   int num_buffer_sizes = buffer_sizes.size();
   for (int i=0; i < num_buffer_sizes; ++i){
-    send_traffic(recver, warmup, buffer_sizes[i], total_num_sends[i], 
-          window_num_sends[i], reqs, buffer);
-    struct timeval t_start;
-    gettimeofday(&t_start, NULL);
+    send_traffic(recver, 1, buffer_sizes[i], warmup, 
+          warmup, reqs, buffer);
+
+    double start = MPI_Wtime();
     send_traffic(recver, nrepeat, buffer_sizes[i], total_num_sends[i], 
           window_num_sends[i], reqs, buffer);
+    double end = MPI_Wtime();
+    double time = end - start;
 
-    struct timeval t_stop;
-    gettimeofday(&t_stop, NULL);
-    double time = (t_stop.tv_sec-t_start.tv_sec) + 1e-6*(t_stop.tv_usec-t_start.tv_usec);
     auto total_bytes_sent = uint64_t(buffer_sizes[i]) * uint64_t(total_num_sends[i]) * uint64_t(nrepeat);
     double tput = total_bytes_sent / time;
     tputs[i] = tput;
@@ -466,8 +460,12 @@ void send_traffic(int recver, MPI_Request* reqs, void* buffer, std::vector<doubl
 void recv_traffic(const std::vector<int>& senders, int niter, 
                  int buffer_size, int num_sends, int window_size,
                  MPI_Request* reqs, void* buffer){
-  for (int i=0 ; i < niter; ++i){
+  for (int i=0; i < niter; ++i){
     int num_windows = num_sends / window_size;
+    if (num_sends % window_size) {
+      std::cerr << "num_sends % window_size must be zero (window_size=" << window_size << ")" << std::endl;
+      MPI_Abort(MPI_COMM_WORLD,0);
+    }
     for (int w=0; w < num_windows; ++w){
       MPI_Request* reqPtr = reqs;
       for (int send=0; send < window_size; ++send){
@@ -493,8 +491,8 @@ void recv_traffic(const std::vector<int>& senders, MPI_Request* reqs, void* buff
   //send a total of 100MB in 1MB window sizes, starting from 1KB base size
   int num_buffer_sizes = buffer_sizes.size();
   for (int i=0; i < num_buffer_sizes; ++i){
-    recv_traffic(senders, warmup, buffer_sizes[i], total_num_sends[i], 
-          window_num_sends[i], reqs, buffer);
+    recv_traffic(senders, 1, buffer_sizes[i], warmup, 
+          warmup, reqs, buffer);
     recv_traffic(senders, nrepeat, buffer_sizes[i], total_num_sends[i], 
           window_num_sends[i], reqs, buffer);
     MPI_Barrier(MPI_COMM_WORLD);
