@@ -599,9 +599,6 @@ struct WRR_PortArbitrator : public SnapprPortArbitrator
       } else {
         spkt_abort_printf("Bad virtual lane type %s given", types[vl].c_str());
       }
-
-
-      VirtualLane& v = vls_[vl];
     }
   }
 
@@ -631,7 +628,7 @@ struct WRR_PortArbitrator : public SnapprPortArbitrator
   void insertNoQoS(uint64_t cycle, SnapprPacket *pkt) {
     int vl= pkt->virtualLane();
     VirtualLane& v = vls_[vl];
-    v.next_free = cycle;
+    v.next_free = std::numeric_limits<uint64_t>::max();
     //there is no special packet deadline here
     port_queue_.emplace(&v);
   }
