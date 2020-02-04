@@ -1,6 +1,6 @@
-#ifndef sstmac_stdio_h
-#define sstmac_stdio_h
-
+#undef stdout
+#undef stderr
+#undef printf
 #include_next <stdio.h>
 
 #ifdef __cplusplus
@@ -21,6 +21,3 @@ FILE* sstmac_stderr();
 #define stderr sstmac_stderr()
 #define printf(...) fprintf(sstmac_stdout(), __VA_ARGS__)
 #endif
-
-#endif
-
