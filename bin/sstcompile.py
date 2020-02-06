@@ -118,7 +118,7 @@ def addSrc2SrcCompile(ctx, sourceFile, outputFile, args, cmds):
 
   srcRepl = addPrefixAndRebase("sst.pp.",sourceFile,objBaseFolder)
   cxxInitSrcFile = addPrefixAndRebase("sstGlobals.pp.",sourceFile,objBaseFolder) + ".cpp"
-  cmds.append([None,clangCmdArr,[srcRepl,cxxInitSrcFile]]) #None -> don't pipe output anywhere
+  cmds.append([None,clangCmdArr,[ppTmpFile,srcRepl,cxxInitSrcFile]]) #None -> don't pipe output anywhere
 
   tmpTarget = addPrefix("tmp.", outputFile)
   llvmPasses = []
