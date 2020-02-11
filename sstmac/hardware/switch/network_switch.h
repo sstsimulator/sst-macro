@@ -90,8 +90,6 @@ class NetworkSwitch :
     return my_addr_;
   }
 
-  virtual Router* router() const = 0;
-
   virtual void deadlockCheck(){}
 
   /**

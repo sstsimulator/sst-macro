@@ -56,11 +56,13 @@ Packet::Packet(
   uint64_t flow_id,
   bool is_tail,
   NodeId fromaddr,
-  NodeId toaddr) :
+  NodeId toaddr,
+  int qos) :
  toaddr_(toaddr),
  fromaddr_(fromaddr),
  flow_id_(flow_id),
  num_bytes_(num_bytes),
+ qos_(qos),
  payload_(flow)
 {
   ::memset(rtr_metadata_, 0, sizeof(rtr_metadata_));
@@ -80,6 +82,7 @@ Packet::serialize_order(serializer& ser)
   ser & rtr_metadata_;
   ser & stats_metadata_;
   ser & nic_metadata_;
+  ser & qos_;
 }
 
 }

@@ -145,6 +145,10 @@ class Packet :
     return flow_id_;
   }
 
+  int qos() const {
+    return qos_;
+  }
+
  private:
   NodeId toaddr_;
 
@@ -153,6 +157,8 @@ class Packet :
   uint64_t flow_id_;
 
   uint32_t num_bytes_;
+
+  int qos_;
 
   Flow* payload_;
 
@@ -163,14 +169,15 @@ class Packet :
   char stats_metadata_[MAX_STAT_BYTES];
 
  protected:
-  Packet() : Packet(nullptr, 0, 0, false, 0, 0) {}
+  Packet() : Packet(nullptr, 0, 0, false, 0, 0, 0) {}
 
   Packet(Flow* payload,
     uint32_t numBytes,
     uint64_t flowId,
     bool isTail,
     NodeId fromaddr,
-    NodeId toadadr);
+    NodeId toadadr,
+    int qos = 0);
 
 };
 

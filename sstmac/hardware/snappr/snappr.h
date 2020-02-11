@@ -122,10 +122,6 @@ class SnapprPacket :
     return vl_;
   }
 
-  int qos() const {
-    return qos_;
-  }
-
   TimeDelta timeToSend() const {
     return time_to_send_;
   }
@@ -186,8 +182,6 @@ class SnapprPacket :
   TimeDelta congestion_delay_;
 
   uint64_t offset_;
-
-  int qos_;
 
   int vl_;
 

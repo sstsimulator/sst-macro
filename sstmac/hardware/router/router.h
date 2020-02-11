@@ -92,7 +92,7 @@ class Router : public sprockit::printable
 
   virtual ~Router();
 
-  NetworkSwitch* get_switch() const {
+  NetworkSwitch* getSwitch() const {
     return netsw_;
   }
 
@@ -114,6 +114,14 @@ class Router : public sprockit::printable
    *         to implement all possible routing algorithms
    */
   virtual int numVC() const = 0;
+
+  int vlOffset() const {
+    return vl_offset_;
+  }
+
+  void setVlOffset(int offset) {
+    vl_offset_ = offset;
+  }
 
   /**
    * @brief random_number
@@ -137,7 +145,7 @@ class Router : public sprockit::printable
    * @return Whether the original path is estimated to be shorter
    */
   bool switchPaths(int orig_distance, int new_distance,
-          int orig_port, int new_port) const;
+          int orig_port, int new_port, int vl = all_vcs) const;
 
  protected:
   static constexpr int all_vcs = -1;
@@ -153,6 +161,8 @@ class Router : public sprockit::printable
   bool debug_seed_;
 
   RNG::MWC* rng_;
+
+  int vl_offset_;
 
 };
 

@@ -66,7 +66,7 @@ namespace sstmac {
 namespace hw {
 
 Router::Router(SST::Params& params, Topology *top, NetworkSwitch *sw)
- : top_(top), netsw_(sw), rng_(nullptr)
+ : top_(top), netsw_(sw), rng_(nullptr), vl_offset_(0)
 {
   my_addr_ = SwitchId(params.find<int>("id"));
   std::vector<RNG::rngint_t> seeds(2);
@@ -87,10 +87,11 @@ Router::switchPaths(
   int orig_distance,
   int new_distance,
   int orig_port,
-  int new_port) const
+  int new_port,
+  int vl) const
 {
-  int orig_queue_length = netsw_->queueLength(orig_port, all_vcs);
-  int new_queue_length = netsw_->queueLength(new_port, all_vcs);
+  int orig_queue_length = netsw_->queueLength(orig_port, vl);
+  int new_queue_length = netsw_->queueLength(new_port, vl);
   int orig_weight = orig_queue_length * orig_distance;
   int valiant_weight = new_queue_length * new_distance;
   rter_debug("comparing minimal(%d) %d=%dx%d against non-minimal(%d) %d=%dx%d",

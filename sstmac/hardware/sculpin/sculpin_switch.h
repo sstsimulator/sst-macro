@@ -93,10 +93,6 @@ class SculpinSwitch :
 
   int queueLength(int port, int vc) const override;
 
-  Router* router() const override {
-    return router_;
-  }
-
   void connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
 
   void connectInput(int src_outport, int dst_inport, EventLink::ptr&& link) override;

@@ -57,7 +57,7 @@ class PiscesAbstractSwitch :
   public NetworkSwitch
 {
  public:
-  Router* router() const override {
+  Router* router() const {
     return router_;
   }
 

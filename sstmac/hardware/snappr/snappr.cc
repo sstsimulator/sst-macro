@@ -66,9 +66,8 @@ SnapprPacket::SnapprPacket(
   NodeId toaddr,
   NodeId fromaddr,
   int qos) :
-  Packet(msg, num_bytes, flow_id, is_tail, fromaddr, toaddr),
+  Packet(msg, num_bytes, flow_id, is_tail, fromaddr, toaddr, qos),
   offset_(offset),
-  qos_(qos),
   priority_(0),
   inport_(-1),
   deadlocked_(false)
@@ -93,7 +92,6 @@ SnapprPacket::serialize_order(serializer& ser)
   ser & time_to_send_;
   ser & priority_;
   ser & inport_;
-  ser & qos_;
   ser & vl_;
   ser & input_vl_;
 }

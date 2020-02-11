@@ -861,6 +861,7 @@ class MpiApi : public sumi::SimTransport
                                   int, //type
                                   int, //stage
                                   uint64_t, //byte length
+                                  uint64_t, //flow ID
                                   double, //send sync delay
                                   double, //recv sync delay
                                   double, //injection delay
