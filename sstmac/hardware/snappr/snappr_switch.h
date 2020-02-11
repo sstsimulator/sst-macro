@@ -92,10 +92,6 @@ class SnapprSwitch :
 
   int queueLength(int port, int vc) const override;
 
-  Router* router() const override {
-    return router_;
-  }
-
   void connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
 
   void connectInput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
@@ -119,7 +115,7 @@ class SnapprSwitch :
 
   void deadlockCheck(int vl);
 
-  Router* router_;
+  std::vector<Router*> routers_;
 
   double link_bw_;
 

@@ -86,19 +86,54 @@ SnapprNIC::SnapprNIC(uint32_t id, SST::Params& params, Node* parent) :
 
   int num_ports = 1;
   std::string arbtype = inj_params.find<std::string>("arbitrator", "fifo");
-  uint32_t credits = inj_params.find<SST::UnitAlgebra>("credits").getRoundedValue();
-  int qosLevels = params.find<int>("qos_levels", 1);
+  qos_levels_ = params.find<int>("qos_levels", 1);
   flow_control_ = inj_params.find<bool>("flow_control", true);
+  std::vector<uint32_t> credits_per_qos(qos_levels_);
+  if (flow_control_){
+    if (inj_params.contains("qos_credits")){
+      std::vector<std::string> qos_credits;
+      inj_params.find_array("qos_credits", qos_credits);
+      if (qos_levels_ != qos_credits.size()){
+        spkt_abort_printf("Have %d QoS levels, but given credit array of size %d",
+          qos_levels_, int(qos_credits.size()));
+      }
+      for (int q=0; q < qos_levels_; ++q){
+        credits_per_qos[q] = SST::UnitAlgebra(qos_credits[q]).getRoundedValue();
+      }
+    } else if (inj_params.contains("credits")){
+      uint32_t credits = inj_params.find<SST::UnitAlgebra>("credits").getRoundedValue();
+      uint32_t credits_per = credits / qos_levels_;
+      for (int q=0; q < qos_levels_; ++q){
+        credits_per_qos[q] = credits_per;
+      }
+    } else {
+      spkt_abort_printf("must specify credits for SNAPPR link when flow_control=true");
+    }
+  } else {
+    uint32_t credits = std::numeric_limits<uint32_t>::max();
+    for (int q=0; q < qos_levels_; ++q){
+      credits_per_qos[q] = credits;
+    }
+  }
+
+  std::vector<int> vls_per_qos(qos_levels_);
+  for (int q=0; q < qos_levels_; ++q){
+    vls_per_qos[q] = 1;
+  }
+
   inj_byte_delay_ = TimeDelta(inj_params.find<SST::UnitAlgebra>("bandwidth").getValue().inverse().toDouble());
   for (int i=0; i < num_ports; ++i){
     std::string subId = sprockit::sprintf("NIC%d:%d", addr(), i);
     outports_.emplace_back(inj_params, arbtype, subId, "NIC_send", i, inj_byte_delay_,
-                           true/*always need congestion on NIC*/, flow_control_, NIC::parent());
+                           true/*always need congestion on NIC*/, flow_control_, NIC::parent(),
+                           vls_per_qos);
     SnapprOutPort& p = outports_[i];
-    p.setVirtualLanes(qosLevels, credits);
+    p.setVirtualLanes(credits_per_qos);
     p.addTailNotifier(this, &SnapprNIC::handleTailPacket);
   }
 
+  scatter_qos_ = params.find<bool>("scatter_qos", false);
+  next_qos_ = addr() % qos_levels_;
 
   std::string queuetype = params.find<std::string>("queue", "fifo");
   inject_queue_ = sprockit::create<InjectionQueue>("macro", queuetype, params);
@@ -134,6 +169,16 @@ SnapprNIC::payloadHandler(int port)
     return newLinkHandler(this, &NIC::mtlHandle);
   } else {
     return newLinkHandler(this, &SnapprNIC::handlePayload);
+  }
+}
+
+void
+SnapprNIC::deadlockCheck()
+{
+  for (auto& p : outports_){
+    for (int vl=0; vl < p.numVirtualLanes(); ++vl){
+      p.deadlockCheck(vl);
+    }
   }
 }
 
@@ -324,7 +369,12 @@ SnapprNIC::injectPacket(uint32_t  /*ptk_size*/, uint64_t byte_offset, NetworkMes
   uint64_t fid = payload->flowId();
   SnapprPacket* pkt = new SnapprPacket(is_tail ? payload : nullptr, pkt_size, is_tail,
                                        fid, byte_offset, to, from, payload->qos());
-  pkt->setVirtualLane(payload->qos());
+  if (scatter_qos_){
+    pkt->setVirtualLane(next_qos_);
+    next_qos_ = (next_qos_ + 1) % qos_levels_;
+  } else {
+    pkt->setVirtualLane(payload->qos());
+  }
 
   //no multi-rail or multi-injection for now
   outports_[0].tryToSendPacket(pkt);

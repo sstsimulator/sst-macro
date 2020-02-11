@@ -601,6 +601,7 @@ MpiApi::logMessageDelay(Message *msg, uint64_t bytes, int stage,
 
   if (crossed_comm_world_barrier_){
     delays_->addData(msg->sender(), msg->recver(), msg->classType(), stage, bytes,
+      msg->flowId(),
       msg->sendSyncDelay().sec(), //the time between send arriving and recver matching
       msg->recvSyncDelay().sec(), //the time between recver posting and send matching
       msg->injectionDelay().sec(), //the congestion delay on injection

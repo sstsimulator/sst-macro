@@ -74,13 +74,37 @@ static FTQTag active("active_port", 0);
 static FTQTag stalled("stalled_port", 0);
 
 SnapprSwitch::SnapprSwitch(uint32_t id, SST::Params& params) :
-  NetworkSwitch(id, params),
-  router_(nullptr)
+  NetworkSwitch(id, params)
 {
   SST::Params rtr_params = params.find_scoped_params("router");
   rtr_params.insert("id", std::to_string(my_addr_));
-  router_ = sprockit::create<Router>(
-   "macro", rtr_params.find<std::string>("name"), rtr_params, top_, this);
+  qos_levels_ = params.find<int>("qos_levels", 1);
+  if (rtr_params.contains("names")){
+    std::vector<std::string> names;
+    rtr_params.find_array("names", names);
+    if (names.size() != qos_levels_){
+      spkt_abort_printf("Given %d router types, but %d QoS levels",
+        qos_levels_, int(names.size()));
+    }
+    routers_.resize(qos_levels_);
+    for (int i=0; i < qos_levels_; ++i){
+      routers_[i] = sprockit::create<Router>(
+        "macro", names[i], rtr_params, top_, this);
+    }
+  } else {
+    routers_.resize(qos_levels_);
+    for (int i=0; i < qos_levels_; ++i){
+      Router* rtr = sprockit::create<Router>(
+       "macro", rtr_params.find<std::string>("name"), rtr_params, top_, this);
+      routers_[i] = rtr;
+    }
+  }
+  int vl_offset = 0;
+  for (Router* rtr : routers_){
+    rtr->setVlOffset(vl_offset);
+    vl_offset += rtr->numVC();
+  }
+  num_vl_ = vl_offset;
 
   bool congestion = params.find<bool>("congestion", true);
 
@@ -88,19 +112,60 @@ SnapprSwitch::SnapprSwitch(uint32_t id, SST::Params& params) :
   link_bw_ = link_params.find<SST::UnitAlgebra>("bandwidth").getValue().toDouble();
 
   bool flow_control = params.find<bool>("flow_control", true);
-  uint32_t credits = std::numeric_limits<uint32_t>::max();
+  std::vector<uint32_t> credits_per_vl(num_vl_);
   if (flow_control){
-    if (link_params.contains("credits")){
-      credits = link_params.find<SST::UnitAlgebra>("credits").getRoundedValue();
+    if (link_params.contains("vl_credits")){
+      std::vector<std::string> vl_credits;
+      link_params.find_array("vl_credits", vl_credits);
+      if (vl_credits.size() != num_vl_){
+        spkt_abort_printf("Have %d VLs, but given credit array of size %d",
+          num_vl_, int(vl_credits.size()));
+      }
+      for (int vl=0; vl < num_vl_; ++vl){
+        uint32_t credits = SST::UnitAlgebra(vl_credits[vl]).getRoundedValue();
+        credits_per_vl[vl] = credits;
+      }
+    } else if (link_params.contains("qos_credits")){
+      std::vector<std::string> qos_credits;
+      link_params.find_array("qos_credits", qos_credits);
+      if (qos_levels_ != qos_credits.size()){
+        spkt_abort_printf("Have %d QoS levels, but given credit array of size %d",
+          qos_levels_, int(qos_credits.size()));
+      }
+      int vl_offset = 0;
+      for (int q=0; q < qos_levels_; ++q){
+        Router* rtr = routers_[q];
+        uint32_t credits_per = 
+          SST::UnitAlgebra(qos_credits[q]).getRoundedValue() / rtr->numVC();
+        for (int vc=0; vc < rtr->numVC(); ++vc){
+          credits_per_vl[vc + vl_offset] = credits_per;
+        }
+        vl_offset += rtr->numVC();
+      }
+    } else if (link_params.contains("credits")){
+      uint32_t credits = link_params.find<SST::UnitAlgebra>("credits").getRoundedValue();
+      uint32_t credits_per = credits / num_vl_;
+      for (int vl=0; vl < num_vl_; ++vl){
+        credits_per_vl[vl] = credits_per;
+      }
     } else {
-      spkt_abort_printf("must specify credits for Sculpin link when flow_control=true");
+      spkt_abort_printf("must specify credits for SNAPPR link when flow_control=true");
     }
 
     if (!congestion){
       spkt_abort_printf("must specify flow_control=false when congestion=false");
     }
+  } else {
+    uint32_t credits = std::numeric_limits<uint32_t>::max();
+    for (int vl=0; vl < num_vl_; ++vl){
+      credits_per_vl[vl] = credits;
+    }
   }
 
+  std::vector<int> vls_per_qos(qos_levels_);
+  for (int q=0; q < qos_levels_; ++q){
+    vls_per_qos[q] = routers_[q]->numVC();
+  }
 
   // Ensure topology is set
   Topology::staticTopology(params);
@@ -108,22 +173,19 @@ SnapprSwitch::SnapprSwitch(uint32_t id, SST::Params& params) :
   //vtk_ = registerStatistic<uint64_t,int,double,int>("traffic_intensity", getName());
   //if (vtk_) vtk_->configure(my_addr_, top_);
 
-  qos_levels_ = params.find<int>("qos_levels", 1);
   TimeDelta byte_delay(1.0/link_bw_);
-  std::string arbtype = params.find<std::string>("arbitrator", "fifo");
+  std::string sw_arbtype = params.find<std::string>("arbitrator", "fifo");
+  std::string link_arbtype = link_params.find<std::string>("arbitrator", sw_arbtype);
   outports_.reserve(top_->maxNumPorts());
   inports_.resize(top_->maxNumPorts());
-  num_vc_ = router()->numVC();
-  num_vl_ = num_vc_ * qos_levels_;
-  switch_debug("initializing with %d VCs and %" PRIu32 " total credits",
-               num_vc_, credits);
   for (int i=0; i < top_->maxNumPorts(); ++i){
     std::string subId = sprockit::sprintf("Switch:%d.Port:%d", addr(), i);
     std::string portName = top_->portTypeName(addr(), i);
-    outports_.emplace_back(link_params, arbtype, subId, portName, i,
-                           byte_delay, congestion, flow_control, this);
+    outports_.emplace_back(link_params, link_arbtype, subId, portName, i,
+                           byte_delay, congestion, flow_control, this,
+                           vls_per_qos);
     SnapprOutPort& p = outports_[i];
-    p.setVirtualLanes(num_vl_, credits);
+    p.setVirtualLanes(credits_per_vl);
     p.inports = inports_.data();
   }
 
@@ -135,7 +197,9 @@ SnapprSwitch::SnapprSwitch(uint32_t id, SST::Params& params) :
 
 SnapprSwitch::~SnapprSwitch()
 {
-  if (router_) delete router_;
+  for (Router* rtr : routers_){
+    if (rtr) delete rtr;
+  }
 }
 
 void
@@ -175,8 +239,7 @@ SnapprSwitch::queueLength(int port, int  /*vc*/) const
 void
 SnapprSwitch::deadlockCheck()
 {
-  int max_vl = qos_levels_*num_vc_;
-  for (int vl=0; vl < max_vl; ++vl){
+  for (int vl=0; vl < num_vl_; ++vl){
     deadlockCheck(vl);
   }
 }
@@ -199,13 +262,10 @@ SnapprSwitch::handlePayload(SnapprPacket* pkt, int inport)
 
   pkt->setInport(inport);
   pkt->saveInputVirtualLane();
-  router_->route(pkt);
-  int vl = pkt->qos() * num_vc_ + pkt->deadlockVC();
+  Router* rtr = routers_[pkt->qos()];
+  rtr->route(pkt);
+  int vl = rtr->vlOffset() + pkt->deadlockVC();
   pkt->setVirtualLane(vl);
-  int max_vl = qos_levels_*num_vc_;
-  if (vl >= max_vl){
-    spkt_abort_printf("Bad QoS %d > max=%d", vl, (max_vl-1));
-  }
 
   SnapprOutPort& p = outports_[pkt->nextPort()];
   TimeDelta time_to_send = p.byte_delay * pkt->numBytes();

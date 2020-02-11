@@ -56,7 +56,7 @@ namespace hw {
 
 struct SnapprPortArbitrator {
   SPKT_DECLARE_BASE(SnapprPortArbitrator)
-  SPKT_DECLARE_CTOR(TimeDelta, SST::Params&)
+  SPKT_DECLARE_CTOR(TimeDelta, SST::Params&, const std::vector<int>&)
 
   virtual void insert(uint64_t cycle, SnapprPacket* pkt) = 0;
 
@@ -70,9 +70,12 @@ struct SnapprPortArbitrator {
 
   virtual void scale(double factor) = 0;
 
-  virtual void setVirtualLanes(int num_vl, uint32_t total_credits) = 0;
+  virtual void setVirtualLanes(const std::vector<uint32_t>& vl_credits) = 0;
 
   virtual int queueLength(int vl) const = 0;
+
+  virtual int numVirtualLanes() const = 0;
+
 };
 
 struct SnapprOutPort {
@@ -99,6 +102,7 @@ struct SnapprOutPort {
   Timestamp send_start;
   Timestamp last_queue_depth_collection;
   TimeDelta byte_delay;
+  TimeDelta flit_overhead;
   int ftq_idle_state;
   int ftq_stalled_state;
   int ftq_active_state;
@@ -145,8 +149,12 @@ struct SnapprOutPort {
 
   void tryToSendPacket(SnapprPacket* pkt);
 
-  void setVirtualLanes(int num_vl, uint32_t total_credits){
-    arb_->setVirtualLanes(num_vl, total_credits);
+  void setVirtualLanes(const std::vector<uint32_t>& credits){
+    arb_->setVirtualLanes(credits);
+  }
+
+  int numVirtualLanes() const {
+    return arb_->numVirtualLanes();
   }
 
   template <class T, class Fxn>
@@ -156,7 +164,8 @@ struct SnapprOutPort {
 
   SnapprOutPort(SST::Params& params, const std::string& arb,
                 const std::string& subId, const std::string& portName, int number,
-                TimeDelta byte_delay, bool congestion, bool flow_control, Component* parent);
+                TimeDelta byte_delay, bool congestion, bool flow_control, Component* parent,
+                const std::vector<int>& vls_per_qos);
 
  private:
   void logQueueDepth();

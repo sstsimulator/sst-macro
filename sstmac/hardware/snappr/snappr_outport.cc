@@ -25,7 +25,7 @@ namespace hw {
 SnapprOutPort::SnapprOutPort(SST::Params& params, const std::string &arb,
                              const std::string& subId, const std::string& portName,
                              int number, TimeDelta byt_delay, bool congestion, bool flow_control,
-                             Component* parent)
+                             Component* parent, const std::vector<int>& vls_per_qos)
   : arbitration_scheduled(false), 
     byte_delay(byt_delay), 
     state_ftq(nullptr),
@@ -39,7 +39,7 @@ SnapprOutPort::SnapprOutPort(SST::Params& params, const std::string &arb,
     number_(number),
     notifier_(nullptr)
 {
-  arb_ = sprockit::create<SnapprPortArbitrator>("macro", arb, byte_delay, params);
+  arb_ = sprockit::create<SnapprPortArbitrator>("macro", arb, byte_delay, params, vls_per_qos);
   xmit_active = parent->registerStatistic<uint64_t>(params, "xmit_active", subId);
   xmit_idle = parent->registerStatistic<uint64_t>(params, "xmit_idle", subId);
   xmit_stall = parent->registerStatistic<uint64_t>(params, "xmit_stall", subId);
@@ -50,10 +50,13 @@ SnapprOutPort::SnapprOutPort(SST::Params& params, const std::string &arb,
   queue_depth_ftq = dynamic_cast<FTQCalendar*>(
         parent->registerMultiStatistic<int,uint64_t,uint64_t>(params, "queue_depth", subId));
 #endif
-
   ftq_idle_state = FTQTag::allocateCategoryId("idle:" + portName);
   ftq_active_state = FTQTag::allocateCategoryId("active:" + portName);
   ftq_stalled_state = FTQTag::allocateCategoryId("stalled:" + portName);
+
+  //default is to assume no flit overhead
+  uint32_t flit_size = params.find<SST::UnitAlgebra>("flit_size", "0").getRoundedValue();
+  flit_overhead = flit_size * byte_delay;
 }
 
 void
@@ -127,7 +130,7 @@ SnapprOutPort::send(SnapprPacket* pkt, Timestamp now)
     state_ftq->addData(ftq_active_state, now.time.ticks(), time_to_send.ticks());
   }
 #endif
-  next_free = now + time_to_send;
+  next_free = now + time_to_send + flit_overhead;
   pkt->setTimeToSend(time_to_send);
   pkt->accumulateCongestionDelay(now);
 #if SSTMAC_SANITY_CHECK
@@ -136,14 +139,16 @@ SnapprOutPort::send(SnapprPacket* pkt, Timestamp now)
                       pkt->toaddr(), pkt->toString().c_str());
   }
 #endif
-  link->send(pkt);
+  link->send(flit_overhead, pkt);
 
-  if (flow_control_ && inports){
-    auto& inport = inports[pkt->inport()];
-    auto* credit = new SnapprCredit(pkt->byteLength(), pkt->inputVirtualLane(), inport.src_outport);
-    pkt_debug("sending credit to port=%d on vl=%d at t=%8.4e: %s",
-              inport.src_outport, pkt->inputVirtualLane(), next_free.sec(), pkt->toString().c_str());
-    inport.link->send(time_to_send, credit);
+  if (flow_control_){
+    if (inports){
+      auto& inport = inports[pkt->inport()];
+      auto* credit = new SnapprCredit(pkt->byteLength(), pkt->inputVirtualLane(), inport.src_outport);
+      pkt_debug("sending credit to port=%d on vl=%d at t=%8.4e: %s",
+                inport.src_outport, pkt->inputVirtualLane(), next_free.sec(), pkt->toString().c_str());
+      inport.link->send(time_to_send + flit_overhead, credit);
+    }
   } else {
     //immediately add the credits back - we don't worry about credits here
     addCredits(pkt->virtualLane(), pkt->byteLength());
@@ -303,7 +308,8 @@ struct FifoPortArbitrator : public SnapprPortArbitrator
     "fifo",
     "implements a FIFO strategy for queuing packets")
 
-  FifoPortArbitrator(TimeDelta  /*link_byte_delay*/, SST::Params&  /*params*/){}
+  FifoPortArbitrator(TimeDelta  /*link_byte_delay*/, SST::Params&  /*params*/,
+                     const std::vector<int>& /*vls_per_qos*/){}
 
   void insert(uint64_t  /*cycle*/, SnapprPacket *pkt) override {
     VirtualLane& vl = vls_[pkt->virtualLane()];
@@ -341,12 +347,15 @@ struct FifoPortArbitrator : public SnapprPortArbitrator
     }
   }
 
-  void setVirtualLanes(int num_vl, uint32_t total_credits) override {
-    uint32_t credits_per_vl = total_credits / num_vl;
-    vls_.resize(num_vl);
-    for (VirtualLane& vl : vls_){
-      vl.credits = credits_per_vl;
+  void setVirtualLanes(const std::vector<uint32_t>& credits) override {
+    vls_.resize(credits.size());
+    for (int i=0; i < vls_.size(); ++i){
+      vls_[i].credits = credits[i];
     }
+  }
+
+  int numVirtualLanes() const override {
+    return vls_.size();
   }
 
   void addCredits(int vl, uint32_t credits) override {
@@ -378,64 +387,6 @@ struct FifoPortArbitrator : public SnapprPortArbitrator
  private:
   std::vector<VirtualLane> vls_;
   std::queue<SnapprPacket*> port_queue_;
-};
-
-struct ScatterPortArbitrator : public SnapprPortArbitrator
-{
-  struct VirtualLane {
-    uint32_t credits;
-    std::queue<SnapprPacket*> pending;
-  };
-
- public:
-  ScatterPortArbitrator(SST::Params&  /*params*/){
-    //nothing to do
-  }
-
-  void insert(uint64_t  /*cycle*/, SnapprPacket *pkt) override {
-    VirtualLane& vl = vls_[pkt->virtualLane()];
-    if (vl.credits >= pkt->numBytes()){
-      port_queue_.emplace(pkt);
-      vl.credits -= pkt->numBytes();
-    } else {
-      vl.pending.push(pkt);
-    }
-  }
-
-  SnapprPacket* pop(uint64_t  /*cycle*/) override {
-    SnapprPacket* pkt = port_queue_.top();
-    port_queue_.pop();
-    return pkt;
-  }
-
-  void addCredits(int vl, uint32_t credits) override {
-    VirtualLane& v = vls_[vl];
-    v.credits += credits;
-    while (!v.pending.empty() && v.pending.front()->numBytes() <= v.credits){
-      SnapprPacket* pkt = v.pending.front();
-      v.pending.pop();
-      port_queue_.emplace(pkt);
-      v.credits -= pkt->numBytes();
-    }
-  }
-
-  bool empty() const override {
-    return port_queue_.empty();
-  }
-
- private:
-  struct priority_is_lower {
-    bool operator()(const SnapprPacket* l,
-                    const SnapprPacket* r) const {
-      //prioritize packets with lower offsets
-      return l->offset() > r->offset();
-    }
-  };
-
-  std::vector<VirtualLane> vls_;
-
-  std::priority_queue<SnapprPacket*, std::vector<SnapprPacket*>,
-      priority_is_lower> port_queue_;
 };
 
 struct WRR_PortArbitrator : public SnapprPortArbitrator
@@ -535,16 +486,37 @@ struct WRR_PortArbitrator : public SnapprPortArbitrator
     "wrr",
     "implements a WRR strategy for queuing packets with bandwidth sharing weights")
 
-  WRR_PortArbitrator(TimeDelta link_byte_delay, SST::Params& params) :
+  WRR_PortArbitrator(TimeDelta link_byte_delay, SST::Params& params,
+                     const std::vector<int>& vls_per_qos) :
     link_byte_delay_(link_byte_delay.ticks())
   {
     std::vector<double> weights;
-    params.find_array("vl_weights", weights);
+    if (params.contains("vl_weights")){
+      params.find_array("vl_weights", weights);
+    } else if (params.contains("qos_weights")) {
+      std::vector<double> qos_weights;
+      params.find_array("qos_weights", qos_weights);
+      for (int q=0; q < qos_weights.size(); ++q){
+        for (int vl=0; vl < vls_per_qos[q]; ++vl){
+          weights.push_back(qos_weights[q]);
+        }
+      }
+    } else {
+      spkt_abort_printf("No VL or QOS weights given to port arbitrator");
+    }
 
     std::vector<std::string> types;
     const std::map<std::string, VirtualLane::SelectionType> sel_type_map;
     if (params.contains("vl_types")){
       params.find_array("vl_types", types);
+    } else if (params.contains("qos_types")){
+      std::vector<std::string> qos_types;
+      params.find_array("qos_types", qos_types);
+      for (int q=0; q < qos_types.size(); ++q){
+        for (int vl=0; vl < vls_per_qos[q]; ++vl){
+          types.push_back(qos_types[q]);
+        }
+      }
     } else {
       types.resize(weights.size(), std::string("min"));
     }
@@ -557,6 +529,14 @@ struct WRR_PortArbitrator : public SnapprPortArbitrator
     std::vector<int> priorities;
     if (params.contains("vl_priorities")){
       params.find_array("vl_priorities", priorities);
+    } else if (params.contains("qos_priorities")) {
+      std::vector<int> qos_priors;
+      params.find_array("qos_priorities", qos_priors);
+      for (int q=0; q < qos_priors.size(); ++q){
+        for (int vl=0; vl < vls_per_qos[q]; ++vl){
+          priorities.push_back(qos_priors[q]);
+        }
+      }
     } else {
       //just give everything priority zero
       priorities.resize(weights.size(), 0);
@@ -602,15 +582,28 @@ struct WRR_PortArbitrator : public SnapprPortArbitrator
     }
   }
 
-  void setVirtualLanes(int num_vl, uint32_t total_credits) override {
-    if (num_vl != int(vls_.size())){
+  SnapprPacket* popDeadlockCheck(int vl) override {
+    VirtualLane& v = vls_[vl];
+    if (!v.pending.empty()){
+      SnapprPacket* pkt = v.pending.front();
+      return pkt;
+    } else {
+      return nullptr;
+    }
+  }
+
+  void setVirtualLanes(const std::vector<uint32_t>& credits) override {
+    if (credits.size() != vls_.size()){
       spkt_abort_printf("WRR arbitrator got %d VLs, but weight vector of size %d",
-                        num_vl, int(vls_.size()));
+                        int(credits.size()), int(vls_.size()));
     }
-    uint32_t credits_per = total_credits / num_vl;
-    for (int vl=0; vl < num_vl; ++vl){
-      vls_[vl].credits = credits_per;
+    for (int i=0; i < vls_.size(); ++i){
+      vls_[i].credits = credits[i];
     }
+  }
+
+  int numVirtualLanes() const override {
+    return vls_.size();
   }
 
   int queueLength(int vl) const override {
@@ -631,6 +624,11 @@ struct WRR_PortArbitrator : public SnapprPortArbitrator
     v.next_free = std::numeric_limits<uint64_t>::max();
     //there is no special packet deadline here
     port_queue_.emplace(&v);
+    if (v.credits < pkt->numBytes()){
+      spkt_abort_printf("WRR %p VL %d no QOS - credits are insufficient",
+                        this, pkt->virtualLane());
+    }
+    v.credits -= pkt->numBytes();
   }
 
   void insertBandwidthMin(uint64_t cycle, SnapprPacket *pkt) {
@@ -639,12 +637,22 @@ struct WRR_PortArbitrator : public SnapprPortArbitrator
     v.next_free = deadline;
     port_debug("WRR %p VL %d is empty and emplacing at deadline=%" PRIu64 " on cycle=%" PRIu64 ": %s",
                this, pkt->virtualLane(), deadline, cycle, pkt->toString().c_str());
+    if (v.credits < pkt->numBytes()){
+      spkt_abort_printf("WRR %p VL %d bandwidth min credits are insufficient",
+                        this, pkt->virtualLane());
+    }
     port_queue_.emplace(&v);
+    v.credits -= pkt->numBytes();
   }
 
   void insertBandwidthMax(uint64_t cycle, SnapprPacket* pkt) {
     //there might be a bandwidth cap here to negotiate
     VirtualLane& v = vls_[pkt->virtualLane()];
+    if (v.credits < pkt->numBytes()){
+      spkt_abort_printf("WRR %p VL %d bandwidth max credits are insufficient",
+                        this, pkt->virtualLane());
+    }
+    v.credits -= pkt->numBytes();
     if (v.next_free > cycle){
       port_debug("WRR %p VL %d is empty and emplacing in cap queue at next_free=%" PRIu64 " on cycle=%" PRIu64 ": %s",
                  this, pkt->virtualLane(), v.next_free, cycle, pkt->toString().c_str());
@@ -661,16 +669,23 @@ struct WRR_PortArbitrator : public SnapprPortArbitrator
     int vl = pkt->virtualLane();
     VirtualLane& v = vls_[vl];
     if (v.pending.empty()){
-      switch(v.sel_type){
-        case VirtualLane::QosBandwidthMax:
-          insertBandwidthMax(cycle, pkt);
-          break;
-        case VirtualLane::QosBandwidthMin:
-          insertBandwidthMin(cycle, pkt);
-          break;
-        case VirtualLane::QosNone:
-          insertNoQoS(cycle, pkt);
-          break;
+      if (v.credits >= pkt->numBytes()){
+        port_debug("WRR %p VL %d inserting on empty, now has %d credits", 
+                   this, v.number, v.credits);
+        switch(v.sel_type){
+          case VirtualLane::QosBandwidthMax:
+            insertBandwidthMax(cycle, pkt);
+            break;
+          case VirtualLane::QosBandwidthMin:
+            insertBandwidthMin(cycle, pkt);
+            break;
+          case VirtualLane::QosNone:
+            insertNoQoS(cycle, pkt);
+            break;
+        }
+      } else {
+        v.stalled = true;
+        port_debug("WRR %p VL %d is waiting on more than %d credits - add to pending", this, v.number, v.credits);
       }
     }
     v.pending.push(pkt);
@@ -681,6 +696,7 @@ struct WRR_PortArbitrator : public SnapprPortArbitrator
     if (vl->credits >= pkt->numBytes()){
       //the deadline can be whatever we set
       vl->next_free = cycle;
+      vl->credits -= pkt->numBytes();
       port_queue_.emplace(vl);
     } else {
       vl->stalled = true;
@@ -715,7 +731,8 @@ struct WRR_PortArbitrator : public SnapprPortArbitrator
       bw_cap_queue_.emplace(vl);
       port_debug("WRR %p VL %d has enough credits=%u to emplace in cap queue at next_free=%" PRIu64
                  " on cycle=%" PRIu64 ": %s",
-                 this, vl->number, vl->next_free, cycle, vl->credits, next->toString().c_str());
+                 this, vl->number, vl->credits, vl->next_free, cycle, next->toString().c_str());
+      vl->credits -= next->numBytes();
     } else {
       //otherwise
       vl->stalled = true;
@@ -731,8 +748,9 @@ struct WRR_PortArbitrator : public SnapprPortArbitrator
     if (vl->credits >= pkt->numBytes()){
       port_debug("WRR %p VL %d has enough credits=%u to emplace at deadline=%" PRIu64
                  " on cycle=%" PRIu64 ": %s",
-                 this, vl->number, deadline, cycle, vl->credits, pkt->toString().c_str());
+                 this, vl->number, vl->credits, deadline, cycle, pkt->toString().c_str());
       vl->next_free = deadline;
+      vl->credits -= pkt->numBytes();
       port_queue_.emplace(vl);
     } else {
       port_debug("WRR %p VL %d has insufficient credits=%u for deadline=%" PRIu64
@@ -775,7 +793,6 @@ struct WRR_PortArbitrator : public SnapprPortArbitrator
 
     SnapprPacket* pkt = vl->pending.front();
     vl->pending.pop();
-    vl->credits -= pkt->numBytes();
 
     port_debug("WRR %p VL %d sending on cycle=%" PRIu64 ": %s",
                this, vl->number, cycle, pkt->toString().c_str());
@@ -828,6 +845,8 @@ struct WRR_PortArbitrator : public SnapprPortArbitrator
 
   void addCredits(int vl, uint32_t credits) override {
     VirtualLane& v = vls_[vl];
+    port_debug("WRR %p VL %d adding %" PRIu32 " credits to existing=%" PRIu32,
+               this, vl, credits, v.credits)
     v.credits += credits;
     if (v.stalled){
 #if SSTMAC_SANITY_CHECK
@@ -849,6 +868,7 @@ struct WRR_PortArbitrator : public SnapprPortArbitrator
           unstallBandwidthMax(&v);
           break;
        }
+       v.credits -= pkt->numBytes();
        v.stalled = false;
       }
     }

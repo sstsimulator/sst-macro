@@ -50,9 +50,9 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-class DelayStats : public SST::Statistics::MultiStatistic<int,int,int,int,uint64_t,double,double,double,double,double,double,double,double,double> {
+class DelayStats : public SST::Statistics::MultiStatistic<int,int,int,int,uint64_t,uint64_t,double,double,double,double,double,double,double,double,double> {
  public:
-  using Parent=SST::Statistics::MultiStatistic<int,int,int,int,uint64_t,double,double,double,double,double,double,double,double,double>;
+  using Parent=SST::Statistics::MultiStatistic<int,int,int,int,uint64_t,uint64_t,double,double,double,double,double,double,double,double,double>;
 
   struct Message {
     int src;
@@ -60,6 +60,7 @@ class DelayStats : public SST::Statistics::MultiStatistic<int,int,int,int,uint64
     int type;
     int stage;
     uint64_t length;
+    uint64_t flow_id;
     double send_sync_delay;
     double recv_sync_delay;
     double contention_delay;
@@ -69,10 +70,10 @@ class DelayStats : public SST::Statistics::MultiStatistic<int,int,int,int,uint64
     double active_delay;
     double time_since_quiesce;
     double time;
-    Message(int s, int d, int t, int st, uint64_t l,
+    Message(int s, int d, int t, int st, uint64_t l, uint64_t fid,
             double ssd, double rsd, double cd, double id, double md, 
             double asd, double ad, double tsq, double tme) :
-      src(s), dst(d), type(t), stage(st), length(l),
+      src(s), dst(d), type(t), stage(st), length(l), flow_id(fid),
       send_sync_delay(ssd), recv_sync_delay(rsd), 
       contention_delay(cd),
       inj_delay(id), min_delay(md),
@@ -95,7 +96,8 @@ class DelayStats : public SST::Statistics::MultiStatistic<int,int,int,int,uint64
 
   ~DelayStats(){}
 
-  void addData_impl(int src, int dst, int type, int stage, uint64_t bytes,
+  void addData_impl(int src, int dst, int type, int stage, 
+                    uint64_t bytes, uint64_t flow_id,
                     double send_sync_delay,
                     double recv_sync_delay, double contention_delay,
                     double comm_delay, double min_delay, 

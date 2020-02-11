@@ -516,6 +516,9 @@ Interconnect::deadlockCheck()
   for (auto* sw : switches_){
     if (sw) sw->deadlockCheck();
   }
+  for (auto* nd : nodes_){
+    if (nd) nd->nic()->deadlockCheck();
+  }
 }
 
 uint32_t

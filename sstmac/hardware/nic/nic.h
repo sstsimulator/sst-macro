@@ -182,6 +182,8 @@ class NIC : public ConnectableSubcomponent
 
   void sendToNode(NetworkMessage* netmsg);
 
+  virtual void deadlockCheck(){}
+
   virtual void sendManagerMsg(NetworkMessage* msg);
 
   virtual std::function<void(NetworkMessage*)> ctrlIoctl();
