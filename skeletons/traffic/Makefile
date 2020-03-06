@@ -23,7 +23,7 @@ $(TARGET): $(OBJ)
 	$(CXX) -o $@ $+ $(LDFLAGS) $(LIBS)  $(CXXFLAGS)
 
 %.o: %.cc 
-	SSTMAC_SKELETONIZE=1 SSTMAC_DELETE_TEMPS=0 SSTMAC_DELETE_TEMP_OFILES=0 $(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
+	SSTMAC_SKELETONIZE=1 $(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
 
 %.o: %.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@

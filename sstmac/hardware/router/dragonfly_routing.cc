@@ -563,8 +563,6 @@ class DragonflyPARRouter : public DragonflyUGALRouter {
     hdr->deadlock_vc = hdr->num_hops;
     ++hdr->num_hops;
   }
- private:
-  bool vl_queues_;
 
 };
 
