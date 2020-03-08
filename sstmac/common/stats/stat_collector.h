@@ -72,7 +72,7 @@ class StatisticBase {
  public:
   virtual void registerOutputFields(StatisticFieldsOutput* statOutput) = 0;
 
-  virtual void outputStatisticData(StatisticFieldsOutput* output, bool endOfSimFlag) = 0;
+  virtual void outputStatisticFields(StatisticFieldsOutput* output, bool endOfSimFlag) = 0;
 
   std::string name() const {
     return name_;
@@ -189,7 +189,7 @@ class StatisticFieldsOutput : public StatisticOutput
 
   void output(StatisticBase* stat, bool endOfSimFlag) override {
     startOutputEntries(stat);
-    stat->outputStatisticData(this, endOfSimFlag);
+    stat->outputStatisticFields(this, endOfSimFlag);
     stopOutputEntries();
   }
 
@@ -353,7 +353,7 @@ class Statistic<void> : public StatisticBase
 
   void registerOutputFields(StatisticFieldsOutput* statOutput) override;
 
-  void outputStatisticData(StatisticFieldsOutput* output, bool endOfSimFlag) override;
+  void outputStatisticFields(StatisticFieldsOutput* output, bool endOfSimFlag) override;
 
  protected:
   Statistic(EventScheduler* parent,
@@ -452,7 +452,7 @@ class NullStatistic : public NullStatisticBase<T,isFund> {
   {
   }
 
-  void outputStatisticData(SST::Statistics::StatisticOutput *, bool) override {}
+  void outputStatisticFields(SST::Statistics::StatisticOutput *, bool) override {}
 
   void registerOutputFields(SST::Statistics::StatisticOutput *) override {}
 

@@ -161,7 +161,7 @@ FTQAccumulator::registerOutputFields(SST::Statistics::StatisticOutput * /*statOu
 }
 
 void
-FTQAccumulator::outputStatisticData(SST::Statistics::StatisticOutput * /*statOutput*/, bool  /*endOfSim*/)
+FTQAccumulator::outputStatisticFields(SST::Statistics::StatisticOutput * /*statOutput*/, bool  /*endOfSim*/)
 {
   sprockit::abort("FTQAccumulator::outputStatisticData: not yet implemented");
 }
@@ -207,7 +207,7 @@ FTQCalendar::registerOutputFields(StatisticFieldsOutput * /*statOutput*/)
 }
 
 void
-FTQCalendar::outputStatisticData(StatisticFieldsOutput * /*output*/, bool  /*endOfSimFlag*/)
+FTQCalendar::outputStatisticFields(StatisticFieldsOutput * /*output*/, bool  /*endOfSimFlag*/)
 {
   sprockit::abort("FTQCalendar::outputStatisticData: should never be called - ensure output is type 'ftq'");
 }
