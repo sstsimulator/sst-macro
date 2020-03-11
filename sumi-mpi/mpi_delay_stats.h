@@ -93,11 +93,11 @@ class DelayStats : public SST::Statistics::MultiStatistic<int,int,int,int,uint64
   void addData_impl(int src, int dst, int type, int stage, uint64_t bytes,
                     double sync_delay, double contention_delay,
                     double comm_delay, double min_delay, 
-                    double active_sync_delay, double active_delay);
+                    double active_sync_delay, double active_delay) override;
 
-  void registerOutputFields(SST::Statistics::StatisticFieldsOutput *statOutput);
+  void registerOutputFields(SST::Statistics::StatisticFieldsOutput *statOutput) override;
 
-  void outputStatisticData(SST::Statistics::StatisticFieldsOutput *output, bool endOfSimFlag);
+  void outputStatisticFields(SST::Statistics::StatisticFieldsOutput *output, bool endOfSimFlag) override;
 
   std::vector<Message>::const_iterator begin() const {
     return messages_.begin();

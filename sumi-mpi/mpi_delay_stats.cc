@@ -29,7 +29,7 @@ DelayStats::registerOutputFields(SST::Statistics::StatisticFieldsOutput * /*stat
 }
 
 void
-DelayStats::outputStatisticData(SST::Statistics::StatisticFieldsOutput * /*output*/, bool  /*endOfSimFlag*/)
+DelayStats::outputStatisticFields(SST::Statistics::StatisticFieldsOutput * /*output*/, bool  /*endOfSimFlag*/)
 {
   sprockit::abort("DelayStats::outputStatisticData: should not be called");
 }

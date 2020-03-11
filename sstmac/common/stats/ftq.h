@@ -83,7 +83,7 @@ class FTQAccumulator : public SST::Statistics::MultiStatistic<int,uint64_t,uint6
   ~FTQAccumulator(){}
 
   void registerOutputFields(SST::Statistics::StatisticOutput* statOutput) override;
-  void outputStatisticData(SST::Statistics::StatisticOutput* statOutput, bool endOfSim) override;
+  void outputStatisticFields(SST::Statistics::StatisticOutput* statOutput, bool endOfSim) override;
 
   void addData_impl(int event_typeid, uint64_t  /*ticks_begin*/, uint64_t num_ticks) override {
     event_counts_[event_typeid] += num_ticks;
@@ -121,7 +121,7 @@ class FTQCalendar : public SST::Statistics::MultiStatistic<int,uint64_t,uint64_t
 
   ~FTQCalendar(){}
 
-  void addData_impl(int event_typeid, uint64_t ticks_begin, uint64_t num_ticks);
+  void addData_impl(int event_typeid, uint64_t ticks_begin, uint64_t num_ticks) override;
 
   bool empty() const {
     return events_.empty();
@@ -131,9 +131,9 @@ class FTQCalendar : public SST::Statistics::MultiStatistic<int,uint64_t,uint64_t
     return events_used_;
   }
 
-  void registerOutputFields(StatisticFieldsOutput *statOutput);
+  void registerOutputFields(StatisticFieldsOutput *statOutput) override;
 
-  void outputStatisticData(StatisticFieldsOutput *output, bool endOfSimFlag);
+  void outputStatisticFields(StatisticFieldsOutput *output, bool endOfSimFlag) override;
 
   /**
   * The calendar may not have collected events until the very end. 

@@ -75,11 +75,11 @@ class StatAccumulator : public Statistic<T> {
     total_ += value;
   }
 
-  void registerOutputFields(SST::Statistics::StatisticOutput* statOutput) override {
+  void registerOutputFields(SST::Statistics::StatisticFieldsOutput* statOutput) override {
     field_ = statOutput->registerField<T>("total");
   }
 
-  void outputStatisticData(SST::Statistics::StatisticOutput* statOutput, bool  /*EndOfSimFlag*/) override {
+  void outputStatisticFields(SST::Statistics::StatisticFieldsOutput* statOutput, bool  /*EndOfSimFlag*/) override {
     statOutput->outputField(field_, total_);
   }
 
