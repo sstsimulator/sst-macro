@@ -92,7 +92,7 @@ class LogPSwitch : public ConnectableComponent
  public:
   LogPSwitch(uint32_t cid, SST::Params& params);
 
-  virtual ~LogPSwitch();
+  ~LogPSwitch() override;
 
   std::string toString() const override {
     return "LogP switch";

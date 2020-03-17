@@ -92,7 +92,7 @@ class Node : public ConnectableComponent
 
   void init(unsigned int phase) override;
 
-  virtual ~Node();
+  ~Node() override;
 
   void connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
 
@@ -130,7 +130,7 @@ class Node : public ConnectableComponent
   /**
    @return  A unique string description of the node
   */
-  virtual std::string toString() const override;
+  std::string toString() const override;
 
   std::string hostname() const;
 

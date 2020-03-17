@@ -65,13 +65,13 @@ class CoordinateAllocation :
 
   CoordinateAllocation(SST::Params& params);
 
-  virtual ~CoordinateAllocation() throw() {}
+  ~CoordinateAllocation() throw() override {}
 
   std::string toString() const override {
     return "coordinate allocation";
   }
 
-  virtual bool allocate(int nnode_requested,
+  bool allocate(int nnode_requested,
     const ordered_node_set& available,
     ordered_node_set& allocation) const override;
 

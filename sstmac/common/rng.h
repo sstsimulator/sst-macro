@@ -181,7 +181,7 @@ class MWC : public UniformInteger
 
   static MWC* construct(rngint_t zarg, rngint_t warg);
 
-  ~MWC();
+  ~MWC() override;
 
   rngint_t value() override {
     return (znew() + wnew());
@@ -228,7 +228,7 @@ class SHR3 : public UniformInteger
 
   static SHR3* construct(rngint_t jsrarg);
 
-  ~SHR3();
+  ~SHR3() override;
 
   rngint_t value() override;
 
@@ -302,7 +302,7 @@ class CONG : public UniformInteger
 
   static CONG* construct(rngint_t jcongarg);
 
-  ~CONG();
+  ~CONG() override;
 
   rngint_t value() override {
     return (jcong = 69069 * jcong + 1234567);
@@ -351,7 +351,7 @@ class SimpleCombo : public UniformInteger
   static SimpleCombo* construct(rngint_t zarg, rngint_t warg,
                                 rngint_t jsrarg, rngint_t jcongarg);
 
-  ~SimpleCombo();
+  ~SimpleCombo() override;
 
   // value is written in this way to make it possible to inline
   // the MWC, CONG, and SHR3 value calls.
@@ -371,11 +371,11 @@ class SimpleCombo : public UniformInteger
 class Table256 : public UniformInteger
 {
  public:
-  ~Table256();
+  ~Table256() override;
 
-  void vec_reseed(const std::vector<rngint_t> &seeds);
+  void vec_reseed(const std::vector<rngint_t> &seeds) override;
 
-  int nseed();
+  int nseed() override;
 
  protected:
   UniformInteger* seeder_;
@@ -429,7 +429,7 @@ class LFIB4 : public Table256
     return (t[i1] = t[i1] + t[i2] + t[i3] + t[i4]);
   }
 
-  ~LFIB4() ;
+  ~LFIB4() override ;
 
   void vec_reseed(const std::vector<rngint_t> &seeds) override;
 
@@ -466,7 +466,7 @@ class SWB : public Table256
 
   rngint_t value() override;
 
-  ~SWB();
+  ~SWB() override;
 
   void vec_reseed(const std::vector<rngint_t> &seeds) override;
 
@@ -499,7 +499,7 @@ class Combo : public UniformInteger
     return kresult + sresult;
   }
 
-  ~Combo();
+  ~Combo() override;
 
   void
   vec_reseed(const std::vector<rngint_t> &seeds) override;

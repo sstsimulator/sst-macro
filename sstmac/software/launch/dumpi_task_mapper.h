@@ -69,7 +69,7 @@ class DumpiTaskMapper : public TaskMapper
     return "dumpi task mapper";
   }
 
-  virtual ~DumpiTaskMapper() throw() {}
+  ~DumpiTaskMapper() throw() override {}
 
   void mapRanks(const ordered_node_set& nodes,
                 int ppn,

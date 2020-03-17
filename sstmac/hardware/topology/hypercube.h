@@ -68,7 +68,7 @@ class Hypercube :
     return "torus topology";
   }
 
-  virtual ~Hypercube() {}
+  ~Hypercube() override {}
 
   double portScaleFactor(uint32_t addr, int port) const override;
 

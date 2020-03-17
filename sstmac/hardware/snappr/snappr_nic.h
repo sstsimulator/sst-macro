@@ -91,7 +91,7 @@ class SnapprNIC :
 
   void setup() override;
 
-  virtual ~SnapprNIC() throw ();
+  ~SnapprNIC() throw () override;
 
   void handlePayload(Event* ev);
 

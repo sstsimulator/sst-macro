@@ -90,14 +90,14 @@ class SimpleNode :
 
   SimpleNode(uint32_t id, SST::Params& params);
 
-  virtual ~SimpleNode();
+  ~SimpleNode() override;
 
-  virtual void execute(ami::COMP_FUNC func,
-         Event* data, ExecutionEvent* cb);
+  void execute(ami::COMP_FUNC func,
+         Event* data, ExecutionEvent* cb) override;
 
   void unblock(Event* ev);
 
-  void init(unsigned int phase);
+  void init(unsigned int phase) override;
  private:
 #if SSTMAC_HAVE_SST_ELEMENTS
   std::vector<SST::Link*> unblock_links_;

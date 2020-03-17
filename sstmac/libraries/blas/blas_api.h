@@ -88,7 +88,7 @@ class BlasAPI :
 
   BlasAPI(SST::Params& params, App* app, SST::Component* comp);
 
-  virtual ~BlasAPI();
+  ~BlasAPI() override;
 
   /**
    A(m,n) * B(n,k) = C(m,k)

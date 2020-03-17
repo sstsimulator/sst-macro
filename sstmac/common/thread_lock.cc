@@ -53,11 +53,11 @@ class mutex_sim_thread_lock :
   public sim_thread_lock,
   public MutexThreadLock
 {
-  void lock(){
+  void lock() override{
     MutexThreadLock::lock();
   }
 
-  void unlock(){
+  void unlock() override{
     MutexThreadLock::unlock();
   }
 };

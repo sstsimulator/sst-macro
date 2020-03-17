@@ -120,7 +120,7 @@ class PiscesNullArbitrator :
 
   PiscesNullArbitrator(double bw);
 
-  virtual void arbitrate(IncomingPacket& st) override;
+  void arbitrate(IncomingPacket& st) override;
 
   std::string toString() const override {
     return "pisces null arbitrator";
@@ -151,7 +151,7 @@ class PiscesSimpleArbitrator :
 
   PiscesSimpleArbitrator(double bw);
 
-  virtual void arbitrate(IncomingPacket& st) override;
+  void arbitrate(IncomingPacket& st) override;
 
   std::string toString() const override {
     return "pisces simple arbitrator";
@@ -189,7 +189,7 @@ class PiscesCutThroughArbitrator :
 
   PiscesCutThroughArbitrator(double bw);
 
-  ~PiscesCutThroughArbitrator();
+  ~PiscesCutThroughArbitrator() override;
 
   void arbitrate(IncomingPacket& st) override;
 

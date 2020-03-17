@@ -77,7 +77,7 @@ class LogPMemoryModel : public MemoryModel
 
   LogPMemoryModel(uint32_t id, SST::Params& params, hw::Node* node);
 
-  virtual ~LogPMemoryModel();
+  ~LogPMemoryModel() override;
 
   std::string toString() const override {
     return "logGP memory model";

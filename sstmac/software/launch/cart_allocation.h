@@ -66,7 +66,7 @@ class CartAllocation :
 
   CartAllocation(SST::Params& params);
 
-  virtual ~CartAllocation() throw () {}
+  ~CartAllocation() throw () override {}
 
   std::string toString() const override {
     return "cart allocation";

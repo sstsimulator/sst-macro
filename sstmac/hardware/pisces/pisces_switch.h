@@ -64,7 +64,7 @@ class PiscesAbstractSwitch :
  protected:
   PiscesAbstractSwitch(uint32_t id, SST::Params& params);
 
-  virtual ~PiscesAbstractSwitch();
+  ~PiscesAbstractSwitch() override;
 
   std::string arbType_;
   Router* router_;
@@ -98,13 +98,13 @@ class PiscesSwitch :
 
   PiscesSwitch(uint32_t id, SST::Params& params);
 
-  virtual ~PiscesSwitch();
+  ~PiscesSwitch() override;
 
   int queueLength(int port, int vc) const override;
 
-  virtual void connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
+  void connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
 
-  virtual void connectInput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
+  void connectInput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
 
   LinkHandler* creditHandler(int port) override;
 
@@ -118,7 +118,7 @@ class PiscesSwitch :
     return xbar_;
   }
 
-  virtual std::string toString() const override;
+  std::string toString() const override;
 
  private:
   void get_buffer(int outport);

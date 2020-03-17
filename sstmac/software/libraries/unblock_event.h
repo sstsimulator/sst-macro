@@ -73,7 +73,7 @@ class UnblockEvent :
  public:
   UnblockEvent(OperatingSystem* os, Thread* thr);
 
-  virtual void execute();
+  void execute() override;
 
  protected:
   OperatingSystem* os_;
@@ -87,7 +87,7 @@ class TimeoutEvent : public ExecutionEvent
  public:
   TimeoutEvent(OperatingSystem* os, Thread* thr);
 
-  virtual void execute();
+  void execute() override;
 
  protected:
   OperatingSystem* os_;

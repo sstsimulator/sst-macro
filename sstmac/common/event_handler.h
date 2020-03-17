@@ -109,7 +109,7 @@ class MemberFxnHandler : public EventHandler
 {
 
  public:
-  virtual ~MemberFxnHandler(){}
+  ~MemberFxnHandler() override{}
 
   std::string toString() const override {
     return obj_->toString();

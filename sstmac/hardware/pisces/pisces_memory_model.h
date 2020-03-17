@@ -79,7 +79,7 @@ class PiscesMemoryModel : public MemoryModel
 
   PiscesMemoryModel(uint32_t id, SST::Params& params, Node* parent);
 
-  virtual ~PiscesMemoryModel();
+  ~PiscesMemoryModel() override;
 
   std::string toString() const override {
     return "packet flow memory model";

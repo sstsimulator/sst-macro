@@ -79,7 +79,7 @@ class ParseDumpi : public sstmac::sw::App
     early_termination() : std::runtime_error("DUMPI early termination") {}
   };
 
-  virtual ~ParseDumpi() throw ();
+  ~ParseDumpi() throw () override;
 
   MpiApi* mpi() {
     return mpi_;

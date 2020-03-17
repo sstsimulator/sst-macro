@@ -90,7 +90,7 @@ class SculpinNIC :
 
   void setup() override;
 
-  virtual ~SculpinNIC() throw ();
+  ~SculpinNIC() throw () override;
 
   void handlePayload(Event* ev);
 

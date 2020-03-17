@@ -69,7 +69,7 @@ class Star : public StructuredTopology
     return "star topology";
   }
 
-  virtual ~Star() {}
+  ~Star() override {}
 
   Star(SST::Params& params);
 

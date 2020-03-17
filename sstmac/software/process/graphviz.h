@@ -139,7 +139,7 @@ class CallGraph : public SST::Statistics::CustomStatistic
   CallGraph(SST::BaseComponent* comp, const std::string& name,
            const std::string& subName, SST::Params& params);
 
-  virtual ~CallGraph();
+  ~CallGraph() override;
 
   void collect(uint64_t count, sw::Thread* thr);
 

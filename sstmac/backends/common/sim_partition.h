@@ -131,7 +131,7 @@ class SerialPartition :
 
   SerialPartition(SST::Params& params, ParallelRuntime* rt);
 
-  virtual ~SerialPartition();
+  ~SerialPartition() override;
 
 };
 
@@ -150,7 +150,7 @@ class TopologyPartition :
 
   TopologyPartition(SST::Params& params, ParallelRuntime* rt);
 
-  virtual ~TopologyPartition();
+  ~TopologyPartition() override;
 
  protected:
    hw::Topology* fake_top_;
@@ -173,9 +173,9 @@ class BlockPartition :
 
   BlockPartition(SST::Params& params, ParallelRuntime* rt);
 
-  virtual ~BlockPartition();
+  ~BlockPartition() override;
 
-  void finalizeInit(SST::Params& params);
+  void finalizeInit(SST::Params& params) override;
 
   virtual void partitionSwitches();
 
@@ -202,9 +202,9 @@ class OccupiedBlockPartition :
 
   OccupiedBlockPartition(SST::Params& params, ParallelRuntime* rt);
 
-  virtual ~OccupiedBlockPartition();
+  ~OccupiedBlockPartition() override;
 
-  virtual void partitionSwitches();
+  void partitionSwitches() override;
 
  protected:
   int occupied_switches_;

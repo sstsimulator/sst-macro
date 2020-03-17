@@ -81,7 +81,7 @@ class GreedyDflyAllocation :
     num_groups_ = params.find<int>("num_groups");
   }
 
-  virtual ~GreedyDflyAllocation() throw () {}
+  ~GreedyDflyAllocation() throw () override {}
 
   std::string toString() const override {
     return "greedy dfly allocation";

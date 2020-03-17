@@ -63,7 +63,7 @@ using Event = SST::Event;
 class Event : public serializable
 {
  public:
-  void serialize_order(serializer&){}
+  void serialize_order(serializer&) override{}
 };
 #endif
 
@@ -71,7 +71,7 @@ class ExecutionEvent : public Event
 {
   NotSerializable(ExecutionEvent)
  public:
-  virtual ~ExecutionEvent() {}
+  ~ExecutionEvent() override {}
 
 #if SSTMAC_INTEGRATED_SST_CORE
   virtual void execute() override = 0;

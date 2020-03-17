@@ -68,7 +68,7 @@ class HostnameTaskMapper : public TaskMapper
     return "hostname task mapper";
   }
 
-  virtual ~HostnameTaskMapper() throw() {}
+  ~HostnameTaskMapper() throw() override {}
 
   void mapRanks(const ordered_node_set& nodes,
                 int ppn,

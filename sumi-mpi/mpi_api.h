@@ -97,7 +97,7 @@ class MpiApi : public sumi::SimTransport
   static void deleteStatics();
 
  public:
-  virtual ~MpiApi();
+  ~MpiApi() override;
 
   MpiQueue* queue() {
     return queue_;

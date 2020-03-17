@@ -16,7 +16,7 @@ class HandlerExecutionEvent :
   using sprockit::thread_safe_new<HandlerExecutionEvent>::operator delete;
 #endif
 
-  virtual ~HandlerExecutionEvent() {}
+  ~HandlerExecutionEvent() override {}
 
   HandlerExecutionEvent(Event* ev, EventHandler* hand) :
     ev_to_deliver_(ev),

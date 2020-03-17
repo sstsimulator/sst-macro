@@ -99,13 +99,13 @@ class Message : public sstmac::hw::NetworkMessage
   {
   }
 
-  virtual ~Message();
+  ~Message() override;
 
   static const char* tostr(class_t ty);
 
-  virtual std::string toString() const override;
+  std::string toString() const override;
 
-  virtual void serialize_order(sstmac::serializer &ser) override;
+  void serialize_order(sstmac::serializer &ser) override;
 
 #if !SSTMAC_INTEGRATED_SST_CORE
   void validate_serialization(serializable *ser) override;
@@ -116,7 +116,7 @@ class Message : public sstmac::hw::NetworkMessage
   static bool needsAck(sstmac::hw::NetworkMessage::type_t ty,
                         int sendCQ, int recvCQ);
 
-  virtual sstmac::hw::NetworkMessage* cloneInjectionAck() const override {
+  sstmac::hw::NetworkMessage* cloneInjectionAck() const override {
     auto* cln = new Message(*this);
     cln->convertToAck();
     return cln;
@@ -298,7 +298,7 @@ class ProtocolMessage : public Message {
   {
   }
 
-  virtual void serialize_order(sstmac::serializer& ser) override {
+  void serialize_order(sstmac::serializer& ser) override {
     ser & stage_;
     ser & protocol_;
     ser & count_;

@@ -58,7 +58,7 @@ class PiscesBuffer :
 {
  public:
 
-  virtual ~PiscesBuffer();
+  ~PiscesBuffer() override;
 
   void setOutput(int this_outport, int dst_inport, EventLink::ptr&& link, int credits) override;
 

@@ -99,9 +99,9 @@ class MultithreadedEventContainer :
 
   MultithreadedEventContainer(SST::Params& params, ParallelRuntime* rt);
 
-  ~MultithreadedEventContainer() throw () {}
+  ~MultithreadedEventContainer() throw () override {}
 
-  virtual void run() override;
+  void run() override;
 
   void scheduleStop(Timestamp until) override;
 

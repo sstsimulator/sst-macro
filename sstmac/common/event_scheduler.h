@@ -566,7 +566,7 @@ class LocalLink : public EventLink {
   {
   }
 
-  virtual ~LocalLink() override {
+  ~LocalLink() override {
     if (handler_) delete handler_;
   }
 
@@ -645,7 +645,7 @@ class SubLink : public EventLink
   {
   }
 
-  ~SubLink(){
+  ~SubLink() override{
     if (handler_) delete handler_;
   }
 

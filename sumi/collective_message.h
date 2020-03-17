@@ -153,7 +153,7 @@ class CollectiveWorkMessage final :
     std::swap(dom_sender_, dom_recver_);
   }
 
-  virtual std::string toString() const override;
+  std::string toString() const override;
 
   static const char* tostr(int p);
 

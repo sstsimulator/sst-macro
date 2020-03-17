@@ -140,11 +140,11 @@ class NetworkMessage : public Flow
 
 
 
-  virtual std::string toString() const override {
+  std::string toString() const override {
     return "network message";
   }
 
-  virtual ~NetworkMessage();
+  ~NetworkMessage() override;
 
   static const char* tostr(nic_event_t mut);
 
@@ -231,7 +231,7 @@ class NetworkMessage : public Flow
     needs_ack_ = flag;
   }
 
-  virtual void serialize_order(serializer& ser) override;
+  void serialize_order(serializer& ser) override;
 
 #if !SSTMAC_INTEGRATED_SST_CORE
   void validate_serialization(serializable *ser) override;

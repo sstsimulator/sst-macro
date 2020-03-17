@@ -84,7 +84,7 @@ class MpiMessage final :
 
   std::string toString() const override;
 
-  ~MpiMessage() throw ();
+  ~MpiMessage() throw () override;
 
   sumi::MpiMessage* clone_me() const {
     MpiMessage* cln = new MpiMessage(*this);

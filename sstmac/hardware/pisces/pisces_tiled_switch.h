@@ -91,9 +91,9 @@ class PiscesTiledSwitch :
 
   void handlePayload(Event* ev);
 
-  virtual std::string toString() const override;
+  std::string toString() const override;
 
-  virtual ~PiscesTiledSwitch();
+  ~PiscesTiledSwitch() override;
 
   int getRow(int tile) const {
     return tile / ncols_;

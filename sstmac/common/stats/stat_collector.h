@@ -163,7 +163,7 @@ class StatisticFieldsOutput : public StatisticOutput
   {
   }
 
-  virtual ~StatisticFieldsOutput(){}
+  ~StatisticFieldsOutput() override{}
 
  public:
   using fieldHandle_t = int;
@@ -330,8 +330,10 @@ class Statistic :
 
  public:
   SST_ELI_DECLARE_BASE(Statistic)
+
   SST_ELI_DECLARE_CTOR(MacroBaseComponent*, const std::string&, const std::string&, SST::Params&)
-  virtual ~Statistic(){}
+
+  ~Statistic() override{}
 
  protected:
   Statistic(MacroBaseComponent* parent,
@@ -349,7 +351,7 @@ class Statistic<void> : public StatisticBase
  public:
   SST_ELI_DECLARE_BASE(Statistic)
   SST_ELI_DECLARE_CTOR(MacroBaseComponent*, const std::string&, const std::string&, SST::Params&)
-  virtual ~Statistic(){}
+  ~Statistic() override{}
 
   void registerOutputFields(StatisticFieldsOutput* statOutput) override;
 

@@ -77,7 +77,7 @@ class DragonflyPlus : public Dragonfly
 
   void connectedOutports(SwitchId src, std::vector<Connection>& conns) const override;
 
-  virtual ~DragonflyPlus() {}
+  ~DragonflyPlus() override {}
 
   std::string portTypeName(SwitchId sid, int port) const override;
 

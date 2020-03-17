@@ -71,7 +71,7 @@ class FatTreeRouter : public Router
 
   FatTreeRouter(SST::Params& params, Topology* top, NetworkSwitch* netsw);
 
-  virtual ~FatTreeRouter() {}
+  ~FatTreeRouter() override {}
 
   std::string toString() const override {
     return "fat tree router";

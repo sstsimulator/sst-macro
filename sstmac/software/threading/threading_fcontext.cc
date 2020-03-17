@@ -52,7 +52,7 @@ class ThreadingFContext : public ThreadContext
     SST_ELI_ELEMENT_VERSION(1,0,0),
     "uses fcontext for fast context switching")
 
-  virtual ~ThreadingFContext() {}
+  ~ThreadingFContext() override {}
 
   ThreadingFContext(){}
 

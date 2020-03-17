@@ -66,7 +66,7 @@ class TestFxn0 :
     : fxn_(fxn) {
   }
 
-  void run() {
+  void run() override {
     (*fxn_)();
   }
 };
@@ -85,7 +85,7 @@ class TestFxn1 :
     : fxn_(fxn), a_(a) {
   }
 
-  void run() {
+  void run() override {
     (*fxn_)(a_);
   }
 };
@@ -106,7 +106,7 @@ class TestFxn2 :
     : fxn_(fxn), a_(a), b_(b) {
   }
 
-  void run() {
+  void run() override {
     (*fxn_)(a_, b_);
   }
 };
@@ -129,7 +129,7 @@ class TestFxn3 :
     : fxn_(fxn), a_(a), b_(b), c_(c) {
   }
 
-  void run() {
+  void run() override {
     (*fxn_)(a_, b_, c_);
   }
 };
@@ -150,7 +150,7 @@ class TestMemberFxn1 :
     : fxn_(fxn), cls_(cls), a_(a) {
   }
 
-  void run() {
+  void run() override {
     (cls_->*fxn_)(a_);
   }
 };
@@ -173,7 +173,7 @@ class TestMemberFxn2 :
     : fxn_(fxn), cls_(cls), a_(a), b_(b) {
   }
 
-  void run() {
+  void run() override {
     (cls_->*fxn_)(a_,b_);
   }
 };
@@ -198,7 +198,7 @@ class TestMemberFxn3 :
     : fxn_(fxn), cls_(cls), a_(a), b_(b), c_(c) {
   }
 
-  void run() {
+  void run() override {
     (cls_->*fxn_)(a_,b_,c_);
   }
 };

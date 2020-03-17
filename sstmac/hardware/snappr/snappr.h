@@ -80,7 +80,7 @@ class SnapprPacket :
 
   std::string toString() const override;
 
-  virtual ~SnapprPacket() {}
+  ~SnapprPacket() override {}
 
   int nextPort() const {
     return rtrHeader<Header>()->edge_port;
@@ -228,7 +228,7 @@ class SnapprCredit :
 
   SnapprCredit(){} //for serialization
 
-  virtual ~SnapprCredit() {}
+  ~SnapprCredit() override {}
 
   void serialize_order(serializer& ser) override;
 

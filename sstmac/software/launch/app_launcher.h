@@ -62,15 +62,15 @@ class AppLauncher :
   AppLauncher(OperatingSystem* os);
 
   /// Hasta la vista.
-  virtual ~AppLauncher() throw ();
+  ~AppLauncher() throw () override;
 
-  virtual void incomingRequest(Request* ev) override;
+  void incomingRequest(Request* ev) override;
 
   void incomingEvent(Event* ev) override {
     Service::incomingEvent(ev);
   }
 
-  virtual void start() override;
+  void start() override;
 
  protected:
   bool is_completed_;

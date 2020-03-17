@@ -78,7 +78,7 @@ class SnapprMemoryModel : public MemoryModel
 
   SnapprMemoryModel(uint32_t id, SST::Params& params, Node* parent);
 
-  virtual ~SnapprMemoryModel(){}
+  ~SnapprMemoryModel() override{}
 
   std::string toString() const override {
     return "packet flow memory model";

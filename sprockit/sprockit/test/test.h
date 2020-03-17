@@ -98,11 +98,11 @@ class TestCase_impl :
     equal_ = TestEquals<T>::equals(test_, asserted_);
   }
 
-  bool is_correct() const {
+  bool is_correct() const override {
     return equal_ == should_be_equal_;
   }
 
-  void print_error(std::ostream &os) const {
+  void print_error(std::ostream &os) const override {
     if (should_be_equal_) {
       os << "SHOULD BE EQUAL";
     } else {
@@ -111,17 +111,17 @@ class TestCase_impl :
   }
 
   void
-  print_descr(std::ostream& os) const {
+  print_descr(std::ostream& os) const override {
     os << descr_;
   }
 
   void
-  print_test_value(std::ostream& os) const {
+  print_test_value(std::ostream& os) const override {
     ClassOutput<T>::print(test_, os);
   }
 
   void
-  print_asserted_value(std::ostream& os) const {
+  print_asserted_value(std::ostream& os) const override {
     ClassOutput<T>::print(asserted_, os);
   }
 
@@ -562,25 +562,25 @@ class ExceptionTestCase :
     test_ += test.substr(last_split);
   }
 
-  bool is_correct() const {
+  bool is_correct() const override {
     return success_;
   }
 
-  void print_error(std::ostream& os) const {
+  void print_error(std::ostream& os) const override {
     os << errormsg_;
   }
 
-  void print_descr(std::ostream& os) const {
+  void print_descr(std::ostream& os) const override {
     os << descr_ << " "
        << file_ << ":"
        << line_;
   }
 
-  void print_test_value(std::ostream& os) const {
+  void print_test_value(std::ostream& os) const override {
     os << test_;
   }
 
-  void print_asserted_value(std::ostream& os) const {
+  void print_asserted_value(std::ostream& os) const override {
     os << exc_;
   }
 

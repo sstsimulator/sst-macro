@@ -75,7 +75,7 @@ class TimestampPrefixFxn :
     }
   }
 
-  std::string str() {
+  std::string str() override {
     double t = comp_->now().sec() * mult_;
     return sprockit::sprintf("T=%14.8f %s:", t, units_.c_str());
   }

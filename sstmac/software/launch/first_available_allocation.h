@@ -72,7 +72,7 @@ class FirstAvailableAllocation : public NodeAllocator
     return "first available allocator";
   }
 
-  virtual ~FirstAvailableAllocation() throw ();
+  ~FirstAvailableAllocation() throw () override;
 
   bool allocate(
     int nnode_requested,

@@ -158,7 +158,7 @@ class AppLaunchRequest : public SoftwareLaunchRequest
              AppId aid,
              const std::string& appNamespace);
 
-  virtual ~AppLaunchRequest();
+  ~AppLaunchRequest() override;
 
   const std::string& appNamespace() const {
     return app_namespace_;

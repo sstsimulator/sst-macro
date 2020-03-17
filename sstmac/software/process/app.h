@@ -131,7 +131,7 @@ class App : public Thread
 
   LibComputeMemmove* computeLib();
 
-  virtual ~App();
+  ~App() override;
 
   void cleanup() override;
 
