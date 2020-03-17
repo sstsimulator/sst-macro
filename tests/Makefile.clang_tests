@@ -25,7 +25,7 @@ CLANGTESTS = \
   pragma_sst_init_cpp \
   pragma_sst_global_cpp \
   pragma_sst_null_replace_cpp \
-  pragma_sst_null_variable_cpp \
+  pragma_sst_null_ptr_cpp \
   pragma_sst_null_vector_cpp \
   pragma_sst_scoped_replace_cpp \
   pragma_sst_replace_cpp \

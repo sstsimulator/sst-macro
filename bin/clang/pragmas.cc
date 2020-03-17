@@ -299,38 +299,65 @@ SSTPragmaHandler::HandlePragma(Preprocessor &PP, PragmaIntroducerKind  /*Introdu
 std::map<std::string, std::list<std::string>>
 SSTPragma::getMap(SourceLocation loc, const std::list<clang::Token>& tokens)
 {
-  std::map<std::string, std::list<std::string>> allArgs;
-  auto iter = tokens.begin();
-  auto incrementIter = [&](){
-    ++iter;
-    if (iter == tokens.end()){
-      errorAbort(loc, "mis-formatted pragma, pragma modifiers should be of the form 'arg(a)' or 'arg(a,b)'");
-    }
-  };
+  /**
+   We want to construct a map of argument lists.
+   If the pragma is:
+   #pragma sst myPragma arg1(x,y,z) arg2(a,b) arg3(1)
+   The resulting map would be:
+   map = {
+     "arg1" : { "x", "y", "z" },
+     "arg2" : { "a", "b" },
+     "arg3" : { "1" }
+   }
+   We also need to accept "standalone" entries with no arguments in parentheses
+   #pragma sst myPragma arg1(x,y,z) arg2
+   The resulting map would be:
+   map = {
+     "arg1" : { "x", "y", "z" },
+     "arg2" : { }
+   }
+   The parsing code belows collects arguments and needs to handle
+   entries with/without parenthetical argument lists
+  */
 
+  std::map<std::string, std::list<std::string>> allArgs;
   int parenDepth = 0;
-  std::list<std::string> argList;
   std::stringstream sstr;
+  /** What the current arguments (a,b) are in a new pragma argument X(a,b) */
+  std::list<std::string> argList;
+  /** What the current entry (X) is in a new pragma argument X(a,b) */
   std::string argName;
+  /** Whether we hit a parentheses immediately after a new token*/
+  bool hitParen = false;
   for (const Token& t : tokens){
     switch(t.getKind()){
     case tok::l_paren: {
       if (parenDepth == 0){
+        /* We are hitting a parentheses
+           immediately after a new token */
+        hitParen = true;
+        /* Grab argument name and start new list */
         argName = sstr.str();
         sstr.str("");
       } else {
+        /* Add the argument to the ongoing list */
         tokenToString(t, sstr);
       }
+      /*This parenthesis is part of an argument entry X(a(i,j),b)*/
       ++parenDepth;
       break;
     }
     case tok::r_paren:
       if (parenDepth == 1){
+        /* We are closing an argument X(a,b) */
         argList.push_back(sstr.str());
         sstr.str("");
         allArgs[argName] = std::move(argList);
         argList = {};
+        hitParen = false;
       } else {
+        /* We are closing a matching parenthesis
+           with nested parentheses.e.g X(a(i,j),b) */
         tokenToString(t, sstr);
       }
       --parenDepth;
@@ -340,14 +367,30 @@ SSTPragma::getMap(SourceLocation loc, const std::list<clang::Token>& tokens)
         argList.push_back(sstr.str());
         sstr.str("");
       } else {
-        tokenToString(t, sstr);
+        sstr << ",";
       }
       break;
     default:
+      if (!hitParen && sstr.tellp() != 0){
+        /* If we have a previous token in sstr
+           but the next token is not a '(',
+           then this a standalone string with (...)
+        */
+        allArgs[sstr.str()] = std::list<std::string>();
+        sstr.str("");
+      }
       tokenToString(t, sstr);
       break;
     }
   }
+  /* If we have a previous token in sstr
+     then this a standalone string with (...)
+     at the end of the pragma */
+  if (sstr.tellp() != 0){
+    allArgs[sstr.str()] = std::list<std::string>();
+    sstr.str("");
+  }
+
   return allArgs;
 }
 
@@ -644,69 +687,36 @@ SSTGlobalVariablePragma::activate(Decl *d)
   errorAbort(d, "global pragma should only be applied to statements");
 }
 
-SSTNullVariablePragma::SSTNullVariablePragma(SourceLocation loc, const std::list<Token> &tokens)
+SSTNullVariablePragma::SSTNullVariablePragma(SourceLocation /**loc*/, std::map<std::string, std::list<std::string>>&& args)
  : declAppliedTo_(nullptr),
    transitiveFrom_(nullptr),
    nullSafe_(false), 
    deleteAll_(false),
    skelComputes_(false)
 {
-  if (tokens.empty()){
-    return;
-  }
-
-  std::set<std::string> replacer;
-  std::set<std::string>* inserter = nullptr;
-  auto end = tokens.end();
-  for (auto iter=tokens.begin(); iter != end; ++iter){
-    const Token& token = *iter;
-    std::string next;
-    switch(token.getKind()){
-    case tok::string_literal:
-    case tok::numeric_constant:
-      next = getLiteralDataAsString(token);
-      break;
-    case tok::kw_new:
-      next = "new";
-      break;
-    case tok::kw_nullptr:
-      next = "nullptr";
-      break;
-    case tok::identifier:
-      next = token.getIdentifierInfo()->getName().str();
-      break;
-    default:
-      std::string error = std::string("token to pragma is not a valid string name: ") + token.getName();
-      errorAbort(token.getLocation(), error);
-      break;
-    }
-
+  for (auto& pair : args){
+    std::string next = pair.first;
     if (next == "except"){
-      inserter = &nullExcept_;
+      nullExcept_.insert(pair.second.begin(), pair.second.end());
     } else if (next == "only"){
-      inserter = &nullOnly_;
+      nullOnly_.insert(pair.second.begin(), pair.second.end());
     } else if (next == "new"){
-      inserter = &nullNew_;
+      nullNew_.insert(pair.second.begin(), pair.second.end());
     } else if (next == "replace"){
-      inserter = &replacer;
+      replacement_ = pair.second.front();
     } else if (next == "target"){
-      inserter = &targetNames_;
+      targetNames_.insert(pair.second.begin(), pair.second.end());
     } else if (next == "safe"){
       nullSafe_ = true;
     } else if (next == "delete_all"){
       deleteAll_ = true;
     } else if (next == "skel_compute"){
       skelComputes_ = true;
-    } else if (inserter == nullptr){
-      extras_.push_back(next);
     } else {
-      inserter->insert(next);
+      extras_.push_back(next);
     }
   }
 
-  if (!replacer.empty()){
-    replacement_ = *replacer.begin();
-  }
 }
 
 static NamedDecl* getNamedDecl(Decl* d)
@@ -727,8 +737,13 @@ void
 SSTNullVariablePragma::doActivate(Decl* d)
 {
   if (!extras_.empty()){
-    errorAbort(d, "illegal null_variable spec: "
-      "must be with 'only', 'except', 'new', 'replace', 'target', 'safe', 'delete_all', 'skel_compute'");
+    std::stringstream sstr;
+    for (auto&& str : extras_){
+      sstr << " " << str;
+    }
+    std::string msg = "illegal null_ptr specs:" + sstr.str() + "\n"
+         + "must be with 'only', 'except', 'new', 'replace', 'target', 'safe', 'delete_all', 'skel_compute'";
+    errorAbort(d, msg);
   }
 
   declAppliedTo_ = getNamedDecl(d);
@@ -741,7 +756,7 @@ SSTNullVariablePragma::doActivate(Decl* d)
     }
 
     if (targetNames_.empty()){
-      errorAbort(d, "null_variable pragma applied to function must give list of target null parameters");
+      errorAbort(d, "null_ptr pragma applied to function must give list of target null parameters");
     }
 
     int numHits = 0;
@@ -755,7 +770,7 @@ SSTNullVariablePragma::doActivate(Decl* d)
 
     if (numHits != targetNames_.size()){
       std::stringstream sstr;
-      sstr << "null_variable pragma lists " << targetNames_.size()
+      sstr << "null_ptr pragma lists " << targetNames_.size()
            << " parameters, but they match " << numHits
            << " parameter names";
       errorAbort(d, sstr.str());
@@ -775,19 +790,19 @@ SSTNullVariablePragma::activate(Decl *d)
     case Decl::Field:{
       FieldDecl* fd = cast<FieldDecl>(d);
       if (!fd->getType()->isPointerType()){
-        errorAbort(d, "only valid to apply null_variable pragma to pointers");
+        errorAbort(d, "only valid to apply null_ptr pragma to pointers");
       }
       break;
     }
     case Decl::Var: {
       VarDecl* vd = cast<VarDecl>(d);
       if (!vd->getType()->isPointerType()){
-        errorAbort(d, "only valid to apply null_variable pragma to pointers");
+        errorAbort(d, "only valid to apply null_ptr pragma to pointers");
       }
       break;
     }
     default:
-      errorAbort(d, "only valid to apply null_variable pragma to functions, variables, and members");
+      errorAbort(d, "only valid to apply null_ptr pragma to functions, variables, and members");
       break;
   }
 
@@ -803,7 +818,7 @@ SSTNullVariablePragma::activate(Stmt *s)
       activate(*iter);
     }
   } else {
-    errorAbort(s, "pragma null_variable should only apply to declaration statements");
+    errorAbort(s, "pragma null_ptr should only apply to declaration statements");
   }
 }
 
@@ -864,8 +879,8 @@ static void doActivateFieldsPragma(Decl* d, bool defaultNull,
   }
 }
 
-SSTNullFieldsPragma::SSTNullFieldsPragma(SourceLocation loc, const std::list<Token> &tokens) :
-  SSTNullVariablePragma(loc, tokens)
+SSTNullFieldsPragma::SSTNullFieldsPragma(SourceLocation loc, std::map<std::string, std::list<std::string>>&& args) :
+  SSTNullVariablePragma(loc, std::move(args))
 {
   for (auto& str : extras_){
     nullFields_.insert(str);
@@ -885,8 +900,8 @@ SSTNullFieldsPragma::activate(Stmt *stmt)
   errorAbort(stmt, "null_fields pragma should only be applied to struct declarations, not statements");
 }
 
-SSTNonnullFieldsPragma::SSTNonnullFieldsPragma(SourceLocation loc, const std::list<Token> &tokens) :
-  SSTNullVariablePragma(loc, tokens)
+SSTNonnullFieldsPragma::SSTNonnullFieldsPragma(SourceLocation loc, std::map<std::string, std::list<std::string>>&& args) :
+  SSTNullVariablePragma(loc, std::move(args))
 {
   for (auto& str : extras_){
     nonnullFields_.insert(str);
@@ -1125,8 +1140,8 @@ static PragmaRegister<SSTStringPragmaShim, SSTKeepIfPragma, true> keepIfPragma(
     "sst", "keep_if", ALL_MODES);
 static PragmaRegister<SSTTokenListPragmaShim, SSTNullTypePragma, true> nullTypePragma(
     "sst", "null_type", SKELETONIZE | SHADOWIZE);
-static PragmaRegister<SSTTokenListPragmaShim, SSTNullVariablePragma, true> nullVariablePragma(
-    "sst", "null_variable", SKELETONIZE | SHADOWIZE);
+static PragmaRegister<SSTArgMapPragmaShim, SSTNullVariablePragma, true> nullVariablePragma(
+    "sst", "null_ptr", SKELETONIZE | SHADOWIZE);
 static PragmaRegister<SSTStringPragmaShim, SSTEmptyPragma, true> emptyPragma(
     "sst", "empty", SKELETONIZE | SHADOWIZE);
 static PragmaRegister<SSTStringPragmaShim, SSTGlobalVariablePragma, true> globalPragma(
@@ -1145,9 +1160,9 @@ static PragmaRegister<SSTTokenListPragmaShim, SSTCallFunctionPragma, true> callF
     "sst", "call", SKELETONIZE | SHADOWIZE | PUPPETIZE);
 static PragmaRegister<SSTStringPragmaShim, SSTOverheadPragma, true> overheadPragma(
     "sst", "overhead", SKELETONIZE | SHADOWIZE | ENCAPSULATE);
-static PragmaRegister<SSTTokenListPragmaShim, SSTNonnullFieldsPragma, true> nonnullFieldPragma(
+static PragmaRegister<SSTArgMapPragmaShim, SSTNonnullFieldsPragma, true> nonnullFieldPragma(
     "sst", "nonnull_fields", SKELETONIZE | SHADOWIZE);
-static PragmaRegister<SSTTokenListPragmaShim, SSTNullFieldsPragma, true> nullFieldPragma(
+static PragmaRegister<SSTArgMapPragmaShim, SSTNullFieldsPragma, true> nullFieldPragma(
     "sst", "null_fields", SKELETONIZE | SHADOWIZE);
 static PragmaRegister<SSTArgMapPragmaShim, SSTStackAllocPragma, true> stackAllocPragma(
     "sst", "stack_alloc", ALL_MODES);

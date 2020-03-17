@@ -23,7 +23,7 @@ extern "C" {
 int sstmac_atexit(void (*)());
 int sstmac_on_exit(void (*)(int,void*),void*);
 void sstmac_exit(int code);
-#pragma sst null_variable safe
+#pragma sst null_ptr safe
 extern void sstmac_free(void* ptr);
 
 char* sstmac_getenv(const char* name);
@@ -36,7 +36,7 @@ int sstmac_setenv(const char* name, const char* val, int overwrite);
 
 #include_next <stdlib.h>
 
-#pragma sst null_variable safe
+#pragma sst null_ptr safe
 void free(void* ptr);
 
 #ifndef __need_malloc_and_calloc

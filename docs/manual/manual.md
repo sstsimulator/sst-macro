@@ -3292,7 +3292,7 @@ This usually applies to large data arrays that should never be allocated and the
 An example can be seen in CoMD:
 
 ````
-#pragma sst null_variable
+#pragma sst null_ptr
    int* nAtoms;         //!< total number of atoms in each box
 ````
 The array is not allocated and all statements operating on the array are deleted.
@@ -3310,7 +3310,7 @@ Another pragma must then be applied to that statement to tell the compiler how t
 
 \subsection{pragma sst null\_type [type alias] [list allowed functions]}
 This applies to C++ class variable declarations. If pragma is not applied to a declaration, a compiler error is given.
-This essentially works the same way as `null_variable`, but allows certain member functions to be kept instead of deleted.
+This essentially works the same way as `null_ptr`, but allows certain member functions to be kept instead of deleted.
 Consider an example from Lulesh:
 
 ````

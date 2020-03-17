@@ -16,7 +16,7 @@ main (int argc, char *argv[])
 {
     int myid, numprocs, i, j;
     int size;
-   #pragma sst null_variable
+   #pragma sst null_ptr
     char *s_buf, *r_buf;
     double t_start = 0.0, t_end = 0.0, t = 0.0;
     int window_size = 64;
