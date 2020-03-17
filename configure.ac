@@ -206,6 +206,8 @@ CHECK_COMM_DELAY_STATS()
 
 CHECK_CLANG_LLVM()
 
+CHECK_WERROR()
+
 
 #-------------------------------------------------
 # Configure subdirs
