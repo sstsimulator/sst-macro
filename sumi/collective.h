@@ -202,7 +202,7 @@ class DagCollective :
 
   void initActors() override;
 
-  virtual ~DagCollective();
+  ~DagCollective() override;
 
  protected:
   virtual DagCollectiveActor* newActor() const = 0;

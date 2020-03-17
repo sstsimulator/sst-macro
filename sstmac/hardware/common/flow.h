@@ -66,7 +66,7 @@ class Flow : public Request
     return byte_length_;
   }
 
-  virtual ~Flow(){}
+  ~Flow() override{}
 
   void setFlowId(uint64_t id) {
     flow_id_ = id;
@@ -84,7 +84,7 @@ class Flow : public Request
     byte_length_ = sz;
   }
 
-  virtual void serialize_order(sstmac::serializer& ser) override {
+  void serialize_order(sstmac::serializer& ser) override {
     ser & flow_id_;
     ser & byte_length_;
     ser & libname_;

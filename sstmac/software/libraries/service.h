@@ -68,7 +68,7 @@ class Service :
     Library(prefix, sid, os)
   {}
 
-  virtual ~Service(){}
+  ~Service() override{}
 
 
 };

@@ -93,7 +93,7 @@ class RuntimeParamBcaster :
  public:
   RuntimeParamBcaster(ParallelRuntime* rt) : rt_(rt) {}
 
-  void bcast(void *buf, int size, int  /*me*/, int root){
+  void bcast(void *buf, int size, int  /*me*/, int root) override{
     rt_->bcast(buf, size, root);
   }
 

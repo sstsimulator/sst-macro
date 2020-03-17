@@ -68,7 +68,7 @@ class LibComputeInst :
   LibComputeInst(SST::Params& params, const std::string& libname,
                    SoftwareId id, OperatingSystem* os);
 
-  virtual ~LibComputeInst() { }
+  ~LibComputeInst() override { }
 
   void computeInst(ComputeEvent* msg, int nthr = 1);
 
@@ -82,7 +82,7 @@ class LibComputeInst :
     uint32_t intops_per_loop,
     uint32_t bytes_per_loop);
 
-  virtual void incomingEvent(Event *ev) override {
+  void incomingEvent(Event *ev) override {
     Library::incomingEvent(ev);
   }
 

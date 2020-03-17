@@ -114,15 +114,15 @@ class serializable_builder_impl : public serializable_builder
   static const uint32_t cls_id_;
 
  public:
-  serializable* build() const {
+  serializable* build() const override {
     return T::construct_deserialize_stub();
   }
 
-  const char* name() const {
+  const char* name() const override {
     return name_;
   }
 
-  uint32_t cls_id() const {
+  uint32_t cls_id() const override {
     return cls_id_;
   }
 
@@ -134,7 +134,7 @@ class serializable_builder_impl : public serializable_builder
     return name_;
   }
 
-  bool sanity(serializable* ser) {
+  bool sanity(serializable* ser) override {
     return (typeid(T) == typeid(*ser));
   }
 };

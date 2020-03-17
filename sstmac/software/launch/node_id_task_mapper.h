@@ -78,7 +78,7 @@ class NodeIdTaskMapper : public TaskMapper
     return "node id task mapper";
   }
 
-  virtual ~NodeIdTaskMapper() throw() {}
+  ~NodeIdTaskMapper() throw() override {}
 
   void mapRanks(const ordered_node_set& nodes,
                 int ppn,

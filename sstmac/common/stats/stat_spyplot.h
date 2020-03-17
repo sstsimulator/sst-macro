@@ -83,7 +83,7 @@ class StatSpyplot : public SST::Statistics::MultiStatistic<Dst,Count>
     fields_.resize(n_dst_);
   }
 
-  virtual ~StatSpyplot() {}
+  ~StatSpyplot() override {}
 
   void addData_impl(int dest, uint64_t num) override {
     vals_[dest] += num;

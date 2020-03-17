@@ -60,7 +60,7 @@ class PthreadRunner : public Thread
   bool finished_;
 
  public:
-  virtual void run() override;
+  void run() override;
 
   PthreadRunner(SoftwareId id, App* parent,
                  start_fxn start_routine, void* arg,

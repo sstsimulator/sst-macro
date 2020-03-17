@@ -82,7 +82,7 @@ class CoordinateTaskMapper : public TaskMapper
     return "coordinate task mapper";
   }
 
-  virtual ~CoordinateTaskMapper() throw() {}
+  ~CoordinateTaskMapper() throw() override {}
 
   void mapRanks(const ordered_node_set& nodes,
         int ppn, std::vector<NodeId> &result,

@@ -150,7 +150,7 @@ class Dragonfly : public CartesianTopology
 
   void connectedOutports(SwitchId src, std::vector<Connection>& conns) const override;
 
-  virtual ~Dragonfly() {
+  ~Dragonfly() override {
     delete group_wiring_;
   }
 

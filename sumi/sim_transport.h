@@ -113,7 +113,7 @@ class SimTransport : public Transport, public sstmac::sw::API {
 
   void finish() override;
 
-  virtual ~SimTransport();
+  ~SimTransport() override;
 
   sstmac::NodeId rankToNode(int rank) const override {
     return rank_mapper_->rankToNode(rank);

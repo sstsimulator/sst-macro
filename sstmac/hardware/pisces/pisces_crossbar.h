@@ -58,7 +58,7 @@ class PiscesNtoMQueue :
   public PiscesSender
 {
  public:
-  virtual ~PiscesNtoMQueue();
+  ~PiscesNtoMQueue() override;
 
   PiscesNtoMQueue(const std::string& selfname, uint32_t id,
                   const std::string& arb, double bw,

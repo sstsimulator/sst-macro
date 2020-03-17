@@ -88,11 +88,11 @@ class PiscesNIC : public NIC
 
   void setup() override;
 
-  virtual ~PiscesNIC() throw ();
+  ~PiscesNIC() throw () override;
 
-  virtual void connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
+  void connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
 
-  virtual void connectInput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
+  void connectInput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
 
   LinkHandler* creditHandler(int port) override;
 

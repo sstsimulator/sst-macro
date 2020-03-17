@@ -89,7 +89,7 @@ class SculpinSwitch :
 
   SculpinSwitch(uint32_t id, SST::Params& params);
 
-  virtual ~SculpinSwitch();
+  ~SculpinSwitch() override;
 
   int queueLength(int port, int vc) const override;
 

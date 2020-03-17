@@ -71,9 +71,9 @@ class RandomTaskMapper : public TaskMapper
     return "random task mapper";
   }
 
-  virtual ~RandomTaskMapper() throw ();
+  ~RandomTaskMapper() throw () override;
 
-  virtual void mapRanks(const ordered_node_set& nodes,
+  void mapRanks(const ordered_node_set& nodes,
     int ppn,
     std::vector<NodeId> &result,
     int nproc) override;

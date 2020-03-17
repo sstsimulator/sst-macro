@@ -345,7 +345,7 @@ class UnblockEvent : public ExecutionEvent
   {
   }
 
-  void execute(){
+  void execute() override{
     Thread* blocker = mutex_->waiters.front();
     mutex_->waiters.pop_front();
     os_->unblock(blocker);

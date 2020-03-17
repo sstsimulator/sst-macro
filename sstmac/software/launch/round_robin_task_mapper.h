@@ -76,9 +76,9 @@ class RoundRobinTaskMapper : public TaskMapper
     return "round robin task mapper";
   }
 
-  virtual ~RoundRobinTaskMapper() throw () {}
+  ~RoundRobinTaskMapper() throw () override {}
 
-  virtual void mapRanks(
+  void mapRanks(
     const ordered_node_set& nodes,
     int ppn,
     std::vector<NodeId> &result,

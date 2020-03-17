@@ -55,7 +55,7 @@ class LibComputeMemmove :
 {
 
  public:
-  virtual ~LibComputeMemmove() {}
+  ~LibComputeMemmove() override {}
 
   LibComputeMemmove(SST::Params& params, SoftwareId id,
                       OperatingSystem* os);
@@ -63,7 +63,7 @@ class LibComputeMemmove :
   LibComputeMemmove(SST::Params& params, const char* prefix, SoftwareId id,
                       OperatingSystem* os);
 
-  void incomingEvent(Event *ev){
+  void incomingEvent(Event *ev) override{
     //forward to parent, which throws
     Library::incomingEvent(ev);
   }

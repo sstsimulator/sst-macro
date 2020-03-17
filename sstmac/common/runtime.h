@@ -69,11 +69,11 @@ template <class T, class Fxn> class deadlock_check_impl : public deadlock_check
  public:
   deadlock_check_impl(T* t , Fxn f) : t_(t), f_(f) {}
 
-  void run(){
+  void run() override{
     (t_->*f_)();
   }
 
-  virtual ~deadlock_check_impl(){}
+  ~deadlock_check_impl() override{}
 
  private:
   T* t_;

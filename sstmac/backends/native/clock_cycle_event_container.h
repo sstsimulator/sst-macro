@@ -83,7 +83,7 @@ class ClockCycleEventMap :
 
   ClockCycleEventMap(SST::Params& params, ParallelRuntime* rt);
 
-  virtual ~ClockCycleEventMap() throw() {}
+  ~ClockCycleEventMap() throw() override {}
 
  protected:
   /**

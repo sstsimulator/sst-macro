@@ -80,7 +80,7 @@ class FTQAccumulator : public SST::Statistics::MultiStatistic<int,uint64_t,uint6
   FTQAccumulator(SST::BaseComponent* comp, const std::string& name,
                  const std::string& subName, SST::Params& params);
 
-  ~FTQAccumulator(){}
+  ~FTQAccumulator() override{}
 
   void registerOutputFields(SST::Statistics::StatisticOutput* statOutput) override;
   void outputStatisticFields(SST::Statistics::StatisticOutput* statOutput, bool endOfSim) override;
@@ -119,7 +119,7 @@ class FTQCalendar : public SST::Statistics::MultiStatistic<int,uint64_t,uint64_t
   FTQCalendar(SST::BaseComponent* comp, const std::string& name,
               const std::string& subName, SST::Params& params);
 
-  ~FTQCalendar(){}
+  ~FTQCalendar() override{}
 
   void addData_impl(int event_typeid, uint64_t ticks_begin, uint64_t num_ticks) override;
 
@@ -173,7 +173,7 @@ class FTQOutput : public sstmac::StatisticOutput
 
   FTQOutput(SST::Params& params);
 
-  ~FTQOutput(){}
+  ~FTQOutput() override{}
 
   void registerStatistic(SST::Statistics::StatisticBase*) override {}
 

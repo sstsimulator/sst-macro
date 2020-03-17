@@ -110,7 +110,7 @@ class Cascade : public CartesianTopology
 
   void connectedOutports(SwitchId src, std::vector<Connection>& conns) const override;
 
-  virtual ~Cascade() {}
+  ~Cascade() override {}
 
   int ndimensions() const {
     return 3;

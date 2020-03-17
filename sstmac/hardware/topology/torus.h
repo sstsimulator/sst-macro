@@ -82,11 +82,11 @@ class Torus : public CartesianTopology
     neg = 1
   } direction_t;
 
-  virtual std::string toString() const override {
+  std::string toString() const override {
     return "torus";
   }
 
-  virtual ~Torus() {}
+  ~Torus() override {}
 
   int diameter() const override {
     return diameter_;

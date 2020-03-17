@@ -57,7 +57,7 @@ class LibCompute :
   public Library
 {  
  public:
-  virtual ~LibCompute(){}
+  ~LibCompute() override{}
 
  protected:
   LibCompute(SST::Params&  /*params*/,

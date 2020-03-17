@@ -90,9 +90,9 @@ class GaussianNoiseModel :
 
   GaussianNoiseModel(SST::Params& params);
 
-  ~GaussianNoiseModel();
+  ~GaussianNoiseModel() override;
 
-  double value();
+  double value() override;
 
  protected:
   RNG::NormalDistribution* rng_;

@@ -90,7 +90,7 @@ class MpiComm : public Communicator
     bool del_grp = false,
     topotypes ty = TOPO_NONE);
 
-  virtual ~MpiComm();
+  ~MpiComm() override;
 
   void setName(std::string name) {
     name_ = name;

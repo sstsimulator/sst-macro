@@ -67,7 +67,7 @@ class RandomAllocation : public NodeAllocator
     return "random allocation";
   }
 
-  virtual ~RandomAllocation() throw ();
+  ~RandomAllocation() throw () override;
 
   bool allocate(
     int nnode_requested,

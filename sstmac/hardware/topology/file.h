@@ -70,7 +70,7 @@ class FileTopology : public Topology
     return "file topology";
   }
 
-  virtual ~FileTopology() {}
+  ~FileTopology() override {}
 
   FileTopology(SST::Params& params);
 

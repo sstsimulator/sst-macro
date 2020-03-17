@@ -69,9 +69,9 @@ class InstructionProcessor :
   InstructionProcessor(SST::Params& params,
                         MemoryModel* mem, Node* nd);
 
-  virtual ~InstructionProcessor();
+  ~InstructionProcessor() override;
 
-  virtual void compute(Event* ev, ExecutionEvent* cb) override;
+  void compute(Event* ev, ExecutionEvent* cb) override;
 
  protected:
   void setMemopDistribution(double stdev);

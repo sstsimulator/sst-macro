@@ -72,9 +72,9 @@ const Timestamp EventManager::no_events_left_time(0, std::numeric_limits<uint64_
 class StopEvent : public ExecutionEvent
 {
  public:
-  virtual ~StopEvent() {}
+  ~StopEvent() override {}
 
-  void execute(){
+  void execute() override{
     cout0 << "--- STOP event -----" << std::endl;
     man_->stop();
   }

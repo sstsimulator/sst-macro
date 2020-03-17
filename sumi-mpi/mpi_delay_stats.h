@@ -94,7 +94,7 @@ class DelayStats : public SST::Statistics::MultiStatistic<int,int,int,int,uint64
   DelayStats(SST::BaseComponent* comp, const std::string& name,
               const std::string& subName, SST::Params& params);
 
-  ~DelayStats(){}
+  ~DelayStats() override{}
 
   void addData_impl(int src, int dst, int type, int stage, 
                     uint64_t bytes, uint64_t flow_id,
@@ -134,7 +134,7 @@ class DelayStatsOutput : public sstmac::StatisticOutput
 
   DelayStatsOutput(SST::Params& params);
 
-  ~DelayStatsOutput(){}
+  ~DelayStatsOutput() override{}
 
   void registerStatistic(SST::Statistics::StatisticBase*) override {}
 

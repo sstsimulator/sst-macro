@@ -530,7 +530,7 @@ class SSTNullVariablePragma : public SSTPragma {
 
   void doActivate(clang::Decl* d);
 
-  virtual void activate(clang::Decl* d) override;
+  void activate(clang::Decl* d) override;
   void activate(clang::Stmt* s) override;
 
   clang::NamedDecl* declAppliedTo_;
@@ -603,9 +603,9 @@ class SSTKeepPragma : public SSTPragma {
  public:
   SSTKeepPragma(){}
  protected:
-  virtual void activate(clang::Stmt *s) override;
+  void activate(clang::Stmt *s) override;
 
-  virtual void activate(clang::Decl* d) override;
+  void activate(clang::Decl* d) override;
 
   void deactivate() override {
     CompilerGlobals::pragmaConfig.makeNoChanges = false;

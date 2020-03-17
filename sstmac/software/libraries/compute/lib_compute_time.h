@@ -68,9 +68,9 @@ class LibComputeTime :
                    const std::string& name, SoftwareId id,
                    OperatingSystem* os);
 
-  virtual ~LibComputeTime();
+  ~LibComputeTime() override;
 
-  void incomingEvent(Event *ev){
+  void incomingEvent(Event *ev) override{
     Library::incomingEvent(ev);
   }
 

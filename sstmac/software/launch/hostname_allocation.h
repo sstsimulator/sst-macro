@@ -85,7 +85,7 @@ class HostnameAllocation : public NodeAllocator
     const ordered_node_set& available,
     ordered_node_set &allocation) const override;
 
-  virtual ~HostnameAllocation() throw () {}
+  ~HostnameAllocation() throw () override {}
 
 
  protected:

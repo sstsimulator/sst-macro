@@ -72,7 +72,7 @@ class Packet :
     return payload_;
   }
 
-  virtual std::string toString() const override {
+  std::string toString() const override {
     return "packet";
   }
 
@@ -126,7 +126,7 @@ class Packet :
     return hdr->edge_port;
   }
 
-  virtual void serialize_order(serializer& ser) override;
+  void serialize_order(serializer& ser) override;
 
   bool isTail() const {
     auto hdr = rtrHeader<Header>();

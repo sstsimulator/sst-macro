@@ -70,7 +70,7 @@ class NodeIdAllocation :
     return "node id allocation";
   }
 
-  virtual ~NodeIdAllocation() throw() {}
+  ~NodeIdAllocation() throw() override {}
 
   bool allocate(int nnode_requested,
     const ordered_node_set& available,

@@ -110,7 +110,7 @@ struct CollectiveOp :
 
  private:
   friend class std::default_delete<CollectiveOp>;
- ~CollectiveOp(){}
+ ~CollectiveOp() override{}
 
   CollectiveOp(int count, MpiComm* comm);
   CollectiveOp(int sendcnt, int recvcnt, MpiComm* comm);
@@ -135,7 +135,7 @@ struct CollectivevOp :
 
  private:
   friend class std::default_delete<CollectivevOp>;
-  ~CollectivevOp(){}
+  ~CollectivevOp() override{}
 
   CollectivevOp(int scnt, int* recvcnts, int* disps, MpiComm* comm);
   CollectivevOp(int* sendcnts, int* disps, int rcnt, MpiComm* comm);

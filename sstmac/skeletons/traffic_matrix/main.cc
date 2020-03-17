@@ -74,7 +74,7 @@ class sumi_param_bcaster : public sprockit::ParamBcaster
     engine_(engine)
   {}
 
-  void bcast(void *buf, int size, int  /*me*/, int root){
+  void bcast(void *buf, int size, int  /*me*/, int root) override{
     engine_->bcast(root, buf, size, sizeof(char), tag_, sumi::Message::default_cq);
     auto* dmsg = engine_->blockUntilNext(sumi::Message::default_cq);
     delete dmsg;
@@ -105,7 +105,7 @@ class config_message : public sumi::Message
     return recv_buf_;
   }
 
-  virtual void serialize_order(sstmac::serializer &ser) override {
+  void serialize_order(sstmac::serializer &ser) override {
     ser.primitive(recv_buf_);
     sumi::Message::serialize_order(ser);
   }
@@ -129,7 +129,7 @@ class RdmaMessage :
   {
   }
 
-  virtual void serialize_order(sstmac::serializer& ser) override {
+  void serialize_order(sstmac::serializer& ser) override {
     ser & iter_;
     ser & start_;
     ser & finish_;

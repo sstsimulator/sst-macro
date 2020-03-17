@@ -69,7 +69,7 @@ class FullyConnected : public StructuredTopology
     return "fully_connected topology";
   }
 
-  virtual ~FullyConnected() {}
+  ~FullyConnected() override {}
 
   FullyConnected(SST::Params& params);
 

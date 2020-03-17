@@ -82,9 +82,9 @@ class NetworkSwitch :
   SST_ELI_DECLARE_DEFAULT_INFO()
   SST_ELI_DECLARE_CTOR(uint32_t,SST::Params&)
 
-  virtual void init(unsigned int phase);
+  void init(unsigned int phase) override;
 
-  virtual ~NetworkSwitch();
+  ~NetworkSwitch() override;
 
   SwitchId addr() const {
     return my_addr_;

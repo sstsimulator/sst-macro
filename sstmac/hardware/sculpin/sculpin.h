@@ -82,7 +82,7 @@ class SculpinPacket :
 
   std::string toString() const override;
 
-  virtual ~SculpinPacket() {}
+  ~SculpinPacket() override {}
 
   int nextPort() const {
     return rtrHeader<Header>()->edge_port;

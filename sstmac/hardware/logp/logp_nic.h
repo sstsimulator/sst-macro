@@ -79,19 +79,19 @@ class LogPNIC :
 
   LogPNIC(uint32_t id, SST::Params& params, Node* parent);
 
-  virtual ~LogPNIC();
+  ~LogPNIC() override;
 
   void handle(Event *ev);
 
-  virtual void connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
+  void connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
 
-  virtual void connectInput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
+  void connectInput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
 
   void mtlHandle(Event* ev) override;
 
   void dropEvent(Event*){}
 
-  virtual std::string toString() const override {
+  std::string toString() const override {
     return "simple nic";
   }
 
@@ -106,7 +106,7 @@ class LogPNIC :
     Start the message sending and inject it into the network
     @param payload The network message to send
   */
-  virtual void doSend(NetworkMessage* msg) override;
+  void doSend(NetworkMessage* msg) override;
 
  protected:
   TimeDelta inj_byte_delay_;

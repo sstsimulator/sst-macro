@@ -104,7 +104,7 @@ class JobLauncher : public Service
 
   void scheduleLaunchRequests();
 
-  virtual ~JobLauncher(){}
+  ~JobLauncher() override{}
 
  protected:
   JobLauncher(SST::Params& params, OperatingSystem* os);
@@ -184,10 +184,10 @@ class DefaultJoblauncher : public JobLauncher
   }
 
  private:
-  void stopEventReceived(JobStopRequest* ev);
+  void stopEventReceived(JobStopRequest* ev) override;
 
  protected:
-  bool handleLaunchRequest(AppLaunchRequest* request, ordered_node_set& allocation);
+  bool handleLaunchRequest(AppLaunchRequest* request, ordered_node_set& allocation) override;
 
 };
 
@@ -214,9 +214,9 @@ class ExclusiveJoblauncher : public DefaultJoblauncher
   }
 
  private:
-  bool handleLaunchRequest(AppLaunchRequest* request, ordered_node_set& allocation);
+  bool handleLaunchRequest(AppLaunchRequest* request, ordered_node_set& allocation) override;
 
-  void stopEventReceived(JobStopRequest* ev);
+  void stopEventReceived(JobStopRequest* ev) override;
 
   std::list<AppLaunchRequest*> pending_requests_;
   AppLaunchRequest* active_job_;

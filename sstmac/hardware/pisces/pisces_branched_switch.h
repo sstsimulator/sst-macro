@@ -75,17 +75,17 @@ class PiscesBranchedSwitch :
 
   int queueLength(int port, int vc) const override;
 
-  virtual void connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
+  void connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
 
-  virtual void connectInput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
+  void connectInput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
 
   LinkHandler* creditHandler(int port) override;
 
   LinkHandler* payloadHandler(int port) override;
 
-  virtual std::string toString() const override;
+  std::string toString() const override;
 
-  virtual ~PiscesBranchedSwitch();
+  ~PiscesBranchedSwitch() override;
 
  private:
   int n_local_xbars_;

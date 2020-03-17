@@ -70,7 +70,7 @@ class SimpleProcessor :
   SimpleProcessor(SST::Params& params, MemoryModel* mem, Node* nd) :
     Processor(params, mem, nd) {}
 
-  virtual ~SimpleProcessor() {}
+  ~SimpleProcessor() override {}
 
   void compute(Event* ev, ExecutionEvent* cb) override;
 

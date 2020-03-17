@@ -84,7 +84,7 @@ class PiscesPacket :
 
   std::string toString() const override;
 
-  virtual ~PiscesPacket() {}
+  ~PiscesPacket() override {}
 
   /**
     Needed because of routable_message ambiguity

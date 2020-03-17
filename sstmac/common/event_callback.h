@@ -58,9 +58,9 @@ class MemberFxnCallback :
 {
 
  public:
-  virtual ~MemberFxnCallback(){}
+  ~MemberFxnCallback() override{}
 
-  void execute() {
+  void execute() override {
     dispatch(typename gens<sizeof...(Args)>::type());
   }
 

@@ -69,7 +69,7 @@ also has a well-defined coordinate system, but is slightly less intuitive.
 class StructuredTopology : public Topology
 {
  public:
-  virtual ~StructuredTopology() {}
+  ~StructuredTopology() override {}
 
   /**** BEGIN PURE VIRTUAL INTERFACE *****/
   /**
@@ -80,9 +80,9 @@ class StructuredTopology : public Topology
      For indirect, num_leaf_switches < num_switches.
      @return The number of leaf switches directly connected to compute nodes
   */
-  virtual SwitchId numLeafSwitches() const override = 0;
+  SwitchId numLeafSwitches() const override = 0;
 
-  virtual void endpointsConnectedToEjectionSwitch(SwitchId swid,
+  void endpointsConnectedToEjectionSwitch(SwitchId swid,
                        std::vector<InjectionPort>& nodes) const override;
 
   int concentration() const {

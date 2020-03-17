@@ -110,7 +110,7 @@ class PiscesSender : public SubComponent
 
   virtual std::string piscesName() const = 0;
 
-  std::string toString() const;// override;
+  std::string toString() const override;// override;
 
  protected:
   PiscesSender(const std::string& selfname, uint32_t id,
