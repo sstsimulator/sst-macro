@@ -597,7 +597,7 @@ SkeletonASTVisitor::checkNullAssignments(clang::NamedDecl* src, bool hasReplacem
         if (!isNullVariable(member) && !hasReplacement){
           //oooh - not good
           std::string error = "member " + member->getNameAsString()
-              + " is assigned to null_variable, but is not a null_variable itself";
+              + " is assigned to null_ptr, but is not a null_ptr itself";
           errorAbort(expr, error);
         }
       } else if (lhs->getStmtClass() == Stmt::DeclRefExprClass){
@@ -675,7 +675,7 @@ void
 SkeletonASTVisitor::nullDereferenceError(Expr* expr, const std::string& varName)
 {
   std::stringstream sstr;
-  sstr << "null_variable " << varName << " used in dereference";
+  sstr << "null_ptr " << varName << " used in dereference";
   for (Stmt* s : loopContexts_){
     sstr << "\nconsider skeletonizing with pragma sst compute here: "
          << getStart(s).printToString(CompilerGlobals::SM());
@@ -785,7 +785,7 @@ SkeletonASTVisitor::visitNullVariable(Expr* expr, NamedDecl* nd)
     if (haveActiveFxnParam()){
       //but I can't just delete if I am being passed off to another expression
       std::stringstream sstr;
-      sstr << "variable " << nd->getNameAsString() << " is a null_variable "
+      sstr << "variable " << nd->getNameAsString() << " is a null_ptr "
            << " and passed to a function with no replacement specified ";
       if (nullVarPrg->isTransitive())
         addTransitiveNullInformation(nd, sstr, nullVarPrg);
@@ -953,7 +953,7 @@ SkeletonASTVisitor::replaceNullWithEmptyType(QualType type, Expr* toRepl)
   }
 
   if (type->isReferenceType()){
-    errorAbort(toRepl, "cannot create empty reference for null_variable");
+    errorAbort(toRepl, "cannot create empty reference for null_ptr");
   }
 
   std::string repl;
@@ -1800,7 +1800,7 @@ SkeletonASTVisitor::TraverseVarDecl(VarDecl* D)
         replace(D->getInit(), "nullptr");
       }
     } else {
-      errorAbort(D, "null_variable can only be applied to pointer");
+      errorAbort(D, "null_ptr can only be applied to pointer");
     }
     return true;
   }

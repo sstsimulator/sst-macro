@@ -1,13 +1,13 @@
 void test(double a){
 }
 
-#pragma sst null_variable target x
+#pragma sst null_ptr target(x)
 void test(double* x){
 }
 
 int fxn()
 {
-#pragma sst null_variable delete_all
+#pragma sst null_ptr delete_all
   double* x = new double[10];
   x[0] = 5;
   test(x[5]);

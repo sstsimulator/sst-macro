@@ -421,7 +421,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
 
   /**
    * @brief VisitDeclRefExpr Examine the usage of a variable to determine
-   * if it is either a global variable or a pragma null_variable and therefore
+   * if it is either a global variable or a pragma null_ptr and therefore
    * requires a rewrite
    * @param expr
    * @return

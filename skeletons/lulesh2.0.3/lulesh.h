@@ -575,9 +575,9 @@ class Domain {
    Int_t    m_numReg ;
    Int_t    m_cost; //imbalance cost
    Index_t *m_regElemSize ;   // Size of region sets
-#pragma sst null_variable
+#pragma sst null_ptr
    Index_t *m_regNumList ;    // Region number per domain element
-#pragma sst null_variable
+#pragma sst null_ptr
    Index_t **m_regElemlist ;  // region indexset
 #pragma sst null_type sstmac::vector size resize empty
    std::vector<Index_t>  m_nodelist ;     /* elemToNode connectivity */
