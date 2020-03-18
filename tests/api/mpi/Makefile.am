@@ -8,7 +8,10 @@
 #   For more information, see the LICENSE file in the top 
 #   SST/macroscale directory.
 #
-include $(top_srcdir)/Makefile.common
+include $(top_srcdir)/Makefile.includes
+include $(top_srcdir)/Makefile.link
+
+AM_CXXFLAGS = $(STD_CXXFLAGS)
 
 AM_CPPFLAGS += \
  -I$(top_srcdir)/tests/mpi/include  \
