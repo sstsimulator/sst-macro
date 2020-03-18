@@ -208,6 +208,8 @@ CHECK_CLANG_LLVM()
 
 CHECK_WERROR()
 
+CHECK_WARNINGS()
+
 
 #-------------------------------------------------
 # Configure subdirs
