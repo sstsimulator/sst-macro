@@ -27,6 +27,7 @@ libsstmac_test_skeletons_la_SOURCES = \
   mem_bandwidth.cc \
   mem_thrash.cc \
   host_compute.cc \
+  partner_stride.cc \
   app_hello_world.cc \
   dfly_worst_case.cc \
   compute.cc \

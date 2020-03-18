@@ -89,14 +89,14 @@ class StatSpyplot : public SST::Statistics::MultiStatistic<Dst,Count>
     vals_[dest] += num;
   }
 
-  void registerOutputFields(SST::Statistics::StatisticOutput* output) override {
+  void registerOutputFields(SST::Statistics::StatisticFieldsOutput* output) override {
     for (int i=0; i < n_dst_; ++i){
-      auto str = sprockit::printf("spy%d", i);
+      auto str = sprockit::sprintf("spy%d", i);
       fields_[i] = output->registerField<uint64_t>(str.c_str());
     }
   }
 
-  void outputStatisticData(SST::Statistics::StatisticOutput* output, bool  /*endOfSim*/) override {
+  void outputStatisticFields(SST::Statistics::StatisticFieldsOutput* output, bool  /*endOfSim*/) override {
     for (int i=0; i < n_dst_; ++i){
       output->outputField(fields_[i], vals_[i]);
     }

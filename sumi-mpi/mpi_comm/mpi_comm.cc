@@ -152,7 +152,7 @@ MpiComm::dupKeyvals(MpiComm* m)
 std::string
 MpiComm::toString() const
 {
-  return sprockit::printf("mpicomm(id=%d,size=%d,rank=%d)", id_, size(), rank_);
+  return sprockit::sprintf("mpicomm(id=%d,size=%d,rank=%d)", id_, size(), rank_);
 }
 
 int

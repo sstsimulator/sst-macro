@@ -89,7 +89,7 @@ CollectiveWorkMessage::validate_serialization(serializable *ser)
 std::string
 CollectiveWorkMessage::toString() const
 {
-  return sprockit::printf(
+  return sprockit::sprintf(
     "message for collective %s recver=%d sender=%d nbytes=%d round=%d tag=%d %s %d->%d",
      Collective::tostr(type_), recver(), sender(), payloadBytes(), round_, tag_,
      sstmac::hw::NetworkMessage::typeStr(), toaddr(), fromaddr());

@@ -50,7 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <cstring>
 
 #define mpi_debug(...) \
-  debug_printf(sprockit::dbg::parallel, "LP %d: %s", me_, sprockit::printf(__VA_ARGS__).c_str())
+  debug_printf(sprockit::dbg::parallel, "LP %d: %s", me_, sprockit::sprintf(__VA_ARGS__).c_str())
 
 namespace sstmac {
 namespace mpi {

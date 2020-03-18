@@ -105,9 +105,9 @@ test_gather(int tag, int root)
       for (int i=0; i < nelems; ++i, ++bufptr, ++idx){
         int test_elem = *bufptr;
         if (test_elem != p){
-          std::cout << sprockit::printf("FAILED: allgather rank %d, section %d\n", rank, p);
+          std::cout << sprockit::sprintf("FAILED: allgather rank %d, section %d\n", rank, p);
         }
-        std::cout << sprockit::printf("T[%d] = %d\n", idx, test_elem);
+        std::cout << sprockit::sprintf("T[%d] = %d\n", idx, test_elem);
       }
     }
   }
@@ -143,7 +143,7 @@ test_scatter(int tag, int root)
   for (int i=0; i < nelems; ++i){
     int test_elem = dst_buffer[i];
     if (test_elem != rank){
-      std::cout << sprockit::printf("FAILED: scatter rank %d, A[%d] = %d\n", rank, i, test_elem);
+      std::cout << sprockit::sprintf("FAILED: scatter rank %d, A[%d] = %d\n", rank, i, test_elem);
     }
   }
 
@@ -268,9 +268,9 @@ test_allgatherv_uneven(int tag)
     for (int i=0; i < (p+1); ++i, ++bufptr, ++idx){
       int test_elem = *bufptr;
       if (test_elem != p){
-        std::cout << sprockit::printf("FAILED: allgatherv rank %d, section %d\n", rank, p);
+        std::cout << sprockit::sprintf("FAILED: allgatherv rank %d, section %d\n", rank, p);
       }
-      //std::cout << sprockit::printf("T[%d][%d] = %d\n", rank, idx, test_elem);
+      //std::cout << sprockit::sprintf("T[%d][%d] = %d\n", rank, idx, test_elem);
     }
   }
 
@@ -308,9 +308,9 @@ test_allgatherv_even(int tag)
     for (int i=0; i < nelems; ++i, ++bufptr, ++idx){
       int test_elem = *bufptr;
       if (test_elem != p){
-        std::cout << sprockit::printf("FAILED: allgatherv rank %d, section %d\n", rank, p);
+        std::cout << sprockit::sprintf("FAILED: allgatherv rank %d, section %d\n", rank, p);
       }
-      //std::cout << sprockit::printf("T[%d][%d] = %d\n", rank, idx, test_elem);
+      //std::cout << sprockit::sprintf("T[%d][%d] = %d\n", rank, idx, test_elem);
     }
   }
 
@@ -378,9 +378,9 @@ test_allgather_payload(int tag)
     for (int i=0; i < nelems; ++i, ++bufptr, ++idx){
       int test_elem = *bufptr;
       if (test_elem != p){
-        std::cout << sprockit::printf("FAILED: allgather rank %d, section %d\n", rank, p);
+        std::cout << sprockit::sprintf("FAILED: allgather rank %d, section %d\n", rank, p);
       }
-      //std::cout << sprockit::printf("T[%d][%d] = %d\n", rank, idx, test_elem);
+      //std::cout << sprockit::sprintf("T[%d][%d] = %d\n", rank, idx, test_elem);
     }
   }
 
@@ -434,7 +434,7 @@ test_alltoall(int tag)
     int partner = i / nelems;
     int elem = me*100 + partner;
     if (dst_buffer[i] != elem){
-        std::cout << sprockit::printf("FAILED: all-to-all rank %d, partner %d\n", me, partner);
+        std::cout << sprockit::sprintf("FAILED: all-to-all rank %d, partner %d\n", me, partner);
     }
   }
 

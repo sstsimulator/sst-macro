@@ -87,7 +87,7 @@ main(int argc, char **argv)
 
     auto& failed = dmsg->failed_procs();
 
-    std::cout << sprockit::printf("t=%8.4e: Rank %d got heartbeat %d with %d failures\n",
+    std::cout << sprockit::sprintf("t=%8.4e: Rank %d got heartbeat %d with %d failures\n",
                   sstmac_now(), me, dmsg->tag(), failed.size());
 
     int idx = 0;

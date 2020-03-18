@@ -64,7 +64,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #define pkt_debug(...) \
   debug_printf(sprockit::dbg::sculpin, "sculpin NIC %d: %s", \
-    int(addr()), sprockit::printf(__VA_ARGS__).c_str())
+    int(addr()), sprockit::sprintf(__VA_ARGS__).c_str())
 
 
 namespace sstmac {
@@ -148,7 +148,7 @@ class MerlinNIC :
   }
 
   std::string toString() const override {
-    return sprockit::printf("sculpin nic(%d)", int(addr()));
+    return sprockit::sprintf("sculpin nic(%d)", int(addr()));
   }
 
   void sendManagerMsg(NetworkMessage *msg) override {

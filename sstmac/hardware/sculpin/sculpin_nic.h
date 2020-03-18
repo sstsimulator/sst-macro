@@ -83,7 +83,7 @@ class SculpinNIC :
   SculpinNIC(uint32_t id, SST::Params& params, Node* node);
 
   std::string toString() const override {
-    return sprockit::printf("sculpin nic(%d)", int(addr()));
+    return sprockit::sprintf("sculpin nic(%d)", int(addr()));
   }
 
   void init(unsigned int phase) override;

@@ -50,9 +50,9 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-class DelayStats : public SST::Statistics::MultiStatistic<int,int,int,int,uint64_t,double,double,double,double,double,double> {
+class DelayStats : public SST::Statistics::MultiStatistic<int,int,int,int,uint64_t,uint64_t,double,double,double,double,double,double,double,double,double> {
  public:
-  using Parent=SST::Statistics::MultiStatistic<int,int,int,int,uint64_t,double,double,double,double,double,double>;
+  using Parent=SST::Statistics::MultiStatistic<int,int,int,int,uint64_t,uint64_t,double,double,double,double,double,double,double,double,double>;
 
   struct Message {
     int src;
@@ -60,19 +60,25 @@ class DelayStats : public SST::Statistics::MultiStatistic<int,int,int,int,uint64
     int type;
     int stage;
     uint64_t length;
-    double sync_delay;
+    uint64_t flow_id;
+    double send_sync_delay;
+    double recv_sync_delay;
     double contention_delay;
     double inj_delay;
     double min_delay;
     double active_sync_delay;
     double active_delay;
-    Message(int s, int d, int t, int st, uint64_t l,
-            double sd, double cd, double id, double md, 
-            double asd, double ad) :
-      src(s), dst(d), type(t), stage(st), length(l),
-      sync_delay(sd), contention_delay(cd),
+    double time_since_quiesce;
+    double time;
+    Message(int s, int d, int t, int st, uint64_t l, uint64_t fid,
+            double ssd, double rsd, double cd, double id, double md, 
+            double asd, double ad, double tsq, double tme) :
+      src(s), dst(d), type(t), stage(st), length(l), flow_id(fid),
+      send_sync_delay(ssd), recv_sync_delay(rsd), 
+      contention_delay(cd),
       inj_delay(id), min_delay(md),
-      active_sync_delay(asd), active_delay(ad)
+      active_sync_delay(asd), active_delay(ad),
+      time_since_quiesce(tsq), time(tme)
     {
     }
   };
@@ -90,14 +96,17 @@ class DelayStats : public SST::Statistics::MultiStatistic<int,int,int,int,uint64
 
   ~DelayStats(){}
 
-  void addData_impl(int src, int dst, int type, int stage, uint64_t bytes,
-                    double sync_delay, double contention_delay,
+  void addData_impl(int src, int dst, int type, int stage, 
+                    uint64_t bytes, uint64_t flow_id,
+                    double send_sync_delay,
+                    double recv_sync_delay, double contention_delay,
                     double comm_delay, double min_delay, 
-                    double active_sync_delay, double active_delay);
+                    double active_sync_delay, double active_delay,
+                    double time_since_quiesce, double time);
 
-  void registerOutputFields(SST::Statistics::StatisticFieldsOutput *statOutput);
+  void registerOutputFields(SST::Statistics::StatisticFieldsOutput *statOutput) override;
 
-  void outputStatisticData(SST::Statistics::StatisticFieldsOutput *output, bool endOfSimFlag);
+  void outputStatisticFields(SST::Statistics::StatisticFieldsOutput *output, bool endOfSimFlag) override;
 
   std::vector<Message>::const_iterator begin() const {
     return messages_.begin();

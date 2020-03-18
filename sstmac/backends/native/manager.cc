@@ -107,7 +107,7 @@ class timestamp_prefix_fxn :
 
   std::string str() {
     double t = mgr_->now().sec() * mult_;
-    return sprockit::printf("T=%14.8f %s:", t, units_.c_str());
+    return sprockit::sprintf("T=%14.8f %s:", t, units_.c_str());
   }
 
  private:
@@ -198,7 +198,7 @@ Manager::computeMaxNprocForApp(sprockit::SimParameters::ptr& app_params)
     } else {
     }
     max_nproc = std::max(max_nproc, nproc);
-    std::string cmd = sprockit::printf("aprun -n %d -N 1", nproc);
+    std::string cmd = sprockit::sprintf("aprun -n %d -N 1", nproc);
     app_params->addParamOverride("launch_cmd", cmd);
   }
 
@@ -228,7 +228,7 @@ Manager::computeMaxNproc(sprockit::SimParameters::ptr& params)
   bool found_app = true;
   sprockit::SimParameters::ptr node_params = params->getNamespace("node");
   while (found_app || appnum < 10) {
-    std::string app_namespace = sprockit::printf("app%d", appnum);
+    std::string app_namespace = sprockit::sprintf("app%d", appnum);
     if (node_params->hasNamespace(app_namespace)){
       auto app_params = node_params->getNamespace(app_namespace);
       int nproc = computeMaxNprocForApp(app_params);

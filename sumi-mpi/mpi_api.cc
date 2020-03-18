@@ -143,14 +143,14 @@ MpiApi::MpiApi(SST::Params& params, sstmac::sw::App* app,
   test_delay_us_ = test_delay_s * 1e6;
 
 #if !SSTMAC_INTEGRATED_SST_CORE
-  std::string subname = sprockit::printf("app%d.rank%d", app->aid(), app->tid());
-  delays_ = app->os()->node()->registerMultiStatistic<int,int,int,int,uint64_t,
-      double,double,double,double,double,double>(params, "delays", subname);
+  std::string subname = sprockit::sprintf("app%d.rank%d", app->aid(), app->tid());
+  delays_ = app->os()->node()->registerMultiStatistic<int,int,int,int,uint64_t,uint64_t,
+      double,double,double,double,double,double,double,double,double>(params, "delays", subname);
 #endif
 
 #ifdef SSTMAC_OTF2_ENABLED
 #if !SSTMAC_INTEGRATED_SST_CORE
-  auto subname = sprockit::printf("App%d-Rank%d", app->sid().app_, app->sid().task_);
+  auto subname = sprockit::sprintf("App%d-Rank%d", app->sid().app_, app->sid().task_);
   auto* stat = comp->registerStatistic<void>(params, "otf2", subname);
   //this will either be a null stat or an otf2 stat
   //the rest of the code will do null checks on the variable before dumping traces
@@ -366,15 +366,15 @@ MpiApi::typeStr(MPI_Datatype mid)
   switch(ty->type())
   {
     case MpiType::PRIM:
-      return sprockit::printf("%s=%d", ty->label.c_str(), mid);
+      return sprockit::sprintf("%s=%d", ty->label.c_str(), mid);
     case MpiType::PAIR:
-      return sprockit::printf("PAIR=%d", mid);
+      return sprockit::sprintf("PAIR=%d", mid);
     case MpiType::VEC:
-      return sprockit::printf("VEC=%d", mid);
+      return sprockit::sprintf("VEC=%d", mid);
     case MpiType::IND:
-      return sprockit::printf("IND=%d", mid);
+      return sprockit::sprintf("IND=%d", mid);
     case MpiType::NONE:
-      return sprockit::printf("NONE=%d", mid);
+      return sprockit::sprintf("NONE=%d", mid);
     default:
       return "UNKNOWN TYPE";
   }
@@ -390,7 +390,7 @@ MpiApi::commStr(MPI_Comm comm)
   } else if (comm == MpiComm::comm_null->id()){
     return "MPI_COMM_NULL";
   } else {
-    return sprockit::printf("COMM=%d", int(comm));
+    return sprockit::sprintf("COMM=%d", int(comm));
   }
 }
 
@@ -404,7 +404,7 @@ MpiApi::commStr(MpiComm* comm)
   } else if (comm == MpiComm::comm_null){
     return "MPI_COMM_NULL";
   } else {
-    return sprockit::printf("COMM=%d", int(comm->id()));
+    return sprockit::sprintf("COMM=%d", int(comm->id()));
   }
 }
 
@@ -414,7 +414,7 @@ MpiApi::tagStr(int tag)
   if (tag==MPI_ANY_TAG){
     return "int_ANY";
   } else {
-    return sprockit::printf("%d", int(tag));
+    return sprockit::sprintf("%d", int(tag));
   }
 }
 
@@ -424,7 +424,7 @@ MpiApi::srcStr(int id)
   if (id == MPI_ANY_SOURCE){
     return "MPI_SOURCE_ANY";
   } else {
-    return sprockit::printf("%d", int(id));
+    return sprockit::sprintf("%d", int(id));
   }
 }
 
@@ -434,7 +434,7 @@ MpiApi::srcStr(MpiComm* comm, int id)
   if (id == MPI_ANY_SOURCE){
     return "MPI_SOURCE_ANY";
   } else {
-    return sprockit::printf("%d:%d", int(id), int(comm->peerTask(id)));
+    return sprockit::sprintf("%d:%d", int(id), int(comm->peerTask(id)));
   }
 }
 
@@ -593,16 +593,25 @@ CallGraphCreateTag(active);
 void
 MpiApi::logMessageDelay(Message *msg, uint64_t bytes, int stage,
                         sstmac::TimeDelta sync_delay,
-                        sstmac::TimeDelta active_delay)
+                        sstmac::TimeDelta active_delay,
+                        sstmac::TimeDelta time_since_quiesce)
 {
 #if !SSTMAC_INTEGRATED_SST_CORE
   current_call_.idle += sync_delay;
 
   if (crossed_comm_world_barrier_){
     delays_->addData(msg->sender(), msg->recver(), msg->classType(), stage, bytes,
-                     msg->recvSyncDelay().sec(), msg->injectionDelay().sec(),
-                     msg->congestionDelay().sec(), msg->minDelay().sec(),
-                     sync_delay.sec(), active_delay.sec());
+      msg->flowId(),
+      msg->sendSyncDelay().sec(), //the time between send arriving and recver matching
+      msg->recvSyncDelay().sec(), //the time between recver posting and send matching
+      msg->injectionDelay().sec(), //the congestion delay on injection
+      msg->congestionDelay().sec(), //the congestion delay on network
+      msg->minDelay().sec(), //the minimum delay the message could have had with no congestion
+      sync_delay.sec(), //the delay due to sync actually seen by application (not overlapped)
+      active_delay.sec(), //the delay due to network actually seen by application
+      time_since_quiesce.sec(),
+      now().sec()
+    ); //how long since the last "quiet" network state
   }
 #endif
 }

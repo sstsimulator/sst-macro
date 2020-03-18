@@ -241,7 +241,7 @@ CallGraphOutput::startOutputGroup(StatisticGroup *grp)
 void
 CallGraphOutput::dumpCallGraph(CallGraph* cgr)
 {
-  std::string fname = sprockit::printf("%s.%s.callgrind.out",
+  std::string fname = sprockit::sprintf("%s.%s.callgrind.out",
              cgr->groupName().c_str(), cgr->getStatSubId().c_str());
   std::cout << "Dumping " << fname << std::endl;
   std::ofstream myfile(fname);

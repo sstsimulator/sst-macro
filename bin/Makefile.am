@@ -110,22 +110,24 @@ endif
 
 sstmac_clang_LDFLAGS = $(CLANG_LDFLAGS) \
  -Wl,-rpath,@CLANG_INSTALL_DIR@/lib \
- -lclangAnalysis \
- -lclangAST \
- -lclangASTMatchers \
- -lclangBasic \
- -lclangDriver \
- -lclangEdit \
- -lclangFormat \
  -lclangFrontend \
  -lclangFrontendTool \
- -lclangLex \
- -lclangParse \
- -lclangRewrite \
- -lclangSema \
- -lclangSerialization \
  -lclangTooling \
+ -lclangBasic \
+ -lclangASTMatchers \
+ -lclangFormat \
+ -lclangFrontend \
+ -lclangDriver \
+ -lclangParse \
+ -lclangSerialization \
+ -lclangSema \
+ -lclangEdit \
+ -lclangAnalysis \
  -lclangToolingCore \
+ -lclangAST \
+ -lclangRewrite \
+ -lclangLex \
+ -lclangBasic \
  @CLANG_LIBTOOLING_LIBS@ \
  @CLANG_LIBTOOLING_SYSTEM_LIBS@
 

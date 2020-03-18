@@ -861,12 +861,16 @@ class MpiApi : public sumi::SimTransport
                                   int, //type
                                   int, //stage
                                   uint64_t, //byte length
-                                  double, //sync delay
+                                  uint64_t, //flow ID
+                                  double, //send sync delay
+                                  double, //recv sync delay
                                   double, //injection delay
                                   double, //contention delay
                                   double, //min delay in absence of contention
                                   double, //active sync delay experienced by app
-                                  double  //active delay experienced by app
+                                  double, //active delay experienced by app
+                                  double, //time since last quiescence
+                                  double  //global clock time
                                  >* delays_;
 
   std::unordered_map<int, keyval*> keyvals_;
@@ -881,7 +885,8 @@ class MpiApi : public sumi::SimTransport
 
  public:
   void logMessageDelay(Message *msg, uint64_t bytes, int stage,
-                       sstmac::TimeDelta sync_delay, sstmac::TimeDelta active_delay) override;
+                       sstmac::TimeDelta sync_delay, sstmac::TimeDelta active_delay,
+                       sstmac::TimeDelta time_since_quiesce) override;
 
  private:
   MPI_Call current_call_;

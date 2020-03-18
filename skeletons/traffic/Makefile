@@ -5,7 +5,7 @@ CXX :=    sst++
 CC :=     sstcc
 #CXX :=    mpicxx
 #CC :=     mpicc
-CXXFLAGS := -fPIC -O3 -std=c++11
+CXXFLAGS := -fPIC -O3 -std=c++11 
 CPPFLAGS := -I.
 LIBDIR :=  
 PREFIX := 

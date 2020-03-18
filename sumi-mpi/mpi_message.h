@@ -77,7 +77,8 @@ class MpiMessage final :
     type_(type),
     tag_(tag),
     commid_(commid),
-    seqnum_(seqnum)
+    seqnum_(seqnum),
+    min_quiesce_(sstmac::Timestamp::max())
   {
   }
 
@@ -126,10 +127,15 @@ class MpiMessage final :
     return dst_rank_;
   }
 
-  void buildStatus(MPI_Status* stat) const;
+  void setMinQuiesce(sstmac::Timestamp ticks){
+    min_quiesce_ = ticks;
+  }
 
- protected:
-  //void clone_into(mpi_message* cln) const;
+  sstmac::Timestamp minQuiesce() const {
+    return min_quiesce_;
+  }
+
+  void buildStatus(MPI_Status* stat) const;
 
  private:
   MpiMessage(){} //for serialization
@@ -140,6 +146,7 @@ class MpiMessage final :
   int tag_;
   MPI_Comm commid_;
   int seqnum_;
+  sstmac::Timestamp min_quiesce_;
 
 };
 

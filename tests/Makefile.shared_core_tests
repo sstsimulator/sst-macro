@@ -32,6 +32,9 @@ test_core_apps_mpi_%.$(CHKSUF): $(CORE_TEST_DEPS)
 	$(PYRUNTEST) 10 $(top_srcdir) $@ 't > 2 and t < 2.2' \
     $(MPI_LAUNCHER) $(SSTMACEXEC) -f $(srcdir)/test_configs/test_mpi_$*.ini --no-wall-time $(THREAD_ARGS)
 
+test_core_apps_ping_all_dfly_plus_qo%.$(CHKSUF): $(SSTMACEXEC)
+	$(PYRUNTEST) 15 $(top_srcdir) $@ True $(SSTMACEXEC) -f $(srcdir)/test_configs/test_ping_all_dfly_plus_qo$*.ini --no-wall-time
+
 test_core_apps_ping_%.$(CHKSUF): $(CORE_TEST_DEPS)
 	$(PYRUNTEST) 10 $(top_srcdir) $@ 't > 5 and t < 5.2' \
     $(MPI_LAUNCHER) $(SSTMACEXEC) -f $(srcdir)/test_configs/test_ping_$*.ini --no-wall-time $(THREAD_ARGS)

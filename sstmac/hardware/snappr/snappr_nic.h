@@ -84,7 +84,7 @@ class SnapprNIC :
   SnapprNIC(uint32_t id, SST::Params& params, Node* parent);
 
   std::string toString() const override {
-    return sprockit::printf("snappr nic(%d)", int(addr()));
+    return sprockit::sprintf("snappr nic(%d)", int(addr()));
   }
 
   void init(unsigned int phase) override;
@@ -122,6 +122,8 @@ class SnapprNIC :
     virtual bool empty() const = 0;
   };
 
+  void deadlockCheck() override;
+
 
  private:
   void doSend(NetworkMessage* payload) override;
@@ -130,7 +132,6 @@ class SnapprNIC :
 
   void eject(SnapprPacket* pkt);
 
- private:
   void copyToNicBuffer();
 
   void injectPacket(uint32_t pkt_size, uint64_t byte_offset, NetworkMessage* payload);
@@ -157,6 +158,10 @@ class SnapprNIC :
   MemoryModel* mem_model_;
   int mem_req_id_;
   bool ignore_memory_;
+
+  int qos_levels_;
+  bool scatter_qos_;
+  int next_qos_;
 
 };
 

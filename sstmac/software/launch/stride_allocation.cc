@@ -74,7 +74,7 @@ class StrideAllocation : public NodeAllocator {
   StrideAllocation(SST::Params& params) :
     NodeAllocator(params)
   {
-    stride_ = params.find<int>("stride");
+    stride_ = params.find<int>("allocation_stride");
   }
 
   std::string toString() const override {

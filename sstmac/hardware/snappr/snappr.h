@@ -90,6 +90,14 @@ class SnapprPacket :
     return arrival_;
   }
 
+  void setDeadlocked() {
+    deadlocked_ = true;
+  }
+
+  bool deadlocked() const {
+    return deadlocked_;
+  }
+
   void setArrival(Timestamp time) {
     arrival_ = time;
   }
@@ -112,10 +120,6 @@ class SnapprPacket :
 
   int virtualLane() const {
     return vl_;
-  }
-
-  int qos() const {
-    return qos_;
   }
 
   TimeDelta timeToSend() const {
@@ -179,8 +183,6 @@ class SnapprPacket :
 
   uint64_t offset_;
 
-  int qos_;
-
   int vl_;
 
   int priority_;
@@ -188,6 +190,8 @@ class SnapprPacket :
   int inport_; //used for sending credits
 
   int input_vl_;
+
+  bool deadlocked_;
 
 };
 

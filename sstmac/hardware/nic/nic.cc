@@ -105,7 +105,7 @@ NIC::NIC(uint32_t id, SST::Params& params, Node* parent) :
   negligibleSize_ = params.find<int>("negligible_size", DEFAULT_NEGLIGIBLE_SIZE);
   top_ = Topology::staticTopology(params);
 
-  std::string subname = sprockit::printf("NIC.%d", my_addr_);
+  std::string subname = sprockit::sprintf("NIC.%d", my_addr_);
   auto* spy = parent->registerMultiStatistic<int,uint64_t>(params, "spy_bytes", subname);
   spy_bytes_ = dynamic_cast<StatSpyplot<int,uint64_t>*>(spy);
 

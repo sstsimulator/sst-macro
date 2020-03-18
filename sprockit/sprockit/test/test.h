@@ -163,7 +163,7 @@ class AssertEqual
            const A& asserted,
            bool should_be_equal = true) {
     A casted(test);
-    std::string info = sprockit::printf("%s %s:%d", descr, file, line);
+    std::string info = sprockit::sprintf("%s %s:%d", descr, file, line);
     test_set.append(new TestCase_impl<A>(info,should_be_equal,casted,asserted));
   }
 };
@@ -180,7 +180,7 @@ class AssertEqual<T,T>
            const T& test,
            const T& asserted,
            bool should_be_equal = true) {
-    std::string info = sprockit::printf("%s %s:%d", descr, file, line);
+    std::string info = sprockit::sprintf("%s %s:%d", descr, file, line);
     test_set.append(new TestCase_impl<T>(info,should_be_equal,test,asserted));
   }
 };
@@ -200,7 +200,7 @@ class AssertEqual< std::vector<T>, A>
            bool should_be_equal = true) {
     std::vector<T> asserted_vec;
     asserted_vec.push_back(asserted);
-    std::string info = sprockit::printf("%s %s:%d", descr, file, line);
+    std::string info = sprockit::sprintf("%s %s:%d", descr, file, line);
     test_set.append(new TestCase_impl<std::vector<T> >(info,should_be_equal,test,
                     asserted_vec));
   }
@@ -218,7 +218,7 @@ class AssertEqual< std::vector<T>, std::vector<T> >
            const std::vector<T>& test,
            const std::vector<T>& asserted,
            bool should_be_equal = true) {
-    std::string info = sprockit::printf("%s %s:%d", descr, file, line);
+    std::string info = sprockit::sprintf("%s %s:%d", descr, file, line);
     test_set.append(new TestCase_impl<std::vector<T> >(info,should_be_equal,test,
                     asserted));
   }

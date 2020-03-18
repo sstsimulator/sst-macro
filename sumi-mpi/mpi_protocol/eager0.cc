@@ -57,7 +57,8 @@ namespace sumi {
 Eager0::Eager0(SST::Params &params, MpiQueue *queue) :
   MpiProtocol(params, queue)
 {
-  qos_ = params.find<int>("eager0_qos", 0);
+  int default_qos = params.find<int>("default_qos", 0);
+  qos_ = params.find<int>("eager0_qos", default_qos);
 }
 
 void
@@ -83,7 +84,8 @@ Eager0::start(void* buffer, int src_rank, int dst_rank, sstmac::sw::TaskId tid, 
 void
 Eager0::incoming(MpiMessage *msg, MpiQueueRecvRequest *req)
 {
-  logRecvDelay(1, msg, req);
+  //1 = stage, TimeDelay() = time since last quiesce
+  logRecvDelay(1, sstmac::TimeDelta(), msg, req);
   if (req->recv_buffer_){
 #if SSTMAC_SANITY_CHECK
     if (!msg->smsgBuffer()){

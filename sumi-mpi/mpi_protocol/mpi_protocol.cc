@@ -69,7 +69,8 @@ MpiProtocol::fillSendBuffer(int count, void* buffer, MpiType* typeobj)
 }
 
 void
-MpiProtocol::logRecvDelay(int stage, MpiMessage* msg, MpiQueueRecvRequest* req)
+MpiProtocol::logRecvDelay(int stage, sstmac::TimeDelta timeSinceQuiesce,
+                          MpiMessage* msg, MpiQueueRecvRequest* req)
 {
   sstmac::TimeDelta active_delay;
   sstmac::TimeDelta sync_delay;
@@ -81,7 +82,7 @@ MpiProtocol::logRecvDelay(int stage, MpiMessage* msg, MpiQueueRecvRequest* req)
     }
   }
   mpi_->logMessageDelay(msg, msg->payloadSize(), stage,
-                        sync_delay, active_delay);
+                        sync_delay, active_delay, timeSinceQuiesce);
 }
 
 DirectPut::~DirectPut()

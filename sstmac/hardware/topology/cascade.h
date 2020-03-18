@@ -216,7 +216,7 @@ class Cascade : public CartesianTopology
 
   static std::string set_string(int x, int y, int g)
   {
-    return sprockit::printf("{ %d %d %d }", x, y, g);
+    return sprockit::sprintf("{ %d %d %d }", x, y, g);
   }
 
  private:

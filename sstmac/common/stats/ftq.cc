@@ -161,7 +161,7 @@ FTQAccumulator::registerOutputFields(SST::Statistics::StatisticOutput * /*statOu
 }
 
 void
-FTQAccumulator::outputStatisticData(SST::Statistics::StatisticOutput * /*statOutput*/, bool  /*endOfSim*/)
+FTQAccumulator::outputStatisticFields(SST::Statistics::StatisticOutput * /*statOutput*/, bool  /*endOfSim*/)
 {
   sprockit::abort("FTQAccumulator::outputStatisticData: not yet implemented");
 }
@@ -207,7 +207,7 @@ FTQCalendar::registerOutputFields(StatisticFieldsOutput * /*statOutput*/)
 }
 
 void
-FTQCalendar::outputStatisticData(StatisticFieldsOutput * /*output*/, bool  /*endOfSimFlag*/)
+FTQCalendar::outputStatisticFields(StatisticFieldsOutput * /*output*/, bool  /*endOfSimFlag*/)
 {
   sprockit::abort("FTQCalendar::outputStatisticData: should never be called - ensure output is type 'ftq'");
 }
@@ -237,7 +237,7 @@ FTQOutput::startOutputGroup(StatisticGroup *grp)
 {
   active_group_ = grp->name;
 
-  std::string dat_fname = sprockit::printf("%s.csv", active_group_.c_str());
+  std::string dat_fname = sprockit::sprintf("%s.csv", active_group_.c_str());
   out_.open(dat_fname.c_str());
   includeHeaders_ = true;
 }
@@ -328,7 +328,7 @@ FTQOutput::dump(const std::vector<FTQCalendar*>& calendars, std::ostream& os,
   } else {
     for (int i=0; i < num_event_types; ++i){
       int index = sparse_index[i];
-      keys[i] = sprockit::printf("%d", index);
+      keys[i] = sprockit::sprintf("%d", index);
     }
   }
 
@@ -353,7 +353,7 @@ FTQOutput::dump(const std::vector<FTQCalendar*>& calendars, std::ostream& os,
   for (uint64_t ep=0; ep < num_epochs; ++ep) {
     //figure out how many us
     double num_ms = double(ep * ticks_per_epoch_) / (double) ticks_ms;
-    os << ep << "," << sprockit::printf("%12.4f", num_ms);
+    os << ep << "," << sprockit::sprintf("%12.4f", num_ms);
     for (int i=0; i < num_epoch_columns; ++i) {
       uint64_t total_ev_ticks = epochs(i,ep);
       if (compute_mean_){
@@ -371,13 +371,13 @@ FTQOutput::dump(const std::vector<FTQCalendar*>& calendars, std::ostream& os,
   if (!compute_mean_ && name.empty()){
     TimeDelta stamp_sec(1.0);
     uint64_t ticks_s = stamp_sec.ticks();
-    std::cout << sprockit::printf("Aggregate time stats: %s\n", active_group_.c_str());
+    std::cout << sprockit::sprintf("Aggregate time stats: %s\n", active_group_.c_str());
     for (int idx=0; idx < num_epoch_columns; ++idx){
       double num_s = event_totals[idx] / ticks_s;
       uint64_t remainder = event_totals[idx] - ticks_s*num_s;
       double rem_s = double(remainder) / double(ticks_s);
       double t_sec = num_s + rem_s;
-      std::cout << sprockit::printf("%16s: %16.5f s\n", keys[idx].c_str(), t_sec);
+      std::cout << sprockit::sprintf("%16s: %16.5f s\n", keys[idx].c_str(), t_sec);
     }
   }
 }

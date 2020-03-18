@@ -210,10 +210,10 @@ resizeTopology(int max_nproc, sprockit::SimParameters::ptr params, bool verbose)
   //create a topology matching nproc
   int x, y, z;
   genCartGrid(max_nproc, x, y, z);
-  std::string paramval = sprockit::printf("[%d,%d,%d]", x, y, z);
+  std::string paramval = sprockit::sprintf("[%d,%d,%d]", x, y, z);
   top_params->addParamOverride("geometry", paramval);
   if (verbose)
-    cerr0 << sprockit::printf("Using auto-generated geometry [%d %d %d] for nproc=%d\n", x, y, z, max_nproc);
+    cerr0 << sprockit::sprintf("Using auto-generated geometry [%d %d %d] for nproc=%d\n", x, y, z, max_nproc);
 }
 
 #if 0

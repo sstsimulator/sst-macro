@@ -134,7 +134,7 @@ StatOutputCSV::outputPending()
 }
 
 void
-Statistic<void>::outputStatisticData(StatisticFieldsOutput * /*output*/, bool  /*endOfSimFlag*/)
+Statistic<void>::outputStatisticFields(StatisticFieldsOutput * /*output*/, bool  /*endOfSimFlag*/)
 {
   spkt_abort_printf("void statistic '%s' should never call outputStatisticData\n"
                     "ensure that correct output is set for group '%s'",

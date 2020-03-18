@@ -106,16 +106,16 @@ class StatHistogram : public SST::Statistics::MultiStatistic<BinType,CountType>
     counts_[bin] += count;
   }
 
-  void registerOutputFields(SST::Statistics::StatisticOutput* statOutput) override {
+  void registerOutputFields(SST::Statistics::StatisticFieldsOutput* statOutput) override {
     fields_.push_back(statOutput->registerField<int>("numBins"));
     fields_.push_back(statOutput->registerField<double>("binSize"));
     for (int i=0; i < counts_.size(); ++i){
-      std::string name = sprockit::printf("bin%d", i);
+      std::string name = sprockit::sprintf("bin%d", i);
       fields_.push_back(statOutput->registerField<uint64_t>(name.c_str()));
     }
   }
 
-  void outputStatisticData(SST::Statistics::StatisticOutput* statOutput, bool  /*EndOfSimFlag*/) override {
+  void outputStatisticFields(SST::Statistics::StatisticFieldsOutput* statOutput, bool  /*EndOfSimFlag*/) override {
     int fid = 0;
     statOutput->outputField(fields_[fid++], int(counts_.size()));
     statOutput->outputField(fields_[fid++], bin_size_);
@@ -131,7 +131,7 @@ class StatHistogram : public SST::Statistics::MultiStatistic<BinType,CountType>
   BinType bin_size_;
   bool is_log_;
 
-  std::vector<SST::Statistics::StatisticOutput::fieldHandle_t> fields_;
+  std::vector<SST::Statistics::StatisticFieldsOutput::fieldHandle_t> fields_;
 
 };
 
@@ -158,12 +158,12 @@ class SimpleStatHistogram : public Statistic<BinType> {
     hist_.addData_impl(value, 1);
   }
 
-  void registerOutputFields(SST::Statistics::StatisticOutput* statOutput) override {
+  void registerOutputFields(SST::Statistics::StatisticFieldsOutput* statOutput) override {
     hist_.registerOutputFields(statOutput);
   }
 
-  void outputStatisticData(SST::Statistics::StatisticOutput* statOutput, bool EndOfSimFlag) override {
-    hist_.outputStatisticData(statOutput, EndOfSimFlag);
+  void outputStatisticFields(SST::Statistics::StatisticFieldsOutput* statOutput, bool EndOfSimFlag) override {
+    hist_.outputStatisticFields(statOutput, EndOfSimFlag);
   }
 
  private:

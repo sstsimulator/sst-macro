@@ -134,7 +134,7 @@ SoftwareLaunchRequest::indexAllocation(
                nproc_);
 
   if (sprockit::Debug::slotActive(sprockit::dbg::indexing)){
-    cout0 << sprockit::printf("Allocated and indexed %d nodes\n",
+    cout0 << sprockit::sprintf("Allocated and indexed %d nodes\n",
                 rank_to_node_indexing.size());
     int num_nodes = rank_to_node_indexing.size();
 
@@ -145,10 +145,10 @@ SoftwareLaunchRequest::indexAllocation(
       NodeId nid = rank_to_node_indexing[i];
       if (regtop){
         hw::coordinates coords = regtop->node_coords(nid);
-        cout0 << sprockit::printf("Rank %d -> nid%d %s\n",
+        cout0 << sprockit::sprintf("Rank %d -> nid%d %s\n",
             i, int(nid), stlString(coords).c_str());
       } else {
-         cout0 << sprockit::printf("Rank %d -> nid%d\n", i, int(nid));
+         cout0 << sprockit::sprintf("Rank %d -> nid%d\n", i, int(nid));
       }
     }
 

@@ -82,7 +82,7 @@ PiscesPacket::serialize_order(serializer& ser)
 std::string
 PiscesPacket::toString() const
 {
-  return sprockit::printf("flow %16lu%s, %d bytes delay=%8.4e %d->%d %s",
+  return sprockit::sprintf("flow %16lu%s, %d bytes delay=%8.4e %d->%d %s",
                    uint64_t(flowId()),
                    isTail() ? " tail" : "",
                    byteLength(), byte_delay_.sec(),
@@ -93,7 +93,7 @@ PiscesPacket::toString() const
 std::string
 PiscesCredit::toString() const
 {
-  return sprockit::printf("credits n=%d port=%d vc=%d",
+  return sprockit::sprintf("credits n=%d port=%d vc=%d",
                           num_credits_, port_, vc_);
 }
 

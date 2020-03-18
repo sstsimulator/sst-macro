@@ -52,7 +52,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <cmath>
 
 #define ftree_rter_debug(...) \
-  rter_debug("fat tree: %s", sprockit::printf(__VA_ARGS__).c_str())
+  rter_debug("fat tree: %s", sprockit::sprintf(__VA_ARGS__).c_str())
 
 namespace sstmac {
 namespace hw {
@@ -349,6 +349,86 @@ class TorusUGALRouter : public TorusValiantRouter {
 
 };
 
+/**
+ * @brief The TorusPositiveRouter class
+ * Simple router that routes all traffic in the same direction, making
+ * it easier to create specific congestion scenarios
+ */
+class TorusPositiveRouter : public Router {
+ public:
+  struct header : public Packet::Header {
+     char wrapped : 1;
+     int num_hops;
+  };
+
+  SST_ELI_REGISTER_DERIVED(
+   Router,
+   TorusPositiveRouter,
+   "macro",
+   "torus_positive",
+   SST_ELI_ELEMENT_VERSION(1,0,0),
+   "a routing algorithm that routes all traffic in the +direction")
+
+  TorusPositiveRouter(SST::Params& params,
+                      Topology* top, NetworkSwitch* netsw)
+   : Router(params, top, netsw)
+  {
+    torus_ = safe_cast(Torus, top);
+    inj_port_offset_ = 2*torus_->ndimensions();
+  }
+
+  std::string toString() const override {
+    return "torus positive router";
+  }
+
+  int numVC() const override {
+    return 2;
+  }
+
+ void minimalRoute(SwitchId dst, header* hdr){
+   SwitchId src = my_addr_;
+   auto& dimensions_ = torus_->dimensions();
+   int div = 1;
+   int ndim = dimensions_.size();
+   for (int i=0; i < ndim; ++i){
+     int srcX = (src / div) % dimensions_[i];
+     int dstX = (dst / div) % dimensions_[i];
+     int nextX = (srcX + 1) % dimensions_[i];
+     int maxX = dimensions_[i] - 1;
+     if (srcX != dstX){
+       if (srcX == maxX){
+         //we are wrapping around
+         hdr->wrapped = 1;
+         hdr->deadlock_vc = 1;
+       } else { //nothing special
+         hdr->deadlock_vc = hdr->wrapped ? 1 : 0;
+       }
+       if (nextX == dstX){
+         hdr->wrapped = 0; //reset for next dim
+       }
+       hdr->edge_port = torus_->convertToPort(i, Torus::pos);
+       return;
+     }
+     div *= dimensions_[i];
+   }
+   sprockit::abort("torus: failed to route correctly on torus");
+ }
+
+  void route(Packet* pkt) override {
+    auto* hdr = pkt->rtrHeader<header>();
+    SwitchId ej_addr = pkt->toaddr() / torus_->concentration();
+    if (ej_addr == my_addr_){
+      hdr->edge_port = pkt->toaddr() % torus_->concentration() + inj_port_offset_;
+      hdr->deadlock_vc = 0;
+      return;
+    }
+    minimalRoute(ej_addr, hdr);
+  }
+
+ protected:
+  Torus* torus_;
+  int inj_port_offset_;
+};
 
 }
 }

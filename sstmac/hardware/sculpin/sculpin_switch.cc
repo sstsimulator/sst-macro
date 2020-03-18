@@ -77,7 +77,7 @@ RegisterKeywords(
 
 #define pkt_debug(...) \
   debug_printf(sprockit::dbg::sculpin, "sculpin switch %d: %s", \
-    int(addr()), sprockit::printf(__VA_ARGS__).c_str())
+    int(addr()), sprockit::sprintf(__VA_ARGS__).c_str())
 
 namespace sstmac {
 namespace hw {
@@ -321,7 +321,7 @@ SculpinSwitch::handlePayload(Event *ev)
 std::string
 SculpinSwitch::toString() const
 {
-  return sprockit::printf("sculpin switch %d", int(my_addr_));
+  return sprockit::sprintf("sculpin switch %d", int(my_addr_));
 }
 
 LinkHandler*

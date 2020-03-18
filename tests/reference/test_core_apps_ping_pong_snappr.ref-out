@@ -7,16 +7,16 @@ ping-pong between 0 and 3
 128:   0.0863 GB/s
 512:   0.1380 GB/s
 1024:   0.3100 GB/s
-2048:   0.3006 GB/s
-4096:   0.2961 GB/s
-8192:   0.2938 GB/s
-20384:   0.5050 GB/s
-40768:   0.5013 GB/s
-81536:   0.4995 GB/s
-163072:   0.4986 GB/s
-326144:   0.4997 GB/s
-652288:   0.5002 GB/s
-1304576:   0.5001 GB/s
+2048:   0.2920 GB/s
+4096:   0.2837 GB/s
+8192:   0.2798 GB/s
+20384:   0.4615 GB/s
+40768:   0.4574 GB/s
+81536:   0.4554 GB/s
+163072:   0.4544 GB/s
+326144:   0.4553 GB/s
+652288:   0.4558 GB/s
+1304576:   0.4556 GB/s
 ping-pong between 2 and 1
 4:   0.0098 GB/s
 8:   0.0190 GB/s
@@ -26,20 +26,20 @@ ping-pong between 2 and 1
 128:   0.0863 GB/s
 512:   0.1380 GB/s
 1024:   0.3100 GB/s
-2048:   0.3006 GB/s
-4096:   0.2961 GB/s
-8192:   0.2938 GB/s
-20384:   0.5050 GB/s
-40768:   0.5013 GB/s
-81536:   0.4995 GB/s
-163072:   0.4986 GB/s
-326144:   0.4997 GB/s
-652288:   0.5002 GB/s
-1304576:   0.5001 GB/s
+2048:   0.2920 GB/s
+4096:   0.2837 GB/s
+8192:   0.2798 GB/s
+20384:   0.4615 GB/s
+40768:   0.4574 GB/s
+81536:   0.4554 GB/s
+163072:   0.4544 GB/s
+326144:   0.4553 GB/s
+652288:   0.4558 GB/s
+1304576:   0.4556 GB/s
 Aggregate time stats: state
-        Inactive:          1.47008 s
-          idle:X:          0.00924 s
+        Inactive:          1.61224 s
+          idle:X:          0.01114 s
         active:X:          0.01042 s
-  idle:injection:          0.00924 s
+  idle:injection:          0.01114 s
 active:injection:          0.01042 s
-Estimated total runtime of           0.01048202 seconds
+Estimated total runtime of           0.01149564 seconds

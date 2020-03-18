@@ -105,11 +105,11 @@ static void
 print_finish(std::ostream& os, double wall_time)
 {
 #if SSTMAC_REPO_BUILD
-  os << sprockit::printf("SSTMAC   repo:   %s\n", sstmac_REPO_HEADER);
+  os << sprockit::sprintf("SSTMAC   repo:   %s\n", sstmac_REPO_HEADER);
 #else
-  os << sprockit::printf("SSTMAC   %s\n", SSTMAC_VERSION);
+  os << sprockit::sprintf("SSTMAC   %s\n", SSTMAC_VERSION);
 #endif
-  os << sprockit::printf("SST/macro ran for %12.4f seconds\n", wall_time);
+  os << sprockit::sprintf("SST/macro ran for %12.4f seconds\n", wall_time);
 }
 
 ParallelRuntime* init()
@@ -193,8 +193,8 @@ initParams(SSTMAC_MAYBE_UNUSED ParallelRuntime*  rt, opts& oo, sprockit::SimPara
 
 
 #if !SSTMAC_INTEGRATED_SST_CORE
-  std::string rank = sprockit::printf("%d", rt->me());
-  std::string nproc = sprockit::printf("%d", rt->nproc());
+  std::string rank = sprockit::sprintf("%d", rt->me());
+  std::string nproc = sprockit::sprintf("%d", rt->nproc());
   params->addParamOverride("sst_rank", rank);
   params->addParamOverride("sst_nproc", nproc);
 #endif
@@ -334,9 +334,9 @@ tryMain(sprockit::SimParameters::ptr params,
 
 
   if (oo.low_res_timer){
-    cout0 << sprockit::printf("Estimated total runtime of %8.2f seconds\n", stats.simulatedTime);
+    cout0 << sprockit::sprintf("Estimated total runtime of %8.2f seconds\n", stats.simulatedTime);
   } else {
-    cout0 << sprockit::printf("Estimated total runtime of %20.8f seconds\n", stats.simulatedTime);
+    cout0 << sprockit::sprintf("Estimated total runtime of %20.8f seconds\n", stats.simulatedTime);
   }
 
   if (oo.print_params) {
