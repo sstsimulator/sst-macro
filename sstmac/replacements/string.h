@@ -26,11 +26,25 @@
 extern "C" {
 #endif
 
+
+#if defined(__clang__) // Remove pragma warnings if clang
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunknown-pragmas"
+#endif
+
+#if defined(__clang__) // Only include S2S things if clang
 #pragma sst null_ptr safe
+#endif
 void* sstmac_memset(void* ptr, int value, unsigned long  sz);
 
+#if defined(__clang__) // Only include S2S things if clang
 #pragma sst null_ptr safe
+#endif
 void* sstmac_memcpy(void* dst, const void* src, unsigned long sz);
+
+#if defined(__clang__) // Add back the warnings
+#pragma clang diagnostic pop
+#endif
 
 #ifdef __cplusplus
 }

@@ -402,13 +402,13 @@ struct WRR_PortArbitrator : public SnapprPortArbitrator
    } SelectionType;
 
    VirtualLane(int num, SelectionType s, int prior, uint64_t delay) :
-     number(num),
      sel_type(s),
-     priority(prior),
      byte_delay(delay),
-     next_free(0),
      stalled(false),
-     credits(0)
+     next_free(0),
+     credits(0),
+     priority(prior),
+     number(num)
    {
    }
 

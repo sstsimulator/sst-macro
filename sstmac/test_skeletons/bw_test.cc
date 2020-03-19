@@ -67,8 +67,8 @@ int USER_MAIN(int  /*argc*/, char**  /*argv*/)
                  sumi::Message::pt2pt, 0/*qos*/);
 
   //wait for send AND recv ack
-  auto msg = tport->blockingPoll(sumi::Message::default_cq);
-  msg = tport->blockingPoll(sumi::Message::default_cq);
+  /*auto msg =*/ tport->blockingPoll(sumi::Message::default_cq);
+  /*msg = */ tport->blockingPoll(sumi::Message::default_cq);
 
   double t_stop = tport->wallTime();
 

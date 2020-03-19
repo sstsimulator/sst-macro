@@ -59,8 +59,8 @@ using namespace clang::driver;
 using namespace clang::tooling;
 
 ReplaceAction::ReplaceAction() :
-  skeleton_visitor_(pragmaList_, globalNs_),
-  first_pass_visitor_(pragmaList_)
+  first_pass_visitor_(pragmaList_),
+  skeleton_visitor_(pragmaList_, globalNs_)
 {
 }
 

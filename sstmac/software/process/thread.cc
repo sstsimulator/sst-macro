@@ -132,7 +132,6 @@ Thread::runRoutine(void* threadptr)
   // Go.
   if (self->isInitialized()) {
     self->state_ = ACTIVE;
-    bool success = false;
     try {
       {
         //need to scope it here to force destructor of guard
@@ -141,7 +140,6 @@ Thread::runRoutine(void* threadptr)
         sstmac::sw::OperatingSystem::CoreAllocateGuard guard(self->os(), self);
         self->run();
       }
-      success = true;
       //this doesn't so much kill the thread as context switch it out
       //it is up to the above delete thread event to actually to do deletion/cleanup
       //all of this is happening ON THE THREAD - it kills itself
@@ -150,7 +148,6 @@ Thread::runRoutine(void* threadptr)
     } catch (const kill_exception& ex) {
       //great, we are done
     } catch (const clean_exit_exception& ex) {
-      success = true;
       self->cleanup();
     } catch (const std::exception &ex) {
       cerrn << "thread terminated with exception: " << ex.what()

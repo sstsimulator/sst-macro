@@ -328,13 +328,13 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   SkeletonASTVisitor(SSTPragmaList& pragmas,
       GlobalVarNamespace& ns) :
     pragmas_(pragmas),
-    visitingGlobal_(false),
-    globalNs_(ns), 
-    currentNs_(&ns),
-    insideCxxMethod_(0), 
     activeBinOpIdx_(-1),
     foundCMain_(false), 
     refactorMain_(true),
+    insideCxxMethod_(0), 
+    globalNs_(ns), 
+    currentNs_(&ns),
+    visitingGlobal_(false),
     keepGlobals_(false)
   {
     initHeaders();

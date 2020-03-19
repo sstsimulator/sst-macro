@@ -70,6 +70,17 @@ struct Prod {
     }
 };
 
+// To work around Wint-in-bool-context
+template <>
+struct Prod<bool> {
+  typedef bool type;
+    static void
+    op(bool& dst, const bool& src){
+        dst = dst && src;
+    }
+};
+
+
 template <typename data_t>
 struct Min
 {
