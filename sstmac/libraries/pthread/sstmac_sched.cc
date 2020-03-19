@@ -136,8 +136,8 @@ SSTMAC_CPU_COUNT_S (size_t  /*setsize*/, sstmac_cpu_set_t* cpusetp){
 }
 
 extern "C" int
-SSTMAC_CPU_EQUAL_S(size_t  /*setsize*/, sstmac_cpu_set_t* cpusetp1, sstmac_cpu_set_t*  /*cpusetp2*/){
-  return cpusetp1->cpubits == cpusetp1->cpubits;
+SSTMAC_CPU_EQUAL_S(size_t  /*setsize*/, sstmac_cpu_set_t* cpusetp1, sstmac_cpu_set_t*  cpusetp2){
+  return cpusetp1->cpubits == cpusetp2->cpubits;
 }
 
 extern "C" void

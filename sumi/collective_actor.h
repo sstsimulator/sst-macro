@@ -60,8 +60,10 @@ DeclareDebugSlot(sumi_collective_buffer)
 #define sumi_case(x) case x: return #x
 
 #define do_sumi_debug_print(...)
-// if (sprockit::debug::slot_active(sprockit::dbg::sumi_collective_buffer)) \
-//   debug_print(__VA_ARGS__)
+ /*
+ if (sprockit::debug::slot_active(sprockit::dbg::sumi_collective_buffer)) \
+   debug_print(__VA_ARGS__)
+ */
 
 namespace sumi {
 

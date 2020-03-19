@@ -49,6 +49,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/libraries/pthread/sstmac_pthread.h>
 #include <sstmac/skeleton.h>
 #include <sstmac/compute.h>
+#include <cassert>
 
 using namespace sstmac;
 using namespace sstmac::sw;
@@ -110,21 +111,23 @@ void* ptest2(void* args)
 
 int USER_MAIN(int  /*argc*/, char**  /*argv*/)
 {
-    void* no_args = 0;
+    void* no_args = nullptr;
     pthread_t thr1, thr2;
-    int status;
-    status = pthread_create(&thr1, nullptr, &ptest, no_args);
-    status = pthread_create(&thr2, nullptr, &ptest, no_args);
+
+    auto check_value = [](int i){ assert(i == 0); };
+
+    check_value(pthread_create(&thr1, nullptr, &ptest, no_args));
+    check_value(pthread_create(&thr2, nullptr, &ptest, no_args));
 
     void* ret;
     pthread_join(thr1, &ret);
     pthread_join(thr2, &ret);
 
     pthread_args pargs;
-    pthread_mutex_init(&pargs.mutex,0);
-    pthread_cond_init(&pargs.cond,0);
-    status = pthread_create(&thr1, nullptr, &ptest2, &pargs);
-    status = pthread_create(&thr2, nullptr, &ptest2, &pargs);
+    pthread_mutex_init(&pargs.mutex,nullptr);
+    pthread_cond_init(&pargs.cond,nullptr);
+    check_value(pthread_create(&thr1, nullptr, &ptest2, &pargs));
+    check_value(pthread_create(&thr2, nullptr, &ptest2, &pargs));
 
     std::cout << "Spawned threads" << std::endl;
     SSTMAC_compute(1);
@@ -138,7 +141,7 @@ int USER_MAIN(int  /*argc*/, char**  /*argv*/)
     pthread_join(thr2, &ret);
 
     //spin off another pthread
-    status = pthread_create(&thr1, nullptr, &ptest, &pargs);
+    check_value(pthread_create(&thr1, nullptr, &ptest, &pargs));
 
     return 0;
 }

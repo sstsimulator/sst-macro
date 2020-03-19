@@ -1112,6 +1112,8 @@ SkeletonASTVisitor::getArrayType(const Type* ty, cArrayConfig& cfg)
   }
 }
 
+
+/* TODO remove, unused
 static RecordDecl* getRecordDeclForType(QualType qt)
 {
   if (qt->isStructureType() || qt->isClassType()){
@@ -1124,6 +1126,7 @@ static RecordDecl* getRecordDeclForType(QualType qt)
     return nullptr;
   }
 }
+*/
 
 void
 SkeletonASTVisitor::arrayFxnPointerTypedef(VarDecl* D, SkeletonASTVisitor::ArrayInfo* info,

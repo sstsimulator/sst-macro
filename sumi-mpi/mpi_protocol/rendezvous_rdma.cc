@@ -120,7 +120,7 @@ RendezvousGet::start(void* buffer, int src_rank, int dst_rank, sstmac::sw::TaskI
                            src_rank, dst_rank, type->id,  tag, comm, seq_id,
                            count, type->packed_size(), send_buf, RENDEZVOUS_GET);
   msg->setMinQuiesce(minPartnerQuiesce_);
-  sstmac::Timestamp now = mpi_->now();
+  //sstmac::Timestamp now = mpi_->now();
   //sstmac::Timestamp time_since_quiesce = now - minPartnerQuiesce_;
   //if (time_since_quiesce > 0.00
   send_flows_.emplace(std::piecewise_construct,

@@ -711,6 +711,8 @@ DagCollectiveActor::getSendBuffer(Action* ac_, uint64_t& nbytes)
       return sumi::Message::offset_ptr(recv_buffer_, ac->offset*type_size_);
       break;
   }
+  sprockit::abort("getSendBuffer switch failed.");
+  return nullptr;
 }
 
 void

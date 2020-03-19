@@ -59,6 +59,7 @@ using namespace clang::tooling;
 SourceLocation SSTPragmaHandler::pragmaDirectiveLoc;
 std::map<std::string, SSTPragmaNamespace*>* PragmaRegisterMap::namespaces_ = nullptr;
 
+/* TODO Remove, as it is unused
 static std::string getStringToken(const Token& next)
 {
   //the next token should be a string naming the argument
@@ -78,7 +79,9 @@ static std::string getStringToken(const Token& next)
   }
   return argName;
 }
+*/
 
+/* TODO Remove, as it is unused
 static void assertToken(const Token& tok, tok::TokenKind kind)
 {
   if (tok.getKind() != kind){
@@ -87,6 +90,8 @@ static void assertToken(const Token& tok, tok::TokenKind kind)
     errorAbort(tok.getLocation(), error);
   }
 }
+*/
+
 static void tokenToString(const Token& tok, std::ostream& os)
 {
   switch(tok.getKind()){

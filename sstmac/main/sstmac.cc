@@ -131,11 +131,13 @@ ParallelRuntime* init()
 
   //used when using fake sst compilers in configure/test-suite
   //automatically uses a basic parameter file
+  /* TODO Remove
   bool fake_build = false;
   env_str = getenv("SSTMAC_FAKE_BUILD");
   if (env_str){
     fake_build = atoi(env_str);
   }
+  */
 
   ParallelRuntime* rt = ParallelRuntime::staticRuntime(cmdline_params);
   return rt;
