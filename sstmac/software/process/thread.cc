@@ -111,7 +111,7 @@ Thread::cleanup()
     if (detach_state_ == DETACHED && state_ != CANCELED){
       parent_app_->removeSubthread(this);
       os_->scheduleThreadDeletion(this);
-    } else; //parent will join and then delete this
+    } else{} //parent will join and then delete this
   } else {
     //no matter what, I have to delete myself
     os_->scheduleThreadDeletion(this);

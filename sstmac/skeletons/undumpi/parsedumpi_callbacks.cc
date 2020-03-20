@@ -839,7 +839,7 @@ on_MPI_Test(const dumpi_test *prm, uint16_t  /*thread*/,
     //we have to make sure this request is complete
     MPI_Request req = translate_request(prm->request);
     cb->getmpi()->wait(&req, MPI_STATUS_IGNORE);
-  } else;  //otherwise - don't do anything - this isn't finished
+  } else {}  //otherwise - don't do anything - this isn't finished
   cb->end_mpi(cpu, wall, perf);
 #endif
   return 1;
