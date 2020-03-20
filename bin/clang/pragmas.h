@@ -115,7 +115,7 @@ struct SSTPragma {
   int getActiveMode() const;
 
   virtual void activate(clang::Stmt* s) = 0;
-  virtual void activate(clang::Decl* d){} //not required
+  virtual void activate(clang::Decl* /*d*/){} //not required
   virtual void deactivate(){} //not required
 
   static void tokenStreamToString(
@@ -259,7 +259,7 @@ class SSTPragmaHandlerInstance : public SSTPragmaHandler
 
 template <class T> struct SSTNoArgsPragmaShim : public T
 {
-  SSTNoArgsPragmaShim(clang::SourceLocation loc, const std::list<clang::Token>& tokens) :
+  SSTNoArgsPragmaShim(clang::SourceLocation /*loc*/, const std::list<clang::Token>& /*tokens*/) :
     T() {
       this->classId = pragmaID<T>();
     }
@@ -268,7 +268,7 @@ template <class T> struct SSTNoArgsPragmaShim : public T
 template <class T> struct SSTStringPragmaShim : public T
 {
   using T::getSingleString;
-  SSTStringPragmaShim(clang::SourceLocation loc, const std::list<clang::Token>& tokens) :
+  SSTStringPragmaShim(clang::SourceLocation /*loc*/, const std::list<clang::Token>& tokens) :
     T(getSingleString(tokens)) //just a single string gets passed up
   {
       this->classId = pragmaID<T>();
@@ -399,8 +399,8 @@ struct PragmaRegister {
  * Use as fill-in for pragmas which should not be activated in a given mode
  */
 struct SSTDoNothingPragma : public SSTPragma {
-  void activate(clang::Stmt* s) override {}
-  void activate(clang::Decl* d) override {}
+  void activate(clang::Stmt* /*s*/) override {}
+  void activate(clang::Decl* /*d*/) override {}
 };
 
 class SSTReturnPragma : public SSTPragma {

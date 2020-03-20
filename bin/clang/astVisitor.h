@@ -168,8 +168,8 @@ class FirstPassASTVisitor : public clang::RecursiveASTVisitor<FirstPassASTVisito
 
   FirstPassASTVisitor(SSTPragmaList& pragmas);
 
-  void preVisitTopLevelDecl(clang::Decl* d){}
-  void postVisitTopLevelDecl(clang::Decl* d){}
+  void preVisitTopLevelDecl(clang::Decl* /*d*/){}
+  void postVisitTopLevelDecl(clang::Decl* /*d*/){}
   void finalizePass(){}
 
   bool VisitDecl(clang::Decl* d);
