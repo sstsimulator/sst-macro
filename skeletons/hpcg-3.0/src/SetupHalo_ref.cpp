@@ -214,11 +214,11 @@ void SetupHalo_ref(SparseMatrix & A) {
   // Extract Matrix pieces
 
   local_int_t localNumberOfRows = A.localNumberOfRows;
-#pragma sst null_variable
+#pragma sst null_ptr
   char  * nonzerosInRow = A.nonzerosInRow;
-#pragma sst null_variable
+#pragma sst null_ptr
   global_int_t ** mtxIndG = A.mtxIndG;
-#pragma sst null_variable
+#pragma sst null_ptr
   local_int_t ** mtxIndL = A.mtxIndL;
 
 #ifdef HPCG_NO_MPI  // In the non-MPI case we simply copy global indices to local index storage

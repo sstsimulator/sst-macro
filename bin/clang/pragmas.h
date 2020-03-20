@@ -435,7 +435,7 @@ class SSTGlobalVariablePragma : public SSTPragma {
 
 class SSTNullVariablePragma : public SSTPragma {
  public:
-  SSTNullVariablePragma(clang::SourceLocation loc, const std::list<clang::Token>& tokens);
+  SSTNullVariablePragma(clang::SourceLocation loc, std::map<std::string, std::list<std::string>>&& args);
 
   SSTNullVariablePragma() :
     declAppliedTo_(nullptr),
@@ -701,7 +701,7 @@ class SSTNewPragma : public SSTPragma {
 
 class SSTNonnullFieldsPragma : public SSTNullVariablePragma {
  public:
-  SSTNonnullFieldsPragma(clang::SourceLocation loc, const std::list<clang::Token>& tokens);
+  SSTNonnullFieldsPragma(clang::SourceLocation loc, std::map<std::string, std::list<std::string>>&& args);
 
  private:
   void activate(clang::Stmt *stmt) override;
@@ -713,7 +713,7 @@ class SSTNonnullFieldsPragma : public SSTNullVariablePragma {
 
 class SSTNullFieldsPragma : public SSTNullVariablePragma {
  public:
-  SSTNullFieldsPragma(clang::SourceLocation loc, const std::list<clang::Token>& tokens);
+  SSTNullFieldsPragma(clang::SourceLocation loc, std::map<std::string, std::list<std::string>>&& args);
 
  private:
   bool firstPass() const override { return false; }

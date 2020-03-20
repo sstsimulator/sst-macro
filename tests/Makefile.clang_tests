@@ -12,7 +12,6 @@ CLANGTESTS = \
   deglobal_ctor_cpp \
   deglobal_namespace_cpp \
   deglobal_array_cpp \
-  deglobal_lambda_cpp \
   deglobal_unique_ptr_cpp \
   deglobal_multi_array_cpp \
   deglobal_template_cpp \
@@ -26,7 +25,7 @@ CLANGTESTS = \
   pragma_sst_init_cpp \
   pragma_sst_global_cpp \
   pragma_sst_null_replace_cpp \
-  pragma_sst_null_variable_cpp \
+  pragma_sst_null_ptr_cpp \
   pragma_sst_null_vector_cpp \
   pragma_sst_scoped_replace_cpp \
   pragma_sst_replace_cpp \
@@ -40,6 +39,11 @@ CLANGTESTS = \
   deglobal_regular_c \
   deglobal_fxn_static_c \
   deglobal_anon_c 
+
+if HAVE_CXX14
+CLANGTESTS += \
+  deglobal_lambda_cpp
+endif
 
 #  puppet_pragma_omp_parallel_cpp \
 #  pragma_sst_memoize_cpp \
@@ -68,7 +72,9 @@ test_clang_%_cpp.tmp-out: sst.pp.%.cc $(SSTMAC_DEGLOBAL)
 	-$(CXX) -std=c++11 -c $< -o tmp.o \
     -I$(top_srcdir) -I$(top_builddir) -I$(top_srcdir)/include \
     -I$(top_srcdir)/sprockit -I$(top_builddir)/sprockit \
-    -include sstmac/compute.h -include sstmac/skeleton.h 2>&1 /dev/null | grep error >& $@
+    -include sstmac/compute.h -include sstmac/skeleton.h \
+    -include tests/clang_src2src/remove_warnings.h \
+    2>&1 /dev/null | grep error >& $@
 	-cat $< | grep -v '^#' >> $@
 	-cat sstGlobals.pp.$*.cc.cpp >> $@
 	rm -f sstGlobals.pp.$*.cc.cpp tmp.o sst.pp.$*.cc pp.$*.cc
@@ -77,7 +83,9 @@ test_clang_%_c.tmp-out: sst.pp.%.c $(SSTMAC_DEGLOBAL)
 	-$(CC) -c $< -o tmp.o \
     -I$(top_srcdir) -I$(top_builddir) -I$(top_srcdir)/include \
     -I$(top_srcdir)/sprockit -I$(top_builddir)/sprockit \
-    -include sstmac/compute.h -include sstmac/skeleton.h 2>&1 /dev/null | grep error >& $@
+    -include sstmac/compute.h -include sstmac/skeleton.h \
+    -include tests/clang_src2src/remove_warnings.h \
+    2>&1 /dev/null | grep error >& $@
 	-cat $< | grep -v '^#' >> $@
 	-cat sstGlobals.pp.$*.c.cpp >> $@
 	rm -f sstGlobals.pp.$*.c.cpp tmp.o sst.pp.$*.c pp.$*.c

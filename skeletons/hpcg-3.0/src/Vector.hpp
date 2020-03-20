@@ -26,13 +26,13 @@
 
 struct Vector_STRUCT {
   local_int_t localLength;  //!< length of local portion of the vector
-#pragma sst null_variable
+#pragma sst null_ptr
   double * values;          //!< array of values
   /*!
    This is for storing optimized data structures created in OptimizeProblem and
    used inside optimized ComputeSPMV().
    */
- #pragma sst null_variable
+ #pragma sst null_ptr
   void * optimizationData;
 
 };

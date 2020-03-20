@@ -36,15 +36,15 @@ struct SparseMatrix_STRUCT {
   local_int_t localNumberOfRows; //!< number of rows local to this process
   local_int_t localNumberOfColumns;  //!< number of columns local to this process
   local_int_t localNumberOfNonzeros;  //!< number of nonzeros local to this process
-#pragma sst null_variable
+#pragma sst null_ptr
   char  * nonzerosInRow;  //!< The number of nonzeros in a row will always be 27 or fewer
-#pragma sst null_variable
+#pragma sst null_ptr
   global_int_t ** mtxIndG; //!< matrix indices as global values
-#pragma sst null_variable
+#pragma sst null_ptr
   local_int_t ** mtxIndL; //!< matrix indices as local values
-#pragma sst null_variable
+#pragma sst null_ptr
   double ** matrixValues; //!< values of matrix entries
-#pragma sst null_variable
+#pragma sst null_ptr
   double ** matrixDiagonal; //!< values of matrix diagonal entries
 #pragma sst null_type
   std::map< global_int_t, local_int_t > globalToLocalMap; //!< global-to-local mapping
@@ -70,7 +70,7 @@ struct SparseMatrix_STRUCT {
   int * neighbors; //!< neighboring processes
   local_int_t * receiveLength; //!< lenghts of messages received from neighboring processes
   local_int_t * sendLength; //!< lenghts of messages sent to neighboring processes
-#pragma sst null_variable
+#pragma sst null_ptr
   double * sendBuffer; //!< send buffer for non-blocking sends
 #endif
 };

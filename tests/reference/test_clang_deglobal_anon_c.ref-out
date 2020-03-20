@@ -21,10 +21,6 @@ void fxn()
   (*sstmac_aa).x = (*sstmac_aa).y + (*sstmac_b).z + (*sstmac_cc).x;
  }}
 
-static struct {
-  int a;
-};
-
 static struct   a_anonymous_type{
 } a;extern int __offset_xyza; void init_xyza(void* ptr){ } int __sizeof_xyza = sizeof(struct a_anonymous_type); 
 #include <sstmac/software/process/cppglobal.h>

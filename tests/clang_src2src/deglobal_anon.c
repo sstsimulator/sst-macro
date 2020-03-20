@@ -22,12 +22,4 @@ void fxn()
 }
 
 static struct {
-  int a;
-};
-
-static struct {
 } a;
-
-
-
-

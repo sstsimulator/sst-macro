@@ -16,7 +16,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#pragma sst null_variable safe
+#pragma sst null_ptr safe
 extern void sstmac_free(void* ptr);
 #ifdef __cplusplus
 }
