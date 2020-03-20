@@ -62,7 +62,7 @@ struct SnapprPortArbitrator {
 
   virtual void addCredits(int vl, uint32_t credits) = 0;
 
-  virtual SnapprPacket* popDeadlockCheck(int vl){ return nullptr; }
+  virtual SnapprPacket* popDeadlockCheck(int /*vl*/){ return nullptr; }
 
   virtual SnapprPacket* pop(uint64_t cycle) = 0;
 

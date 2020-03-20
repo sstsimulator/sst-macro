@@ -101,6 +101,7 @@ class RuntimeParamBcaster :
   ParallelRuntime* rt_;
 };
 
+/* TODO Remove because unused
 static void
 print_finish(std::ostream& os, double wall_time)
 {
@@ -111,6 +112,7 @@ print_finish(std::ostream& os, double wall_time)
 #endif
   os << sprockit::sprintf("SST/macro ran for %12.4f seconds\n", wall_time);
 }
+*/
 
 ParallelRuntime* init()
 {
@@ -346,7 +348,12 @@ tryMain(sprockit::SimParameters::ptr params,
   }
 
   if (oo.print_walltime) {
-    sstmac::print_finish(cout0, stats.wallTime);
+#if SSTMAC_REPO_BUILD
+    cout0 << sprockit::sprintf("SSTMAC   repo:   %s\n", sstmac_REPO_HEADER);
+#else
+    cout0 << sprockit::sprintf("SSTMAC   %s\n", SSTMAC_VERSION);
+#endif
+    cout0 << sprockit::sprintf("SST/macro ran for %12.4f seconds\n", stats.wallTime);
   }
 
   if (!oo.params_dump_file.empty()) {

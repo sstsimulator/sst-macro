@@ -11,6 +11,8 @@
 #include <sstmac/common/stats/ftq_tag.h>
 #include <queue>
 
+#include <unusedvariablemacro.h>
+
 #define pkt_debug(...) \
   debug_printf(sprockit::dbg::snappr, "snappr port %s:%d %s", \
     portName_.c_str(), number_, sprockit::sprintf(__VA_ARGS__).c_str())
@@ -186,7 +188,7 @@ SnapprOutPort::scheduleArbitration()
 }
 
 void
-SnapprOutPort::deadlockCheck(int vl)
+SnapprOutPort::deadlockCheck(SSTMAC_MAYBE_UNUSED int vl)
 {
 #if !SSTMAC_INTEGRATED_SST_CORE
   auto iter = deadlocked_vls_.find(vl);
@@ -619,7 +621,7 @@ struct WRR_PortArbitrator : public SnapprPortArbitrator
     }
   }
 
-  void insertNoQoS(uint64_t cycle, SnapprPacket *pkt) {
+  void insertNoQoS(uint64_t /*cycle*/, SnapprPacket *pkt) {
     int vl= pkt->virtualLane();
     VirtualLane& v = vls_[vl];
     v.next_free = std::numeric_limits<uint64_t>::max();

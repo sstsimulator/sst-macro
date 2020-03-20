@@ -199,7 +199,7 @@ Manager::computeMaxNproc(sprockit::SimParameters::ptr& params)
 }
 
 #if SSTMAC_INTEGRATED_SST_CORE
-Manager::Manager(SST::Params& params, ParallelRuntime* rt){}
+Manager::Manager(SST::Params& /*params*/, ParallelRuntime* /*rt*/){}
 #else
 class TimestampPrefixFxn :
   public sprockit::DebugPrefixFxn

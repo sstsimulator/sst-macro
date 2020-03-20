@@ -513,11 +513,10 @@ using SubComponentParent = MacroBaseComponent;
 class Component : public ComponentParent
 {
  public:
-  virtual ~Component() {}
+  ~Component() override {}
 
-  virtual void setup(); //needed for SST core compatibility
-
-  virtual void init(unsigned int phase); //needed for SST core compatibility
+  void setup() override;
+  void init(unsigned int phase) override; 
 
  protected:
   Component(uint32_t cid, SST::Params& /*params*/) :
@@ -528,21 +527,29 @@ class Component : public ComponentParent
 };
 
 
+namespace detail {
+  // Class to provoide the same virtual interface as SST::Subcomponent, mainly
+  // to silence warnings about override, but also because we don't change the
+  // interface when Core is unavalible. 
+  class CoreSubComponentStub {
+    public:
+      virtual void setup() = 0;
+      virtual void init(unsigned int) = 0;
+  };
+}
 
 class SubComponent : public SubComponentParent
 {
 
  public:
-  virtual void setup(); //needed for SST core compatibility
-
-  virtual void init(unsigned int phase); //needed for SST core compatibility
+  void setup() override; 
+  void init(unsigned int phase) override; 
 
  protected:
   SubComponent(uint32_t id, const std::string& selfname, SST::Component* /*parent*/) :
     SubComponentParent(selfname, id)
   {
   }
-
 };
 
 #if SSTMAC_INTEGRATED_SST_CORE
