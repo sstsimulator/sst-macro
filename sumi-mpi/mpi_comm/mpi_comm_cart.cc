@@ -52,7 +52,9 @@ MpiCommCart::MpiCommCart(
   AppId aid, int ndims,
   const int *dims, const int *periods, int reorder) :
   MpiComm(id, rank, peers, aid, TOPO_CART),
-  ndims_(ndims), reorder_(reorder)
+  ndims_(ndims), 
+  // Wint-in-bool-context on gcc9.2, but I don't know why just ignore for now
+  reorder_(reorder) 
 {
   for (int i = 0; i < ndims; i++) {
     dims_.push_back(dims[i]);

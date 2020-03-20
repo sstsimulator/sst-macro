@@ -62,10 +62,10 @@ class BtreeGathervActor :
     return "btree gatherv actor";
   }
 
-  BtreeGathervActor(CollectiveEngine* engine, int root, void *dst, void *src,
-                      int sendcnt, int *recv_counts, int type_size, int tag, int cq_id, Communicator* comm) :
-    DagCollectiveActor(Collective::gatherv, engine, dst, src, type_size, tag, cq_id, comm),
-    root_(root), sendcnt_(sendcnt), recv_counts_(recv_counts) {}
+  BtreeGathervActor(CollectiveEngine* engine, int /*root*/, void *dst, void *src,
+                      int /*sendcnt*/, int * /*recv_counts*/, int type_size, int tag, int cq_id, Communicator* comm) :
+    DagCollectiveActor(Collective::gatherv, engine, dst, src, type_size, tag, cq_id, comm)
+  {}
 
  protected:
   void finalizeBuffers() override;
@@ -76,12 +76,8 @@ class BtreeGathervActor :
   void bufferAction(void *dst_buffer, void *msg_buffer, Action* ac) override;
 
  private:
-  SSTMAC_MAYBE_UNUSED int root_;
   int midpoint_;
   int log2nproc_;
-  SSTMAC_MAYBE_UNUSED int sendcnt_;
-  SSTMAC_MAYBE_UNUSED int* recv_counts_;
-
 };
 
 class BtreeGatherv :

@@ -48,13 +48,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #if __cplusplus >= 201703L
   #define SSTMAC_MAYBE_UNUSED [[maybe_unused]]
 #else
-
-  // g++ has macro expansion order issues that prevent this from working
-  // correctly, but if we don't use it then we get unused variable warnings
-  #if defined(__GNUG__) 
-  #pragma GCC diagnostic ignored "-Wattributes"
-  #endif
-
   #define SSTMAC_MAYBE_UNUSED __attribute__((unused))
 #endif
 
