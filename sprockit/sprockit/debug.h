@@ -72,9 +72,11 @@ class DebugInt
       init(slot);
     }
 
-    DebugInt(){
-      fields = 0;
-    }
+    DebugInt() = default;
+    DebugInt& operator=(const DebugInt& rhs) = default;
+    DebugInt& operator=(DebugInt&&rhs) = default;
+    DebugInt(const DebugInt& rhs) = default;
+    DebugInt(DebugInt&&rhs) = default;
 
     DebugInt& operator~(){
       fields = ~fields;
@@ -85,10 +87,6 @@ class DebugInt
       fields = (1ull) << slot;
     }
 
-    DebugInt& operator=(const DebugInt& rhs){
-      fields = rhs.fields;
-      return *this;
-    }
 
     operator bool() const {
       return fields;
@@ -96,7 +94,7 @@ class DebugInt
 
     std::string toString() const;
 
-    uint64_t fields;
+    uint64_t fields = 0;
 };
 
 inline DebugInt

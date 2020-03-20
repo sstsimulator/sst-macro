@@ -355,7 +355,9 @@ Thread::computeDetailed(uint64_t flops, uint64_t nintops, uint64_t bytes, int nt
 }
 
 void
-Thread::collectStats(Timestamp start, TimeDelta elapsed)
+Thread::collectStats(
+    SSTMAC_MAYBE_UNUSED Timestamp start, 
+    SSTMAC_MAYBE_UNUSED TimeDelta elapsed)
 {
 #if !SSTMAC_INTEGRATED_SST_CORE
 #if SSTMAC_HAVE_CALL_GRAPH

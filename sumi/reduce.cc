@@ -118,7 +118,6 @@ WilkeReduceActor::initDag()
   int num_roles = rank_map.realToVirtual(dom_me_, my_roles);
 
   int num_doubling_rounds = log2nproc;
-  bool i_am_midpoint = false;
 
   debug_printf(sumi_collective,
     "Rank %s configured reduce for tag=%d for nproc=%d(%d) virtualized to n=%d over %d rounds",
@@ -150,7 +149,6 @@ WilkeReduceActor::initDag()
     Action *prev_send = nullptr, *prev_recv = nullptr;
 
     int virtual_me = my_roles[role];
-    if (virtual_me == midpoint) i_am_midpoint = true;
     bool i_am_even = (virtual_me % 2) == 0;
     int round_offset = 2*num_doubling_rounds;
     debug_printf(sumi_collective,

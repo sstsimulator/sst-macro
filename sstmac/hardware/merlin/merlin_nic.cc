@@ -118,8 +118,8 @@ class MerlinNIC :
 
   MerlinNIC(uint32_t id, SST::Params& params, Node* parent) :
     NIC(id, params, parent),
-    test_size_(0),
-    vns_(2)
+    vns_(2),
+    test_size_(0)
   {
     int slot_id = 0;
     /** All bandwidth and other parameters get pulled in
