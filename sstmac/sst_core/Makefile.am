@@ -21,6 +21,7 @@ EXTRA_DIST = sstmacro.py
 
 nobase_library_include_HEADERS = \
   connectable_wrapper.h \
+	sst_python.h \
   integrated_component.h \
   integrated_core.h
 
