@@ -357,7 +357,7 @@ SkeletonASTVisitor::preVisitTopLevelDecl(Decl *d)
 }
 
 void
-SkeletonASTVisitor::postVisitTopLevelDecl(Decl *d)
+SkeletonASTVisitor::postVisitTopLevelDecl(Decl * /*d*/)
 {
   setVisitingGlobal(false); //and reset
 }
@@ -2695,7 +2695,7 @@ FirstPassASTVisitor::VisitStmt(Stmt *s)
 }
 
 bool
-FirstPassASTVisitor::TraverseFunctionDecl(FunctionDecl *fd, DataRecursionQueue* queue)
+FirstPassASTVisitor::TraverseFunctionDecl(FunctionDecl *fd, DataRecursionQueue* /*queue*/)
 {
   PushGuard<FunctionDecl*> pg(CompilerGlobals::astContextLists.enclosingFunctionDecls, fd);
   Parent::TraverseFunctionDecl(fd);
@@ -2703,7 +2703,7 @@ FirstPassASTVisitor::TraverseFunctionDecl(FunctionDecl *fd, DataRecursionQueue* 
 }
 
 bool
-FirstPassASTVisitor::TraverseCompoundStmt(CompoundStmt* cs, DataRecursionQueue* queue)
+FirstPassASTVisitor::TraverseCompoundStmt(CompoundStmt* cs, DataRecursionQueue* /*queue*/)
 {
   PushGuard<CompoundStmt*> pg(CompilerGlobals::astContextLists.compoundStmtBlocks, cs);
   Parent::TraverseCompoundStmt(cs);

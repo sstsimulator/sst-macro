@@ -220,7 +220,8 @@ SubComponent::setup()
   SubComponentParent::setup();
 }
 
-SubComponent::SubComponent(uint32_t id, const std::string& selfname, SST::Component* parent) :
+SubComponent::SubComponent(SSTMAC_MAYBE_UNUSED uint32_t id, 
+    const std::string& selfname, SST::Component* parent) :
 #if SSTMAC_INTEGRATED_SST_CORE
     SST::SubComponent(id),
     EventScheduler(selfname, 0, parent)
@@ -270,7 +271,7 @@ IpcLink::send(TimeDelta delay, Event *ev)
 }
 
 void
-IpcLink::deliver(Event* ev){
+IpcLink::deliver(Event* /*ev*/){
   spkt_abort_printf("IpcLink: cannot direct deliver events");
 }
 
@@ -287,7 +288,7 @@ MultithreadLink::send(TimeDelta delay, Event* ev)
 }
 
 void
-MultithreadLink::deliver(Event* ev){
+MultithreadLink::deliver(Event* /*ev*/){
   spkt_abort_printf("MultithreadLink: cannot direct deliver events");
 }
 #endif
