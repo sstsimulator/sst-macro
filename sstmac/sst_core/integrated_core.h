@@ -54,7 +54,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/hardware/common/connection.h>
 
-#include <Python.h>
+#include "sst_python.h"
 
 #if PY_MAJOR_VERSION >= 3
 #define PyString_FromString PyUnicode_FromString
