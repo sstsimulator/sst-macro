@@ -122,6 +122,8 @@ class MerlinNIC :
     vns_(2)
   {
     int slot_id = 0;
+    /** All bandwidth and other parameters get pulled in
+        through params now, not through initialize */
     link_control_ = loadAnonymousSubComponent<SST::Interfaces::SimpleNetwork>(
                                  params.find<std::string>("module"),
                                  "LinkControl", slot_id,
@@ -141,10 +143,6 @@ class MerlinNIC :
 
     link_control_->setNotifyOnReceive(recv_notify);
     link_control_->setNotifyOnSend(send_notify);
-
-    SST::UnitAlgebra bw = params.find<SST::UnitAlgebra>("bandwidth");
-    SST::UnitAlgebra buf_size = params.find<SST::UnitAlgebra>("buffer");
-    link_control_->initialize("rtr", bw, 2, buf_size, buf_size);
   }
 
   std::string toString() const override {
