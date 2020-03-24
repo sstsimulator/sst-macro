@@ -131,6 +131,12 @@ EventLink::allocateSelfLinkId()
   return max - offset;
 }
 
+EventLink::ptr
+MacroBaseComponent::allocateSubLink(const std::string& /*name*/, TimeDelta lat, LinkHandler* handler)
+{
+  return EventLink::ptr(new SubLink(lat, this, handler));
+}
+
 void
 MacroBaseComponent::endSimulation()
 {

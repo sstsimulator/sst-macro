@@ -78,7 +78,37 @@ struct SnapprPortArbitrator {
 
 };
 
-struct SnapprOutPort {
+struct SnapprOutPort : public SubComponent {
+
+#if SSTMAC_INTEGRATED_SST_CORE
+  SST_ELI_REGISTER_SUBCOMPONENT_API(sstmac::hw::SnapprOutPort,
+                                    const std::string& /*arb*/,
+                                    const std::string& /*subId*/, const std::string& /*portName*/, int /*number*/,
+                                    TimeDelta /*byte_delay*/, bool /*congestion*/, bool /*flow_control*/, Component* /*parent*/,
+                                    const std::vector<int>& /*vls_per_qos*/)
+  SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(
+    SnapprOutPort,
+    "macro",
+    "snappr",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "implements a basic Snappr OutPort",
+    sstmac::hw::SnapprOutPort)
+#else
+  SST_ELI_DECLARE_BASE(SnapprOutPort)
+  SST_ELI_DECLARE_DEFAULT_INFO()
+  SST_ELI_DECLARE_CTOR(uint32_t /*id*/, SST::Params& /*params*/, const std::string& /*arb*/,
+                       const std::string& /*subId*/, const std::string& /*portName*/, int /*number*/,
+                       TimeDelta /*byte_delay*/, bool /*congestion*/, bool /*flow_control*/, Component* /*parent*/,
+                       const std::vector<int>& /*vls_per_qos*/)
+
+  SST_ELI_REGISTER_DERIVED(
+    SnapprOutPort,
+    SnapprOutPort,
+    "macro",
+    "snappr",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "implements a basic Snappr OutPort")
+#endif
 
   struct TailNotifier {
     virtual void notify(Timestamp,SnapprPacket*) = 0;
@@ -162,7 +192,7 @@ struct SnapprOutPort {
     notifier_ = new TailNotifierDerived<T,Fxn>(t,f);
   }
 
-  SnapprOutPort(SST::Params& params, const std::string& arb,
+  SnapprOutPort(uint32_t id, SST::Params& params, const std::string& arb,
                 const std::string& subId, const std::string& portName, int number,
                 TimeDelta byte_delay, bool congestion, bool flow_control, Component* parent,
                 const std::vector<int>& vls_per_qos);

@@ -67,8 +67,7 @@ PiscesNIC::PiscesNIC(uint32_t id, SST::Params& params, Node* parent) :
   pending_inject_(1)
 {
   SST::Params inj_params = params.find_scoped_params("injection");
-  self_mtl_link_ = allocateSubLink("mtl", TimeDelta(), parent_,
-                                    newLinkHandler(this, &NIC::mtlHandle));
+  self_mtl_link_ = allocateSubLink("mtl", TimeDelta(), newLinkHandler(this, &NIC::mtlHandle));
 
   inj_credits_ = inj_params.find<SST::UnitAlgebra>("credits").getRoundedValue();
   auto arb = inj_params.find<std::string>("arbitrator");

@@ -147,7 +147,7 @@ class SnapprNIC :
   TimeDelta inj_byte_delay_;
 
   bool flow_control_;
-  std::vector<SnapprOutPort> outports_;
+  std::vector<SnapprOutPort*> outports_;
   InjectionQueue* inject_queue_;
 
   Timestamp ej_next_free_;

@@ -22,7 +22,7 @@
 namespace sstmac {
 namespace hw {
 
-SnapprOutPort::SnapprOutPort(SST::Params& params, const std::string &arb,
+SnapprOutPort::SnapprOutPort(uint32_t id, SST::Params& params, const std::string &arb,
                              const std::string& subId, const std::string& portName,
                              int number, TimeDelta byt_delay, bool congestion, bool flow_control,
                              Component* parent, const std::vector<int>& vls_per_qos)
@@ -37,13 +37,14 @@ SnapprOutPort::SnapprOutPort(SST::Params& params, const std::string &arb,
     congestion_(congestion), 
     portName_(subId), 
     number_(number),
-    notifier_(nullptr)
+    notifier_(nullptr),
+    SubComponent(id, portName, parent)
 {
   arb_ = sprockit::create<SnapprPortArbitrator>("macro", arb, byte_delay, params, vls_per_qos);
-  xmit_active = parent->registerStatistic<uint64_t>(params, "xmit_active", subId);
-  xmit_idle = parent->registerStatistic<uint64_t>(params, "xmit_idle", subId);
-  xmit_stall = parent->registerStatistic<uint64_t>(params, "xmit_stall", subId);
-  bytes_sent = parent->registerStatistic<uint64_t>(params, "bytes_sent", subId);
+  xmit_active = registerStatistic<uint64_t>(params, "xmit_active", subId);
+  xmit_idle = registerStatistic<uint64_t>(params, "xmit_idle", subId);
+  xmit_stall = registerStatistic<uint64_t>(params, "xmit_stall", subId);
+  bytes_sent = registerStatistic<uint64_t>(params, "bytes_sent", subId);
 #if !SSTMAC_INTEGRATED_SST_CORE
   state_ftq = dynamic_cast<FTQCalendar*>(
         parent->registerMultiStatistic<int,uint64_t,uint64_t>(params, "state", subId));
