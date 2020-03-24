@@ -105,7 +105,7 @@ class EventManager
 
   friend class Component;
   friend class SubComponent;
-  friend class EventScheduler;
+  friend class MacroBaseComponent;
   friend class native::Manager;
 
   EventManager(SST::Params& params, ParallelRuntime* rt);
@@ -282,7 +282,7 @@ class EventManager
 
  private:
 #define MAX_EVENT_MGR_THREADS 128
-  std::vector<EventScheduler*> pending_registration_[MAX_EVENT_MGR_THREADS];
+  std::vector<MacroBaseComponent*> pending_registration_[MAX_EVENT_MGR_THREADS];
 
  protected:
   Timestamp min_ipc_time_;

@@ -50,8 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 
 #if SSTMAC_INTEGRATED_SST_CORE
-class EventScheduler;
-typedef EventScheduler EventManager;
+class EventManager;
 #else
 class EventManager;
 struct IpcEvent;

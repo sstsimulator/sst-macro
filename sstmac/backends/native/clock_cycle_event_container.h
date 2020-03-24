@@ -85,8 +85,6 @@ class ClockCycleEventMap :
 
   virtual ~ClockCycleEventMap() throw() {}
 
-  void renewScheduler(int thread, TimeDelta t, EventScheduler* es);
-
  protected:
   /**
    * @brief receive_incoming_events

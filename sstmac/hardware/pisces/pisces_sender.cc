@@ -73,7 +73,7 @@ PiscesSender::PiscesSender(
   const std::string& selfname, uint32_t id,
   SST::Component* parent,
   bool update_vc) :
-  EventScheduler(selfname, id, parent), //no self handlers
+  SubComponent(id, selfname, parent), //no self handlers
   update_vc_(update_vc)
 {
 }

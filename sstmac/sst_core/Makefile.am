@@ -53,7 +53,6 @@ endif
 libsstmac_sst_core_la_SOURCES =  \
   partitioner.cc \
 	python_topology.cc \
-  integrated_component.cc \
   integrated_core.cc
 endif
 

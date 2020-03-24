@@ -219,23 +219,6 @@ Interconnect::nodeToLogpSwitch(NodeId nid) const
 
 #if !SSTMAC_INTEGRATED_SST_CORE
 
-#if 0
-EventLink*
-Interconnect::allocateIntraProcLink(TimeDelta latency, EventManager* mgr, EventHandler* handler,
-                                EventScheduler* src, EventScheduler* dst)
-{
-  EventLink* iplink = nullptr;
-  if (src->threadId() == dst->threadId()){
-    iplink = new LocalLink(latency,mgr,handler, src->componentId(), dst->componentId());
-  } else {
-    iplink = new MultithreadLink(handler,latency,mgr,dst,
-                               src->componentId(), dst->componentId());
-  }
-  links_.push_back(iplink);
-  return iplink;
-}
-#endif
-
 uint64_t
 Interconnect::connectEndpoints(uint64_t linkIdOffset,
                                EventManager* mgr,

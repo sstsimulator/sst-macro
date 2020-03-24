@@ -53,6 +53,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/handler_event_queue_entry.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
+#include <sprockit/output.h>
 #include <unistd.h>
 #include <limits>
 
@@ -72,12 +73,54 @@ EventLink::~EventLink()
 }
 
 #if SSTMAC_INTEGRATED_SST_CORE
-SST::TimeConverter* EventScheduler::time_converter_ = nullptr;
+SST::TimeConverter* SharedBaseComponent::time_converter_ = nullptr;
+
+IntegratedComponent::IntegratedComponent(uint32_t id) :
+  IntegratedBaseComponent<SST::Component>("self", id)
+{
+  sprockit::output::init_out0(&std::cout);
+  sprockit::output::init_err0(&std::cerr);
+  sprockit::output::init_outn(&std::cout);
+  sprockit::output::init_errn(&std::cerr);
+
+  link_map_ = SST::Simulation::getSimulation()->getComponentLinkMap(id);
+  TimeDelta::initStamps(100); //100 as per tick
+}
 
 void
-EventScheduler::endSimulation()
+IntegratedComponent::initLinks(SST::Params&  /*params*/)
 {
-  spkt_abort_printf("intgrated core does not support stopping");
+  //loop all the links in our map and determine what we need to do with them
+  for (auto& pair : link_map_->getLinkMap()){
+    SST::Link* link = pair.second;
+    //extract link info from the port name
+    std::istringstream istr(pair.first);
+    std::string port_type;
+    int src_outport, dst_inport;
+    istr >> port_type;
+    istr >> src_outport;
+    istr >> dst_inport;
+    EventLink::ptr ev_link{new EventLink(pair.first, TimeDelta(), link)};
+
+    if (port_type == "input"){
+      //setup up the link for sending credits back to source
+      connectInput(src_outport, dst_inport, std::move(ev_link));
+      //I will receive incoming payloads on this link
+      configureLink(pair.first, SharedBaseComponent::timeConverter(), payloadHandler(dst_inport));
+    } else if (port_type == "output"){
+      //setup the link for sending output payloads to destination
+      connectOutput(src_outport, dst_inport, std::move(ev_link));
+      //I will receive credits back after sending out payloads
+      configureLink(pair.first, SharedBaseComponent::timeConverter(), creditHandler(src_outport));
+    } else if (port_type == "in-out"){
+      //no credits involved here - just setting up output handlers
+      connectOutput(src_outport, dst_inport, std::move(ev_link));
+      configureLink(pair.first, SharedBaseComponent::timeConverter(), payloadHandler(src_outport));
+    } else {
+      //other special type of link I don't need to process
+    }
+
+  }
 }
 #else
 uint64_t
@@ -89,13 +132,13 @@ EventLink::allocateSelfLinkId()
 }
 
 void
-EventScheduler::endSimulation()
+MacroBaseComponent::endSimulation()
 {
   mgr_->stop();
 }
 
 void
-EventScheduler::sendExecutionEvent(Timestamp arrival, ExecutionEvent *ev)
+MacroBaseComponent::sendExecutionEvent(Timestamp arrival, ExecutionEvent *ev)
 {
   ev->setTime(arrival);
   ev->setSeqnum(seqnum_++);
@@ -104,27 +147,27 @@ EventScheduler::sendExecutionEvent(Timestamp arrival, ExecutionEvent *ev)
 }
 
 SST::Params&
-EventScheduler::getEmptyParams()
+MacroBaseComponent::getEmptyParams()
 {
   static SST::Params params{};
   return params;
 }
 
 void
-EventScheduler::statNotFound(SST::Params & /*params*/, const std::string &name, const std::string &type)
+MacroBaseComponent::statNotFound(SST::Params & /*params*/, const std::string &name, const std::string &type)
 {
   spkt_abort_printf("Bad stat type '%s' given for statistic '%s'",
                     type.c_str(), name.c_str());
 }
 
 void
-EventScheduler::registerStatisticCore(StatisticBase *base, SST::Params& params)
+MacroBaseComponent::registerStatisticCore(StatisticBase *base, SST::Params& params)
 {
   mgr_->registerStatisticCore(base, params);
 }
 
 void
-EventScheduler::setManager()
+MacroBaseComponent::setManager()
 {
   mgr_ = EventManager::global->componentManager(id_);
   thread_id_ = mgr_->thread();
@@ -138,32 +181,27 @@ uint32_t EventLink::selfLinkIdCounter_{0};
 #endif
 
 void
-Component::init(SSTMAC_MAYBE_UNUSED unsigned int phase)
+Component::init(unsigned int phase)
 {
-#if SSTMAC_INTEGRATED_SST_CORE
-  SSTIntegratedComponent::init(phase);
-#endif
+  ComponentParent::init(phase);
 }
 
 void
 Component::setup()
 {
-#if SSTMAC_INTEGRATED_SST_CORE
-  SSTIntegratedComponent::setup();
-#endif
+  ComponentParent::setup();
 }
 
 void
-SubComponent::init(unsigned int /*phase*/)
+SubComponent::init(unsigned int phase)
 {
+  SubComponentParent::init(phase);
 }
 
 void
 SubComponent::setup()
 {
-#if SSTMAC_INTEGRATED_SST_CORE
-  SST::SubComponent::setup();
-#endif
+  SubComponentParent::setup();
 }
 
 #if SSTMAC_INTEGRATED_SST_CORE

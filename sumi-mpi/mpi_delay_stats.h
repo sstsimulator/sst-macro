@@ -102,7 +102,7 @@ class DelayStats : public SST::Statistics::MultiStatistic<int,int,int,int,uint64
                     double recv_sync_delay, double contention_delay,
                     double comm_delay, double min_delay, 
                     double active_sync_delay, double active_delay,
-                    double time_since_quiesce, double time);
+                    double time_since_quiesce, double time) override;
 
   void registerOutputFields(SST::Statistics::StatisticFieldsOutput *statOutput) override;
 

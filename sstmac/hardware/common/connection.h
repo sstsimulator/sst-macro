@@ -58,8 +58,6 @@ namespace hw {
 
 class Connectable {
  public:
-  virtual std::string toString() const = 0;
-
   static const int any_port = -1;
 
   /**
@@ -113,7 +111,7 @@ class ConnectableSubcomponent :
 {
  protected:
   ConnectableSubcomponent(uint32_t id, const std::string& selfname, SST::Component* parent)
-    : SubComponent(id,selfname, parent)
+    : SubComponent(id,selfname,parent)
   {
   }
 
