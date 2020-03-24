@@ -566,43 +566,6 @@ class DragonflyPARRouter : public DragonflyUGALRouter {
 
 };
 
-class DragonflyFlyStatsRouter : public DragonflyMinimalRouter
-{
- public:
-  SST_ELI_REGISTER_DERIVED(
-    Router,
-    DragonflyFlyStatsRouter,
-    "macro",
-    "dragonfly_stats",
-    SST_ELI_ELEMENT_VERSION(1,0,0),
-    "router providing traffic stats")
-
-  DragonflyFlyStatsRouter(SST::Params& params, Topology *top,
-                       NetworkSwitch *netsw)
-    : DragonflyMinimalRouter(params, top, netsw)
-  {
-    std::string subId = sprockit::sprintf("%d", netsw->addr());
-    intergroup_bytes_ = netsw->registerMultiStatistic<int,uint64_t>(params, "intergroup_bytes", subId);
-  }
-
-  void route(Packet *pkt){
-    auto hdr = pkt->rtrHeader<header>();
-    SwitchId ej_addr = pkt->toaddr() / dfly_->concentration();
-    if (hdr->num_hops == 0){
-      int dst_g = dfly_->computeG(ej_addr);
-      if (dst_g != my_g_){
-        intergroup_bytes_->addData(dst_g,pkt->byteLength());
-      }
-    }
-    DragonflyMinimalRouter::route(pkt);
-  }
-
- private:
-  SST::Statistics::MultiStatistic<int,uint64_t>* intergroup_bytes_;
-
-};
-
-
 struct DragonflyScatterRouter : public Router {
   SST_ELI_REGISTER_DERIVED(
     Router,

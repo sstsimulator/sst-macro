@@ -176,17 +176,17 @@ SnapprSwitch::SnapprSwitch(uint32_t id, SST::Params& params) :
   TimeDelta byte_delay(1.0/link_bw_);
   std::string sw_arbtype = params.find<std::string>("arbitrator", "fifo");
   std::string link_arbtype = link_params.find<std::string>("arbitrator", sw_arbtype);
-  outports_.reserve(top_->maxNumPorts());
+  outports_.resize(top_->maxNumPorts());
   inports_.resize(top_->maxNumPorts());
   for (int i=0; i < top_->maxNumPorts(); ++i){
     std::string subId = sprockit::sprintf("Switch:%d.Port:%d", addr(), i);
     std::string portName = top_->portTypeName(addr(), i);
-    outports_.emplace_back(link_params, link_arbtype, subId, portName, i,
-                           byte_delay, congestion, flow_control, this,
-                           vls_per_qos);
-    SnapprOutPort& p = outports_[i];
-    p.setVirtualLanes(credits_per_vl);
-    p.inports = inports_.data();
+    outports_[i] = loadSub<SnapprOutPort>("snappr", "outport", i, link_params,
+                                          link_arbtype, subId, portName, i,
+                                          byte_delay, congestion, flow_control, this,
+                                          vls_per_qos);
+    outports_[i]->setVirtualLanes(credits_per_vl);
+    outports_[i]->inports = inports_.data();
   }
 
   for (int i=0; i < inports_.size(); ++i){
@@ -207,13 +207,13 @@ SnapprSwitch::connectOutput(int src_outport, int dst_inport, EventLink::ptr&& li
 {
   double scale_factor = top_->portScaleFactor(my_addr_, src_outport);
   double port_bw = scale_factor * link_bw_;
-  SnapprOutPort& p = outports_[src_outport];
-  p.link = std::move(link);
-  p.byte_delay = TimeDelta(1.0/port_bw);
-  p.dst_port = dst_inport;
-  p.scaleBuffers(scale_factor);
+  SnapprOutPort* p = outports_[src_outport];
+  p->link = std::move(link);
+  p->byte_delay = TimeDelta(1.0/port_bw);
+  p->dst_port = dst_inport;
+  p->scaleBuffers(scale_factor);
   switch_debug("connecting output port %d to input port %d with scale=%10.4f byte_delay=%10.5e",
-               src_outport, dst_inport, scale_factor, p.byte_delay.sec());
+               src_outport, dst_inport, scale_factor, p->byte_delay.sec());
 }
 
 void
@@ -230,9 +230,7 @@ SnapprSwitch::connectInput(int src_outport, int dst_inport, EventLink::ptr&& lin
 int
 SnapprSwitch::queueLength(int port, int  /*vc*/) const
 {
-  auto& p = outports_[port];
-  //VC basically ignored, all ports on "same" VC
-  return p.queueLength();
+  return outports_[port]->queueLength();
 }
 
 
@@ -247,8 +245,8 @@ SnapprSwitch::deadlockCheck()
 void
 SnapprSwitch::deadlockCheck(int vl)
 {
-  for (auto& p : outports_){
-    p.deadlockCheck(vl);
+  for (auto* p : outports_){
+    p->deadlockCheck(vl);
   }
 }
 
@@ -267,17 +265,17 @@ SnapprSwitch::handlePayload(SnapprPacket* pkt, int inport)
   int vl = rtr->vlOffset() + pkt->deadlockVC();
   pkt->setVirtualLane(vl);
 
-  SnapprOutPort& p = outports_[pkt->nextPort()];
-  TimeDelta time_to_send = p.byte_delay * pkt->numBytes();
+  SnapprOutPort* p = outports_[pkt->nextPort()];
+  TimeDelta time_to_send = p->byte_delay * pkt->numBytes();
   /** I am processing the head flit - so I assume compatibility with wormhole routing
     The tail flit cannot leave THIS switch prior to its departure time in the prev switch */
   if (pkt->timeToSend() > time_to_send){
     //delay the packet
-    auto ev = newCallback(&p, &SnapprOutPort::tryToSendPacket, pkt);
+    auto ev = newCallback(p, &SnapprOutPort::tryToSendPacket, pkt);
     TimeDelta delta_t = pkt->timeToSend() - time_to_send;
     sendDelayedExecutionEvent(delta_t, ev);
   } else {
-    p.tryToSendPacket(pkt);
+    p->tryToSendPacket(pkt);
   }
 }
 
@@ -291,7 +289,7 @@ LinkHandler*
 SnapprSwitch::creditHandler(int port)
 {
   switch_debug("returning credit handler on output port %d", port);
-  return newLinkHandler(&outports_[port], &SnapprOutPort::handle);
+  return newLinkHandler(outports_[port], &SnapprOutPort::handle);
 }
 
 LinkHandler*

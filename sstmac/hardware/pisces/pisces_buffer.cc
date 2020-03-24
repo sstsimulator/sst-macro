@@ -101,8 +101,8 @@ PiscesBuffer::PiscesBuffer(SST::Params& params, const std::string& selfname, uin
     spkt_abort_printf("In buffer %s, got zero packet size", selfname.c_str());
   }
 
-  xmit_wait_ = parent->registerStatistic<double>(params, "xmit_wait", selfname);
-  xmit_bytes_ = parent->registerStatistic<uint64_t>(params, "xmit_bytes", selfname);
+  xmit_wait_ = registerStatistic<double>(params, "xmit_wait", selfname);
+  xmit_bytes_ = registerStatistic<uint64_t>(params, "xmit_bytes", selfname);
 }
 
 void

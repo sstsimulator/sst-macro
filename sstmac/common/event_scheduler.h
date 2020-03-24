@@ -105,7 +105,6 @@ namespace Event {
 using HandlerBase = sstmac::EventHandler;
 }
 using sstmac::Component;
-//using BaseComponent = sstmac::EventScheduler;
 using Link = sstmac::EventLink;
 }
 namespace sstmac {
@@ -249,6 +248,11 @@ class IntegratedBaseComponent :
 
   SST::SimTime_t getCurrentSimTime(SST::TimeConverter* tc) const {
     return Base::getCurrentSimTime(tc);
+  }
+
+  EventLinkPtr allocateSubLink(const std::string& name, TimeDelta lat, LinkHandler* handler){
+    SST::Link* self = Base::configureSelfLink(name, timeConverter(), handler);
+    return EventLink::ptr(new EventLink(name, lat, self));
   }
 
   void sendDelayedExecutionEvent(TimeDelta delay, ExecutionEvent* ev){
@@ -473,6 +477,8 @@ class MacroBaseComponent
   {
   }
 
+  EventLink::ptr allocateSubLink(const std::string& /*name*/, TimeDelta lat, LinkHandler* handler);
+
  private:
   void registerStatisticCore(StatisticBase* base, SST::Params& params);
 
@@ -543,18 +549,6 @@ class SubComponent : public SubComponentParent
 template <class T, class Fxn>
 SST::Event::HandlerBase* newLinkHandler(const T* t, Fxn fxn){
   return new SST::Event::Handler<T>(const_cast<T*>(t), fxn);
-}
-
-static inline EventLinkPtr allocateSubLink(const std::string& name, TimeDelta lat,
-                                           sstmac::SubComponent* subcomp, LinkHandler* handler){
-  SST::Link* self = subcomp->configureSelfLink(name, subcomp->timeConverter(), handler);
-  return EventLink::ptr(new EventLink(name, lat, self));
-}
-
-static inline EventLinkPtr allocateSubLink(const std::string& name, TimeDelta lat,
-                                           sstmac::Component* comp, LinkHandler* handler){
-  SST::Link* self = comp->configureSelfLink(name, comp->timeConverter(), handler);
-  return EventLink::ptr(new EventLink(name, lat, self));
 }
 #else
 template <class T, class Fxn, class... Args>
@@ -645,7 +639,7 @@ class IpcLink : public EventLink {
 class SubLink : public EventLink
 {
  public:
-  SubLink(TimeDelta lat, Component* comp, EventHandler* handler) :
+  SubLink(TimeDelta lat, MacroBaseComponent* comp, EventHandler* handler) :
     EventLink(allocateSelfLinkId(), lat), //sub links have no latency
     comp_(comp), handler_(handler)
   {
@@ -668,19 +662,10 @@ class SubLink : public EventLink
   }
 
  private:
-#if SSTMAC_INTEGRATED_SST_CORE
-  SST::Link* self_link_;
-#endif
-
-  Component* comp_;
+  MacroBaseComponent* comp_;
   EventHandler* handler_;
 };
 
-static inline EventLink::ptr allocateSubLink(const std::string&  /*name*/, TimeDelta lat,
-                                             SST::Component* comp, LinkHandler* handler)
-{
-  return EventLink::ptr(new SubLink(lat, comp, handler));
-}
 #endif
 
 } // end of namespace sstmac

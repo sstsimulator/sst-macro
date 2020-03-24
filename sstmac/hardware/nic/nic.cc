@@ -106,10 +106,13 @@ NIC::NIC(uint32_t id, SST::Params& params, Node* parent) :
   top_ = Topology::staticTopology(params);
 
   std::string subname = sprockit::sprintf("NIC.%d", my_addr_);
-  auto* spy = parent->registerMultiStatistic<int,uint64_t>(params, "spy_bytes", subname);
+  auto* spy = registerMultiStatistic<int,uint64_t>(params, "spy_bytes", subname);
+  //this might be a null statistic, dynamic cast to check
+  //no calls are made to this statistic unless it is non-null
+  //nullness checks are deferred to other places
   spy_bytes_ = dynamic_cast<StatSpyplot<int,uint64_t>*>(spy);
 
-  xmit_flows_ = parent->registerStatistic<uint64_t>(params, "xmit_flows", subname);
+  xmit_flows_ = registerStatistic<uint64_t>(params, "xmit_flows", subname);
 }
 
 NIC::~NIC()

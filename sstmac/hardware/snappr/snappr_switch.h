@@ -109,7 +109,7 @@ class SnapprSwitch :
 
   void handlePayload(SnapprPacket* ev, int port);
 
-  std::vector<SnapprOutPort> outports_;
+  std::vector<SnapprOutPort*> outports_;
 
   std::vector<SnapprInPort> inports_;
 
