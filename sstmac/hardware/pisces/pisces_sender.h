@@ -83,7 +83,7 @@ struct PayloadQueue {
 
 };
 
-class PiscesSender : public sstmac::EventScheduler
+class PiscesSender : public SubComponent
 {
  public:
   struct Input {

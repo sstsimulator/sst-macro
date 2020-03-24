@@ -46,18 +46,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #define SSTMAC_MICRO_INTEGRATED_COMPONENT_H_
 
 #include <sstmac/common/sstmac_config.h>
-#include <sprockit/sim_parameters_fwd.h>
-#include <sprockit/factory.h>
-#include <sstmac/common/sst_event_fwd.h>
-#include <sstmac/common/timestamp.h>
-#include <sstmac/common/event_handler_fwd.h>
-#include <sstmac/hardware/common/connection_fwd.h>
-
-#define SSTMAC_VALID_PORTS \
-   {"input %(out)d %(in)d",  "Will receive new payloads here",      {}}, \
-   {"output %(out)d %(in)d", "Will receive new acks(credits) here", {}}, \
-   {"in-out %(out)d %(in)d", "Will send/recv payloads here",        {}}, \
-   {"rtr",                   "Special link to Merlin router",       {}}
 
 #if SSTMAC_INTEGRATED_SST_CORE
 #include <sst/core/link.h>
@@ -65,6 +53,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sst/core/params.h>
 #include <sst/core/component.h>
 #include <sst/core/subcomponent.h>
+#include <sst/core/eli/elibase.h>
 
 #define SSTMAC_VALID_PORTS \
    {"input %(out)d %(in)d",  "Will receive new payloads here",      {}}, \
@@ -73,64 +62,8 @@ Questions? Contact sst-macro-help@sandia.gov
    {"rtr",                   "Special link to Merlin router",       {}}
 
 
-#define SST_ELI_REGISTER_DERIVED_COMPONENT(ase,cls,lib,name,version,desc,cat) \
+#define SST_ELI_REGISTER_DERIVED_COMPONENT(base,cls,lib,name,version,desc,cat) \
   SST_ELI_REGISTER_COMPONENT(cls,lib,name,ELI_FORWARD_AS_ONE(version),desc,cat)
-
-sprockit::SimParameters* make_spkt_params_from_sst_params(SST::Params& map);
-
-namespace sstmac {
-
-/**
- * @brief The SSTIntegratedComponent class  Provides common functionality
- * for converting an sst/macro standalone Component into a
- * a SST::Component compatible with integration
- */
-class SSTIntegratedComponent
-  : public SST::Component
-{
- public:
-  /**
-   * @brief connectInput All of these classes should implement the
-   *        Connectable interface
-   * @param src_outport
-   * @param dst_inport
-   * @param mod
-   */
-  virtual void connectInput(int src_outport, int dst_inport, EventLinkPtr&& link) = 0;
-
-  /**
-   * @brief connectOutput  All of these classes should implement
-   *                        the Connectable interface
-   * @param src_outport
-   * @param dst_inport
-   * @param mod
-   */
-  virtual void connectOutput(int src_outport, int dst_inport, EventLinkPtr&& link) = 0;
-
-  /**
-   * @brief payloadHandler
-   * @param port
-   * @return The handler that will receive payloads from an SST link
-   */
-  virtual SST::Event::HandlerBase* payloadHandler(int port) = 0;
-
-  /**
-   * @brief creditHandler
-   * @param port
-   * @return The handler that will receive credits from an SST link
-   */
-  virtual SST::Event::HandlerBase* creditHandler(int port) = 0;
-
-  void initLinks(SST::Params& params);
-
- protected:
-  SSTIntegratedComponent(SST::Params& params, uint32_t id);
-
-  SST::LinkMap* link_map_;
-
-};
-
-} /* end namespace sstmac */
 
 #else
 

@@ -51,7 +51,7 @@ namespace sstmac {
 
 class Component;
 class SubComponent;
-class EventScheduler;
+class MacroBaseComponent;
 class EventLink;
 
 }
@@ -63,7 +63,7 @@ class Component;
 class SubComponent;
 #else
 using sstmac::Component;
-using BaseComponent = sstmac::EventScheduler;
+using BaseComponent = sstmac::MacroBaseComponent;
 #endif
 }
 

@@ -105,7 +105,7 @@ class StatisticBase {
   virtual ~StatisticBase(){}
 
  protected:
-  StatisticBase(EventScheduler* parent,
+  StatisticBase(MacroBaseComponent* parent,
                 const std::string& name, const std::string& subName,
                 SST::Params& params);
 
@@ -330,11 +330,11 @@ class Statistic :
 
  public:
   SST_ELI_DECLARE_BASE(Statistic)
-  SST_ELI_DECLARE_CTOR(EventScheduler*, const std::string&, const std::string&, SST::Params&)
+  SST_ELI_DECLARE_CTOR(MacroBaseComponent*, const std::string&, const std::string&, SST::Params&)
   virtual ~Statistic(){}
 
  protected:
-  Statistic(EventScheduler* parent,
+  Statistic(MacroBaseComponent* parent,
             const std::string& name, const std::string& subName,
             SST::Params& params) :
     StatisticBase(parent, name, subName, params)
@@ -348,7 +348,7 @@ class Statistic<void> : public StatisticBase
 
  public:
   SST_ELI_DECLARE_BASE(Statistic)
-  SST_ELI_DECLARE_CTOR(EventScheduler*, const std::string&, const std::string&, SST::Params&)
+  SST_ELI_DECLARE_CTOR(MacroBaseComponent*, const std::string&, const std::string&, SST::Params&)
   virtual ~Statistic(){}
 
   void registerOutputFields(StatisticFieldsOutput* statOutput) override;
@@ -356,7 +356,7 @@ class Statistic<void> : public StatisticBase
   void outputStatisticFields(StatisticFieldsOutput* output, bool endOfSimFlag) override;
 
  protected:
-  Statistic(EventScheduler* parent,
+  Statistic(MacroBaseComponent* parent,
             const std::string& name, const std::string& subName,
             SST::Params& params) :
     StatisticBase(parent, name, subName, params)
@@ -381,7 +381,7 @@ template <class T>
 class NullStatisticBase<T,false> : public Statistic<T>
 {
  protected:
-  NullStatisticBase(EventScheduler* parent,
+  NullStatisticBase(MacroBaseComponent* parent,
             const std::string& name, const std::string& subName,
             SST::Params& params) :
     Statistic<T>(parent, name, subName, params)
@@ -399,7 +399,7 @@ class NullStatisticBase<std::tuple<Args...>,false> :
     public Statistic<std::tuple<Args...>>
 {
  protected:
-  NullStatisticBase(EventScheduler* parent,
+  NullStatisticBase(MacroBaseComponent* parent,
             const std::string& name, const std::string& subName,
             SST::Params& params) :
     Statistic<std::tuple<Args...>>(parent, name, subName, params)
@@ -413,7 +413,7 @@ class NullStatisticBase<std::tuple<Args...>,false> :
 template <>
 class NullStatisticBase<void,true> : public Statistic<void> {
  protected:
-   NullStatisticBase(EventScheduler* parent,
+   NullStatisticBase(MacroBaseComponent* parent,
             const std::string& name, const std::string& subName,
             SST::Params& params) :
     Statistic<void>(parent, name, subName, params)
@@ -424,7 +424,7 @@ class NullStatisticBase<void,true> : public Statistic<void> {
 template <class T>
 class NullStatisticBase<T,true> : public Statistic<T> {
  protected:
-  NullStatisticBase(EventScheduler* parent,
+  NullStatisticBase(MacroBaseComponent* parent,
             const std::string& name, const std::string& subName,
             SST::Params& params) :
     Statistic<T>(parent, name, subName, params)
@@ -446,7 +446,7 @@ class NullStatistic : public NullStatisticBase<T,isFund> {
      "a null stat that collects nothing",
      "Statistic<...>")
 
-  NullStatistic(EventScheduler* parent, const std::string& name,
+  NullStatistic(MacroBaseComponent* parent, const std::string& name,
                 const std::string& subName, SST::Params& params) :
     NullStatisticBase<T,isFund>(parent, name, subName, params)
   {

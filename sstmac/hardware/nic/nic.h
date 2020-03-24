@@ -119,8 +119,6 @@ class NIC : public ConnectableSubcomponent
     LogP
   } Port;
 
-  virtual std::string toString() const override = 0;
-
   virtual ~NIC();
 
   /**

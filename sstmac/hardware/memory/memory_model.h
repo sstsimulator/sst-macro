@@ -125,8 +125,6 @@ class MemoryModel : public SubComponent
 
   int initialize(RequestHandlerBase* handler);
 
-  virtual std::string toString() const = 0;
-
   NodeId addr() const;
 
  protected:
