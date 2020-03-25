@@ -88,7 +88,7 @@ class SnapprSwitch :
 
   SnapprSwitch(uint32_t id, SST::Params& params);
 
-  ~SnapprSwitch() override;
+  ~SnapprSwitch();
 
   int queueLength(int port, int vc) const override;
 

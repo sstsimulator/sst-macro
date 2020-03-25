@@ -84,7 +84,7 @@ class NetworkSwitch :
 
   void init(unsigned int phase) override;
 
-  ~NetworkSwitch() override;
+  ~NetworkSwitch();
 
   SwitchId addr() const {
     return my_addr_;

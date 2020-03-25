@@ -92,7 +92,7 @@ class Node : public ConnectableComponent
 
   void init(unsigned int phase) override;
 
-  ~Node() override;
+  ~Node();
 
   void connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
 

@@ -360,6 +360,8 @@ class MacroBaseComponent
 
   virtual void init(unsigned int /*phase*/) {}
 
+  virtual ~MacroBaseComponent() = default;
+
   virtual void setup() {}
 
   template <class T> Statistic<T>*
@@ -498,9 +500,6 @@ class MacroBaseComponent
   void statNotFound(SST::Params& params, const std::string& name, const std::string& type);
 
   static SST::Params& getEmptyParams();
-
-  SST::Component* comp_;
-
 };
 
 using ComponentParent = MacroBaseComponent;
@@ -513,7 +512,7 @@ using SubComponentParent = MacroBaseComponent;
 class Component : public ComponentParent
 {
  public:
-  ~Component() override {}
+  ~Component() {}
 
   void setup() override;
   void init(unsigned int phase) override; 
@@ -526,17 +525,6 @@ class Component : public ComponentParent
 
 };
 
-
-namespace detail {
-  // Class to provoide the same virtual interface as SST::Subcomponent, mainly
-  // to silence warnings about override, but also because we don't change the
-  // interface when Core is unavalible. 
-  class CoreSubComponentStub {
-    public:
-      virtual void setup() = 0;
-      virtual void init(unsigned int) = 0;
-  };
-}
 
 class SubComponent : public SubComponentParent
 {
