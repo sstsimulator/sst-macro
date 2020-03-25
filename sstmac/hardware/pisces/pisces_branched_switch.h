@@ -85,7 +85,7 @@ class PiscesBranchedSwitch :
 
   std::string toString() const override;
 
-  ~PiscesBranchedSwitch() override;
+  ~PiscesBranchedSwitch();
 
  private:
   int n_local_xbars_;

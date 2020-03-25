@@ -64,7 +64,7 @@ class PiscesAbstractSwitch :
  protected:
   PiscesAbstractSwitch(uint32_t id, SST::Params& params);
 
-  ~PiscesAbstractSwitch() override;
+  ~PiscesAbstractSwitch();
 
   std::string arbType_;
   Router* router_;
@@ -98,7 +98,7 @@ class PiscesSwitch :
 
   PiscesSwitch(uint32_t id, SST::Params& params);
 
-  ~PiscesSwitch() override;
+  ~PiscesSwitch();
 
   int queueLength(int port, int vc) const override;
 

@@ -51,9 +51,10 @@ DeclareDebugSlot(timestamp)
 namespace sstmac {
 namespace hw {
 
+#if !SSTMAC_INTEGRATED_SST_CORE
+
 static bool checked_prefix_fxn = false;
 
-#if !SSTMAC_INTEGRATED_SST_CORE
 class TimestampPrefixFxn :
   public sprockit::DebugPrefixFxn
 {

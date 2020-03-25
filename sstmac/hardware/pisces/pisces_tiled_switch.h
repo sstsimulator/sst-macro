@@ -93,7 +93,7 @@ class PiscesTiledSwitch :
 
   std::string toString() const override;
 
-  ~PiscesTiledSwitch() override;
+  ~PiscesTiledSwitch();
 
   int getRow(int tile) const {
     return tile / ncols_;

@@ -198,15 +198,6 @@ Component::setup()
   ComponentParent::setup();
 }
 
-Component::Component(uint32_t cid, SSTMAC_MAYBE_UNUSED SST::Params&  params) :
-#if SSTMAC_INTEGRATED_SST_CORE
-   SSTIntegratedComponent(params, cid),
-   EventScheduler(cid, this)
-#else
-   EventScheduler(cid, nullptr)
-#endif
-  {
-  }
 
 void
 SubComponent::init(unsigned int phase)
@@ -219,17 +210,6 @@ SubComponent::setup()
 {
   SubComponentParent::setup();
 }
-
-SubComponent::SubComponent(SSTMAC_MAYBE_UNUSED uint32_t id, 
-    const std::string& selfname, SST::Component* parent) :
-#if SSTMAC_INTEGRATED_SST_CORE
-    SST::SubComponent(id),
-    EventScheduler(selfname, 0, parent)
-#else
-    EventScheduler(selfname, parent->componentId(), parent)
-#endif
-  {
-  }
 
 #if SSTMAC_INTEGRATED_SST_CORE
 #else

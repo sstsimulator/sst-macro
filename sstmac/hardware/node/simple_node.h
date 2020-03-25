@@ -90,7 +90,7 @@ class SimpleNode :
 
   SimpleNode(uint32_t id, SST::Params& params);
 
-  ~SimpleNode() override;
+  ~SimpleNode();
 
   void execute(ami::COMP_FUNC func,
          Event* data, ExecutionEvent* cb) override;
