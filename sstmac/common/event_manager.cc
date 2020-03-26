@@ -380,7 +380,12 @@ EventManager::spinDown()
   if (nactive_threads == 0){
     //delete here while we are still on a user-space thread
     //annoying but necessary
-    interconn_->deadlockCheck();
+    if (!stopped_){
+      //don't do a deadlock check if the simulator has been stopped
+      //there will be packets left in all the queus
+      //and the sim will report an erroneous deadlock
+      interconn_->deadlockCheck();
+    }
     hw::Interconnect::clearStaticInterconnect();
   }
   active_lock.unlock();
