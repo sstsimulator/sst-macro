@@ -3285,7 +3285,7 @@ Applied to any statement in which the right-hand side a C++ operator new. This s
 This is critical for turning off large memory allocations on data structures not required for control-flow.
 
 \section{Data-Driven Type Pragmas}
-\subsection{pragma sst null\_variable}
+\subsection{pragma sst null\_ptr}
 This applies to variable declarations. If pragma is not applied to a declaration, a compiler error is given.
 A null variable is one in which all operations involving the variable should be deleted.
 This usually applies to large data arrays that should never be allocated and therefore never dereferenced.

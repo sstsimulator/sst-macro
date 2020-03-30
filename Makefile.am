@@ -1,7 +1,7 @@
 #
 #   This file is part of SST/macroscale: 
 #                The macroscale architecture simulator from the SST suite.
-#   Copyright (c) 2009-2018 NTESS.
+#   Copyright (c) 2009-2020 NTESS.
 #   This software is distributed under the BSD License.
 #   Under the terms of Contract DE-NA0003525 with NTESS,
 #   the U.S. Government retains certain rights in this software.
@@ -13,8 +13,8 @@ include $(top_srcdir)/Makefile.common
 
 # Files that should be distributed but are not built.
 EXTRA_DIST = LICENSE bootstrap.sh \
-  developer-sstmacro-9.1.pdf \
-  manual-sstmacro-9.1.pdf \
+  developer-sstmacro-10.0.pdf \
+  manual-sstmacro-10.0.pdf \
   pdes-report.pdf \
   docs \
   share \

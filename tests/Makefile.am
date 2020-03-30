@@ -1,7 +1,7 @@
 # vim : set ts=4 sw=4 foldmethod=marker:
 #   This file is part of SST/macroscale:
 #                The macroscale architecture simulator from the SST suite.
-#   Copyright (c) 2009-2018 NTESS.
+#   Copyright (c) 2009-2020 NTESS.
 #   This software is distributed under the BSD License.
 #   Under the terms of Contract DE-NA0003525 with NTESS,
 #   the U.S. Government retains certain rights in this software.
