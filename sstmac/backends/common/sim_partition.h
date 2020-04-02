@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2020 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2018, NTESS
+Copyright (c) 2009-2020, NTESS
 
 All rights reserved.
 
@@ -131,7 +131,7 @@ class SerialPartition :
 
   SerialPartition(SST::Params& params, ParallelRuntime* rt);
 
-  virtual ~SerialPartition();
+  ~SerialPartition() override;
 
 };
 
@@ -150,7 +150,7 @@ class TopologyPartition :
 
   TopologyPartition(SST::Params& params, ParallelRuntime* rt);
 
-  virtual ~TopologyPartition();
+  ~TopologyPartition() override;
 
  protected:
    hw::Topology* fake_top_;
@@ -173,9 +173,9 @@ class BlockPartition :
 
   BlockPartition(SST::Params& params, ParallelRuntime* rt);
 
-  virtual ~BlockPartition();
+  ~BlockPartition() override;
 
-  void finalizeInit(SST::Params& params);
+  void finalizeInit(SST::Params& params) override;
 
   virtual void partitionSwitches();
 
@@ -202,9 +202,9 @@ class OccupiedBlockPartition :
 
   OccupiedBlockPartition(SST::Params& params, ParallelRuntime* rt);
 
-  virtual ~OccupiedBlockPartition();
+  ~OccupiedBlockPartition() override;
 
-  virtual void partitionSwitches();
+  void partitionSwitches() override;
 
  protected:
   int occupied_switches_;

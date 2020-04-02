@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2020 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2018, NTESS
+Copyright (c) 2009-2020, NTESS
 
 All rights reserved.
 
@@ -839,7 +839,7 @@ on_MPI_Test(const dumpi_test *prm, uint16_t  /*thread*/,
     //we have to make sure this request is complete
     MPI_Request req = translate_request(prm->request);
     cb->getmpi()->wait(&req, MPI_STATUS_IGNORE);
-  } else;  //otherwise - don't do anything - this isn't finished
+  } else {}  //otherwise - don't do anything - this isn't finished
   cb->end_mpi(cpu, wall, perf);
 #endif
   return 1;

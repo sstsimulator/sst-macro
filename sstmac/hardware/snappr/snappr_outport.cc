@@ -1,3 +1,46 @@
+/**
+Copyright 2009-2020 National Technology and Engineering Solutions of Sandia,
+LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
+retains certain rights in this software.
+
+Sandia National Laboratories is a multimission laboratory managed and operated
+by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
+owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
+Energy's National Nuclear Security Administration under contract DE-NA0003525.
+
+Copyright (c) 2009-2020, NTESS
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, 
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+
+    * Neither the name of the copyright holder nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Questions? Contact sst-macro-help@sandia.gov
+*/
 #ifndef __STDC_FORMAT_MACROS
 #define __STDC_FORMAT_MACROS
 #endif
@@ -11,6 +54,8 @@
 #include <sstmac/common/stats/ftq_tag.h>
 #include <queue>
 
+#include <unusedvariablemacro.h>
+
 #define pkt_debug(...) \
   debug_printf(sprockit::dbg::snappr, "snappr port %s:%d %s", \
     portName_.c_str(), number_, sprockit::sprintf(__VA_ARGS__).c_str())
@@ -22,11 +67,12 @@
 namespace sstmac {
 namespace hw {
 
-SnapprOutPort::SnapprOutPort(SST::Params& params, const std::string &arb,
+SnapprOutPort::SnapprOutPort(uint32_t id, SST::Params& params, const std::string &arb,
                              const std::string& subId, const std::string& portName,
                              int number, TimeDelta byt_delay, bool congestion, bool flow_control,
                              Component* parent, const std::vector<int>& vls_per_qos)
-  : arbitration_scheduled(false), 
+  : SubComponent(id, portName, parent),
+    arbitration_scheduled(false), 
     byte_delay(byt_delay), 
     state_ftq(nullptr),
     queue_depth_ftq(nullptr),
@@ -40,10 +86,10 @@ SnapprOutPort::SnapprOutPort(SST::Params& params, const std::string &arb,
     notifier_(nullptr)
 {
   arb_ = sprockit::create<SnapprPortArbitrator>("macro", arb, byte_delay, params, vls_per_qos);
-  xmit_active = parent->registerStatistic<uint64_t>(params, "xmit_active", subId);
-  xmit_idle = parent->registerStatistic<uint64_t>(params, "xmit_idle", subId);
-  xmit_stall = parent->registerStatistic<uint64_t>(params, "xmit_stall", subId);
-  bytes_sent = parent->registerStatistic<uint64_t>(params, "bytes_sent", subId);
+  xmit_active = registerStatistic<uint64_t>(params, "xmit_active", subId);
+  xmit_idle = registerStatistic<uint64_t>(params, "xmit_idle", subId);
+  xmit_stall = registerStatistic<uint64_t>(params, "xmit_stall", subId);
+  bytes_sent = registerStatistic<uint64_t>(params, "bytes_sent", subId);
 #if !SSTMAC_INTEGRATED_SST_CORE
   state_ftq = dynamic_cast<FTQCalendar*>(
         parent->registerMultiStatistic<int,uint64_t,uint64_t>(params, "state", subId));
@@ -185,7 +231,7 @@ SnapprOutPort::scheduleArbitration()
 }
 
 void
-SnapprOutPort::deadlockCheck(int vl)
+SnapprOutPort::deadlockCheck(SSTMAC_MAYBE_UNUSED int vl)
 {
 #if !SSTMAC_INTEGRATED_SST_CORE
   auto iter = deadlocked_vls_.find(vl);
@@ -401,13 +447,13 @@ struct WRR_PortArbitrator : public SnapprPortArbitrator
    } SelectionType;
 
    VirtualLane(int num, SelectionType s, int prior, uint64_t delay) :
-     number(num),
      sel_type(s),
-     priority(prior),
      byte_delay(delay),
-     next_free(0),
      stalled(false),
-     credits(0)
+     next_free(0),
+     credits(0),
+     priority(prior),
+     number(num)
    {
    }
 
@@ -618,7 +664,7 @@ struct WRR_PortArbitrator : public SnapprPortArbitrator
     }
   }
 
-  void insertNoQoS(uint64_t cycle, SnapprPacket *pkt) {
+  void insertNoQoS(uint64_t /*cycle*/, SnapprPacket *pkt) {
     int vl= pkt->virtualLane();
     VirtualLane& v = vls_[vl];
     v.next_free = std::numeric_limits<uint64_t>::max();

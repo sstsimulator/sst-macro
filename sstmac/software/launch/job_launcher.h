@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2020 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2018, NTESS
+Copyright (c) 2009-2020, NTESS
 
 All rights reserved.
 
@@ -104,7 +104,7 @@ class JobLauncher : public Service
 
   void scheduleLaunchRequests();
 
-  virtual ~JobLauncher(){}
+  ~JobLauncher() override{}
 
  protected:
   JobLauncher(SST::Params& params, OperatingSystem* os);
@@ -184,10 +184,10 @@ class DefaultJoblauncher : public JobLauncher
   }
 
  private:
-  void stopEventReceived(JobStopRequest* ev);
+  void stopEventReceived(JobStopRequest* ev) override;
 
  protected:
-  bool handleLaunchRequest(AppLaunchRequest* request, ordered_node_set& allocation);
+  bool handleLaunchRequest(AppLaunchRequest* request, ordered_node_set& allocation) override;
 
 };
 
@@ -214,9 +214,9 @@ class ExclusiveJoblauncher : public DefaultJoblauncher
   }
 
  private:
-  bool handleLaunchRequest(AppLaunchRequest* request, ordered_node_set& allocation);
+  bool handleLaunchRequest(AppLaunchRequest* request, ordered_node_set& allocation) override;
 
-  void stopEventReceived(JobStopRequest* ev);
+  void stopEventReceived(JobStopRequest* ev) override;
 
   std::list<AppLaunchRequest*> pending_requests_;
   AppLaunchRequest* active_job_;

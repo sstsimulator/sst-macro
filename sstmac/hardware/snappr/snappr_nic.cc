@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2020 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2018, NTESS
+Copyright (c) 2009-2020, NTESS
 
 All rights reserved.
 
@@ -79,12 +79,12 @@ SnapprNIC::SnapprNIC(uint32_t id, SST::Params& params, Node* parent) :
 {
   SST::Params inj_params = params.find_scoped_params("injection");
 
-  //configure for a single port for now
-  outports_.reserve(1);
 
   packet_size_ = inj_params.find<SST::UnitAlgebra>("mtu").getRoundedValue();
 
+  //configure for a single port for now
   int num_ports = 1;
+  outports_.resize(num_ports);
   std::string arbtype = inj_params.find<std::string>("arbitrator", "fifo");
   qos_levels_ = params.find<int>("qos_levels", 1);
   flow_control_ = inj_params.find<bool>("flow_control", true);
@@ -124,12 +124,14 @@ SnapprNIC::SnapprNIC(uint32_t id, SST::Params& params, Node* parent) :
   inj_byte_delay_ = TimeDelta(inj_params.find<SST::UnitAlgebra>("bandwidth").getValue().inverse().toDouble());
   for (int i=0; i < num_ports; ++i){
     std::string subId = sprockit::sprintf("NIC%d:%d", addr(), i);
-    outports_.emplace_back(inj_params, arbtype, subId, "NIC_send", i, inj_byte_delay_,
-                           true/*always need congestion on NIC*/, flow_control_, NIC::parent(),
-                           vls_per_qos);
-    SnapprOutPort& p = outports_[i];
-    p.setVirtualLanes(credits_per_qos);
-    p.addTailNotifier(this, &SnapprNIC::handleTailPacket);
+    outports_[i] = loadSub<SnapprOutPort>("snappr", "outport", i, inj_params,
+                                          arbtype, subId, "NIC_send", i,
+                                          inj_byte_delay_,
+                                          true/*always need congestion on NIC*/,
+                                          flow_control_,  NIC::parent(),
+                                          vls_per_qos);
+    outports_[i]->setVirtualLanes(credits_per_qos);
+    outports_[i]->addTailNotifier(this, &SnapprNIC::handleTailPacket);
   }
 
   scatter_qos_ = params.find<bool>("scatter_qos", false);
@@ -175,9 +177,9 @@ SnapprNIC::payloadHandler(int port)
 void
 SnapprNIC::deadlockCheck()
 {
-  for (auto& p : outports_){
-    for (int vl=0; vl < p.numVirtualLanes(); ++vl){
-      p.deadlockCheck(vl);
+  for (auto* p : outports_){
+    for (int vl=0; vl < p->numVirtualLanes(); ++vl){
+      p->deadlockCheck(vl);
     }
   }
 }
@@ -192,8 +194,8 @@ void
 SnapprNIC::connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link)
 {
   if (src_outport == Injection){
-    outports_[src_outport].link = std::move(link);
-    outports_[src_outport].dst_port = dst_inport;
+    outports_[src_outport]->link = std::move(link);
+    outports_[src_outport]->dst_port = dst_inport;
   } else if (src_outport == LogP) {
     logp_link_ = std::move(link);
   } else {
@@ -338,7 +340,7 @@ SnapprNIC::handleCredit(Event *ev)
             credit->numBytes(), buffer_remaining_);
   copyToNicBuffer();
   //this transfers ownership - don't delete here
-  outports_[credit->port()].handleCredit(credit);
+  outports_[credit->port()]->handleCredit(credit);
 }
 
 void
@@ -377,7 +379,7 @@ SnapprNIC::injectPacket(uint32_t  /*ptk_size*/, uint64_t byte_offset, NetworkMes
   }
 
   //no multi-rail or multi-injection for now
-  outports_[0].tryToSendPacket(pkt);
+  outports_[0]->tryToSendPacket(pkt);
 }
 
 void

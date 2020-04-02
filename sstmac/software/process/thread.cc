@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2020 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2018, NTESS
+Copyright (c) 2009-2020, NTESS
 
 All rights reserved.
 
@@ -111,7 +111,7 @@ Thread::cleanup()
     if (detach_state_ == DETACHED && state_ != CANCELED){
       parent_app_->removeSubthread(this);
       os_->scheduleThreadDeletion(this);
-    } else; //parent will join and then delete this
+    } else{} //parent will join and then delete this
   } else {
     //no matter what, I have to delete myself
     os_->scheduleThreadDeletion(this);
@@ -132,7 +132,6 @@ Thread::runRoutine(void* threadptr)
   // Go.
   if (self->isInitialized()) {
     self->state_ = ACTIVE;
-    bool success = false;
     try {
       {
         //need to scope it here to force destructor of guard
@@ -141,7 +140,6 @@ Thread::runRoutine(void* threadptr)
         sstmac::sw::OperatingSystem::CoreAllocateGuard guard(self->os(), self);
         self->run();
       }
-      success = true;
       //this doesn't so much kill the thread as context switch it out
       //it is up to the above delete thread event to actually to do deletion/cleanup
       //all of this is happening ON THE THREAD - it kills itself
@@ -150,7 +148,6 @@ Thread::runRoutine(void* threadptr)
     } catch (const kill_exception& ex) {
       //great, we are done
     } catch (const clean_exit_exception& ex) {
-      success = true;
       self->cleanup();
     } catch (const std::exception &ex) {
       cerrn << "thread terminated with exception: " << ex.what()
@@ -358,7 +355,9 @@ Thread::computeDetailed(uint64_t flops, uint64_t nintops, uint64_t bytes, int nt
 }
 
 void
-Thread::collectStats(Timestamp start, TimeDelta elapsed)
+Thread::collectStats(
+    SSTMAC_MAYBE_UNUSED Timestamp start, 
+    SSTMAC_MAYBE_UNUSED TimeDelta elapsed)
 {
 #if !SSTMAC_INTEGRATED_SST_CORE
 #if SSTMAC_HAVE_CALL_GRAPH

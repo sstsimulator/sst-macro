@@ -1,6 +1,6 @@
 
 /**
-Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2020 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -9,7 +9,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2018, NTESS
+Copyright (c) 2009-2020, NTESS
 
 All rights reserved.
 
@@ -115,7 +115,7 @@ struct SSTPragma {
   int getActiveMode() const;
 
   virtual void activate(clang::Stmt* s) = 0;
-  virtual void activate(clang::Decl* d){} //not required
+  virtual void activate(clang::Decl* /*d*/){} //not required
   virtual void deactivate(){} //not required
 
   static void tokenStreamToString(
@@ -259,7 +259,7 @@ class SSTPragmaHandlerInstance : public SSTPragmaHandler
 
 template <class T> struct SSTNoArgsPragmaShim : public T
 {
-  SSTNoArgsPragmaShim(clang::SourceLocation loc, const std::list<clang::Token>& tokens) :
+  SSTNoArgsPragmaShim(clang::SourceLocation /*loc*/, const std::list<clang::Token>& /*tokens*/) :
     T() {
       this->classId = pragmaID<T>();
     }
@@ -268,7 +268,7 @@ template <class T> struct SSTNoArgsPragmaShim : public T
 template <class T> struct SSTStringPragmaShim : public T
 {
   using T::getSingleString;
-  SSTStringPragmaShim(clang::SourceLocation loc, const std::list<clang::Token>& tokens) :
+  SSTStringPragmaShim(clang::SourceLocation /*loc*/, const std::list<clang::Token>& tokens) :
     T(getSingleString(tokens)) //just a single string gets passed up
   {
       this->classId = pragmaID<T>();
@@ -399,8 +399,8 @@ struct PragmaRegister {
  * Use as fill-in for pragmas which should not be activated in a given mode
  */
 struct SSTDoNothingPragma : public SSTPragma {
-  void activate(clang::Stmt* s) override {}
-  void activate(clang::Decl* d) override {}
+  void activate(clang::Stmt* /*s*/) override {}
+  void activate(clang::Decl* /*d*/) override {}
 };
 
 class SSTReturnPragma : public SSTPragma {
@@ -530,7 +530,7 @@ class SSTNullVariablePragma : public SSTPragma {
 
   void doActivate(clang::Decl* d);
 
-  virtual void activate(clang::Decl* d) override;
+  void activate(clang::Decl* d) override;
   void activate(clang::Stmt* s) override;
 
   clang::NamedDecl* declAppliedTo_;
@@ -603,9 +603,9 @@ class SSTKeepPragma : public SSTPragma {
  public:
   SSTKeepPragma(){}
  protected:
-  virtual void activate(clang::Stmt *s) override;
+  void activate(clang::Stmt *s) override;
 
-  virtual void activate(clang::Decl* d) override;
+  void activate(clang::Decl* d) override;
 
   void deactivate() override {
     CompilerGlobals::pragmaConfig.makeNoChanges = false;

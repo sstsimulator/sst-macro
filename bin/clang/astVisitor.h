@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2020 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2018, NTESS
+Copyright (c) 2009-2020, NTESS
 
 All rights reserved.
 
@@ -168,8 +168,8 @@ class FirstPassASTVisitor : public clang::RecursiveASTVisitor<FirstPassASTVisito
 
   FirstPassASTVisitor(SSTPragmaList& pragmas);
 
-  void preVisitTopLevelDecl(clang::Decl* d){}
-  void postVisitTopLevelDecl(clang::Decl* d){}
+  void preVisitTopLevelDecl(clang::Decl* /*d*/){}
+  void postVisitTopLevelDecl(clang::Decl* /*d*/){}
   void finalizePass(){}
 
   bool VisitDecl(clang::Decl* d);
@@ -328,13 +328,13 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   SkeletonASTVisitor(SSTPragmaList& pragmas,
       GlobalVarNamespace& ns) :
     pragmas_(pragmas),
-    visitingGlobal_(false),
-    globalNs_(ns), 
-    currentNs_(&ns),
-    insideCxxMethod_(0), 
     activeBinOpIdx_(-1),
     foundCMain_(false), 
     refactorMain_(true),
+    insideCxxMethod_(0), 
+    globalNs_(ns), 
+    currentNs_(&ns),
+    visitingGlobal_(false),
     keepGlobals_(false)
   {
     initHeaders();

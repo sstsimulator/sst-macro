@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2020 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2018, NTESS
+Copyright (c) 2009-2020, NTESS
 
 All rights reserved.
 
@@ -52,7 +52,9 @@ MpiCommCart::MpiCommCart(
   AppId aid, int ndims,
   const int *dims, const int *periods, int reorder) :
   MpiComm(id, rank, peers, aid, TOPO_CART),
-  ndims_(ndims), reorder_(reorder)
+  ndims_(ndims), 
+  // Wint-in-bool-context on gcc9.2, but I don't know why just ignore for now
+  reorder_(reorder) 
 {
   for (int i = 0; i < ndims; i++) {
     dims_.push_back(dims[i]);

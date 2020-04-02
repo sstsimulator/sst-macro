@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2020 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2018, NTESS
+Copyright (c) 2009-2020, NTESS
 
 All rights reserved.
 
@@ -97,17 +97,17 @@ class mersenne_twister : public UniformInteger
   static mersenne_twister* construct(uint64_t seed);
 
   /// Cleanup.
-  virtual ~mersenne_twister();
+  ~mersenne_twister() override;
 
   /// Get a value in the interval [0,numeric_limits<rngint_t>::max()]
-  virtual rngint_t value() override;
+  rngint_t value() override;
 
   /// Reseed the generator.  This is an expensive operation.
-  virtual void vec_reseed(const std::vector<rngint_t> &seeds) override;
+  void vec_reseed(const std::vector<rngint_t> &seeds) override;
 
   /// The number of seeds employed by this generator.
   /// The generator will accept any value up to state_vector_length_.
-  virtual int nseed() override {
+  int nseed() override {
     return state_vector_length_;
   }
 };

@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2020 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2018, NTESS
+Copyright (c) 2009-2020, NTESS
 
 All rights reserved.
 
@@ -42,20 +42,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef COORDINATE_INDEXING_H
-#define COORDINATE_INDEXING_H
-
-/*
- *  This file is part of SST/macroscale:
- *               The macroscale architecture simulator from the SST suite.
- *  Copyright (c) 2009-2018 NTESS.
- *  This software is distributed under the BSD License.
- *  Under the terms of Contract DE-NA0003525 with NTESS,
- *  the U.S. Government retains certain rights in this software.
- *  For more information, see the LICENSE file in the top
- *  SST/macroscale directory.
- */
-
 #ifndef SSTMAC_SOFTWARE_SERVICES_LAUNCH_INDEXING_FROMFILEINDEXER_H_INCLUDED
 #define SSTMAC_SOFTWARE_SERVICES_LAUNCH_INDEXING_FROMFILEINDEXER_H_INCLUDED
 
@@ -82,7 +68,7 @@ class CoordinateTaskMapper : public TaskMapper
     return "coordinate task mapper";
   }
 
-  virtual ~CoordinateTaskMapper() throw() {}
+  ~CoordinateTaskMapper() throw() override {}
 
   void mapRanks(const ordered_node_set& nodes,
         int ppn, std::vector<NodeId> &result,
@@ -97,7 +83,3 @@ class CoordinateTaskMapper : public TaskMapper
 }
 }
 #endif
-
-
-
-#endif // COORDINATE_INDEXING_H

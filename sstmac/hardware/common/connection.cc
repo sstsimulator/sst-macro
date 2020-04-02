@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2020 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2018, NTESS
+Copyright (c) 2009-2020, NTESS
 
 All rights reserved.
 
@@ -51,14 +51,16 @@ DeclareDebugSlot(timestamp)
 namespace sstmac {
 namespace hw {
 
+#if !SSTMAC_INTEGRATED_SST_CORE
+
 static bool checked_prefix_fxn = false;
 
-class timestamp_prefix_fxn :
+class TimestampPrefixFxn :
   public sprockit::DebugPrefixFxn
 {
  public:
-  timestamp_prefix_fxn(SST::Params& params, EventScheduler* mgr) :
-    mgr_(mgr)
+  TimestampPrefixFxn(SST::Params& params, MacroBaseComponent* comp) :
+    comp_(comp)
   {
     units_ = params.find<std::string>("timestamp_print_units", "s");
     if (units_ == "ns"){
@@ -74,27 +76,30 @@ class timestamp_prefix_fxn :
     }
   }
 
-  std::string str() {
-    double t = mgr_->now().sec() * mult_;
+  std::string str() override {
+    double t = comp_->now().sec() * mult_;
     return sprockit::sprintf("T=%14.8f %s:", t, units_.c_str());
   }
 
  private:
-  EventScheduler* mgr_;
+  MacroBaseComponent* comp_;
   std::string units_;
   double mult_;
 
 };
+#endif
 
 ConnectableComponent::ConnectableComponent(uint32_t cid, SST::Params& params)
   : Component(cid, params)
 {
+#if !SSTMAC_INTEGRATED_SST_CORE
   if (!checked_prefix_fxn){
     if (sprockit::Debug::slotActive(sprockit::dbg::timestamp)){
-      sprockit::Debug::prefix_fxn = std::unique_ptr<sprockit::DebugPrefixFxn>(new timestamp_prefix_fxn(params, this));
+      sprockit::Debug::prefix_fxn = std::unique_ptr<sprockit::DebugPrefixFxn>(new TimestampPrefixFxn(params, this));
     }
     checked_prefix_fxn = true;
   }
+#endif
 }
 
 

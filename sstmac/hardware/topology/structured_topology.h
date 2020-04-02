@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2020 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2018, NTESS
+Copyright (c) 2009-2020, NTESS
 
 All rights reserved.
 
@@ -69,7 +69,7 @@ also has a well-defined coordinate system, but is slightly less intuitive.
 class StructuredTopology : public Topology
 {
  public:
-  virtual ~StructuredTopology() {}
+  ~StructuredTopology() override {}
 
   /**** BEGIN PURE VIRTUAL INTERFACE *****/
   /**
@@ -80,9 +80,9 @@ class StructuredTopology : public Topology
      For indirect, num_leaf_switches < num_switches.
      @return The number of leaf switches directly connected to compute nodes
   */
-  virtual SwitchId numLeafSwitches() const override = 0;
+  SwitchId numLeafSwitches() const override = 0;
 
-  virtual void endpointsConnectedToEjectionSwitch(SwitchId swid,
+  void endpointsConnectedToEjectionSwitch(SwitchId swid,
                        std::vector<InjectionPort>& nodes) const override;
 
   int concentration() const {

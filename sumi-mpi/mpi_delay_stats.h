@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2020 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2018, NTESS
+Copyright (c) 2009-2020, NTESS
 
 All rights reserved.
 
@@ -94,7 +94,7 @@ class DelayStats : public SST::Statistics::MultiStatistic<int,int,int,int,uint64
   DelayStats(SST::BaseComponent* comp, const std::string& name,
               const std::string& subName, SST::Params& params);
 
-  ~DelayStats(){}
+  ~DelayStats() override{}
 
   void addData_impl(int src, int dst, int type, int stage, 
                     uint64_t bytes, uint64_t flow_id,
@@ -102,7 +102,7 @@ class DelayStats : public SST::Statistics::MultiStatistic<int,int,int,int,uint64
                     double recv_sync_delay, double contention_delay,
                     double comm_delay, double min_delay, 
                     double active_sync_delay, double active_delay,
-                    double time_since_quiesce, double time);
+                    double time_since_quiesce, double time) override;
 
   void registerOutputFields(SST::Statistics::StatisticFieldsOutput *statOutput) override;
 
@@ -134,7 +134,7 @@ class DelayStatsOutput : public sstmac::StatisticOutput
 
   DelayStatsOutput(SST::Params& params);
 
-  ~DelayStatsOutput(){}
+  ~DelayStatsOutput() override{}
 
   void registerStatistic(SST::Statistics::StatisticBase*) override {}
 

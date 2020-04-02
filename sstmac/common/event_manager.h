@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2020 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2018, NTESS
+Copyright (c) 2009-2020, NTESS
 
 All rights reserved.
 
@@ -105,7 +105,7 @@ class EventManager
 
   friend class Component;
   friend class SubComponent;
-  friend class EventScheduler;
+  friend class MacroBaseComponent;
   friend class native::Manager;
 
   EventManager(SST::Params& params, ParallelRuntime* rt);
@@ -282,7 +282,7 @@ class EventManager
 
  private:
 #define MAX_EVENT_MGR_THREADS 128
-  std::vector<EventScheduler*> pending_registration_[MAX_EVENT_MGR_THREADS];
+  std::vector<MacroBaseComponent*> pending_registration_[MAX_EVENT_MGR_THREADS];
 
  protected:
   Timestamp min_ipc_time_;

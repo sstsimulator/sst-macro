@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2020 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2018, NTESS
+Copyright (c) 2009-2020, NTESS
 
 All rights reserved.
 
@@ -72,9 +72,9 @@ const Timestamp EventManager::no_events_left_time(0, std::numeric_limits<uint64_
 class StopEvent : public ExecutionEvent
 {
  public:
-  virtual ~StopEvent() {}
+  ~StopEvent() override {}
 
-  void execute(){
+  void execute() override{
     cout0 << "--- STOP event -----" << std::endl;
     man_->stop();
   }
@@ -380,7 +380,12 @@ EventManager::spinDown()
   if (nactive_threads == 0){
     //delete here while we are still on a user-space thread
     //annoying but necessary
-    interconn_->deadlockCheck();
+    if (!stopped_){
+      //don't do a deadlock check if the simulator has been stopped
+      //there will be packets left in all the queus
+      //and the sim will report an erroneous deadlock
+      interconn_->deadlockCheck();
+    }
     hw::Interconnect::clearStaticInterconnect();
   }
   active_lock.unlock();

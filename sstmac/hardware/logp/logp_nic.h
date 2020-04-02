@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2020 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2018, NTESS
+Copyright (c) 2009-2020, NTESS
 
 All rights reserved.
 
@@ -79,19 +79,19 @@ class LogPNIC :
 
   LogPNIC(uint32_t id, SST::Params& params, Node* parent);
 
-  virtual ~LogPNIC();
+  ~LogPNIC() override;
 
   void handle(Event *ev);
 
-  virtual void connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
+  void connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
 
-  virtual void connectInput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
+  void connectInput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
 
   void mtlHandle(Event* ev) override;
 
   void dropEvent(Event*){}
 
-  virtual std::string toString() const override {
+  std::string toString() const override {
     return "simple nic";
   }
 
@@ -106,7 +106,7 @@ class LogPNIC :
     Start the message sending and inject it into the network
     @param payload The network message to send
   */
-  virtual void doSend(NetworkMessage* msg) override;
+  void doSend(NetworkMessage* msg) override;
 
  protected:
   TimeDelta inj_byte_delay_;

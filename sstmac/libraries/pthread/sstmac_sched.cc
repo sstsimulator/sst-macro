@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2020 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2018, NTESS
+Copyright (c) 2009-2020, NTESS
 
 All rights reserved.
 
@@ -136,8 +136,8 @@ SSTMAC_CPU_COUNT_S (size_t  /*setsize*/, sstmac_cpu_set_t* cpusetp){
 }
 
 extern "C" int
-SSTMAC_CPU_EQUAL_S(size_t  /*setsize*/, sstmac_cpu_set_t* cpusetp1, sstmac_cpu_set_t*  /*cpusetp2*/){
-  return cpusetp1->cpubits == cpusetp1->cpubits;
+SSTMAC_CPU_EQUAL_S(size_t  /*setsize*/, sstmac_cpu_set_t* cpusetp1, sstmac_cpu_set_t*  cpusetp2){
+  return cpusetp1->cpubits == cpusetp2->cpubits;
 }
 
 extern "C" void

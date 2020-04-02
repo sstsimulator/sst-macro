@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2020 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2018, NTESS
+Copyright (c) 2009-2020, NTESS
 
 All rights reserved.
 
@@ -93,7 +93,7 @@ class RuntimeParamBcaster :
  public:
   RuntimeParamBcaster(ParallelRuntime* rt) : rt_(rt) {}
 
-  void bcast(void *buf, int size, int  /*me*/, int root){
+  void bcast(void *buf, int size, int  /*me*/, int root) override{
     rt_->bcast(buf, size, root);
   }
 
@@ -101,6 +101,7 @@ class RuntimeParamBcaster :
   ParallelRuntime* rt_;
 };
 
+/* TODO Remove because unused
 static void
 print_finish(std::ostream& os, double wall_time)
 {
@@ -111,6 +112,7 @@ print_finish(std::ostream& os, double wall_time)
 #endif
   os << sprockit::sprintf("SST/macro ran for %12.4f seconds\n", wall_time);
 }
+*/
 
 ParallelRuntime* init()
 {
@@ -131,11 +133,13 @@ ParallelRuntime* init()
 
   //used when using fake sst compilers in configure/test-suite
   //automatically uses a basic parameter file
+  /* TODO Remove
   bool fake_build = false;
   env_str = getenv("SSTMAC_FAKE_BUILD");
   if (env_str){
     fake_build = atoi(env_str);
   }
+  */
 
   ParallelRuntime* rt = ParallelRuntime::staticRuntime(cmdline_params);
   return rt;
@@ -344,7 +348,12 @@ tryMain(sprockit::SimParameters::ptr params,
   }
 
   if (oo.print_walltime) {
-    sstmac::print_finish(cout0, stats.wallTime);
+#if SSTMAC_REPO_BUILD
+    cout0 << sprockit::sprintf("SSTMAC   repo:   %s\n", sstmac_REPO_HEADER);
+#else
+    cout0 << sprockit::sprintf("SSTMAC   %s\n", SSTMAC_VERSION);
+#endif
+    cout0 << sprockit::sprintf("SST/macro ran for %12.4f seconds\n", stats.wallTime);
   }
 
   if (!oo.params_dump_file.empty()) {

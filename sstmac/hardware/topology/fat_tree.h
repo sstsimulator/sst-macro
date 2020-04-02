@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2020 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2018, NTESS
+Copyright (c) 2009-2020, NTESS
 
 All rights reserved.
 
@@ -130,11 +130,11 @@ class FatTree :
 
   FatTree(SST::Params& params);
 
-  virtual std::string toString() const override {
+  std::string toString() const override {
     return "fat tree topology";
   }
 
-  virtual ~FatTree() {}
+  ~FatTree() override {}
 
   std::string portTypeName(SwitchId sid, int port) const override;
 
@@ -295,11 +295,11 @@ class TaperedFatTree : public AbstractFatTree
 
   TaperedFatTree(SST::Params& params);
 
-  virtual std::string toString() const override {
+  std::string toString() const override {
     return "tapered fat-tree topology";
   }
 
-  virtual ~TaperedFatTree() {}
+  ~TaperedFatTree() override {}
 
   SwitchId numSwitches() const override {
     return num_leaf_switches_ + num_agg_subtrees_ + 1;
@@ -381,7 +381,7 @@ class TaperedFatTree : public AbstractFatTree
   void connectedOutports(SwitchId src, std::vector<Connection>& conns) const override;
 
  protected:
-  virtual void createPartition(
+  void createPartition(
     int* switch_to_lp,
     int* switch_to_thread,
     int me,

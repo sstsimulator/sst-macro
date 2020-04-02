@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2018 National Technology and Engineering Solutions of Sandia,
+Copyright 2009-2020 National Technology and Engineering Solutions of Sandia,
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2018, NTESS
+Copyright (c) 2009-2020, NTESS
 
 All rights reserved.
 
@@ -565,43 +565,6 @@ class DragonflyPARRouter : public DragonflyUGALRouter {
   }
 
 };
-
-class DragonflyFlyStatsRouter : public DragonflyMinimalRouter
-{
- public:
-  SST_ELI_REGISTER_DERIVED(
-    Router,
-    DragonflyFlyStatsRouter,
-    "macro",
-    "dragonfly_stats",
-    SST_ELI_ELEMENT_VERSION(1,0,0),
-    "router providing traffic stats")
-
-  DragonflyFlyStatsRouter(SST::Params& params, Topology *top,
-                       NetworkSwitch *netsw)
-    : DragonflyMinimalRouter(params, top, netsw)
-  {
-    std::string subId = sprockit::sprintf("%d", netsw->addr());
-    intergroup_bytes_ = netsw->registerMultiStatistic<int,uint64_t>(params, "intergroup_bytes", subId);
-  }
-
-  void route(Packet *pkt){
-    auto hdr = pkt->rtrHeader<header>();
-    SwitchId ej_addr = pkt->toaddr() / dfly_->concentration();
-    if (hdr->num_hops == 0){
-      int dst_g = dfly_->computeG(ej_addr);
-      if (dst_g != my_g_){
-        intergroup_bytes_->addData(dst_g,pkt->byteLength());
-      }
-    }
-    DragonflyMinimalRouter::route(pkt);
-  }
-
- private:
-  SST::Statistics::MultiStatistic<int,uint64_t>* intergroup_bytes_;
-
-};
-
 
 struct DragonflyScatterRouter : public Router {
   SST_ELI_REGISTER_DERIVED(

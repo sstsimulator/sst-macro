@@ -1,5 +1,5 @@
 ﻿/**
-Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2020 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2018, NTESS
+Copyright (c) 2009-2020, NTESS
 
 All rights reserved.
 
@@ -59,6 +59,7 @@ using namespace clang::tooling;
 SourceLocation SSTPragmaHandler::pragmaDirectiveLoc;
 std::map<std::string, SSTPragmaNamespace*>* PragmaRegisterMap::namespaces_ = nullptr;
 
+/* TODO Remove, as it is unused
 static std::string getStringToken(const Token& next)
 {
   //the next token should be a string naming the argument
@@ -78,7 +79,9 @@ static std::string getStringToken(const Token& next)
   }
   return argName;
 }
+*/
 
+/* TODO Remove, as it is unused
 static void assertToken(const Token& tok, tok::TokenKind kind)
 {
   if (tok.getKind() != kind){
@@ -87,6 +90,8 @@ static void assertToken(const Token& tok, tok::TokenKind kind)
     errorAbort(tok.getLocation(), error);
   }
 }
+*/
+
 static void tokenToString(const Token& tok, std::ostream& os)
 {
   switch(tok.getKind()){

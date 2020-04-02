@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2020 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2018, NTESS
+Copyright (c) 2009-2020, NTESS
 
 All rights reserved.
 
@@ -129,13 +129,9 @@ MpiApi::waitall(int count, MPI_Request array_of_requests[],
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request, 
     "MPI_Waitall(%d,...)", count);
   bool ignore_status = array_of_statuses == MPI_STATUSES_IGNORE;
-  int last_nonnull = 0;
   std::vector<MPI_Request> req_vec;
   for (int i=0; i < count; ++i){
     MPI_Status* status = ignore_status ? MPI_STATUS_IGNORE : &array_of_statuses[i];
-    if (array_of_requests[i] != MPI_REQUEST_NULL){
-      last_nonnull = i;
-    }
     int tag, source;
     doWait(&array_of_requests[i], status, tag, source);
 #ifdef SSTMAC_OTF2_ENABLED
@@ -165,8 +161,6 @@ MpiApi::waitany(int count, MPI_Request array_of_requests[], int *indx,
   auto start_clock = traceClock();
 #endif
 
-  // for caching the request in an upper scope before it is destroyed
-  MPI_Request req_val = -1;
 
   StartMPICall(MPI_Waitany);
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Waitany(...)");
@@ -189,7 +183,6 @@ MpiApi::waitany(int count, MPI_Request array_of_requests[], int *indx,
         }
 #endif
         *indx = i;
-        req_val = req;
         finalizeWaitRequest(reqPtr, &array_of_requests[i], status);
         FinishMPICall(MPI_Waitany);
 
@@ -226,7 +219,6 @@ MpiApi::waitany(int count, MPI_Request array_of_requests[], int *indx,
           }
 #endif
           *indx = i;
-          req_val = req;
           finalizeWaitRequest(reqPtr, &array_of_requests[i], status);
           FinishMPICall(MPI_Waitany);
           call_completed = true;

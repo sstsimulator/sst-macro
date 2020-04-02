@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2020 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2018, NTESS
+Copyright (c) 2009-2020, NTESS
 
 All rights reserved.
 
@@ -87,9 +87,9 @@ struct SpktError : public std::exception {
   SpktError(const std::string &msg) :
     message(msg) {
   }
-  virtual ~SpktError() throw () {}
+  ~SpktError() throw () override {}
 
-  virtual const char* what() const throw () {
+  const char* what() const throw () override {
     return message.c_str();
   }
 
@@ -103,7 +103,7 @@ struct NullError : public SpktError {
   NullError(const std::string &msg) :
     SpktError(msg) {
   }
-  virtual ~NullError() throw () {}
+  ~NullError() throw () override {}
 };
 
 /**
@@ -113,7 +113,7 @@ struct ValueError : public SpktError {
   ValueError(const std::string &msg) :
     SpktError(msg) {
   }
-  virtual ~ValueError() throw () {}
+  ~ValueError() throw () override {}
 };
 
 /**
@@ -123,7 +123,7 @@ struct LibraryError : public SpktError {
   LibraryError(const std::string &msg) :
     SpktError(msg) {
   }
-  virtual ~LibraryError() throw () {}
+  ~LibraryError() throw () override {}
 };
 
 /**
@@ -133,7 +133,7 @@ struct TimeError : public SpktError {
   TimeError(const std::string &msg) :
     SpktError(msg) {
   }
-  virtual ~TimeError() throw () {}
+  ~TimeError() throw () override {}
 };
 
 /**
@@ -143,7 +143,7 @@ struct IOError : public SpktError {
   IOError(const std::string &msg) :
     SpktError(msg) {
   }
-  virtual ~IOError() throw () {}
+  ~IOError() throw () override {}
 };
 
 /**
@@ -153,7 +153,7 @@ struct IllformedError : public SpktError {
   IllformedError(const std::string &msg) :
     SpktError(msg) {
   }
-  virtual ~IllformedError() throw () {}
+  ~IllformedError() throw () override {}
 };
 
 /**
@@ -163,7 +163,7 @@ struct OSError : public SpktError {
   OSError(const std::string &msg) :
     SpktError(msg) {
   }
-  virtual ~OSError() throw () {}
+  ~OSError() throw () override {}
 };
 
 /**
@@ -175,7 +175,7 @@ struct MemoryError : public SpktError {
     SpktError(msg) {
   }
 
-  virtual ~MemoryError() throw () {}
+  ~MemoryError() throw () override {}
 };
 
 /**
@@ -186,7 +186,7 @@ struct IteratorError : public SpktError {
     SpktError(msg) {
   }
 
-  virtual ~IteratorError() throw () {}
+  ~IteratorError() throw () override {}
 
 };
 
@@ -199,7 +199,7 @@ struct UnimplementedError : public SpktError {
     SpktError(msg) {
   }
 
-  virtual ~UnimplementedError() throw () {}
+  ~UnimplementedError() throw () override {}
 };
 
 /**
@@ -210,7 +210,7 @@ struct NotPortedError : public SpktError {
   NotPortedError(const std::string& msg) :
     SpktError(msg) {
   }
-  virtual ~NotPortedError() throw() {}
+  ~NotPortedError() throw() override {}
 };
 
 /**
@@ -220,7 +220,7 @@ struct InvalidKeyError : public SpktError {
   InvalidKeyError(const std::string &msg) :
     SpktError(msg) {
   }
-  virtual ~InvalidKeyError() throw () {}
+  ~InvalidKeyError() throw () override {}
 };
 
 /**
@@ -230,7 +230,7 @@ struct RangeError : public SpktError {
   RangeError(const std::string &msg) :
     SpktError(msg) {
   }
-  virtual ~RangeError() throw () {}
+  ~RangeError() throw () override {}
 };
 
 /**
@@ -240,7 +240,7 @@ struct InputError : public SpktError {
   InputError(const std::string &msg) :
     SpktError(msg) {
   }
-  virtual ~InputError() throw () {}
+  ~InputError() throw () override {}
 };
 
 } // end of namespace sprockit

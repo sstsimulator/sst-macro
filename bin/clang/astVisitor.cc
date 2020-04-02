@@ -1,5 +1,5 @@
 ﻿/**
-Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2020 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2018, NTESS
+Copyright (c) 2009-2020, NTESS
 
 All rights reserved.
 
@@ -357,7 +357,7 @@ SkeletonASTVisitor::preVisitTopLevelDecl(Decl *d)
 }
 
 void
-SkeletonASTVisitor::postVisitTopLevelDecl(Decl *d)
+SkeletonASTVisitor::postVisitTopLevelDecl(Decl * /*d*/)
 {
   setVisitingGlobal(false); //and reset
 }
@@ -1112,6 +1112,8 @@ SkeletonASTVisitor::getArrayType(const Type* ty, cArrayConfig& cfg)
   }
 }
 
+
+/* TODO remove, unused
 static RecordDecl* getRecordDeclForType(QualType qt)
 {
   if (qt->isStructureType() || qt->isClassType()){
@@ -1124,6 +1126,7 @@ static RecordDecl* getRecordDeclForType(QualType qt)
     return nullptr;
   }
 }
+*/
 
 void
 SkeletonASTVisitor::arrayFxnPointerTypedef(VarDecl* D, SkeletonASTVisitor::ArrayInfo* info,
@@ -2692,7 +2695,7 @@ FirstPassASTVisitor::VisitStmt(Stmt *s)
 }
 
 bool
-FirstPassASTVisitor::TraverseFunctionDecl(FunctionDecl *fd, DataRecursionQueue* queue)
+FirstPassASTVisitor::TraverseFunctionDecl(FunctionDecl *fd, DataRecursionQueue* /*queue*/)
 {
   PushGuard<FunctionDecl*> pg(CompilerGlobals::astContextLists.enclosingFunctionDecls, fd);
   Parent::TraverseFunctionDecl(fd);
@@ -2700,7 +2703,7 @@ FirstPassASTVisitor::TraverseFunctionDecl(FunctionDecl *fd, DataRecursionQueue* 
 }
 
 bool
-FirstPassASTVisitor::TraverseCompoundStmt(CompoundStmt* cs, DataRecursionQueue* queue)
+FirstPassASTVisitor::TraverseCompoundStmt(CompoundStmt* cs, DataRecursionQueue* /*queue*/)
 {
   PushGuard<CompoundStmt*> pg(CompilerGlobals::astContextLists.compoundStmtBlocks, cs);
   Parent::TraverseCompoundStmt(cs);

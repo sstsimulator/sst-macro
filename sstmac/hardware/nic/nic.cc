@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2020 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2018, NTESS
+Copyright (c) 2009-2020, NTESS
 
 All rights reserved.
 
@@ -106,10 +106,13 @@ NIC::NIC(uint32_t id, SST::Params& params, Node* parent) :
   top_ = Topology::staticTopology(params);
 
   std::string subname = sprockit::sprintf("NIC.%d", my_addr_);
-  auto* spy = parent->registerMultiStatistic<int,uint64_t>(params, "spy_bytes", subname);
+  auto* spy = registerMultiStatistic<int,uint64_t>(params, "spy_bytes", subname);
+  //this might be a null statistic, dynamic cast to check
+  //no calls are made to this statistic unless it is non-null
+  //nullness checks are deferred to other places
   spy_bytes_ = dynamic_cast<StatSpyplot<int,uint64_t>*>(spy);
 
-  xmit_flows_ = parent->registerStatistic<uint64_t>(params, "xmit_flows", subname);
+  xmit_flows_ = registerStatistic<uint64_t>(params, "xmit_flows", subname);
 }
 
 NIC::~NIC()

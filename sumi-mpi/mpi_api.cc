@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2020 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2018, NTESS
+Copyright (c) 2009-2020, NTESS
 
 All rights reserved.
 
@@ -72,6 +72,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi-mpi/mpi_protocol/mpi_protocol.h>
 #include <sumi-mpi/mpi_comm/mpi_comm_factory.h>
 #include <sumi-mpi/mpi_types.h>
+
+#include <unusedvariablemacro.h>
 
 #ifdef SSTMAC_OTF2_ENABLED 
 #include <sumi-mpi/otf2_output_stat.h>
@@ -591,10 +593,10 @@ CallGraphCreateTag(idle);
 CallGraphCreateTag(active);
 
 void
-MpiApi::logMessageDelay(Message *msg, uint64_t bytes, int stage,
-                        sstmac::TimeDelta sync_delay,
-                        sstmac::TimeDelta active_delay,
-                        sstmac::TimeDelta time_since_quiesce)
+MpiApi::logMessageDelay( SSTMAC_MAYBE_UNUSED Message *msg, SSTMAC_MAYBE_UNUSED
+    uint64_t bytes, SSTMAC_MAYBE_UNUSED int stage, SSTMAC_MAYBE_UNUSED
+    sstmac::TimeDelta sync_delay, SSTMAC_MAYBE_UNUSED sstmac::TimeDelta
+    active_delay, SSTMAC_MAYBE_UNUSED sstmac::TimeDelta time_since_quiesce)
 {
 #if !SSTMAC_INTEGRATED_SST_CORE
   current_call_.idle += sync_delay;

@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2020 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2018, NTESS
+Copyright (c) 2009-2020, NTESS
 
 All rights reserved.
 
@@ -114,15 +114,15 @@ class serializable_builder_impl : public serializable_builder
   static const uint32_t cls_id_;
 
  public:
-  serializable* build() const {
+  serializable* build() const override {
     return T::construct_deserialize_stub();
   }
 
-  const char* name() const {
+  const char* name() const override {
     return name_;
   }
 
-  uint32_t cls_id() const {
+  uint32_t cls_id() const override {
     return cls_id_;
   }
 
@@ -134,7 +134,7 @@ class serializable_builder_impl : public serializable_builder
     return name_;
   }
 
-  bool sanity(serializable* ser) {
+  bool sanity(serializable* ser) override {
     return (typeid(T) == typeid(*ser));
   }
 };

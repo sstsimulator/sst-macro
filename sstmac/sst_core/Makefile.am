@@ -1,7 +1,7 @@
 #
 #   This file is part of SST/macroscale: 
 #                The macroscale architecture simulator from the SST suite.
-#   Copyright (c) 2009-2018 NTESS.
+#   Copyright (c) 2009-2020 NTESS.
 #   This software is distributed under the BSD License.
 #   Under the terms of Contract DE-NA0003525 with NTESS,
 #   the U.S. Government retains certain rights in this software.
@@ -21,6 +21,7 @@ EXTRA_DIST = sstmacro.py
 
 nobase_library_include_HEADERS = \
   connectable_wrapper.h \
+	sst_python.h \
   integrated_component.h \
   integrated_core.h
 
@@ -53,7 +54,6 @@ endif
 libsstmac_sst_core_la_SOURCES =  \
   partitioner.cc \
 	python_topology.cc \
-  integrated_component.cc \
   integrated_core.cc
 endif
 

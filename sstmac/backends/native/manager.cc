@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2020 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2018, NTESS
+Copyright (c) 2009-2020, NTESS
 
 All rights reserved.
 
@@ -70,52 +70,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <iterator>
 #include <cstdlib>
 
-RegisterKeywords(
-{ "EventManager", "the type of event manager for scheduling/managing events" },
-{ "sst_rank", "my logical process within a parallel SST run" },
-{ "sst_nproc", "the total number of logical processes within an SST run" },
-{ "timestamp_print_units", "the units of time to print on debug statements" },
-);
-
 
 namespace sstmac {
 namespace native {
-
-using namespace sstmac::sw;
-using namespace sstmac::hw;
-
-class timestamp_prefix_fxn :
-  public sprockit::DebugPrefixFxn
-{
- public:
-  timestamp_prefix_fxn(SST::Params& params, EventManager* mgr) :
-    mgr_(mgr)
-  {
-    units_ = params.find<std::string>("timestamp_print_units", "s");
-    if (units_ == "ns"){
-      mult_ = 1e9;
-    } else if (units_ == "us"){
-      mult_ = 1e6;
-    } else if (units_ == "ms"){
-      mult_ = 1e3;
-    } else if (units_ == "s"){
-      mult_ = 1;
-    } else {
-      spkt_abort_printf("invalid timestamp units for printing function: %s", units_.c_str());
-    }
-  }
-
-  std::string str() {
-    double t = mgr_->now().sec() * mult_;
-    return sprockit::sprintf("T=%14.8f %s:", t, units_.c_str());
-  }
-
- private:
-  EventManager* mgr_;
-  std::string units_;
-  double mult_;
-
-};
 
 static std::string get_first_line_from_cmd(const std::string& cmd)
 {
@@ -216,7 +173,7 @@ Manager::computeMaxNprocForApp(sprockit::SimParameters::ptr& app_params)
 
   int nproc, procs_per_node;
   std::vector<int> ignore;
-  AppLaunchRequest::parseLaunchCmd(sst_params, nproc, procs_per_node, ignore);
+  sw::AppLaunchRequest::parseLaunchCmd(sst_params, nproc, procs_per_node, ignore);
   return std::max(nproc, max_nproc);
 }
 
@@ -242,8 +199,41 @@ Manager::computeMaxNproc(sprockit::SimParameters::ptr& params)
 }
 
 #if SSTMAC_INTEGRATED_SST_CORE
-Manager::Manager(SST::Params& params, ParallelRuntime* rt){}
+Manager::Manager(SST::Params& /*params*/, ParallelRuntime* /*rt*/){}
 #else
+class TimestampPrefixFxn :
+  public sprockit::DebugPrefixFxn
+{
+ public:
+  TimestampPrefixFxn(SST::Params& params, EventManager* mgr) :
+    mgr_(mgr)
+  {
+    units_ = params.find<std::string>("timestamp_print_units", "s");
+    if (units_ == "ns"){
+      mult_ = 1e9;
+    } else if (units_ == "us"){
+      mult_ = 1e6;
+    } else if (units_ == "ms"){
+      mult_ = 1e3;
+    } else if (units_ == "s"){
+      mult_ = 1;
+    } else {
+      spkt_abort_printf("invalid timestamp units for printing function: %s", units_.c_str());
+    }
+  }
+
+  std::string str() {
+    double t = mgr_->now().sec() * mult_;
+    return sprockit::sprintf("T=%14.8f %s:", t, units_.c_str());
+  }
+
+ private:
+  EventManager* mgr_;
+  std::string units_;
+  double mult_;
+
+};
+
 //
 // Default constructor.
 //
@@ -266,7 +256,7 @@ Manager::Manager(SST::Params& params, ParallelRuntime* rt) :
 
   if (sprockit::Debug::slotActive(sprockit::dbg::timestamp)){
     sprockit::Debug::prefix_fxn = std::unique_ptr<sprockit::DebugPrefixFxn>(
-          new timestamp_prefix_fxn(params, EventManager_));
+          new TimestampPrefixFxn(params, EventManager_));
   }
 
   bool debug_startup = params.find<bool>("debug_startup", true);

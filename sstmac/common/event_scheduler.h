@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2020 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2018, NTESS
+Copyright (c) 2009-2020, NTESS
 
 All rights reserved.
 
@@ -56,13 +56,12 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/backends/common/parallel_runtime.h>
 #include <sstmac/sst_core/integrated_component.h>
 #include <sprockit/sim_parameters_fwd.h>
-
 #include <unusedvariablemacro.h>
 
-#if SSTMAC_INTEGRATED_SST_CORE
-#include <sst/core/params.h>
-#include <sst/core/link.h>
+
 extern int run_standalone(int, char**);
+
+#if SSTMAC_INTEGRATED_SST_CORE
 namespace sstmac {
   using LinkHandler = SST::Event::HandlerBase;
 
@@ -106,7 +105,6 @@ namespace Event {
 using HandlerBase = sstmac::EventHandler;
 }
 using sstmac::Component;
-using BaseComponent = sstmac::EventScheduler;
 using Link = sstmac::EventLink;
 }
 namespace sstmac {
@@ -186,12 +184,75 @@ class EventLink {
 
 namespace sstmac {
 
-class EventScheduler : public sprockit::printable
+class SharedBaseComponent {
+ public:
+  uint32_t componentId() const {
+    return id_;
+  }
+
+  int nthread() const {
+    return nthread_;
+  }
+
+  int threadId() const {
+    return thread_id_;
+  }
+
+ protected:
+  SharedBaseComponent(uint32_t id) :
+    id_(id),
+    thread_id_(0),
+    nthread_(1)
+  {
+  }
+
+ private:
+  int id_;
+  int thread_id_;
+  int nthread_;
+
+#if SSTMAC_INTEGRATED_SST_CORE
+ public:
+  static SST::TimeConverter* timeConverter() {
+    return time_converter_;
+  }
+ protected:
+  static SST::TimeConverter* time_converter_;
+#endif
+};
+
+#if SSTMAC_INTEGRATED_SST_CORE
+template <class Base>
+class IntegratedBaseComponent :
+  public Base,
+  public SharedBaseComponent
 {
  public:
-#if SSTMAC_INTEGRATED_SST_CORE
+  virtual std::string toString() const = 0;
+
+  template <class T, class... Args> T* loadSub(const std::string& name, const std::string& iface, int slot_id,
+                                               SST::Params& params, Args&&... args){
+    auto* sub = Base::template loadAnonymousSubComponent<T>("macro." + name + "_" + iface, iface, slot_id,
+                                          SST::ComponentInfo::SHARE_PORTS | SST::ComponentInfo::SHARE_STATS,
+                                          params, std::forward<Args>(args)...);
+    return dynamic_cast<T*>(sub);
+  }
+
+  template <class T, class... Args> T* newSub(const std::string& name, int slot_id,
+                               SST::Params& params, Args&&... args){
+    auto* sub = Base::template loadAnonymousSubComponent<T>("macro." + name, name, slot_id,
+                                          SST::ComponentInfo::SHARE_PORTS | SST::ComponentInfo::SHARE_STATS,
+                                          params, std::forward<Args>(args)...);
+    return dynamic_cast<T*>(sub);
+  }
+
   SST::SimTime_t getCurrentSimTime(SST::TimeConverter* tc) const {
-    return comp_->getCurrentSimTime(tc);
+    return Base::getCurrentSimTime(tc);
+  }
+
+  EventLinkPtr allocateSubLink(const std::string& name, TimeDelta lat, LinkHandler* handler){
+    SST::Link* self = Base::configureSelfLink(name, timeConverter(), handler);
+    return EventLink::ptr(new EventLink(name, lat, self));
   }
 
   void sendDelayedExecutionEvent(TimeDelta delay, ExecutionEvent* ev){
@@ -207,11 +268,101 @@ class EventScheduler : public sprockit::printable
     self_link_->send(delay, time_converter_, ev);
   }
 
-  void endSimulation();
-#else
-  Component* getTrueComponent() const {
-    return comp_;
+  Timestamp now() const {
+    SST::SimTime_t nowTicks = getCurrentSimTime(time_converter_);
+    return Timestamp(uint64_t(0), uint64_t(nowTicks));
   }
+
+  void endSimulation() {
+    spkt_abort_printf("intgrated core does not support stopping");
+  }
+
+  void handleExecutionEvent(Event* ev){
+    ExecutionEvent* sev = dynamic_cast<ExecutionEvent*>(ev);
+    sev->execute();
+    delete sev;
+  }
+
+protected:
+ IntegratedBaseComponent(const std::string& selfname, uint32_t id) :
+   Base(id),
+   SharedBaseComponent(id)
+ {
+   if (!time_converter_){
+     time_converter_ = Base::getTimeConverter(TimeDelta::tickIntervalString());
+   }
+   self_link_ = Base::configureSelfLink(selfname, time_converter_,
+         new SST::Event::Handler<IntegratedBaseComponent>(this, &IntegratedBaseComponent::handleExecutionEvent));
+ }
+
+ private:
+  SST::Link* self_link_;
+
+};
+
+/**
+ * @brief The SSTIntegratedComponent class  Provides common functionality
+ * for converting an sst/macro standalone Component into a
+ * a SST::Component compatible with integration
+ */
+class IntegratedComponent
+  : public IntegratedBaseComponent<SST::Component>
+{
+ public:
+  /**
+   * @brief connectInput All of these classes should implement the
+   *        Connectable interface
+   * @param src_outport
+   * @param dst_inport
+   * @param mod
+   */
+  virtual void connectInput(int src_outport, int dst_inport, EventLinkPtr&& link) = 0;
+
+  /**
+   * @brief connectOutput  All of these classes should implement
+   *                        the Connectable interface
+   * @param src_outport
+   * @param dst_inport
+   * @param mod
+   */
+  virtual void connectOutput(int src_outport, int dst_inport, EventLinkPtr&& link) = 0;
+
+  /**
+   * @brief payloadHandler
+   * @param port
+   * @return The handler that will receive payloads from an SST link
+   */
+  virtual SST::Event::HandlerBase* payloadHandler(int port) = 0;
+
+  /**
+   * @brief creditHandler
+   * @param port
+   * @return The handler that will receive credits from an SST link
+   */
+  virtual SST::Event::HandlerBase* creditHandler(int port) = 0;
+
+  void initLinks(SST::Params& params);
+
+ protected:
+  IntegratedComponent(uint32_t id);
+
+  SST::LinkMap* link_map_;
+
+};
+
+using ComponentParent = IntegratedComponent;
+using SubComponentParent = IntegratedBaseComponent<SST::SubComponent>;
+#else
+class MacroBaseComponent
+{
+ public:
+  virtual std::string toString() const = 0;
+
+  virtual void init(unsigned int /*phase*/) {}
+
+  virtual ~MacroBaseComponent() = default;
+
+  virtual void setup() {}
 
   template <class T> Statistic<T>*
   registerStatistic(SST::Params& params, const std::string& name, const std::string& subId = ""){
@@ -257,13 +408,20 @@ class EventScheduler : public sprockit::printable
   void sendExecutionEvent(Timestamp arrival, ExecutionEvent* ev);
 
   void endSimulation();
-#endif
 
- public:
-  std::string toString() const {
-    return "event scheduler";
+  void initLinks(SST::Params&){} //need for SST core compatibility
+
+  template <class T, class... Args> T* loadSub(const std::string& name, const std::string& /*iface*/, int slot_id,
+                                SST::Params& params, Args&&... args){
+    return sprockit::create<T>("macro", name, componentId(), params, std::forward<Args>(args)...);
   }
 
+  template <class T, class... Args> T* newSub(const std::string& /*name*/, int slot_id,
+                               SST::Params& params, Args&&... args){
+    return new T(componentId(), params, std::forward<Args>(args)...);
+  }
+
+ public:
   uint32_t componentId() const {
     return id_;
   }
@@ -277,19 +435,8 @@ class EventScheduler : public sprockit::printable
   }
 
   Timestamp now() const {
-#if SSTMAC_INTEGRATED_SST_CORE
-    SST::SimTime_t nowTicks = getCurrentSimTime(time_converter_);
-    return Timestamp(uint64_t(0), uint64_t(nowTicks));
-#else
     return *now_;
-#endif
   }
-
-#if SSTMAC_INTEGRATED_SST_CORE
-  static SST::TimeConverter* timeConverter() {
-    return time_converter_;
-  }
-#else
 
   EventManager* mgr() const {
     return mgr_;
@@ -298,7 +445,7 @@ class EventScheduler : public sprockit::printable
   const Timestamp* nowPtr() const {
     return now_;
   }
-#endif
+
   template <class Base, class... Args> Base* loadDerived(const std::string& name, Args&&... args){
     return Base::getBuilderLibrary("macro")->getBuilder(name)
                   ->create(std::forward<Args>(args)...);
@@ -314,42 +461,27 @@ class EventScheduler : public sprockit::printable
  protected:
   //friend int ::sstmac::run_standalone(int, char**);
 
-  EventScheduler(SSTMAC_MAYBE_UNUSED const std::string&  selfname, 
-                 uint32_t id, SST::Component* base) :
-#if !SSTMAC_INTEGRATED_SST_CORE
+  MacroBaseComponent(const std::string& /*selfname*/, uint32_t id) :
     mgr_(nullptr), 
     seqnum_(0), 
     selfLinkId_(EventLink::allocateSelfLinkId()),
     now_(nullptr), 
-#endif
+
     id_(id), 
     thread_id_(0),
-    nthread_(1),
-    comp_(base)
+    nthread_(1)
   {
-#if SSTMAC_INTEGRATED_SST_CORE
-    if (!time_converter_){
-      time_converter_ = base->getTimeConverter(TimeDelta::tickIntervalString());
-    }
-    self_link_ = base->configureSelfLink(selfname, time_converter_,
-          new SST::Event::Handler<EventScheduler>(this, &EventScheduler::handleExecutionEvent));
-#else
     setManager();
-#endif
   }
 
-  EventScheduler(uint32_t id, SST::Component* base)
-    : EventScheduler("self", id, base)
+  MacroBaseComponent(uint32_t id)
+    : MacroBaseComponent("self", id)
   {
   }
+
+  EventLink::ptr allocateSubLink(const std::string& /*name*/, TimeDelta lat, LinkHandler* handler);
 
  private:
-
-#if SSTMAC_INTEGRATED_SST_CORE
-  SST::Link* self_link_;
-  static SST::TimeConverter* time_converter_;
-#else
-
   void registerStatisticCore(StatisticBase* base, SST::Params& params);
 
   EventManager* mgr_;
@@ -359,7 +491,6 @@ class EventScheduler : public sprockit::printable
 
  protected:
   void setManager();
-#endif
 
  private:
   uint32_t id_;
@@ -369,115 +500,50 @@ class EventScheduler : public sprockit::printable
   void statNotFound(SST::Params& params, const std::string& name, const std::string& type);
 
   static SST::Params& getEmptyParams();
-
-  SST::Component* comp_;
-
 };
+
+using ComponentParent = MacroBaseComponent;
+using SubComponentParent = MacroBaseComponent;
+#endif
 
 /**
  * The interface for something that can schedule messages
  */
-class Component :
-#if SSTMAC_INTEGRATED_SST_CORE
-  public SSTIntegratedComponent,
-#endif
-  public EventScheduler
+class Component : public ComponentParent
 {
  public:
-  virtual ~Component() {}
+  ~Component() {}
 
-  virtual void setup(); //needed for SST core compatibility
-
-  virtual void init(unsigned int phase); //needed for SST core compatibility
+  void setup() override;
+  void init(unsigned int phase) override; 
 
  protected:
-  Component(uint32_t cid, SSTMAC_MAYBE_UNUSED SST::Params&  params) :
-#if SSTMAC_INTEGRATED_SST_CORE
-   SSTIntegratedComponent(params, cid),
-   EventScheduler(cid, this)
-#else
-   EventScheduler(cid, nullptr)
-#endif
+  Component(uint32_t cid, SST::Params& /*params*/) :
+   ComponentParent(cid)
   {
   }
-
-#if SSTMAC_INTEGRATED_SST_CORE
-  template <class T, class... Args> T* loadSub(const std::string& name, const std::string& iface, int slot_id,
-                                               SST::Params& params, Args&&... args){
-    auto* sub = loadAnonymousSubComponent<T>("macro." + name + "_" + iface, iface, slot_id,
-                                          SST::ComponentInfo::SHARE_PORTS | SST::ComponentInfo::SHARE_STATS,
-                                          params, std::forward<Args>(args)...);
-    return dynamic_cast<T*>(sub);
-  }
-
-  template <class T, class... Args> T* newSub(const std::string& name, int slot_id,
-                               SST::Params& params, Args&&... args){
-    auto* sub = loadAnonymousSubComponent<T>("macro." + name, name, slot_id,
-                                          SST::ComponentInfo::SHARE_PORTS | SST::ComponentInfo::SHARE_STATS,
-                                          params, std::forward<Args>(args)...);
-    return dynamic_cast<T*>(sub);
-  }
-#else
-  void initLinks(SST::Params&){} //need for SST core compatibility
-
-  template <class T, class... Args> T* loadSub(const std::string& name, const std::string& /*iface*/, int slot_id,
-                                SST::Params& params, Args&&... args){
-    return sprockit::create<T>("macro", name, componentId(), params, std::forward<Args>(args)...);
-  }
-
-  template <class T, class... Args> T* newSub(const std::string& /*name*/, int slot_id,
-                               SST::Params& params, Args&&... args){
-    return new T(componentId(), params, std::forward<Args>(args)...);
-  }
-#endif
 
 };
 
 
-
-class SubComponent :
-#if SSTMAC_INTEGRATED_SST_CORE
-  public SST::SubComponent,
-#endif
-  public EventScheduler
+class SubComponent : public SubComponentParent
 {
 
  public:
-  virtual void setup(); //needed for SST core compatibility
-
-  virtual void init(unsigned int phase); //needed for SST core compatibility
-
-  virtual std::string toString() const = 0;
+  void setup() override; 
+  void init(unsigned int phase) override; 
 
  protected:
-  SubComponent(uint32_t id, const std::string& selfname, SST::Component* parent) :
-#if SSTMAC_INTEGRATED_SST_CORE
-    SST::SubComponent(id),
-    EventScheduler(selfname, 0, parent)
-#else
-    EventScheduler(selfname, parent->componentId(), parent)
-#endif
+  SubComponent(uint32_t id, const std::string& selfname, SST::Component* /*parent*/) :
+    SubComponentParent(selfname, id)
   {
   }
-
 };
 
 #if SSTMAC_INTEGRATED_SST_CORE
 template <class T, class Fxn>
 SST::Event::HandlerBase* newLinkHandler(const T* t, Fxn fxn){
   return new SST::Event::Handler<T>(const_cast<T*>(t), fxn);
-}
-
-static inline EventLinkPtr allocateSubLink(const std::string& name, TimeDelta lat,
-                                           sstmac::SubComponent* subcomp, LinkHandler* handler){
-  SST::Link* self = subcomp->configureSelfLink(name, subcomp->timeConverter(), handler);
-  return EventLink::ptr(new EventLink(name, lat, self));
-}
-
-static inline EventLinkPtr allocateSubLink(const std::string& name, TimeDelta lat,
-                                           sstmac::Component* comp, LinkHandler* handler){
-  SST::Link* self = comp->configureSelfLink(name, comp->timeConverter(), handler);
-  return EventLink::ptr(new EventLink(name, lat, self));
 }
 #else
 template <class T, class Fxn, class... Args>
@@ -495,7 +561,7 @@ class LocalLink : public EventLink {
   {
   }
 
-  virtual ~LocalLink() override {
+  ~LocalLink() override {
     if (handler_) delete handler_;
   }
 
@@ -568,13 +634,13 @@ class IpcLink : public EventLink {
 class SubLink : public EventLink
 {
  public:
-  SubLink(TimeDelta lat, Component* comp, EventHandler* handler) :
+  SubLink(TimeDelta lat, MacroBaseComponent* comp, EventHandler* handler) :
     EventLink(allocateSelfLinkId(), lat), //sub links have no latency
     comp_(comp), handler_(handler)
   {
   }
 
-  ~SubLink(){
+  ~SubLink() override{
     if (handler_) delete handler_;
   }
 
@@ -591,19 +657,10 @@ class SubLink : public EventLink
   }
 
  private:
-#if SSTMAC_INTEGRATED_SST_CORE
-  SST::Link* self_link_;
-#endif
-
-  Component* comp_;
+  MacroBaseComponent* comp_;
   EventHandler* handler_;
 };
 
-static inline EventLink::ptr allocateSubLink(const std::string&  /*name*/, TimeDelta lat,
-                                             SST::Component* comp, LinkHandler* handler)
-{
-  return EventLink::ptr(new SubLink(lat, comp, handler));
-}
 #endif
 
 } // end of namespace sstmac

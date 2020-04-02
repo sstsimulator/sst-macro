@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2020 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2018, NTESS
+Copyright (c) 2009-2020, NTESS
 
 All rights reserved.
 
@@ -74,7 +74,7 @@ class sumi_param_bcaster : public sprockit::ParamBcaster
     engine_(engine)
   {}
 
-  void bcast(void *buf, int size, int  /*me*/, int root){
+  void bcast(void *buf, int size, int  /*me*/, int root) override{
     engine_->bcast(root, buf, size, sizeof(char), tag_, sumi::Message::default_cq);
     auto* dmsg = engine_->blockUntilNext(sumi::Message::default_cq);
     delete dmsg;
@@ -105,7 +105,7 @@ class config_message : public sumi::Message
     return recv_buf_;
   }
 
-  virtual void serialize_order(sstmac::serializer &ser) override {
+  void serialize_order(sstmac::serializer &ser) override {
     ser.primitive(recv_buf_);
     sumi::Message::serialize_order(ser);
   }
@@ -129,7 +129,7 @@ class RdmaMessage :
   {
   }
 
-  virtual void serialize_order(sstmac::serializer& ser) override {
+  void serialize_order(sstmac::serializer& ser) override {
     ser & iter_;
     ser & start_;
     ser & finish_;

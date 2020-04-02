@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2020 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2018, NTESS
+Copyright (c) 2009-2020, NTESS
 
 All rights reserved.
 
@@ -72,9 +72,11 @@ class DebugInt
       init(slot);
     }
 
-    DebugInt(){
-      fields = 0;
-    }
+    DebugInt() = default;
+    DebugInt& operator=(const DebugInt& rhs) = default;
+    DebugInt& operator=(DebugInt&&rhs) = default;
+    DebugInt(const DebugInt& rhs) = default;
+    DebugInt(DebugInt&&rhs) = default;
 
     DebugInt& operator~(){
       fields = ~fields;
@@ -85,10 +87,6 @@ class DebugInt
       fields = (1ull) << slot;
     }
 
-    DebugInt& operator=(const DebugInt& rhs){
-      fields = rhs.fields;
-      return *this;
-    }
 
     operator bool() const {
       return fields;
@@ -96,7 +94,7 @@ class DebugInt
 
     std::string toString() const;
 
-    uint64_t fields;
+    uint64_t fields = 0;
 };
 
 inline DebugInt
