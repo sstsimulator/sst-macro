@@ -14,7 +14,6 @@ include $(top_srcdir)/Makefile.common
 bin_PROGRAMS = 
 
 dist_bin_SCRIPTS = \
-  findHeaders \
   sst++ \
   sstcc \
   sstcclib.py \
@@ -29,7 +28,7 @@ endif
 
 bin_SCRIPTS = sstmacro-config sstccvars.py
 
-EXTRA_DIST = sstmacro-config.in sstccvars.py.in tools config_tools manifest uq plots
+EXTRA_DIST = sst++.in sstcc.in sstmacro-config.in sstccvars.py.in tools config_tools manifest uq plots
 
 AM_LDFLAGS += -ldl
 

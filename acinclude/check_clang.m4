@@ -3,7 +3,7 @@
 AC_DEFUN([CHECK_CLANG], [
 
   AC_MSG_CHECKING([Clang flags])
-  have_clang=`$srcdir/bin/config_tools/get_clang $CXX`
+  have_clang=`$pyexe $srcdir/bin/config_tools/get_clang $CXX`
   AC_MSG_RESULT([$have_clang])
 
 
@@ -75,7 +75,7 @@ AC_DEFUN([CHECK_CLANG_LLVM], [
     AM_CONDITIONAL(CLANG_NEED_LIBCPP,false)
   else
     AM_CONDITIONAL(HAVE_CLANG, true)
-    offset=`$srcdir/bin/config_tools/get_offsetof_macro $CXX`
+    offset=`$pyexe $srcdir/bin/config_tools/get_offsetof_macro $CXX`
     AC_MSG_CHECKING([offsetof macro definition])
     AC_MSG_RESULT([$offset])
     AC_DEFINE_UNQUOTED([OFFSET_OF_MACRO], [$offset], "the definition of the offsetof macro")
@@ -98,7 +98,7 @@ AC_DEFUN([CHECK_CLANG_LLVM], [
       AM_CONDITIONAL(CLANG_NEED_LIBCPP,false)
     fi
 
-    clang_compatibility=`$srcdir/bin/config_tools/check_clang_compatibility $CXX $clang $srcdir/bin/config_tools/clang_version_test.cc $CXXFLAGS $SST_CXXFLAGS $STD_CXXFLAGS`
+    clang_compatibility=`$pyexe $srcdir/bin/config_tools/check_clang_compatibility $CXX $clang $srcdir/bin/config_tools/clang_version_test.cc $CXXFLAGS $SST_CXXFLAGS $STD_CXXFLAGS`
 
     if test "X$clang_compatibility" != "X"; then
       AC_MSG_ERROR([$clang_compatibility])
@@ -106,11 +106,11 @@ AC_DEFUN([CHECK_CLANG_LLVM], [
 
     AC_SUBST([CLANG_LIBTOOLING_LIBS])
     AC_SUBST([CLANG_LIBTOOLING_SYSTEM_LIBS])
-    AC_SUBST([CLANG_LIBTOOLING_CXX_FLAGS], "`$srcdir/bin/config_tools/get_clang_includes $clang -E -v -std=c++1y -stdlib=libc++ -x c++`")
-    AC_SUBST([CLANG_LIBTOOLING_C_FLAGS], "`$srcdir/bin/config_tools/get_clang_includes $clang -E -v`")
+    AC_SUBST([CLANG_LIBTOOLING_CXX_FLAGS], "`$pyexe $srcdir/bin/config_tools/get_clang_includes $clang -E -v -std=c++1y -stdlib=libc++ -x c++`")
+    AC_SUBST([CLANG_LIBTOOLING_C_FLAGS], "`$pyexe $srcdir/bin/config_tools/get_clang_includes $clang -E -v`")
+    clang_has_float128=`$pyexe $srcdir/bin/config_tools/get_float_128 $clang/bin/clang++`
   fi
 
-  clang_has_float128=`$srcdir/bin/config_tools/get_float_128 $clang/bin/clang++`
   if test "X$clang_has_float128" = "Xyes"; then
     AC_SUBST([have_float_128], [True])
   else
