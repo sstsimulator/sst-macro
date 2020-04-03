@@ -31,8 +31,8 @@ def delete(files):
 
 def getProcTreeHelper(mypid, arr):
   mypid = str(mypid)
-  import commands
-  info = commands.getoutput("ps axo pid,ppid,comm")
+  import configlib
+  info = configlib.getoutput("ps axo pid,ppid,comm")
   for line in info.splitlines():
     args = line.strip().split()
     if args[0] == mypid:
@@ -49,10 +49,10 @@ def getProcTree():
 
 def getProcName():
   import os
-  import commands
+  import configlib
   import sys
   pid = int(os.getppid())
-  runCmds = commands.getoutput("ps -p %d" % pid).splitlines()[-1].split()
+  runCmds = configlib.getoutput("ps -p %d" % pid).splitlines()[-1].split()
   runCmds = runCmds[3:]
   firstCmd = runCmds[0].lstrip("-")
   if firstCmd in ("/bin/sh", "sh", "bash", "/bin/bash", "tcsh", "/bin/tcsh", "zsh", "/bin/zsh"):
