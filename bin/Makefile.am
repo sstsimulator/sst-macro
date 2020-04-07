@@ -131,9 +131,10 @@ sstmac_clang_LDFLAGS = $(CLANG_LDFLAGS) \
  @CLANG_LIBTOOLING_LIBS@ \
  @CLANG_LIBTOOLING_SYSTEM_LIBS@
 
-if CLANG_NEED_LIBCPP
-sstmac_clang_LDFLAGS += -lclang-cpp
-endif
+# TODO Figure out this was included
+# if CLANG_NEED_LIBCPP
+# sstmac_clang_LDFLAGS += -lclang-cpp
+# endif
 
 endif
 
