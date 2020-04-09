@@ -3184,13 +3184,21 @@ The variable `SSTMAC_HEADERS` should give the full path of a file containing the
 Header file paths in the file should be one per line and should be the full path, not a relative path.
 
 \subsubsection{SSTMAC\_DELETE\_TEMPS: Default 1}
-If non-zero, the compiler cleans up all temporary files. 
-If you wish to keep temporary files to view them for debugging, set to zero.
+If non-zero, the compiler cleans up all temporary source files.
+If you wish to keep temporary files to view them for debugging, set to 0.
 All temporary, intermediate source files will otherwise be deleted at the end of compilation.
+The source files are re-formatted using clang-format to make them more readable.
+The actual source files given to the compiler are very mess (with very long lines) since the source-to-source tries to preserve the original line numbers for debugging.
+
+\subsubsection{SSTMAC\_DELETE\_TEMP\_OFILES: Default 1}
+If non-zero, the compiler cleans up all temporary object files.
+If you wish to keep temporary files for debugging, set to 0.
+Due to issues with some linkers, debug symbols do not appear correctly in gdb or lldb unless the original object files are kept.
+If you wish to get sensible output from the debugger, make sure this is set to 0.
 
 \section{Basic Replacement Pragmas}
 When skeletonization is active (see `SSTMAC_SKELETONIZE`), these pragmas will cause replacements in the original source code.
-Pragmas appy to the next statement in the source code.
+Pragmas apply to the next statement in the source code.
 For compound statements such as a for-loop with a multi-statement body, the pragma applies to the entire for-loop.
 \subsection{pragma sst delete: no arguments}
 This deletes the next statement from the source code.
