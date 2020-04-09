@@ -62,6 +62,7 @@ def addLink(ctx, ldTarget, args, cmds, objects, toExe=False):
   cmds.append([None,linkCmdArr,[]])
 
 def addModeLinks(ctx, args):
-  ctx.libs.append('-lsstmac')
+  if not ctx.sstCore:
+    ctx.libs.append('-lsstmac')
   ctx.libs.append('-lsprockit')
   ctx.libs.append('-lundumpi')
