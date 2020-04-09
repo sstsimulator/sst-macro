@@ -101,13 +101,19 @@ sstmac_get_optional_double_param(const char* str, double val)
 extern "C" const char*
 sstmac_get_param(const char* str)
 {
-  return get_local_params().find<std::string>(str).c_str();
+  std::string param = get_local_params().find<std::string>(str);
+  char* param_cstr = new char[param.size() + 1];
+  ::strcpy(param_cstr, param.c_str());
+  return param_cstr;
 }
 
 extern "C" const char*
 sstmac_get_optional_param(const char* str, const char* val)
 {
-  return get_local_params().find<std::string>(str, val).c_str();
+  std::string param = get_local_params().find<std::string>(str, val);
+  char* param_cstr = new char[param.size() + 1];
+  ::strcpy(param_cstr, param.c_str());
+  return param_cstr;
 }
 
 extern "C" double
