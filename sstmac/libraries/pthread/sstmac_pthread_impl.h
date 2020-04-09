@@ -120,6 +120,10 @@ int SSTMAC_pthread_attr_setaffinity_np(sstmac_pthread_attr_t *attr, size_t cpuse
 
 int SSTMAC_pthread_attr_getaffinity_np(sstmac_pthread_attr_t attr, size_t cpusetsize, sstmac_cpu_set_t *cpuset);
 
+int SSTMAC_pthread_setaffinity_np(sstmac_pthread_t thread, size_t cpusetsize, const sstmac_cpu_set_t *cpuset);
+
+int SSTMAC_pthread_getaffinity_np(sstmac_pthread_t thread, size_t cpusetsize, sstmac_cpu_set_t *cpuset);
+
 int SSTMAC_pthread_mutexattr_init(sstmac_pthread_mutexattr_t *attr);
 
 int SSTMAC_pthread_mutexattr_destroy(sstmac_pthread_mutexattr_t *attr);

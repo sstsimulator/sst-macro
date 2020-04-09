@@ -208,6 +208,12 @@ class OperatingSystem : public SubComponent
   void joinThread(Thread* subthread);
 
   /**
+    @param The id of the thread to return
+    @return The thread object with the given ID, nullptr otherwise
+  */
+  Thread* getThread(uint32_t id) const;
+
+  /**
    * @brief complete_active_thread Must be called from a currently running application thread, not the DES thread.
    *                               This returns from the currently running context, closes it out,
    *                               and schedules resources associated with it (stack, etc) to be cleaned up.
@@ -367,6 +373,8 @@ class OperatingSystem : public SubComponent
   SST::Params params_;
 
   ComputeScheduler* compute_sched_;
+
+  std::map<uint32_t, Thread*> running_threads_;
 
   static std::unordered_map<uint32_t, Thread*> all_threads_;
   static bool hold_for_gdb_;

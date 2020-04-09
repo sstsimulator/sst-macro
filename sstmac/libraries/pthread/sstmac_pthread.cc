@@ -783,3 +783,27 @@ SSTMAC_pthread_mutexattr_setpshared(sstmac_pthread_mutexattr_t*  /*attr*/, int p
   }
   return 0;
 }
+
+extern "C" int
+SSTMAC_pthread_setaffinity_np(sstmac_pthread_t thread, size_t cpusetsize, const sstmac_cpu_set_t *cpuset)
+{
+  Thread* t = OperatingSystem::currentOs()->getThread(thread);
+  if (t){
+    t->setCpumask(cpuset->cpubits);
+    return 0;
+  } else {
+    return EINVAL;
+  }
+}
+
+extern "C" int
+SSTMAC_pthread_getaffinity_np(sstmac_pthread_t thread, size_t cpusetsize, sstmac_cpu_set_t *cpuset)
+{
+  Thread* t = OperatingSystem::currentOs()->getThread(thread);
+  if (t){
+    cpuset->cpubits = t->cpumask();
+    return 0;
+  } else {
+    return EINVAL;
+  }
+}
