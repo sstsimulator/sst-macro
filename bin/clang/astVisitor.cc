@@ -2556,7 +2556,11 @@ SkeletonASTVisitor::getUnderlyingExpr(Expr *e)
     sub_case(e,ExprWithCleanups);
     case Stmt::MaterializeTemporaryExprClass: {
       MaterializeTemporaryExpr* mte = cast<MaterializeTemporaryExpr>(e);
+#if CLANG_VERSION_MAJOR < 10
       e = mte->GetTemporaryExpr();
+#else
+      e = mte->getSubExpr();
+#endif
       break;
     }
     default:
