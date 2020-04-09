@@ -1,4 +1,3 @@
-
 int x = 10;extern int __offset_x; void init_x(void* ptr){int initer = 10; memcpy(ptr, (void*) &initer, sizeof(initer)); } int __sizeof_x = sizeof(int); 
 
 

@@ -1,4 +1,3 @@
-
 int __sizeof_xyz_fxnx = sizeof(void*);  extern int __offset_xyz_fxnx;  extern "C" void init_xyz_fxnx(void* ptr){    void** ptrptr = (void**) ptr;    *ptrptr = nullptr; }void fxn()
 { char* sstmac_global_data = get_sstmac_global_data();{
   static int x = 10;void** ptrsstmac_xyz_fxnx = ((void**)(sstmac_global_data + __offset_xyz_fxnx));int* sstmac_xyz_fxnx = (int*)(*ptrsstmac_xyz_fxnx); if (sstmac_xyz_fxnx == nullptr){ sstmac_xyz_fxnx= new int{ 10 };  *ptrsstmac_xyz_fxnx = sstmac_xyz_fxnx; }

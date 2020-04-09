@@ -1,4 +1,3 @@
-
 template <class T>
 class unique_ptr {
 };
