@@ -26,8 +26,8 @@ if test "X$have_integrated_core" = "Xyes"; then
   SST_INCLUDES="-I$SST/include -I$SST/include/sst -I$SST/include/sst/core"
   SST_CPPFLAGS="-DSSTMAC_INTEGRATED_SST_CORE=1 $SST_INCLUDES -D__STDC_FORMAT_MACROS"
   SAVE_CPPFLAGS="$CPPFLAGS"
-  PY_INCLUDES="`python-config --includes`"
-  PY_LDFLAGS=`$srcdir/bin/config_tools/get_py_ldflags`
+  PY_INCLUDES="`$pycfg --includes`"
+  PY_LDFLAGS=`$pyexe $srcdir/bin/config_tools/get_py_ldflags`
   SST_CPPFLAGS="$SST_CPPFLAGS $PY_INCLUDES"
   CPPFLAGS="$CPPFLAGS $SST_CPPFLAGS"
 
