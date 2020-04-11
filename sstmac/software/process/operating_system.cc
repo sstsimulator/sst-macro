@@ -515,6 +515,7 @@ OperatingSystem::joinThread(Thread* t)
   } else {
     os_debug("joining completed thread %ld", t->threadId());
   }
+  running_threads_.erase(t->tid());
   delete t;
 }
 
@@ -719,6 +720,7 @@ OperatingSystem::startThread(Thread* t)
       parent->globalsStorage(),
       parent->newTlsStorage());
   }
+  running_threads_[t->tid()] = t;
 
   if (gdb_active_){
     static thread_lock all_threads_lock;
@@ -761,27 +763,6 @@ OperatingSystem::handleLibraryRequest(const std::string& name, Request* req)
   return found;
 }
 
-#if 0
-void
-OperatingSystem::handleEvent(Event* ev)
-{  
-  //this better be an incoming event to a library, probably from off node
-  Flow* libmsg = test_cast(Flow, ev);
-  if (!libmsg) {
-    spkt_throw_printf(sprockit::illformed_error,
-      "OperatingSystem::handle_event: got event %s instead of library event",
-      sprockit::toString(ev).c_str());
-  }
-
-  bool found = handleLibraryEvent(libmsg->libname(), ev);
-  if (!found){
-    os_debug("delaying event to lib %s: %s",
-             libmsg->libname().c_str(), libmsg->toString().c_str());
-    pending_library_events_[libmsg->libname()].push_back(ev);
-  }
-}
-#endif
-
 void
 OperatingSystem::handleRequest(Request* req)
 {
@@ -798,6 +779,17 @@ OperatingSystem::handleRequest(Request* req)
     os_debug("delaying event to lib %s: %s",
              libmsg->libname().c_str(), libmsg->toString().c_str());
     pending_library_request_[libmsg->libname()].push_back(req);
+  }
+}
+
+Thread*
+OperatingSystem::getThread(uint32_t threadId) const
+{
+  auto iter = running_threads_.find(threadId);
+  if (iter == running_threads_.end()){
+    return nullptr;
+  } else {
+    return iter->second;
   }
 }
 

@@ -1,6 +1,3 @@
-
-
-
 int x[] = {1,2,3};typedef int array_type_x[3];extern int __offset_x; void init_x(void* ptr){array_type_x initer = {1, 2, 3}; memcpy(ptr, (void*) &initer, sizeof(initer)); } int __sizeof_x = sizeof(array_type_x); 
 
 int __sizeof_xyz_fxnbb = sizeof(void*);  extern int __offset_xyz_fxnbb;  void init_xyz_fxnbb(void* ptr){    void** ptrptr = (void**) ptr;    *ptrptr = 0; }void fxn()

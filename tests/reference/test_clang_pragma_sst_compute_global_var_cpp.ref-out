@@ -1,4 +1,3 @@
-
 int bound_i = 5;extern int __offset_bound_i; int __sizeof_bound_i = sizeof(int);static std::function<void(void*)> init_bound_i = [](void* ptr){ new (ptr) int{5}; };sstmac::CppGlobalRegisterGuard bound_i_sstmac_ctor(__offset_bound_i, __sizeof_bound_i, false, "bound_i", std::move(init_bound_i));
 int bound_j = 10;extern int __offset_bound_j; int __sizeof_bound_j = sizeof(int);static std::function<void(void*)> init_bound_j = [](void* ptr){ new (ptr) int{10}; };sstmac::CppGlobalRegisterGuard bound_j_sstmac_ctor(__offset_bound_j, __sizeof_bound_j, false, "bound_j", std::move(init_bound_j));
 
