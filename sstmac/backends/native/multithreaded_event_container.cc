@@ -58,7 +58,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/thread_safe.h>
 #include <cinttypes>
 
-RegisterDebugSlot(multithread_event_manager);
+RegisterDebugSlot(multithread);
 RegisterDebugSlot(cpu_affinity);
 
 RegisterKeywords(
@@ -115,7 +115,7 @@ pthread_run_worker_thread(void* args)
       } else if (delta_t != 0) {
         horizon += TimeDelta(delta_t, TimeDelta::exact);
         Timestamp new_min_time = q->mgr->runEvents(horizon);
-       debug_printf(sprockit::dbg::parallel, "manager %d:%d voting for minimum time %10.7e on epoch %d",
+        debug_printf(sprockit::dbg::parallel, "manager %d:%d voting for minimum time %10.7e on epoch %d",
                     q->mgr->me(), q->mgr->thread(), new_min_time.sec(), q->mgr->epoch());
         q->min_time = new_min_time;
       }
@@ -265,8 +265,11 @@ MultithreadedEventContainer::runWork()
     if (child1) wait_on_child_completion(child1, min_time);
     if (child2) wait_on_child_completion(child2, min_time);
 
-
-    lower_bound = receiveIncomingEvents(min_time);
+    if (stopped_){
+      lower_bound = no_events_left_time; //done
+    } else {
+      lower_bound = receiveIncomingEvents(min_time);
+    }
     if (num_loops_left > 0) --num_loops_left;
     last_horizon = horizon;
     auto t_stop = rdtsc();
@@ -275,11 +278,9 @@ MultithreadedEventContainer::runWork()
     event_cycles += event;
     barrier_cycles += barrier;
     if (epoch % epoch_print_interval == 0 && rt_->me() == 0){
-      //printf("Epoch %-10" PRIu64 " ran %13" PRIu64 ", %13" PRIu64 " cumulative %13" PRIu64 ", %13" PRIu64
-      //       " until horizon %" PRIu64 ":%" PRIu64 "\n",
-      //       epoch, event, barrier, event_cycles, barrier_cycles, horizon.epochs, horizon.time.ticks());
-      printf("Epoch %-10" PRIu64 " ran until horizion %" PRIu64 ":%" PRIu64 " - new bound = %" PRIu64 ":%" PRIu64 "\n",
-             epoch, horizon.epochs, horizon.time.ticks(), lower_bound.epochs, lower_bound.time.ticks());
+      debug_printf(sprockit::dbg::multithread,
+           "Epoch %-10" PRIu64 " ran until horizon %" PRIu64 ":%" PRIu64 " - new bound = %" PRIu64 ":%" PRIu64 "\n",
+           epoch, horizon.epochs, horizon.time.ticks(), lower_bound.epochs, lower_bound.time.ticks());
       fflush(stdout);
     }
     ++epoch;
