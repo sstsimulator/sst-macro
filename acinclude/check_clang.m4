@@ -18,8 +18,7 @@ AC_DEFUN([CHECK_CLANG], [
 
 AC_DEFUN([CHECK_CLANG_LLVM], [
   AC_ARG_WITH(clang,
-    [
-      AS_HELP_STRING(
+    [AS_HELP_STRING(
         [--with-clang],
         [Whether Clang libTooling is available for static analysis]
       )
