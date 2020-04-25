@@ -163,6 +163,8 @@ class SnapprNIC :
   bool scatter_qos_;
   int next_qos_;
 
+  int rdma_get_req_qos_;
+
 };
 
 }
