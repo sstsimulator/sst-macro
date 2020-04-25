@@ -1,23 +1,24 @@
 AC_DEFUN([CHECK_PYTHON], [
- AC_ARG_WITH([python-config],
-   [
-    AS_HELP_STRING([--with-python-config=<path>],
-     [Give location to Python package's python-config])
-   ],
-   [
-     pycfg="$withval"
-     if test -z "$pycfg"; then
-       AC_MSG_ERROR([Must give valid python-config to --with-python-config option])
-     fi
-   ],
-   [
-     pycfg=""
-   ]
- )
+
+AC_ARG_WITH([python-config],
+  [AS_HELP_STRING(
+    [--with-python-config=<path>],
+    [Give location to Python package's python-config],
+    )
+  ],
+  [
+    pycfg="$withval"
+    if test -z "$pycfg"; then
+      AC_MSG_ERROR([Must give valid python-config to --with-python-config option])
+    fi
+  ],
+  [
+    pycfg=""
+  ]
+)
 
  AC_ARG_WITH([python],
-   [
-    AS_HELP_STRING([--with-python=<path>],
+   [AS_HELP_STRING([--with-python=<path>],
      [Give location to Python installation prefix])
    ],
    [

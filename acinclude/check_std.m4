@@ -9,8 +9,7 @@ AH_TEMPLATE([HAVE_CXX17],
             [Define to use C++17 language features])
 
 AC_ARG_WITH(std,
-  [
-    AS_HELP_STRING(
+  [AS_HELP_STRING(
       [--with-std],
       [The C++ standard to enable],
     )
