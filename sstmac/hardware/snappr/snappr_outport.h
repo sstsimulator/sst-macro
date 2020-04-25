@@ -222,6 +222,7 @@ struct SnapprOutPort : public SubComponent {
 
   void send(SnapprPacket* pktr, Timestamp now);
 
+  int debug_qos_;
   SnapprPortArbitrator* arb_;
   Component* parent_;
   int total_packets_;

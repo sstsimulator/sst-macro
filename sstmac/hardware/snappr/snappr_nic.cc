@@ -369,8 +369,13 @@ SnapprNIC::injectPacket(uint32_t  /*ptk_size*/, uint64_t byte_offset, NetworkMes
   NodeId to = payload->toaddr();
   NodeId from = payload->fromaddr();
   uint64_t fid = payload->flowId();
+
+  int qos = payload->qos();
+  if (rdma_get_req_qos_ != -1 && payload->type() == NetworkMessage::rdma_get_request){
+    qos = rdma_get_req_qos_;
+  }
   SnapprPacket* pkt = new SnapprPacket(is_tail ? payload : nullptr, pkt_size, is_tail,
-                                       fid, byte_offset, to, from, payload->qos());
+                                       fid, byte_offset, to, from, qos);
   if (scatter_qos_){
     pkt->setVirtualLane(next_qos_);
     next_qos_ = (next_qos_ + 1) % qos_levels_;
