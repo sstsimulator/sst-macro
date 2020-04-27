@@ -317,6 +317,11 @@ void
 SnapprNIC::handlePayload(Event *ev)
 {
   SnapprPacket* pkt = static_cast<SnapprPacket*>(ev);
+  if (pkt->deadlocked()){
+    std::cerr << "NIC " << addr() << " is part of deadlock" << std::endl;
+    return;
+  }
+
 
   TimeDelta time_to_send = pkt->byteLength() * inj_byte_delay_;
   if (time_to_send < pkt->timeToSend()){
