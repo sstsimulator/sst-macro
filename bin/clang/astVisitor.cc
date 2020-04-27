@@ -90,7 +90,7 @@ llvm::cl::opt<bool> CompilerGlobals::noRefactorMainOpt("no-refactor-main",
 modes::Mode CompilerGlobals::mode;
 int CompilerGlobals::modeMask;
 bool CompilerGlobals::refactorMain = true;
-std::list<std::string> CompilerGlobals::includePaths;
+std::vector<std::string> CompilerGlobals::realSystemIncludePaths;
 decltype(CompilerGlobals::visitor) CompilerGlobals::visitor;
 
 using namespace clang;
@@ -212,12 +212,20 @@ CompilerGlobals::setup(clang::CompilerInstance* CI)
 
 
   if (includeListOpt.getNumOccurrences()){
-    StringRef sref(includeListOpt);
-    std::istringstream sstr(sref.str());
+    char fullpathBuffer[1024];
+    std::istringstream sstr(includeListOpt.getValue());
     std::string path;
-    while (std::getline(sstr, path, ':'))
-    {
-      includePaths.push_back(path);
+    while (std::getline(sstr, path, ':')){
+      //make sure the full paths (following symlinks)
+      //are included for checking
+      const char* fullpath_cstr = realpath(path.c_str(), fullpathBuffer);
+      if (fullpath_cstr){
+        realSystemIncludePaths.emplace_back(fullpath_cstr);
+      } else {
+        std::cerr << "realpath(...) failed to resolve " << path
+                 << ". Cannot continue." << std::endl;
+        ::abort();
+      }
     }
   }
 
@@ -369,10 +377,6 @@ SkeletonASTVisitor::shouldVisitDecl(VarDecl* D)
     return false;
   }
 
-  SourceLocation startLoc = getStart(D);
-  PresumedLoc ploc = CompilerGlobals::SM().getPresumedLoc(startLoc);
-  SourceLocation headerLoc = ploc.getIncludeLoc();
-
   //ignore eli variables
   std::string varName = D->getNameAsString();
   if (varName.size() >= 5){
@@ -412,49 +416,42 @@ SkeletonASTVisitor::shouldVisitDecl(VarDecl* D)
     }
   }
 
-  bool useAllHeaders = false;
-  if (headerLoc.isValid() && !useAllHeaders){
-    char fullpathBuffer[1024];
-    const char* fullpath_cstr = realpath(ploc.getFilename(), fullpathBuffer);
-    if (fullpath_cstr){
-      std::string fullpath(fullpath_cstr);
-      if (validHeaders_.empty()){
-        //we have not been explicitly given a list of valid headers
-        //just ignore all headers in default system paths
-        //we are inside a header
-        bool match = false;
-        for (auto&& path : CompilerGlobals::includePaths){
-          if (path.size() < fullpath.size()){
-            bool substr_match = true;
-            for (int i=0; i < path.size(); ++i){
-              if (path[i] != fullpath[i]){
-                substr_match = false;
-                break;
-              }
-            }
-            if (substr_match){
-              match = true;
-              break;
-            }
-          }
-        }
-        //this is a system header - skip it
-        if (match){
-          return false;
-        }
-      } else {
-        //we have an explicit list of valid headers
-        return validHeaders_.find(fullpath) != validHeaders_.end();
-      }
-    } else {
-      //we have been given explicitly a list of valid headers
-      warn(startLoc, "bad header path location, you probably abused and misused #line in your file");
-        return false;
-    }
+  //do visit if we are not in a system header
+  //do NOT visit if we are not in a system header
+  return !isInSystemHeader(getStart(D));
+}
+
+bool
+SkeletonASTVisitor::isInSystemHeader(SourceLocation loc)
+{
+  PresumedLoc ploc = CompilerGlobals::SM().getPresumedLoc(loc);
+  SourceLocation headerLoc = ploc.getIncludeLoc();
+  if (!headerLoc.isValid()){
+    return false;
   }
 
-  //not a header - good to go
-  return true;
+  char fullpathBuffer[1024];
+  const char* fullpath_cstr = realpath(ploc.getFilename(), fullpathBuffer);
+  if (fullpath_cstr){
+    llvm::StringRef fullpath(fullpath_cstr);
+    if (validHeaders_.empty()){
+      //we have not been explicitly given a list of valid headers
+      //just ignore all headers in default system paths
+      for (const auto& system_path : CompilerGlobals::realSystemIncludePaths){
+        if (fullpath.startswith(system_path)){
+          return true;
+        }
+      }
+      //found no matches
+      return false;
+    } else {
+      return validHeaders_.find(fullpath) == validHeaders_.end();
+    }
+  } else {
+    std::string err_str = std::string("realpath(...) failed to resolve ") + ploc.getFilename() + ". Cannot continue.";
+    errorAbort(loc, err_str);
+    return false; //for warnings
+  }
 }
 
 
