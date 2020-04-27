@@ -240,7 +240,11 @@ struct CompilerGlobals {
     return ci->getSema();
   }
 
-  static std::list<std::string> includePaths;
+  /**
+   This contains the list of system include root paths.
+   This stores "real" paths, which are absolute paths after following all symlinks
+  */
+  static std::vector<std::string> realSystemIncludePaths;
 
   static bool refactorMain;
 
