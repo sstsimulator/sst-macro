@@ -2,25 +2,25 @@
   "switches" : {
     "switch0" : {
       "routes" : {
-        "nid0" : 2,
-        "nid1" : 3,
+        "nid0" : 1,
+        "nid1" : 2,
         "nid2" : 0,
-        "nid3" : 1,
+        "nid3" : 0,
         "nid4" : 0,
-        "nid5" : 1,
+        "nid5" : 0,
         "nid6" : 0,
-        "nid7" : 1
+        "nid7" : 0
       }
-    },	
+    },
     "switch1" : {
       "routes" : {
-        "nid0" : 1,
+        "nid0" : 0,
         "nid1" : 0,
-        "nid2" : 2,
-        "nid3" : 3,
-        "nid4" : 1,
+        "nid2" : 1,
+        "nid3" : 2,
+        "nid4" : 0,
         "nid5" : 0,
-        "nid6" : 1,
+        "nid6" : 0,
         "nid7" : 0
       }
     },
@@ -29,59 +29,59 @@
         "nid0" : 0,
         "nid1" : 0,
         "nid2" : 0,
-        "nid3" : 1,
-        "nid4" : 2,
-        "nid5" : 3,
+        "nid3" : 0,
+        "nid4" : 1,
+        "nid5" : 2,
         "nid6" : 0,
-        "nid7" : 1
+        "nid7" : 0
       }
     },
     "switch3" : {
       "routes" : {
-        "nid0" : 1,
+        "nid0" : 0,
         "nid1" : 0,
-        "nid2" : 1,
+        "nid2" : 0,
         "nid3" : 0,
-        "nid4" : 1,
+        "nid4" : 0,
         "nid5" : 0,
-        "nid6" : 2,
-        "nid7" : 3
+        "nid6" : 1,
+        "nid7" : 2
       }
     },
     "switch4" : {
       "routes" : {
         "nid0" : 0,
-        "nid1" : 2,
+        "nid1" : 0,
         "nid2" : 1,
-        "nid3" : 3,
-        "nid4" : 4,
-        "nid5" : 5,
-        "nid6" : 4,
-        "nid7" : 5
+        "nid3" : 1,
+        "nid4" : 2,
+        "nid5" : 2,
+        "nid6" : 2,
+        "nid7" : 2
       }
     },
     "switch5" : {
       "routes" : {
-        "nid0" : 4,
-        "nid1" : 5,
-        "nid2" : 4,
-        "nid3" : 5,
+        "nid0" : 2,
+        "nid1" : 2,
+        "nid2" : 2,
+        "nid3" : 2,
         "nid4" : 0,
-        "nid5" : 2,
+        "nid5" : 0,
         "nid6" : 1,
-        "nid7" : 3
+        "nid7" : 1
       }
     },
     "switch6" : {
       "routes" : {
         "nid0" : 0,
-        "nid1" : 2,
+        "nid1" : 0,
         "nid2" : 0,
-        "nid3" : 2,
+        "nid3" : 0,
         "nid4" : 1,
-        "nid5" : 3,
+        "nid5" : 1,
         "nid6" : 1,
-        "nid7" : 3
+        "nid7" : 1
       }
     }
   }

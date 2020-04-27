@@ -51,15 +51,24 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-
-/*------------------------------------------------------------------------------
-  abstract_fat_tree
-  ----------------------------------------------------------------------------*/
-
-class AbstractFatTree :
+/**
+ * @class fat_tree
+ * The fat tree network generates a k-ary fat tree with l tiers
+ */
+class FatTree :
   public StructuredTopology
 {
+
  public:
+  SPKT_REGISTER_DERIVED(
+    Topology,
+    FatTree,
+    "macro",
+    "fat_tree",
+    "implements a fat-tree, with possible tapering")
+
+  FatTree(SST::Params& params);
+
   typedef enum {
    up_dimension = 1,
    down_dimension = 0
@@ -74,61 +83,13 @@ class AbstractFatTree :
   }
 
 
-  inline int injSubtree(const SwitchId sid) const {
+  int injSubtree(const SwitchId sid) const {
     return sid / leaf_switches_per_subtree_;
   }
 
   int leafSwitchesPerSubtree() const {
     return leaf_switches_per_subtree_;
   }
-
- protected:
-  AbstractFatTree(SST::Params& params);
-
-  virtual int aggSubtree(const SwitchId sid) const {
-    return (sid - num_leaf_switches_) / agg_switches_per_subtree_;
-  }
-
-  // used for minimal_fat_tree routing
-  virtual int upPort(int level) const = 0;
-  virtual int downPort(int dst_tree) const = 0;
-
-  int num_leaf_switches_;
-  int num_agg_subtrees_;
-  int leaf_switches_per_subtree_;
-  int agg_switches_per_subtree_;
-  int num_agg_switches_;
-  int num_core_switches_;
-  double vtk_radius_;
-  double vtk_subtree_theta_;
-
- private:
-  sprockit::SimParameters*
-  override_params(SST::Params& params);
-};
-
-
-/*------------------------------------------------------------------------------
-  fat_tree
-  ----------------------------------------------------------------------------*/
-
-/**
- * @class fat_tree
- * The fat tree network generates a k-ary fat tree with l tiers
- */
-class FatTree :
-  public AbstractFatTree
-{
-
- public:
-  SPKT_REGISTER_DERIVED(
-    Topology,
-    FatTree,
-    "macro",
-    "fat_tree",
-    "implements a fat-tree, with possible tapering")
-
-  FatTree(SST::Params& params);
 
   std::string toString() const override {
     return "fat tree topology";
@@ -140,6 +101,13 @@ class FatTree :
 
   SwitchId numSwitches() const override {
     return num_leaf_switches_ + num_agg_switches_ + num_core_switches_;
+  }
+
+  /**
+   * Unlike other topologies, we all fat-tree to leave empty slots
+   */
+  NodeId numNodes() const override {
+    return max_nodes_;
   }
 
   int level(SwitchId sid) const {
@@ -214,10 +182,6 @@ class FatTree :
     return agg_switches_per_subtree_;
   }
 
-  int leafSwitchesPerSubtree() const {
-    return leaf_switches_per_subtree_;
-  }
-
   int upPortsPerAggSwitch() const {
     return up_ports_per_agg_switch_;
   }
@@ -253,9 +217,9 @@ class FatTree :
     return minimalDistance(src/concentration_, dst/concentration_);
   }
 
- protected:
+ private:
   // used for minimal_fat_tree routing
-  inline int upPort(int level) const override {
+  int upPort(int level) const {
     if (level == 0){
       return 0;
     } else if (level == 1) {
@@ -265,136 +229,30 @@ class FatTree :
       return -1; //make gcc happy
     }
   }
-  inline int downPort(int dst_tree) const override {
+  int downPort(int dst_tree) const {
       return dst_tree * agg_switches_per_subtree_;
   }
 
- private:
+  int aggSubtree(const SwitchId sid) const {
+    return (sid - num_leaf_switches_) / agg_switches_per_subtree_;
+  }
+
   int up_ports_per_leaf_switch_;
   int down_ports_per_agg_switch_;
   int up_ports_per_agg_switch_;
   int down_ports_per_core_switch_;
+  int max_nodes_;
+
+  int num_leaf_switches_;
+  int num_agg_subtrees_;
+  int leaf_switches_per_subtree_;
+  int agg_switches_per_subtree_;
+  int num_agg_switches_;
+  int num_core_switches_;
+  double vtk_radius_;
+  double vtk_subtree_theta_;
 
   void checkInput() const;
-};
-
-
-/*------------------------------------------------------------------------------
-  tapered_fat_tree
-  ----------------------------------------------------------------------------*/
-
-class TaperedFatTree : public AbstractFatTree
-{
- public:
-  SPKT_REGISTER_DERIVED(
-    Topology,
-    TaperedFatTree,
-    "macro",
-    "tapered_fat_tree",
-    "implements a fat-tree with simple tapering models")
-
-  TaperedFatTree(SST::Params& params);
-
-  std::string toString() const override {
-    return "tapered fat-tree topology";
-  }
-
-  ~TaperedFatTree() override {}
-
-  SwitchId numSwitches() const override {
-    return num_leaf_switches_ + num_agg_subtrees_ + 1;
-  }
-
-  int level(SwitchId sid) const {
-    if (sid == coreSwitchId()){
-      return 2;
-    } else if (sid >= num_leaf_switches_){
-      return 1;
-    } else {
-      return 0;
-    }
-  }
-
-  inline int subtree(const SwitchId sid) const {
-    int lvl = level(sid);
-    switch (lvl) {
-    case 0:
-      return injSubtree(sid);
-    case 1:
-      return aggSubtree(sid);
-    case 2:
-      return num_agg_subtrees_;
-    default:
-     spkt_abort_printf("Bad level %d - should be <= 2", lvl);
-     return -1; //make gcc happy
-    }
-  }
-
-  int minimalDistance(SwitchId src, SwitchId dst) const {
-    if (src == dst){
-      return 0;
-    }
-    int src_tree = aggSubtree(src);
-    int dst_tree = aggSubtree(dst);
-    if (src_tree == dst_tree){
-      return 2;
-    } else {
-      return 4;
-    }
-  }
-
-  int numHopsToNode(NodeId src, NodeId dst) const override {
-    return minimalDistance(src/concentration_, dst/concentration_);
-  }
-
-  void endpointsConnectedToInjectionSwitch(
-      SwitchId swaddr, std::vector<InjectionPort>& nodes) const override;
-
-  int maxNumPorts() const override {
-    int first_max = std::max(concentration() + 1, leaf_switches_per_subtree_ + 1);
-    return std::max(first_max, num_agg_subtrees_);
-  }
-
-  inline int upPort(int level) const override {
-    if (level == 0){
-      //port is after all the compute nodes
-      return concentration();
-    } else if (level == 1){
-      //I have this many down ports - up port comes after
-      return leaf_switches_per_subtree_;
-    } else {
-      spkt_abort_printf("invalid level %d - cannot go up on fat tree level %d", level, level);
-      return -1;
-    }
-  }
-
-  int downPort(int dst_tree) const override {
-    return dst_tree;
-  }
-
-  inline int aggSubtree(SwitchId sid) const override {
-    return (sid - num_leaf_switches_);
-  }
-
-  double portScaleFactor(uint32_t addr, int port) const override;
-
-  void connectedOutports(SwitchId src, std::vector<Connection>& conns) const override;
-
- protected:
-  void createPartition(
-    int* switch_to_lp,
-    int* switch_to_thread,
-    int me,
-    int nproc,
-    int nthread,
-    int noccupied) const override;
-
- private:
-  inline SwitchId coreSwitchId() const {
-    return num_leaf_switches_ + num_agg_subtrees_;
-  }
-  double agg_bw_multiplier_;
-
 };
 
 }
