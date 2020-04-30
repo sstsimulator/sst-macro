@@ -71,7 +71,7 @@ SnapprOutPort::SnapprOutPort(uint32_t id, SST::Params& params, const std::string
                              const std::string& subId, const std::string& portName,
                              int number, TimeDelta byt_delay, bool congestion, bool flow_control,
                              Component* parent, const std::vector<int>& vls_per_qos)
-  : SubComponent(id, portName, parent),
+  : SubComponent(id, subId + portName, parent),
     arbitration_scheduled(false), 
     byte_delay(byt_delay), 
     state_ftq(nullptr),
