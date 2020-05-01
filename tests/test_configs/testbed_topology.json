@@ -1,0 +1,717 @@
+{ 
+  "avg_num_hops" : 4,
+  "switches" : { 
+    "sst-sw0" : {
+      "outports" : { 
+        "0" : { "destination" : "sst-sw1", "inport" : 0 },
+        "1" : { "destination" : "sst-sw1", "inport" : 1 },
+        "2" : { "destination" : "sst-sw1", "inport" : 2 },
+        "3" : { "destination" : "sst-sw1", "inport" : 3 },
+        "4" : { "destination" : "sst-sw3", "inport" : 0 },
+        "5" : { "destination" : "sst-sw3", "inport" : 1 },
+        "6" : { "destination" : "sst-sw3", "inport" : 2 },
+        "7" : { "destination" : "sst-sw3", "inport" : 3 },
+        "8" : { "destination" : "sst-sw5", "inport" : 0 },
+        "9" : { "destination" : "sst-sw5", "inport" : 1 },
+        "10" : { "destination" : "sst-sw5", "inport" : 2 },
+        "11" : { "destination" : "sst-sw5", "inport" : 3 },
+        "12" : { "destination" : "sst-sw7", "inport" : 0 },
+        "13" : { "destination" : "sst-sw7", "inport" : 1 },
+        "14" : { "destination" : "sst-sw7", "inport" : 2 },
+        "15" : { "destination" : "sst-sw7", "inport" : 3 },
+        "16" : { "destination" : "sst-sw2", "inport" : 0 },
+        "17" : { "destination" : "sst-sw2", "inport" : 1 },
+        "18" : { "destination" : "sst-sw2", "inport" : 2 },
+        "19" : { "destination" : "sst-sw2", "inport" : 3 },
+        "20" : { "destination" : "sst-sw4", "inport" : 0 },
+        "21" : { "destination" : "sst-sw4", "inport" : 1 },
+        "22" : { "destination" : "sst-sw4", "inport" : 2 },
+        "23" : { "destination" : "sst-sw4", "inport" : 3 },
+        "24" : { "destination" : "sst-sw6", "inport" : 0 },
+        "25" : { "destination" : "sst-sw6", "inport" : 1 },
+        "26" : { "destination" : "sst-sw6", "inport" : 2 },
+        "27" : { "destination" : "sst-sw6", "inport" : 3 },
+        "28" : { "destination" : "sst-sw8", "inport" : 0 },
+        "29" : { "destination" : "sst-sw8", "inport" : 1 },
+        "30" : { "destination" : "sst-sw8", "inport" : 2 },
+        "31" : { "destination" : "sst-sw8", "inport" : 3 }
+      },
+      "port_channels" : {
+        "Po0" : { "ports" : [0,1,2,3] },
+        "Po1" : { "ports" : [4,5,6,7] },
+        "Po2" : { "ports" : [8,9,10,11] },
+        "Po3" : { "ports" : [12,13,14,15] },
+        "Po4" : { "ports" : [16,17,18,19] },
+        "Po5" : { "ports" : [20,21,22,23] },
+        "Po6" : { "ports" : [24,25,26,27] },
+        "Po7" : { "ports" : [28,29,30,31] }
+      }
+    },
+    "sst-sw8" : {
+      "outports" : { 
+        "0" : { "destination" : "sst-sw0", "inport" : 28 },
+        "1" : { "destination" : "sst-sw0", "inport" : 29 },
+        "2" : { "destination" : "sst-sw0", "inport" : 30 },
+        "3" : { "destination" : "sst-sw0", "inport" : 31 },
+        "4" : { "destination" : "en215", "inport" : 0 },
+        "5" : { "destination" : "en213", "inport" : 0 },
+        "6" : { "destination" : "en211", "inport" : 0 },
+        "7" : { "destination" : "en209", "inport" : 0 },
+        "8" : { "destination" : "en207", "inport" : 0 },
+        "9" : { "destination" : "en205", "inport" : 0 },
+        "10" : { "destination" : "en203", "inport" : 0 },
+        "11" : { "destination" : "en201", "inport" : 0 },
+        "12" : { "destination" : "en199", "inport" : 0 },
+        "13" : { "destination" : "en197", "inport" : 0 },
+        "14" : { "destination" : "en195", "inport" : 0 },
+        "15" : { "destination" : "en193", "inport" : 0 }
+      },
+      "port_channels" : {
+        "Po0" : { "ports" : [0,1,2,3] }
+      }
+    },
+    "sst-sw7" : {
+      "outports" : { 
+        "0" : { "destination" : "sst-sw0", "inport" : 12 },
+        "1" : { "destination" : "sst-sw0", "inport" : 13 },
+        "2" : { "destination" : "sst-sw0", "inport" : 14 },
+        "3" : { "destination" : "sst-sw0", "inport" : 15 },
+        "4" : { "destination" : "en216", "inport" : 0 },
+        "5" : { "destination" : "en214", "inport" : 0 },
+        "6" : { "destination" : "en212", "inport" : 0 },
+        "7" : { "destination" : "en210", "inport" : 0 },
+        "8" : { "destination" : "en208", "inport" : 0 },
+        "9" : { "destination" : "en206", "inport" : 0 },
+        "10" : { "destination" : "en204", "inport" : 0 },
+        "11" : { "destination" : "en202", "inport" : 0 },
+        "12" : { "destination" : "en200", "inport" : 0 },
+        "13" : { "destination" : "en198", "inport" : 0 },
+        "14" : { "destination" : "en196", "inport" : 0 },
+        "15" : { "destination" : "en194", "inport" : 0 }
+      },
+      "port_channels" : {
+        "Po0" : { "ports" : [0,1,2,3] }
+      }
+    },
+    "sst-sw6" : {
+      "outports" : { 
+        "0" : { "destination" : "sst-sw0", "inport" : 24 },
+        "1" : { "destination" : "sst-sw0", "inport" : 25 },
+        "2" : { "destination" : "sst-sw0", "inport" : 26 },
+        "3" : { "destination" : "sst-sw0", "inport" : 27 },
+        "4" : { "destination" : "en239", "inport" : 0 },
+        "5" : { "destination" : "en237", "inport" : 0 },
+        "6" : { "destination" : "en235", "inport" : 0 },
+        "7" : { "destination" : "en233", "inport" : 0 },
+        "8" : { "destination" : "en231", "inport" : 0 },
+        "9" : { "destination" : "en229", "inport" : 0 },
+        "10" : { "destination" : "en227", "inport" : 0 },
+        "11" : { "destination" : "en225", "inport" : 0 },
+        "12" : { "destination" : "en223", "inport" : 0 },
+        "13" : { "destination" : "en221", "inport" : 0 },
+        "14" : { "destination" : "en219", "inport" : 0 },
+        "15" : { "destination" : "en217", "inport" : 0 }
+      },
+      "port_channels" : {
+        "Po0" : { "ports" : [0,1,2,3] }
+      }
+    },
+    "sst-sw5" : {
+      "outports" : {
+        "0" : { "destination" : "sst-sw0", "inport" : 8 },
+        "1" : { "destination" : "sst-sw0", "inport" : 9 },
+        "2" : { "destination" : "sst-sw0", "inport" : 10 },
+        "3" : { "destination" : "sst-sw0", "inport" : 11 },
+        "4" : { "destination" : "en240", "inport" : 0 },
+        "5" : { "destination" : "en238", "inport" : 0 },
+        "6" : { "destination" : "en236", "inport" : 0 },
+        "7" : { "destination" : "en234", "inport" : 0 },
+        "8" : { "destination" : "en232", "inport" : 0 },
+        "9" : { "destination" : "en230", "inport" : 0 },
+        "10" : { "destination" : "en228", "inport" : 0 },
+        "11" : { "destination" : "en226", "inport" : 0 },
+        "12" : { "destination" : "en224", "inport" : 0 },
+        "13" : { "destination" : "en222", "inport" : 0 },
+        "14" : { "destination" : "en220", "inport" : 0 },
+        "15" : { "destination" : "en218", "inport" : 0 }
+      },
+      "port_channels" : {
+        "Po0" : { "ports" : [0,1,2,3] }
+      }
+    },
+    "sst-sw4" : {
+      "outports" : {
+        "0" : { "destination" : "sst-sw0", "inport" : 20 },
+        "1" : { "destination" : "sst-sw0", "inport" : 21 },
+        "2" : { "destination" : "sst-sw0", "inport" : 22 },
+        "3" : { "destination" : "sst-sw0", "inport" : 23 },
+        "4" : { "destination" : "en263", "inport" : 0 },
+        "5" : { "destination" : "en261", "inport" : 0 },
+        "6" : { "destination" : "en259", "inport" : 0 },
+        "7" : { "destination" : "en257", "inport" : 0 },
+        "8" : { "destination" : "en255", "inport" : 0 },
+        "9" : { "destination" : "en253", "inport" : 0 },
+        "10" : { "destination" : "en251", "inport" : 0 },
+        "11" : { "destination" : "en249", "inport" : 0 },
+        "12" : { "destination" : "en247", "inport" : 0 },
+        "13" : { "destination" : "en245", "inport" : 0 },
+        "14" : { "destination" : "en243", "inport" : 0 },
+        "15" : { "destination" : "en241", "inport" : 0 }
+      },
+      "port_channels" : {
+        "Po0" : { "ports" : [0,1,2,3] }
+      }
+    },
+    "sst-sw3" : {
+      "outports" : {
+        "0" : { "destination" : "sst-sw0", "inport" : 4 },
+        "1" : { "destination" : "sst-sw0", "inport" : 5 },
+        "2" : { "destination" : "sst-sw0", "inport" : 6 },
+        "3" : { "destination" : "sst-sw0", "inport" : 7 },
+        "4" : { "destination" : "en264", "inport" : 0 },
+        "5" : { "destination" : "en262", "inport" : 0 },
+        "6" : { "destination" : "en260", "inport" : 0 },
+        "7" : { "destination" : "en258", "inport" : 0 },
+        "8" : { "destination" : "en256", "inport" : 0 },
+        "9" : { "destination" : "en254", "inport" : 0 },
+        "10" : { "destination" : "en252", "inport" : 0 },
+        "11" : { "destination" : "en250", "inport" : 0 },
+        "12" : { "destination" : "en248", "inport" : 0 },
+        "13" : { "destination" : "en246", "inport" : 0 },
+        "14" : { "destination" : "en244", "inport" : 0 },
+        "15" : { "destination" : "en242", "inport" : 0 }
+      },
+      "port_channels" : {
+        "Po0" : { "ports" : [0,1,2,3] }
+      }
+    },
+    "sst-sw2" : {
+      "outports" : {
+        "0" : { "destination" : "sst-sw0", "inport" : 16 },
+        "1" : { "destination" : "sst-sw0", "inport" : 17 },
+        "2" : { "destination" : "sst-sw0", "inport" : 18 },
+        "3" : { "destination" : "sst-sw0", "inport" : 19 },
+        "4" : { "destination" : "en287", "inport" : 0 },
+        "5" : { "destination" : "en285", "inport" : 0 },
+        "6" : { "destination" : "en283", "inport" : 0 },
+        "7" : { "destination" : "en281", "inport" : 0 },
+        "8" : { "destination" : "en279", "inport" : 0 },
+        "9" : { "destination" : "en277", "inport" : 0 },
+        "10" : { "destination" : "en275", "inport" : 0 },
+        "11" : { "destination" : "en273", "inport" : 0 },
+        "12" : { "destination" : "en271", "inport" : 0 },
+        "13" : { "destination" : "en269", "inport" : 0 },
+        "14" : { "destination" : "en267", "inport" : 0 },
+        "15" : { "destination" : "en265", "inport" : 0 }
+      },
+      "port_channels" : {
+        "Po0" : { "ports" : [0,1,2,3] }
+      }
+    },
+    "sst-sw1" : {
+      "outports" : {
+        "0" : { "destination" : "sst-sw0", "inport" : 0 },
+        "1" : { "destination" : "sst-sw0", "inport" : 1 },
+        "2" : { "destination" : "sst-sw0", "inport" : 2 },
+        "3" : { "destination" : "sst-sw0", "inport" : 3 },
+        "4" : { "destination" : "en288", "inport" : 0 },
+        "5" : { "destination" : "en286", "inport" : 0 },
+        "6" : { "destination" : "en284", "inport" : 0 },
+        "7" : { "destination" : "en282", "inport" : 0 },
+        "8" : { "destination" : "en280", "inport" : 0 },
+        "9" : { "destination" : "en278", "inport" : 0 },
+        "10" : { "destination" : "en276", "inport" : 0 },
+        "11" : { "destination" : "en274", "inport" : 0 },
+        "12" : { "destination" : "en272", "inport" : 0 },
+        "13" : { "destination" : "en270", "inport" : 0 },
+        "14" : { "destination" : "en268", "inport" : 0 },
+        "15" : { "destination" : "en266", "inport" : 0 }
+      },
+      "port_channels" : {
+        "Po0" : { "ports" : [0,1,2,3] }
+      }
+    }
+  },
+  "nodes" : { 
+    "en193" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw8", "inport" : 15 }
+      }
+    },
+    "en195" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw8", "inport" : 14 }
+      }
+    },
+    "en197" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw8", "inport" : 13 }
+      }
+    },
+    "en199" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw8", "inport" : 12 }
+      }
+    },
+    "en201" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw8", "inport" : 11 }
+      }
+    },
+    "en203" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw8", "inport" : 10 }
+      }
+    },
+    "en205" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw8", "inport" : 9 }
+      }
+    },
+    "en207" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw8", "inport" : 8 }
+      }
+    },
+    "en209" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw8", "inport" : 7 }
+      }
+    },
+    "en211" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw8", "inport" : 6 }
+      }
+    },
+    "en213" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw8", "inport" : 5 }
+      }
+    },
+    "en215" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw8", "inport" : 4 }
+      }
+    },
+    "en194" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw7", "inport" : 15 }
+      }
+    },
+    "en196" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw7", "inport" : 14 }
+      }
+    },
+    "en198" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw7", "inport" : 13 }
+      }
+    },
+    "en200" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw7", "inport" : 12 }
+      }
+    },
+    "en202" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw7", "inport" : 11 }
+      }
+    },
+    "en204" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw7", "inport" : 10 }
+      }
+    },
+    "en206" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw7", "inport" : 9 }
+      }
+    },
+    "en208" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw7", "inport" : 8 }
+      }
+    },
+    "en210" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw7", "inport" : 7 }
+      }
+    },
+    "en212" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw7", "inport" : 6 }
+      }
+    },
+    "en214" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw7", "inport" : 5 }
+      }
+    },
+    "en216" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw7", "inport" : 4 }
+      }
+    },
+    "en217" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw6", "inport" : 15 }
+      }
+    },
+    "en219" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw6", "inport" : 14 }
+      }
+    },
+    "en221" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw6", "inport" : 13 }
+      }
+    },
+    "en223" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw6", "inport" : 12 }
+      }
+    },
+    "en225" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw6", "inport" : 11 }
+      }
+    },
+    "en227" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw6", "inport" : 10 }
+      }
+    },
+    "en229" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw6", "inport" : 9 }
+      }
+    },
+    "en231" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw6", "inport" : 8 }
+      }
+    },
+    "en233" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw6", "inport" : 7 }
+      }
+    },
+    "en235" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw6", "inport" : 6 }
+      }
+    },
+    "en237" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw6", "inport" : 5 }
+      }
+    },
+    "en239" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw6", "inport" : 4 }
+      }
+    },
+    "en218" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw5", "inport" : 15 }
+      }
+    },
+    "en220" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw5", "inport" : 14 }
+      }
+    },
+    "en222" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw5", "inport" : 13 }
+      }
+    },
+    "en224" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw5", "inport" : 12 }
+      }
+    },
+    "en226" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw5", "inport" : 11 }
+      }
+    },
+    "en228" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw5", "inport" : 10 }
+      }
+    },
+    "en230" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw5", "inport" : 9 }
+      }
+    },
+    "en232" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw5", "inport" : 8 }
+      }
+    },
+    "en234" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw5", "inport" : 7 }
+      }
+    },
+    "en236" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw5", "inport" : 6 }
+      }
+    },
+    "en238" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw5", "inport" : 5 }
+      }
+    },
+    "en240" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw5", "inport" : 4 }
+      }
+    },
+    "en241" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw4", "inport" : 15 }
+      }
+    },
+    "en243" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw4", "inport" : 14 }
+      }
+    },
+    "en245" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw4", "inport" : 13 }
+      }
+    },
+    "en247" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw4", "inport" : 12 }
+      }
+    },
+    "en249" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw4", "inport" : 11 }
+      }
+    },
+    "en251" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw4", "inport" : 10 }
+      }
+    },
+    "en253" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw4", "inport" : 9 }
+      }
+    },
+    "en255" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw4", "inport" : 8 }
+      }
+    },
+    "en257" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw4", "inport" : 7 }
+      }
+    },
+    "en259" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw4", "inport" : 6 }
+      }
+    },
+    "en261" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw4", "inport" : 5 }
+      }
+    },
+    "en263" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw4", "inport" : 4 }
+      }
+    },
+    "en242" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw3", "inport" : 15 }
+      }
+    },
+    "en244" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw3", "inport" : 14 }
+      }
+    },
+    "en246" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw3", "inport" : 13 }
+      }
+    },
+    "en248" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw3", "inport" : 12 }
+      }
+    },
+    "en250" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw3", "inport" : 11 }
+      }
+    },
+    "en252" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw3", "inport" : 10 }
+      }
+    },
+    "en254" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw3", "inport" : 9 }
+      }
+    },
+    "en256" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw3", "inport" : 8 }
+      }
+    },
+    "en258" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw3", "inport" : 7 }
+      }
+    },
+    "en260" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw3", "inport" : 6 }
+      }
+    },
+    "en262" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw3", "inport" : 5 }
+      }
+    },
+    "en264" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw3", "inport" : 4 }
+      }
+    },
+    "en265" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw2", "inport" : 15 }
+      }
+    },
+    "en267" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw2", "inport" : 14 }
+      }
+    },
+    "en269" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw2", "inport" : 13 }
+      }
+    },
+    "en271" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw2", "inport" : 12 }
+      }
+    },
+    "en273" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw2", "inport" : 11 }
+      }
+    },
+    "en275" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw2", "inport" : 10 }
+      }
+    },
+    "en277" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw2", "inport" : 9 }
+      }
+    },
+    "en279" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw2", "inport" : 8 }
+      }
+    },
+    "en281" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw2", "inport" : 7 }
+      }
+    },
+    "en283" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw2", "inport" : 6 }
+      }
+    },
+    "en285" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw2", "inport" : 5 }
+      }
+    },
+    "en287" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw2", "inport" : 4 }
+      }
+    },
+    "en266" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw1", "inport" : 15 }
+      }
+    },
+    "en268" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw1", "inport" : 14 }
+      }
+    },
+    "en270" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw1", "inport" : 13 }
+      }
+    },
+    "en272" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw1", "inport" : 12 }
+      }
+    },
+    "en274" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw1", "inport" : 11 }
+      }
+    },
+    "en276" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw1", "inport" : 10 }
+      }
+    },
+    "en278" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw1", "inport" : 9 }
+      }
+    },
+    "en280" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw1", "inport" : 8 }
+      }
+    },
+    "en282" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw1", "inport" : 7 }
+      }
+    },
+    "en284" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw1", "inport" : 6 }
+      }
+    },
+    "en286" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw1", "inport" : 5 }
+      }
+    },
+    "en288" : {
+      "outports" : {
+        "0" : {"destination" : "sst-sw1", "inport" : 4 }
+      }
+    }
+  }
+}
