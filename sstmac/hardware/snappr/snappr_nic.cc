@@ -79,7 +79,6 @@ SnapprNIC::SnapprNIC(uint32_t id, SST::Params& params, Node* parent) :
 {
   SST::Params inj_params = params.find_scoped_params("injection");
 
-
   packet_size_ = inj_params.find<SST::UnitAlgebra>("mtu").getRoundedValue();
 
   //configure for a single port for now
@@ -87,6 +86,7 @@ SnapprNIC::SnapprNIC(uint32_t id, SST::Params& params, Node* parent) :
   outports_.resize(num_ports);
   std::string arbtype = inj_params.find<std::string>("arbitrator", "fifo");
   qos_levels_ = params.find<int>("qos_levels", 1);
+  rdma_get_req_qos_ = params.find<int>("rdma_get_qos", -1);
   flow_control_ = inj_params.find<bool>("flow_control", true);
   std::vector<uint32_t> credits_per_qos(qos_levels_);
   if (flow_control_){
@@ -317,6 +317,11 @@ void
 SnapprNIC::handlePayload(Event *ev)
 {
   SnapprPacket* pkt = static_cast<SnapprPacket*>(ev);
+  if (pkt->deadlocked()){
+    std::cerr << "NIC " << addr() << " is part of deadlock" << std::endl;
+    return;
+  }
+
 
   TimeDelta time_to_send = pkt->byteLength() * inj_byte_delay_;
   if (time_to_send < pkt->timeToSend()){
@@ -369,8 +374,16 @@ SnapprNIC::injectPacket(uint32_t  /*ptk_size*/, uint64_t byte_offset, NetworkMes
   NodeId to = payload->toaddr();
   NodeId from = payload->fromaddr();
   uint64_t fid = payload->flowId();
+
+  int qos = payload->qos();
+  if (rdma_get_req_qos_ != -1 && payload->type() == NetworkMessage::rdma_get_request){
+    qos = rdma_get_req_qos_;
+  }
+  if (qos >= qos_levels_){
+    spkt_abort_printf("invalid payload qos %d, max is %d", qos, qos_levels_ - 1);
+  }
   SnapprPacket* pkt = new SnapprPacket(is_tail ? payload : nullptr, pkt_size, is_tail,
-                                       fid, byte_offset, to, from, payload->qos());
+                                       fid, byte_offset, to, from, qos);
   if (scatter_qos_){
     pkt->setVirtualLane(next_qos_);
     next_qos_ = (next_qos_ + 1) % qos_levels_;

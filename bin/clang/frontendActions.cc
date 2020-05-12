@@ -91,7 +91,11 @@ ReplaceAction::CreateASTConsumer(clang::CompilerInstance& CI, clang::StringRef /
   CompilerGlobals::rewriter.setSourceMgr(CI.getSourceManager(), CI.getLangOpts());
   CompilerGlobals::ci = &CI;
   initPragmas();
+#if __cplusplus >= 201402L
+  return std::make_unique<SkeletonASTConsumer>(first_pass_visitor_, skeleton_visitor_);
+#else
   return llvm::make_unique<SkeletonASTConsumer>(first_pass_visitor_, skeleton_visitor_);
+#endif
 }
 
 void
@@ -165,7 +169,13 @@ void
 ReplaceAction::initPragmas()
 {
   /** Need this to figure out begin location of #pragma */
-  CompilerGlobals::CI().getPreprocessor().addPPCallbacks(llvm::make_unique<PragmaPPCallback>());
+  CompilerGlobals::CI().getPreprocessor().addPPCallbacks(
+#if __cplusplus >= 201402L
+      std::make_unique<PragmaPPCallback>()
+#else
+      llvm::make_unique<PragmaPPCallback>()
+#endif
+      );
 }
 
 void

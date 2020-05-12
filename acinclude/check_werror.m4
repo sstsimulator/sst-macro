@@ -6,8 +6,7 @@ AC_DEFUN([CHECK_WERROR], [
 
   AC_MSG_CHECKING([whether to use -Werror build])
   AC_ARG_WITH(werror,
-    [
-      AS_HELP_STRING(
+    [AS_HELP_STRING(
         [--with-werror],
         [Whether to build with Werror]
       )

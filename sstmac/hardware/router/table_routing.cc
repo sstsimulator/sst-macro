@@ -45,13 +45,10 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/router/router.h>
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/topology/topology.h>
-//#include <sstmac/hardware/topology/multipath_topology.h>
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
-#include <sstmac/hardware/topology/fat_tree.h>
-//#include <sstmac/hardware/topology/butterfly.h>
-#include <sstmac/hardware/topology/fully_connected.h>
+#include <sstmac/hardware/topology/file.h>
 #include <sstmac/libraries/nlohmann/json.hpp>
 #include <sstream>
 #include <fstream>
@@ -61,6 +58,34 @@ namespace sstmac {
 namespace hw {
 
 class TableRouter : public Router {
+ private:
+  struct Port {
+    Port(const nlohmann::json& pch) :
+      rotater(0)
+    {
+      for (auto p : pch.at("ports")){
+        ports.push_back(p);
+      }
+    }
+
+    Port(int port) :
+      ports(1, port),
+      rotater(0)
+    {
+    }
+
+    Port() : rotater(0), ports(0) {}
+
+    int nextPort(){
+      int ret = ports[rotater];
+      rotater = (rotater + 1) % ports.size();
+      return ret;
+    }
+
+    std::vector<int> ports;
+    int rotater;
+  };
+
  public:
   SST_ELI_REGISTER_DERIVED(
     Router,
@@ -72,21 +97,41 @@ class TableRouter : public Router {
 
   TableRouter(SST::Params& params, Topology* top, NetworkSwitch* sw) :
     Router(params, top, sw),
-    table_(top->numNodes(), -1)
+    table_(top->numNodes())
   {
     std::string fname = params.find<std::string>("filename");
     std::ifstream in(fname);
     nlohmann::json jsn;
     in >> jsn;
+    FileTopology* file_topo = dynamic_cast<FileTopology*>(top);
 
+    std::string myName = top->switchIdToName(my_addr_);
     nlohmann::json routes =
-        jsn.at("switches").at( top->switchIdToName(my_addr_) ).at("routes");
-    for (auto it = routes.begin(); it != routes.end(); ++it)
-      table_[top->nodeNameToId(it.key())] = it.value();
+        jsn.at("switches").at(myName).at("routes");
+    nlohmann::json port_channels;
+    if (file_topo){
+      nlohmann::json switch_ports = file_topo->getSwitchJson(myName);
+      auto pch_it = switch_ports.find("port_channels");
+      if (pch_it != switch_ports.end()){
+        port_channels = *pch_it;
+      }
+    }
+
+    for (auto it = routes.begin(); it != routes.end(); ++it){
+      NodeId dest_nid = top->nodeNameToId(it.key());
+      if (it.value().is_number()){
+        //this is a single port
+        table_[dest_nid] = Port(int(it.value()));
+      } else {
+        std::string pch_name = it.value();
+        table_[dest_nid] = Port(port_channels.at(pch_name));
+      }
+    }
+
 
     int size = table_.size();
     for (int i=0; i < size; ++i){
-      if (table_[i] == -1){
+      if (table_[i].ports.size() == 0){
         spkt_abort_printf("No port specified on switch %d to destination %d",
                           my_addr_, i);
       }
@@ -103,7 +148,7 @@ class TableRouter : public Router {
   }
 
   void route(Packet *pkt) override {
-    int port = table_[pkt->toaddr()];
+    int port = table_[pkt->toaddr()].nextPort();
     pkt->setEdgeOutport(port);
     //for now only valid on topologies with minimal/no vcs
     pkt->setDeadlockVC(0);
@@ -111,7 +156,7 @@ class TableRouter : public Router {
   }
 
  private:
-  std::vector<int> table_;
+  std::vector<Port> table_;
 };
 
 }

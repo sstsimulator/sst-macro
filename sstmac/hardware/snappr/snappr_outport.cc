@@ -71,7 +71,7 @@ SnapprOutPort::SnapprOutPort(uint32_t id, SST::Params& params, const std::string
                              const std::string& subId, const std::string& portName,
                              int number, TimeDelta byt_delay, bool congestion, bool flow_control,
                              Component* parent, const std::vector<int>& vls_per_qos)
-  : SubComponent(id, portName, parent),
+  : SubComponent(id, subId + portName, parent),
     arbitration_scheduled(false), 
     byte_delay(byt_delay), 
     state_ftq(nullptr),
@@ -103,6 +103,8 @@ SnapprOutPort::SnapprOutPort(uint32_t id, SST::Params& params, const std::string
   //default is to assume no flit overhead
   uint32_t flit_size = params.find<SST::UnitAlgebra>("flit_size", "0").getRoundedValue();
   flit_overhead = flit_size * byte_delay;
+
+  debug_qos_ = params.find<int>("debug_qos", -1);
 }
 
 void
@@ -185,19 +187,26 @@ SnapprOutPort::send(SnapprPacket* pkt, Timestamp now)
                       pkt->toaddr(), pkt->toString().c_str());
   }
 #endif
-  link->send(flit_overhead, pkt);
-
-  if (flow_control_){
-    if (inports){
-      auto& inport = inports[pkt->inport()];
-      auto* credit = new SnapprCredit(pkt->byteLength(), pkt->inputVirtualLane(), inport.src_outport);
-      pkt_debug("sending credit to port=%d on vl=%d at t=%8.4e: %s",
-                inport.src_outport, pkt->inputVirtualLane(), next_free.sec(), pkt->toString().c_str());
-      inport.link->send(time_to_send + flit_overhead, credit);
-    }
+  if (pkt->qos() == debug_qos_){
+    queue(pkt); //put the packet back
+    SnapprCredit* credit = new SnapprCredit(pkt->numBytes(), pkt->virtualLane(), -1);
+    auto* ev = newCallback(this, &SnapprOutPort::handleCredit, credit); //port doesn't matter
+    parent_->sendExecutionEvent(next_free, ev);
   } else {
-    //immediately add the credits back - we don't worry about credits here
-    addCredits(pkt->virtualLane(), pkt->byteLength());
+    //actually send it
+    link->send(flit_overhead, pkt);
+    if (flow_control_){
+      if (inports){
+        auto& inport = inports[pkt->inport()];
+        auto* credit = new SnapprCredit(pkt->byteLength(), pkt->inputVirtualLane(), inport.src_outport);
+        pkt_debug("sending credit to port=%d on vl=%d at t=%8.4e: %s",
+                  inport.src_outport, pkt->inputVirtualLane(), next_free.sec(), pkt->toString().c_str());
+        inport.link->send(time_to_send + flit_overhead, credit);
+      }
+    } else {
+      //immediately add the credits back - we don't worry about credits here
+      addCredits(pkt->virtualLane(), pkt->byteLength());
+    }
   }
 
   if (notifier_ && pkt->isTail()){
@@ -523,6 +532,9 @@ struct WRR_PortArbitrator : public SnapprPortArbitrator
  std::vector<VirtualLane> vls_;
 
  uint64_t link_byte_delay_;
+ int debug_vl_;
+ int debug_qos_;
+ int mtu_;
 
  public:
   SPKT_REGISTER_DERIVED(
@@ -534,8 +546,18 @@ struct WRR_PortArbitrator : public SnapprPortArbitrator
 
   WRR_PortArbitrator(TimeDelta link_byte_delay, SST::Params& params,
                      const std::vector<int>& vls_per_qos) :
-    link_byte_delay_(link_byte_delay.ticks())
+    link_byte_delay_(link_byte_delay.ticks()),
+    debug_vl_(-1)
   {
+    mtu_ = params.find<SST::UnitAlgebra>("mtu", "4096").getRoundedValue();
+    debug_qos_ = params.find<int>("debug_qos", -1);
+    if (debug_qos_ != -1){
+      debug_vl_ = 0;
+      for (int i=0; i < debug_qos_; ++i){
+        debug_vl_ += vls_per_qos[i];
+      }
+    }
+
     std::vector<double> weights;
     if (params.contains("vl_weights")){
       params.find_array("vl_weights", weights);
@@ -645,6 +667,14 @@ struct WRR_PortArbitrator : public SnapprPortArbitrator
     }
     for (int i=0; i < vls_.size(); ++i){
       vls_[i].credits = credits[i];
+    }
+    if (debug_vl_ != -1){
+      int num_filler_packets = 16;
+      SnapprPacket* pkt = new SnapprPacket(nullptr, mtu_, false,
+                                           std::numeric_limits<uint64_t>::max(),
+                                           0, 0, 0, debug_qos_);
+      pkt->setVirtualLane(debug_vl_);
+      insert(0,pkt);
     }
   }
 

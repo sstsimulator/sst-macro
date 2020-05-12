@@ -1,4 +1,5 @@
-/**
+#! @pyexe@
+__license__ = """
 Copyright 2009-2020 National Technology and Engineering Solutions of Sandia,
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
@@ -40,14 +41,10 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Questions? Contact sst-macro-help@sandia.gov
-*/
-#! /usr/bin/env python
+"""
 
 from sstcclib import run
 import sys
-import os
-extra_libs = "-lsstmac" #for multipass issues
-rc = run("c", extra_libs)
+rc =  run("c++")
 if not rc == 0:
     sys.exit(1)
-

@@ -1,4 +1,3 @@
-
 static int x = 10;extern int __offset_xyzx; int __sizeof_xyzx = sizeof(int);static std::function<void(void*)> init_xyzx = [](void* ptr){ new (ptr) int{10}; };static sstmac::CppGlobalRegisterGuard x_sstmac_ctor(__offset_xyzx, __sizeof_xyzx, false, "x", std::move(init_xyzx));
 
 struct A {

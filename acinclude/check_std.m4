@@ -9,8 +9,7 @@ AH_TEMPLATE([HAVE_CXX17],
             [Define to use C++17 language features])
 
 AC_ARG_WITH(std,
-  [
-    AS_HELP_STRING(
+  [AS_HELP_STRING(
       [--with-std],
       [The C++ standard to enable],
     )
@@ -146,8 +145,12 @@ if test "x$cxxstd" = "x17"; then
   AM_CONDITIONAL([HAVE_CXX17], [true])
 fi
 
-if test "x$cxxstd" != "x11" -a test "x$cxxstd" != "x14" -a test "x$cxxstd" != "x17"; then
-  AC_MSG_ERROR([Got invalid C++ standard request $cxxstd. Must be 11, 14, or 17])
+if test "x$cxxstd" != "x11"; then
+  if test "x$cxxstd" != "x14"; then
+    if test "x$cxxstd" != "x17"; then
+      AC_MSG_ERROR([Got invalid C++ standard request $cxxstd. Must be 11, 14, or 17])
+    fi
+  fi
 fi
 
 AC_SUBST([STD_CXXFLAGS])

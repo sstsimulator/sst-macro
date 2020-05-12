@@ -1,4 +1,3 @@
-
 struct A {
  static int x; public: static int __offset_x;
  void fxn(){ char* sstmac_global_data = get_sstmac_global_data();int* sstmac_x=(int*)(sstmac_global_data + A::__offset_x); {

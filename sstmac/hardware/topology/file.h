@@ -165,6 +165,10 @@ class FileTopology : public Topology
     return key;
   }
 
+  nlohmann::json getSwitchJson(const std::string& name) const {
+    return switches_.at(name);
+  }
+
  private:
   void initHostnameMap(SST::Params& params) override;
 

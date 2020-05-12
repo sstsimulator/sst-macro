@@ -184,8 +184,8 @@ EventManager::runEvents(Timestamp event_horizon)
   while (!event_queue_.empty()){
     auto iter = event_queue_.begin();
     ExecutionEvent* ev = *iter;
-    //std::cout << "Run " << ev->time().time.ticks() << " " << ev->linkId() << " " << ev->seqnum() << std::endl;
-
+    prll_debug("manager %d:%d pulled event %" PRIu32 " from link %" PRIu64 " at t=%10.7e on epoch %d",
+                me_, thread_id_, ev->seqnum(), ev->linkId(), ev->time().sec(), epoch());
 #if SSTMAC_SANITY_CHECK
     if (ev->time() < now_){
       spkt_abort_printf("Time went backwards on manager %d:%d to t=%10.6e for link=%" PRIu64 " for seqnum=%" PRIu32,
@@ -334,8 +334,8 @@ EventManager::registerPending()
         spkt_abort_printf("Thread %d scheduling event in the past on thread %d", idx, thread_id_);
       }
 #endif
-      prll_debug("manager %d:%d scheduling event %" PRIu32 " from link %" PRIu64 " at t=%10.7e on epoch %d",
-                 me_, thread_id_, ev->seqnum(), ev->linkId(), ev->time().sec(), epoch());
+      prll_debug("manager %d:%d scheduling event %" PRIu32 " from link %" PRIu64 " at t=%10.7e on epoch %d from slot %d",
+                 me_, thread_id_, ev->seqnum(), ev->linkId(), ev->time().sec(), epoch(), pendingSlot_);
       schedule(ev);
     }
     pendingVec.clear();
@@ -380,9 +380,10 @@ EventManager::spinDown()
   if (nactive_threads == 0){
     //delete here while we are still on a user-space thread
     //annoying but necessary
-    if (!stopped_){
+    if (!stopped_ && nproc()==1 && nthread()==1){
       //don't do a deadlock check if the simulator has been stopped
-      //there will be packets left in all the queus
+      //also can't do a deadlock check with parallel
+      //there will be packets left in all the queues
       //and the sim will report an erroneous deadlock
       interconn_->deadlockCheck();
     }
@@ -447,7 +448,6 @@ EventManager::schedule(ExecutionEvent* ev){
                "manager %d:%d adding event to run at t=%" PRIu64 " seqnum=%" PRIu32 " on link=%" PRIu64,
                me_, thread_id_, ev->time().time.ticks(), ev->seqnum(), ev->linkId());
 #endif
-  //std::cout << "Schedule " << ev->time().time.ticks() << " " << ev->linkId() << " " << ev->seqnum() << std::endl;
   event_queue_.insert(ev);
 #if SSTMAC_SANITY_CHECK
   if (prev_size == event_queue_.size()){

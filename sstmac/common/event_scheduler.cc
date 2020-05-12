@@ -268,8 +268,9 @@ MultithreadLink::send(TimeDelta delay, Event* ev)
 }
 
 void
-MultithreadLink::deliver(Event* /*ev*/){
-  spkt_abort_printf("MultithreadLink: cannot direct deliver events");
+MultithreadLink::deliver(Event* ev)
+{
+  handler_->handle(ev);
 }
 #endif
 

@@ -6,8 +6,7 @@ AC_DEFUN([CHECK_WARNINGS], [
 
   AC_MSG_CHECKING([whether to use -Werror build])
   AC_ARG_WITH(warnings,
-    [
-      AS_HELP_STRING(
+    [AS_HELP_STRING(
         [--with-warnings],
         [Whether to build with certain warning flags]
       )

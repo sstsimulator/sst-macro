@@ -129,6 +129,8 @@ else
 AM_CONDITIONAL([HAVE_UBUNTU], [false])
 fi
 
+CHECK_PYTHON()
+
 CHECK_DLOPEN()
 
 CHECK_SST_CORE()
@@ -150,10 +152,6 @@ CHECK_CXX_STD()
 if test "X$have_integrated_core" != "Xyes"; then
 CHECK_MPI_PARALLEL()
 fi
-
-CHECK_CPP_STANDARD()
-
-CHECK_PYTHON()
 
 CHECK_SPACK()
 
@@ -262,11 +260,15 @@ AC_CONFIG_FILES([
  tests/api/mpi/Makefile
  tests/api/globals/Makefile
  docs/doxygen.cfg
+ share/Makefile
+ share/SSTMacroConfig.cmake
  sumi-mpi/Makefile
  sumi/Makefile
 ])
 
 AC_CONFIG_FILES([bin/sstmacro-config], [chmod +x bin/sstmacro-config])
+AC_CONFIG_FILES([bin/sst++], [chmod +x bin/sst++])
+AC_CONFIG_FILES([bin/sstcc], [chmod +x bin/sstcc])
 AC_CONFIG_FILES([bin/sstccvars.py])
 
 AC_OUTPUT
@@ -308,6 +310,7 @@ echo
 
 echo "MAC SDK            $enable_sdk"
 echo "SST Core           $have_integrated_core"
+echo "Python             $pyexe"
 echo "Clang Autoskeleton $found_clang"
 echo "OTF2 Replay        $build_otf2"
 echo "MPI Sync Stats     $with_comm_sync_stats"
