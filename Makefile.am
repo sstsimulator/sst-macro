@@ -21,7 +21,7 @@ EXTRA_DIST = LICENSE bootstrap.sh \
   skeletons \
 	configurations
 
-SUBDIRS = $(subdirs) include sumi-mpi sprockit sumi sstmac bin python tests configurations 
+SUBDIRS = $(subdirs) include sumi-mpi sprockit sumi sstmac bin python tests configurations share
 
 dist_bin_SCRIPTS = sstmacro-libtool
 
