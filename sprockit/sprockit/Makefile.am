@@ -15,9 +15,7 @@ include $(top_srcdir)/Makefile.common
 
 SUBDIRS = 
 
-noinst_LTLIBRARIES = libspkt_temp.la
-lib_LTLIBRARIES = libsprockit.la
-libsprockit_la_LIBADD = libspkt_temp.la
+noinst_LTLIBRARIES = libsprockit.la
 EXTRA_DIST = libsprockit.c
 
 SOURCES = \
@@ -32,7 +30,7 @@ SOURCES = \
   test/test.cc \
   keyword_registration.cc
 
-libspkt_temp_la_SOURCES = $(SOURCES)
+libsprockit_la_SOURCES = $(SOURCES)
 
 library_includedir=$(includedir)/sprockit
 
@@ -67,7 +65,7 @@ nobase_library_include_HEADERS = \
   keyword_registration.h
 
 if !INTEGRATED_SST_CORE
-libspkt_temp_la_SOURCES += \
+libsprockit_la_SOURCES += \
   serialize_serializable.cc \
   serializer.cc \
   serializable.cc 

@@ -1,14 +1,10 @@
-macro(add_sstmac_library NAME)
-  set(SST_ROOT "@sst_prefix@")
-  if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    set(CMAKE_MODULE_LINKER_FLAGS "-undefined dynamic_lookup")
-  endif()
-  #ARGN is sources
-  add_library(${NAME} MODULE ${ARGN})
-  target_compile_features(${NAME} PUBLIC cxx_std_11)
-  target_include_directories(${NAME} PUBLIC @prefix@/include)
-  target_include_directories(${NAME} PUBLIC @prefix@/include/sprockit)
-  if (SST_ROOT)
-    target_include_directories(${NAME} PUBLIC @sst_prefix@/include)
-  endif()
-endmacro()
+if (NOT TARGET SST::SSTMacro)
+  add_library(SST::SSTMacro IMPORTED UNKNOWN)
+
+  set_target_properties(SST::SSTMacro PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES "@prefix@/include;@prefix@/include/sprockit"
+    INTERFACE_COMPILE_FEATURES cxx_std_11
+    IMPORTED_LOCATION @prefix@/lib/libsstmac.so
+    INSTALL_RPATH @prefix@/lib
+  )
+endif()
