@@ -933,6 +933,12 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    */
   const clang::Decl* getOriginalDeclaration(clang::VarDecl* vd);
 
+  /**
+    @param loc  The source location inside a header
+    @return Whether this is a "system" header that should be ignored in source-to-source
+  */
+  bool isInSystemHeader(clang::SourceLocation loc);
+
  private:
   SSTPragmaList& pragmas_;
   clang::Decl* currentTopLevelScope_;

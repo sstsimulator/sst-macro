@@ -208,6 +208,10 @@ SnapprSwitch::connectOutput(int src_outport, int dst_inport, EventLink::ptr&& li
   double scale_factor = top_->portScaleFactor(my_addr_, src_outport);
   double port_bw = scale_factor * link_bw_;
   SnapprOutPort* p = outports_[src_outport];
+  if (p->link){
+    spkt_abort_printf("Bad connection on switch outport %d:%d -> %d - port already occupied",
+                      addr(), src_outport, dst_inport);
+  }
   p->link = std::move(link);
   p->byte_delay = TimeDelta(1.0/port_bw);
   p->dst_port = dst_inport;
@@ -220,8 +224,11 @@ void
 SnapprSwitch::connectInput(int src_outport, int dst_inport, EventLink::ptr&& link)
 {
   switch_debug("connecting input port %d to output port %d", dst_inport, src_outport);
-  //no-op
   auto& port = inports_[dst_inport];
+  if (port.link){
+    spkt_abort_printf("Bad connection on switch inport %d:%d -> %d - port already occupied",
+                      addr(), dst_inport, src_outport);
+  }
   port.src_outport = src_outport;
   port.link = std::move(link);
   port.parent = this;
@@ -254,6 +261,7 @@ void
 SnapprSwitch::handlePayload(SnapprPacket* pkt, int inport)
 {
   if (pkt->deadlocked()){
+    std::cerr << "Switch " << addr() << " is part of deadlock on inport" << std::endl;
     deadlockCheck(pkt->virtualLane());
     return;
   }

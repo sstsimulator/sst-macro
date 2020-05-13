@@ -46,13 +46,11 @@ CORETESTS+= \
   test_core_apps_ping_all_torus_sculpin \
   test_core_apps_compute \
   test_core_apps_host_compute \
-  test_core_apps_ping_all_uneven_tree \
   test_core_apps_stop_time \
   test_core_apps_ping_pong \
   test_core_apps_ping_pong_slow \
-  test_core_apps_mpi_fattree \
   test_core_apps_ping_all_tree_table \
-  test_core_apps_ping_all_simple_fattree \
+  test_core_apps_ping_all_port_channel \
   test_core_apps_ping_all_fattree2 \
   test_core_apps_ping_all_fattree4 \
   test_core_apps_ping_all_fattree_tapered
@@ -79,6 +77,13 @@ test_core_apps_ping_all_file.$(CHKSUF): $(SSTMACEXEC)
    $(SSTMACEXEC) -f $(srcdir)/test_configs/test_ping_all_file.ini \
    -p switch.router.filename=$(top_srcdir)/tests/test_configs/rtr_tbl_file_topology1.json \
    -p topology.filename=$(top_srcdir)/tests/test_configs/file_topology1.json \
+   --no-wall-time
+
+test_core_apps_ping_all_port_channel.$(CHKSUF): $(SSTMACEXEC)
+	$(PYRUNTEST) 15 $(top_srcdir) $@ Exact \
+   $(SSTMACEXEC) -f $(srcdir)/test_configs/test_ping_all_file.ini \
+   -p switch.router.filename=$(top_srcdir)/tests/test_configs/testbed_rtr_tbl.json \
+   -p topology.filename=$(top_srcdir)/tests/test_configs/testbed_topology.json \
    --no-wall-time
 
 test_core_apps_ping_all_tiled_cascade.$(CHKSUF): $(SSTMACEXEC)

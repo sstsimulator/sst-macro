@@ -116,25 +116,27 @@ ClockCycleEventMap::handleIncoming(char* buf)
 Timestamp
 ClockCycleEventMap::receiveIncomingEvents(Timestamp vote)
 {
+  if (stopped_){
+    spkt_abort_printf("internal error: receiveIncomingEvents should not be called after stopping early");
+  }
+
   if (nproc_ == 1) return vote;
 
-  Timestamp min_time = no_events_left_time;
-  if (!stopped_){
-    event_debug("voting for minimum time %10.6e on epoch %d", vote.sec(), epoch());
-    min_time = rt_->sendRecvMessages(vote);
+  event_debug("voting for minimum time %10.6e on epoch %d", vote.sec(), epoch());
 
-    event_debug("got back minimum time %10.6e", min_time.sec());
+  Timestamp min_time = rt_->sendRecvMessages(vote);
 
-    int num_recvs = rt_->numRecvsDone();
-    for (int i=0; i < num_recvs; ++i){
-      auto& buf = rt_->recvBuffer(i);
-      size_t bytesRemaining = buf.totalBytes();
-      char* serBuf = buf.buffer();
-      while (bytesRemaining > 0){
-        int size = handleIncoming(serBuf);
-        bytesRemaining -= size;
-        serBuf += size;
-      }
+  event_debug("got back minimum time %10.6e", min_time.sec());
+
+  int num_recvs = rt_->numRecvsDone();
+  for (int i=0; i < num_recvs; ++i){
+    auto& buf = rt_->recvBuffer(i);
+    size_t bytesRemaining = buf.totalBytes();
+    char* serBuf = buf.buffer();
+    while (bytesRemaining > 0){
+      int size = handleIncoming(serBuf);
+      bytesRemaining -= size;
+      serBuf += size;
     }
   }
   rt_->resetSendRecv();

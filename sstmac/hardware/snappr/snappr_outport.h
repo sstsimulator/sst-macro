@@ -89,7 +89,7 @@ struct SnapprOutPort : public SubComponent {
   SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(
     SnapprOutPort,
     "macro",
-    "snappr",
+    "snappr_outport",
     SST_ELI_ELEMENT_VERSION(1,0,0),
     "implements a basic Snappr OutPort",
     sstmac::hw::SnapprOutPort)
@@ -222,6 +222,7 @@ struct SnapprOutPort : public SubComponent {
 
   void send(SnapprPacket* pktr, Timestamp now);
 
+  int debug_qos_;
   SnapprPortArbitrator* arb_;
   Component* parent_;
   int total_packets_;

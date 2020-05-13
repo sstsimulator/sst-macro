@@ -260,6 +260,8 @@ AC_CONFIG_FILES([
  tests/api/mpi/Makefile
  tests/api/globals/Makefile
  docs/doxygen.cfg
+ share/Makefile
+ share/SSTMacroConfig.cmake
  sumi-mpi/Makefile
  sumi/Makefile
 ])
