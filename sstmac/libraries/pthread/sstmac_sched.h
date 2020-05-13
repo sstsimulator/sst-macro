@@ -73,14 +73,10 @@ extern int SSTMAC_sched_getscheduler (pid_t pid);
 extern int SSTMAC_sched_yield (void);
 
 /* Get maximum priority value for a scheduler.  */
-static inline int SSTMAC_sched_get_priority_max (int  /*algorithm*/){
-  return 99;
-}
+extern int SSTMAC_sched_get_priority_max(int algorithm);
 
 /* Get minimum priority value for a scheduler.  */
-static inline int SSTMAC_sched_get_priority_min (int  /*algorithm*/){
-  return 1;
-}
+extern int SSTMAC_sched_get_priority_min(int algorithm);
 
 /* Get the SCHED_RR interval for the named process.  */
 struct timespec;
