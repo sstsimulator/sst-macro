@@ -190,3 +190,15 @@ SSTMAC_sched_getaffinity (pid_t  /*pid*/, size_t  /*cpusetsize*/, sstmac_cpu_set
   cpuset->cpubits = t->cpumask();
   return 0;
 }
+
+/* Get maximum priority value for a scheduler.  */
+extern "C"
+int SSTMAC_sched_get_priority_max(int /*algorithm*/){
+  return 99;
+}
+
+/* Get minimum priority value for a scheduler.  */
+extern "C"
+int SSTMAC_sched_get_priority_min(int  /*algorithm*/){
+  return 1;
+}
