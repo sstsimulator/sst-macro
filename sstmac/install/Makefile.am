@@ -24,6 +24,7 @@ libsstmac_la_LIBADD =
 libsstmac_la_SOURCES =
 nodist_EXTRA_libsstmac_la_SOURCES = dummy.cxx
 libsstmac_la_LIBADD += \
+  ../../sprockit/sprockit/libsprockit.la \
   ../../sumi/libsumi.la \
   ../backends/common/libsstmac_backends.la \
   ../backends/native/libsstmac_native.la \
@@ -66,7 +67,6 @@ libmacro_la_SOURCES =
 nodist_EXTRA_libmacro_la_SOURCES = dummy.cxx
 
 libmacro_la_LIBADD = \
-  ../../sprockit/sprockit/libspkt_temp.la \
   libsstmac.la
 
 libmacro_la_LDFLAGS = -module -shared -version-info @SSTMAC_LIBVERSION@
