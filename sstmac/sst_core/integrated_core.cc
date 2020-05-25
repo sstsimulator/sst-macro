@@ -112,7 +112,13 @@ py_extract_params(PyObject* dict, sprockit::SimParameters::ptr params)
     PyObject* val = PySequence_GetItem(pair, 1);
     PyObject* key_str_obj = PyObject_Str(key);
     const char* key_c_str = PyString_AsString(key_str_obj);
-    if (PyMapping_Check(val)){
+    bool isMapping = PyMapping_Check(val);
+#if PY_MAJOR_VERSION >= 3
+    bool isString = PyUnicode_Check(val);
+#else
+    bool isString = false; //ignore, not needed
+#endif
+    if (isMapping && !isString){
       sprockit::SimParameters::ptr sub_params = params->getOptionalNamespace(key_c_str);
       sstmac::py_extract_params(val, sub_params);
     } else {

@@ -6,7 +6,7 @@ import sst.macro
 smallLatency = "1ps"
 
 def getParam(params, paramName, paramNS=None):
-  if not params.has_key(paramName):
+  if not paramName in params:
     import sys
     if paramNs:
       sys.stderr.write("Missing parameter '%s' in namespace '%s'\n" % (paramName, paramNS))
@@ -16,7 +16,7 @@ def getParam(params, paramName, paramNS=None):
   return params[paramName]
 
 def getParamNamespace(params, ns, parentNs=None):
-  if not params.has_key(ns):
+  if not ns in params:
     import sys
     if parentNs:
       sys.stderr.write("Missing parameter namespace '%s' in namespace '%s'\n" % (ns, parentNS))
@@ -29,7 +29,7 @@ def getNestedParamNamespace(params, *xargs):
   nestedNs = ""
   nextParams = params
   for entry in xargs:
-    if not nextParams.has_key(entry):
+    if not entry in nextParams:
       sys.stderr.write("Missing parameter namespace %s in params %s\n" % (entry, nestedNs))
       raise Exception("failed configuring SST/macro")
     nextParams = nextParams[entry]
@@ -143,7 +143,7 @@ class Interconnect:
       self.nodes[i] = epFxn(i)
 
   def latency(self, params):
-    if params.has_key("latency"):
+    if "latency" in params:
       return params["latency"]
     else:
       import sys
@@ -204,7 +204,7 @@ class Interconnect:
     import re
     nproc = sst.getMPIRankCount() * sst.getThreadCount()
     switchParams = self.params["switch"]
-    if switchParams.has_key("logp"):
+    if "logp" in switchParams:
       switchParams = switchParams["logp"]
     lat = switchParams["out_in_latency"]
     switches = []
@@ -281,7 +281,7 @@ def setupDeprecatedParams(params, debugList=[]):
 
   for i in range(10):
     ns = "app%d" % i
-    if params.has_key(ns):
+    if ns in params:
       appParams = params[ns]
       nodeParams[ns] = appParams
       appName = appParams["name"]
@@ -305,7 +305,7 @@ def setupDeprecatedParams(params, debugList=[]):
     for key in params:
       val = params[key]
       if isinstance(val, str):
-        if not nsParams.has_key(key):
+        if not key in nsParams:
           nsParams[key] = val
 
   ic = Interconnect(params)
@@ -317,7 +317,7 @@ def setupDeprecated():
   sst.setProgramOption("timebase", "100as")
   params = readCmdLineParams()
   debugList = []
-  if params.has_key("debug"):
+  if "debug" in params:
     debugList = params["debug"].strip().split()
   for i in range(len(sys.argv)):
     if sys.argv[i] == "-d" or sys.argv[i] == "--debug":
