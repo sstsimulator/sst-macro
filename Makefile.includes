@@ -1,6 +1,7 @@
 AM_CPPFLAGS = -I$(top_builddir) -I$(top_srcdir) -I$(top_srcdir)/include -I$(top_srcdir)/sprockit -I$(top_builddir)/sprockit
 if INTEGRATED_SST_CORE
   AM_CPPFLAGS += $(SST_CPPFLAGS)
+  AM_CPPFLAGS += $(PY_CPPFLAGS)
 endif
 AM_CPPFLAGS += $(PTH_CPPFLAGS)
 AM_CPPFLAGS += $(UCONTEXT_CPPFLAGS)

@@ -49,6 +49,33 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <unordered_map>
 #include <algorithm>
 
+#if PY_MAJOR_VERSION >= 3
+#ifndef Py_TYPE
+#endif
+ #define PY_OBJ_HEAD PyVarObject_HEAD_INIT(nullptr, 0)
+ #define ConvertToPythonLong(x) PyLong_FromLong(x)
+ #define ConvertToCppLong(x) PyLong_AsLong(x)
+ #define TP_FINALIZE
+ #define TP_VECTORCALL_OFFSET 0,
+ #define TP_PRINT
+ #define TP_COMPARE
+ #define TP_AS_SYNC nullptr,
+#else
+ #define Py_TYPE(ob) (((PyObject*)(ob))->ob_type)
+ #define PY_OBJ_HEAD PyVarObject_HEAD_INIT(nullptr, 0)
+ #define ConvertToPythonLong(x) PyInt_FromLong(x)
+ #define ConvertToCppLong(x) PyInt_AsLong(x)
+ #define TP_FINALIZE nullptr,
+ #define TP_VECTORCALL_OFFSET
+ #define TP_PRINT nullptr,
+ #define TP_COMPARE nullptr,
+ #define TP_AS_SYNC
+#endif
+
+
+using sstmac::SwitchId;
+using sstmac::NodeId;
+
 extern "C" {
 
 typedef struct {
@@ -119,20 +146,17 @@ static PyMethodDef system_methods[] = {
 
 
 static PyTypeObject SystemType = {
-#if PY_MAJOR_VERSION >= 3
-    PyVarObject_HEAD_INIT(nullptr, 0)
-#else
-    PyObject_HEAD_INIT(nullptr)
-    0,                         /* ob_size */
-#endif
+    PY_OBJ_HEAD
     "sst.macro.Topology",      /* tp_name */
     sizeof(SystemPy_t),        /* tp_basicsize */
     0,                         /* tp_itemsize */
     (destructor)sys_dealloc,   /* tp_dealloc */
-    nullptr,                   /* tp_print */
+    TP_VECTORCALL_OFFSET       /* Python3 only */
+    TP_PRINT                   /* Python2 only */
     nullptr,                   /* tp_getattr */
     nullptr,                   /* tp_setattr */
-    nullptr,                   /* tp_compare */
+    TP_COMPARE                 /* Python2 only */
+    TP_AS_SYNC                 /* Python3 only */
     nullptr,                   /* tp_repr */
     nullptr,                   /* tp_as_number */
     nullptr,                   /* tp_as_sequence */
@@ -162,6 +186,7 @@ static PyTypeObject SystemType = {
     (initproc)sys_init,        /* tp_init */
     nullptr,                   /* tp_alloc */
     nullptr,                   /* tp_new */
+    TP_FINALIZE
 };
 
 namespace sstmac {
@@ -196,11 +221,11 @@ sys_convert_to_list(const std::vector<sstmac::hw::Topology::InjectionPort>& port
   for (int i=0; i < ports.size(); ++i){
     const sstmac::hw::Topology::InjectionPort& port = ports[i];
     PyObject* portTuple = PyTuple_New(3);
-    PyObject* nodeIdx = PyInt_FromLong(port.nid);
+    PyObject* nodeIdx = ConvertToPythonLong(port.nid);
     PyTuple_SetItem(portTuple, 0, nodeIdx);
-    PyObject* swPort = PyInt_FromLong(port.switch_port);
+    PyObject* swPort = ConvertToPythonLong(port.switch_port);
     PyTuple_SetItem(portTuple, 1, swPort);
-    PyObject* epPort = PyInt_FromLong(port.ep_port);
+    PyObject* epPort = ConvertToPythonLong(port.ep_port);
     PyTuple_SetItem(portTuple, 2, epPort);
     PyTuple_SetItem(tuple, i, portTuple);
   }
@@ -210,7 +235,8 @@ sys_convert_to_list(const std::vector<sstmac::hw::Topology::InjectionPort>& port
 static PyObject*
 sys_get_injection_connections(SystemPy_t* self, PyObject* swIdx)
 {
-  int sid = PyInt_AsLong(swIdx);
+  /** downcast, index guaranteed to fit 32-bit */
+  SwitchId sid = (SwitchId) ConvertToCppLong(swIdx);
   std::vector<sstmac::hw::Topology::InjectionPort> ports;
   self->macro_topology->endpointsConnectedToInjectionSwitch(sid, ports);
   return sys_convert_to_list(ports);
@@ -219,20 +245,21 @@ sys_get_injection_connections(SystemPy_t* self, PyObject* swIdx)
 static PyObject*
 sys_get_switch_connections(SystemPy_t* self, PyObject* idx)
 {
-  int swIdx = PyInt_AsLong(idx);
+  /** downcast, index guaranteed to fit 32-bit */
+  SwitchId swIdx = (SwitchId) ConvertToCppLong(idx);
   std::vector<sstmac::hw::Topology::Connection> conns;
   self->macro_topology->connectedOutports(swIdx, conns);
   PyObject* tuple = PyTuple_New(conns.size());
   for (int i=0; i < conns.size(); ++i){
     sstmac::hw::Topology::Connection& conn = conns[i];
     PyObject* connTuple = PyTuple_New(4);
-    PyObject* srcIdx = PyInt_FromLong(conn.src);
+    PyObject* srcIdx = ConvertToPythonLong(conn.src);
     PyTuple_SetItem(connTuple, 0, srcIdx);
-    PyObject* dstIdx = PyInt_FromLong(conn.dst);
+    PyObject* dstIdx = ConvertToPythonLong(conn.dst);
     PyTuple_SetItem(connTuple, 1, dstIdx);
-    PyObject* srcOutport = PyInt_FromLong(conn.src_outport);
+    PyObject* srcOutport = ConvertToPythonLong(conn.src_outport);
     PyTuple_SetItem(connTuple, 2, srcOutport);
-    PyObject* dstInport = PyInt_FromLong(conn.dst_inport);
+    PyObject* dstInport = ConvertToPythonLong(conn.dst_inport);
     PyTuple_SetItem(connTuple, 3, dstInport);
     PyTuple_SetItem(tuple, i, connTuple);
   }
@@ -242,15 +269,17 @@ sys_get_switch_connections(SystemPy_t* self, PyObject* idx)
 static PyObject*
 sys_nodeToLogpSwitch(SystemPy_t* self, PyObject* idx)
 {
-  int nid = PyInt_AsLong(idx);
-  int sid = self->macro_topology->nodeToLogpSwitch(nid);
-  return PyInt_FromLong(sid);
+  /** downcast, index guaranteed to fit 32-bit */
+  NodeId nid = (NodeId) ConvertToCppLong(idx);
+  SwitchId sid = self->macro_topology->nodeToLogpSwitch(nid);
+  return ConvertToPythonLong(sid);
 }
 
 static PyObject*
 sys_get_ejection_connections(SystemPy_t* self, PyObject* swIdx)
 {
-  int sid = PyInt_AsLong(swIdx);
+  /** downcast, index guaranteed to fit 32-bit */
+  SwitchId sid = (SwitchId) ConvertToCppLong(swIdx);
   std::vector<sstmac::hw::Topology::InjectionPort> ports;
   self->macro_topology->endpointsConnectedToEjectionSwitch(sid, ports);
   return sys_convert_to_list(ports);
@@ -276,7 +305,10 @@ sys_init(SystemPy_t* self, PyObject* args, PyObject* kwargs)
       return -1;
     }
   }
-  sstmac::py_extract_params(params_dict, params);
+
+  if (params_dict){
+    sstmac::py_extract_params(params_dict, params);
+  }
 
   if (PyMapping_Check(kwargs)){
     sstmac::py_extract_params(kwargs, params);
@@ -298,10 +330,6 @@ sys_init(SystemPy_t* self, PyObject* args, PyObject* kwargs)
   return 0;
 }
 
-#ifndef Py_TYPE
- #define Py_TYPE(ob) (((PyObject*)(ob))->ob_type)
-#endif
-
 static void
 sys_dealloc(SystemPy_t* self)
 {
@@ -311,11 +339,11 @@ sys_dealloc(SystemPy_t* self)
 static PyObject*
 sys_num_switches(SystemPy_t* self, PyObject*  /*null*/)
 {
-  return PyInt_FromLong(self->macro_topology->numSwitches());
+  return ConvertToPythonLong(self->macro_topology->numSwitches());
 }
 
 static PyObject*
 sys_num_nodes(SystemPy_t* self, PyObject*  /*null*/)
 {
-  return PyInt_FromLong(self->macro_topology->numNodes());
+  return ConvertToPythonLong(self->macro_topology->numNodes());
 }
