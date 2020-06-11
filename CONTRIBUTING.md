@@ -8,7 +8,8 @@
       * **devel** - Contains the latest offical codeset of SST-Macro.  **This branch is unstable and may be broken at any time.**
       * **master** - Contains the latest fully tested stable version of SST-Macro.
 
-Repository to SST-Macro is located [here](https://github.com/sstsimulator/sst-macro).
+* Repository to SST-Macro is located [here](https://github.com/sstsimulator/sst-macro).
+* Questions can be sent to sst-macro-help@sandia.gov
 
 ---
 
