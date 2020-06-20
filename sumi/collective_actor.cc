@@ -894,7 +894,7 @@ DagCollectiveActor::recv(CollectiveWorkMessage* msg)
       //partner is the sender - I tried and RDMA get but they were dead
       spkt_abort_printf("do not currently support NACK");
       break;
-    case Message::payload:
+    case Message::smsg_send:
       incomingHeader(msg);
       break;
     default:
