@@ -240,6 +240,10 @@ class SimTransport : public Transport, public sstmac::sw::API {
     }
   }
 
+  void deallocateCq(int id) override {
+    free_cq_ids_.push(id);
+  }
+
   int allocateDefaultCq() override {
     int id = allocateCqId();
     allocateCq(id, std::bind(&DefaultProgressQueue::incoming,

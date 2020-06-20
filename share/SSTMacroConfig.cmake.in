@@ -4,7 +4,15 @@ if (NOT TARGET SST::SSTMacro)
   set_target_properties(SST::SSTMacro PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES "@prefix@/include;@prefix@/include/sprockit"
     INTERFACE_COMPILE_FEATURES cxx_std_11
-    IMPORTED_LOCATION @prefix@/lib/libsstmac.so
     INSTALL_RPATH @prefix@/lib
   )
+  if (APPLE)
+    set_target_properties(SST::SSTMacro PROPERTIES
+      IMPORTED_LOCATION @prefix@/lib/libsstmac.dylib
+    )
+  else()
+    set_target_properties(SST::SSTMacro PROPERTIES
+      IMPORTED_LOCATION @prefix@/lib/libsstmac.so
+    )
+  endif()
 endif()

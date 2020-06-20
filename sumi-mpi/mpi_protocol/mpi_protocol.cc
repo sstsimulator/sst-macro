@@ -95,7 +95,8 @@ DirectPut::start(void* buffer, int src_rank, int dst_rank, sstmac::sw::TaskId ti
 {
   int qos = 0;
   auto* msg = mpi_->rdmaPut<MpiMessage>(tid, count*type->packed_size(), nullptr, nullptr,
-                queue_->pt2ptCqId(), queue_->pt2ptCqId(), sumi::Message::pt2pt, qos,
+                queue_->pt2ptCqId(), queue_->pt2ptCqId(),
+                sumi::Message::pt2pt, qos,
                 src_rank, dst_rank, type->id, tag, comm, seq_id, count, type->packed_size(),
                 buffer, DIRECT_PUT);
 
