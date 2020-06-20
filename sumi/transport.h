@@ -159,7 +159,7 @@ class Transport {
     uint64_t flow_id = allocateFlowId();
     bool needs_ack = remote_cq != Message::no_ack;
     T* t = new T(std::forward<Args>(args)...,
-                 rank_, remote_proc, remote_cq, local_cq, cls,
+                 rank_, remote_proc, remote_cq, local_cq, Message::no_queue, cls,
                  qos, flow_id, serverLibname(), sid().app_,
                  rankToNode(remote_proc), addr(),
                  byte_length, needs_ack, local_buffer, remote_buffer, Message::rdma_get{});
@@ -173,7 +173,7 @@ class Transport {
     uint64_t flow_id = allocateFlowId();
     bool needs_ack = local_cq != Message::no_ack;
     T* t = new T(std::forward<Args>(args)...,
-                 rank_, remote_proc, local_cq, remote_cq, cls,
+                 rank_, remote_proc, local_cq, remote_cq, Message::no_queue, cls,
                  qos, flow_id, serverLibname(), sid().app_,
                  rankToNode(remote_proc), addr(),
                  byte_length, needs_ack, local_buffer, remote_buffer, Message::rdma_put{});
@@ -182,15 +182,31 @@ class Transport {
   }
 
   template <class T, class... Args>
+  T* postSend(int remote_proc, uint64_t byte_length, void* buffer,
+          int local_cq, int remote_cq, int posted_recv_queue,
+          Message::class_t cls, int qos, Args&&... args){
+    uint64_t flow_id = allocateFlowId();
+    bool needs_ack = local_cq != Message::no_ack;
+    T* t = new T(std::forward<Args>(args)...,
+                 rank_, remote_proc, local_cq, remote_cq, posted_recv_queue, cls,
+                 qos, flow_id, serverLibname(), sid().app_,
+                 rankToNode(remote_proc), addr(),
+                 byte_length, needs_ack, buffer, Message::post_send{});
+    send(t);
+    return t;
+  }
+
+
+  template <class T, class... Args>
   T* smsgSend(int remote_proc, uint64_t byte_length, void* buffer,
               int local_cq, int remote_cq, Message::class_t cls, int qos, Args&&... args){
     uint64_t flow_id = allocateFlowId();
     bool needs_ack = local_cq != Message::no_ack;
     T* t = new T(std::forward<Args>(args)...,
-                 rank_, remote_proc, local_cq, remote_cq, cls,
+                 rank_, remote_proc, local_cq, remote_cq, Message::no_queue, cls,
                  qos, flow_id, serverLibname(), sid().app_,
                  rankToNode(remote_proc), addr(),
-                 byte_length, needs_ack, buffer, Message::header{});
+                 byte_length, needs_ack, buffer, Message::smsg{});
     send(t);
     return t;
   }
@@ -246,6 +262,8 @@ class Transport {
   virtual uint64_t allocateFlowId() = 0;
 
   virtual int allocateCqId() = 0;
+
+  virtual void deallocateCq(int id) = 0;
 
   virtual int allocateDefaultCq() = 0;
 

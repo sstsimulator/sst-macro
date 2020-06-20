@@ -71,6 +71,7 @@ class Message : public sstmac::hw::NetworkMessage
 
  public:
   static const int no_ack = -1;
+  static const int no_queue = -1;
   static const int default_cq = 0;
 
  typedef enum {
@@ -88,14 +89,15 @@ class Message : public sstmac::hw::NetworkMessage
   static const int header_size;
 
   template <class... Args>
-  Message(int sender, int recver, int send_cq, int recv_cq, class_t cls,
+  Message(int sender, int recver, int send_cq, int recv_cq, int posted_recv_queue, class_t cls,
           Args&&... args) :
    sstmac::hw::NetworkMessage(std::forward<Args>(args)...),
     class_(cls),
     sender_(sender),
     recver_(recver),
     send_cq_(send_cq),
-    recv_cq_(recv_cq)
+    recv_cq_(recv_cq),
+    posted_recv_queue_(posted_recv_queue)
   {
   }
 
@@ -152,9 +154,14 @@ class Message : public sstmac::hw::NetworkMessage
     return recv_cq_;
   }
 
+  int postedRecvQueue() const {
+    return posted_recv_queue_;
+  }
+
   int targetRank() const {
     switch (NetworkMessage::type()){
-     case NetworkMessage::payload:
+     case NetworkMessage::smsg_send:
+     case NetworkMessage::posted_send:
      case NetworkMessage::rdma_get_payload:
      case NetworkMessage::rdma_put_payload:
      case NetworkMessage::rdma_get_nack:
@@ -171,7 +178,8 @@ class Message : public sstmac::hw::NetworkMessage
 
   int cqId() const {
     switch (NetworkMessage::type()){
-     case NetworkMessage::payload:
+     case NetworkMessage::smsg_send:
+     case NetworkMessage::posted_send:
      case NetworkMessage::rdma_get_payload:
      case NetworkMessage::rdma_put_payload:
      case NetworkMessage::rdma_get_nack:
@@ -220,6 +228,7 @@ class Message : public sstmac::hw::NetworkMessage
 
   int send_cq_;
   int recv_cq_;
+  int posted_recv_queue_;
 
  public:
   sstmac::Timestamp timeArrived() const {
