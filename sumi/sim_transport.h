@@ -257,8 +257,6 @@ class SimTransport : public Transport, public sstmac::sw::API {
  private:      
   void send(Message* m) override;
 
-  void matchPostedRecv(Message* m);
-
   uint64_t allocateFlowId() override;
 
   std::vector<std::function<void(Message*)>> completion_queues_;
@@ -298,25 +296,6 @@ class SimTransport : public Transport, public sstmac::sw::API {
   std::function<void(sstmac::hw::NetworkMessage*)> nic_ioctl_;
 
   QoSAnalysis* qos_analysis_;
-
-  struct PostedRecv {
-    uint32_t size;
-    void* buf;
-    PostedRecv(uint32_t s, void* b) :
-      size(s), buf(b)
-    {
-    }
-  };
-
-  struct RecvQueue {
-    std::vector<PostedRecv> recvs;
-    uint64_t head;
-    uint64_t tail;
-    RecvQueue() : head(0), tail(0)
-    {
-    }
-  };
-  std::vector<RecvQueue> recv_queues_;
 
  private:
   void drop(Message*){}

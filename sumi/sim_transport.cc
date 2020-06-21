@@ -483,34 +483,6 @@ SimTransport::allocateFlowId()
 }
 
 void
-SimTransport::matchPostedRecv(Message* msg)
-{
-  if (msg->postedRecvQueue() < 0 > msg->postedRecvQueue() >= recv_queues_.size()){
-    msg->setNoRecvMatch();
-    return;
-  }
-
-  RecvQueue& q = recv_queues_[msg->postedRecvQueue()];
-  if (q.head == q.tail){
-    msg->setNoRecvMatch();
-    return;
-  }
-
-  auto head_idx = q.head % recv_queues_.size();
-  PostedRecv& r = q.recvs[head_idx];
-  if (r.size < msg->byteLength()){
-    msg->setNoRecvMatch();
-    return;
-  }
-
-  //move for next message
-  ++q.head;
-  if (r.buf && msg->localBuffer()){
-    msg->matchRecv(r.buf);
-  }
-}
-
-void
 SimTransport::incomingMessage(Message *msg)
 {
 #if SSTMAC_COMM_DELAY_STATS
