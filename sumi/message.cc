@@ -49,7 +49,6 @@ namespace sumi {
 
 const int Message::ack_size = 16;
 const int Message::header_size = 64;
-const int Message::no_queue;
 
 Message::~Message()
 {

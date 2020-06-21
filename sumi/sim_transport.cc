@@ -498,10 +498,6 @@ SimTransport::incomingMessage(Message *msg)
       held_[cq].push_back(msg);
     } else {
       debug_printf(sprockit::dbg::sumi, "CQ %d handle %s", cq, msg->toString().c_str());
-      if (msg->postedRecvQueue() != Message::no_queue){
-        //find a posted recv for this
-        matchPostedRecv(msg);
-      }
       completion_queues_[cq](msg);
     }
   } else {
