@@ -4,7 +4,7 @@
  */
 
 
-#include <sstmac/replacements/mpi.h>
+#include <sstmac/replacements/mpi/mpi.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>

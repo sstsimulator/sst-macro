@@ -152,8 +152,14 @@ static void tokenToString(const Token& tok, std::ostream& os)
   case tok::kw_true:
     os << "true";
     break;
+  case tok::ampamp:
+    os << "&&";
+    break;
   case tok::kw_void:
     os << "void";
+    break;
+  case tok::ampamp:
+    os << "&&";
     break;
   case tok::kw_false:
     os << "false";
@@ -694,6 +700,42 @@ SSTGlobalVariablePragma::activate(Decl *d)
   errorAbort(d, "global pragma should only be applied to statements");
 }
 
+SSTBlockingPragma::SSTBlockingPragma(SourceLocation loc, std::map<std::string, std::list<std::string>>&& args)
+ : condition_("true"),
+   timeout_("-1")
+{
+  auto iter = args.find("condition");
+  if (iter != args.end()){
+    condition_ = iter->second.front();
+    args.erase(iter);
+  }
+
+  iter = args.find("timeout");
+  if (iter != args.end()){
+    timeout_ = iter->second.front();
+    args.erase(iter);
+  }
+
+  iter = args.find("api");
+  if (iter == args.end()){
+    errorAbort(loc, "blocking pragma must give api name");
+  }
+  api_ = iter->second.front();
+  args.erase(iter);
+
+  if (!args.empty()){
+    std::string err = "got invalid keyword in block pragma: " + args.begin()->first;
+    errorAbort(loc, err);
+  }
+}
+
+void
+SSTBlockingPragma::activate(Stmt* s)
+{
+  std::string text = "sstmac_blocking_call(" + condition_ + "," + timeout_ + ",\"" + api_ + "\");";
+  CompilerGlobals::rewriter.InsertText(getStart(s), text, false, false);
+}
+
 SSTNullVariablePragma::SSTNullVariablePragma(SourceLocation /**loc*/, std::map<std::string, std::list<std::string>>&& args)
  : declAppliedTo_(nullptr),
    transitiveFrom_(nullptr),
@@ -1173,5 +1215,7 @@ static PragmaRegister<SSTArgMapPragmaShim, SSTNullFieldsPragma, true> nullFieldP
     "sst", "null_fields", SKELETONIZE | SHADOWIZE);
 static PragmaRegister<SSTArgMapPragmaShim, SSTStackAllocPragma, true> stackAllocPragma(
     "sst", "stack_alloc", ALL_MODES);
+static PragmaRegister<SSTArgMapPragmaShim, SSTBlockingPragma, true> blockingPragma(
+    "sst", "blocking", SKELETONIZE | ENCAPSULATE);
 
 

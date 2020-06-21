@@ -189,6 +189,14 @@ class SimTransport : public Transport, public sstmac::sw::API {
   void shutdownServer(int dest_rank, sstmac::NodeId dest_node, int dest_app);
 
   void pinRdma(uint64_t bytes);
+
+  void configureNextPoll(bool& blocking, double& timeout){
+    if (pragma_block_set_){
+      blocking = true;
+      pragma_block_set_ = false;
+      timeout = pragma_timeout_;
+    }
+  }
   
   /**
    Check if a message has been received on a specific completion queue.
@@ -200,6 +208,7 @@ class SimTransport : public Transport, public sstmac::sw::API {
    @return    The next message to be received, null if no messages
   */
   Message* poll(bool blocking, int cq_id, double timeout = -1) override {
+    configureNextPoll(blocking, timeout);
     return default_progress_queue_.find(cq_id, blocking, timeout);
   }
 
@@ -212,7 +221,13 @@ class SimTransport : public Transport, public sstmac::sw::API {
    @return    The next message to be received, null if no messages
   */
   Message* poll(bool blocking, double timeout = -1) override {
+    configureNextPoll(blocking, timeout);
     return default_progress_queue_.find_any(blocking, timeout);
+  }
+
+  void setPragmaBlocking(bool cond, double timeout = -1){
+    pragma_block_set_ = cond;
+    pragma_timeout_ = timeout;
   }
 
   /**
@@ -298,6 +313,10 @@ class SimTransport : public Transport, public sstmac::sw::API {
   QoSAnalysis* qos_analysis_;
 
  private:
+  bool pragma_block_set_;
+
+  double pragma_timeout_;
+
   void drop(Message*){}
 };
 

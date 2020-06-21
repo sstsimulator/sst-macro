@@ -44,7 +44,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <stdio.h>
 #include <stdlib.h>
 #include <cstring>
-#include <sstmac/replacements/mpi.h>
+#include <sstmac/replacements/mpi/mpi.h>
 
 #define MP_X 0
 #define MP_Y 1

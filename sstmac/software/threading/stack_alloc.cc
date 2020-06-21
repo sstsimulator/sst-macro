@@ -82,7 +82,9 @@ void
 StackAlloc::chunk_set::clear()
 {
   for (chunk* ch : allocations){
-    delete ch;
+    //this leads to an munmap during cxa_finalize
+    //which segfaults for no apparent reason
+    //delete ch;
   }
   allocations.clear();
   available.clear();

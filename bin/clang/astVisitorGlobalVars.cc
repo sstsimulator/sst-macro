@@ -56,6 +56,24 @@ getBaseType(VarDecl* D){
 }
 
 static const Type*
+unravelArrayPointers(const Type* ty, int& num_pointers){
+  num_pointers = 0;
+  while(ty->isPointerType()  && !(ty->isFunctionPointerType() || ty->isFunctionProtoType())){
+    ty = ty->getPointeeType().getTypePtr();
+    ++num_pointers;
+  }
+
+  while(ty->isConstantArrayType() || ty->isArrayType()){
+    QualType elty = ty->getAsArrayTypeUnsafe()->getElementType();
+    ty = elty.getTypePtr();
+    ++num_pointers;
+  }
+
+  return ty;
+}
+
+
+static const Type*
 getPointerBaseType(VarDecl* D){
   auto ty = D->getType().getTypePtr();
   while (ty->isPointerType()){
@@ -171,10 +189,30 @@ SkeletonASTVisitor::setupGlobalReplacement(VarDecl *D, const std::string& namePr
       var.retType = var.typeStr + "*";
       delayedInsertAfter(D, typedefDecl + ";");
     }
+  } else if (ptrSubTy && (ptrSubTy->isConstantArrayType() || ptrSubTy->isArrayType())) {
+    //the awful case of something declared like char (*)[256]
+    //which is a pointer to char[256] types
+    var.typeStr = GetAsString(D->getType());
+
+    int num_pointers;
+    const Type* elTy = unravelArrayPointers(D->getType().getTypePtr(), num_pointers);
+    var.retType = GetAsString(elTy);
+    for (int p=0; p < (num_pointers+1); ++p){
+      var.retType += "*";
+    }
   } else {
     var.typeStr = GetAsString(D->getType());
+    if (D->getType()->isEnumeralType()){
+      if (var.typeStr.find("anonymous") != std::string::npos){
+        //weird case of anonymous enum like enum { X, Y, Z } dim
+        //we have no type we can actually refer to, but that's okay
+        //just make it an int
+        var.typeStr = "int";
+      }
+    }
     var.retType = var.typeStr + "*";
   }
+
   return var;
 }
 
@@ -185,7 +223,7 @@ SkeletonASTVisitor::registerGlobalReplacement(VarDecl* D, GlobalVariableReplacem
   setActiveGlobalScopedName(repl->scopeUniqueVarName);
   scopedNames_[mainDecl(D)] = repl->scopeUniqueVarName;
 
-  if (!D->hasExternalStorage()){
+  if (isGlobalDefinition(D, repl)){
     currentNs_->replVars.emplace(std::piecewise_construct,
           std::forward_as_tuple(repl->scopeUniqueVarName),
           std::forward_as_tuple(isCxx(), repl->isFxnStatic, repl->threadLocal));
@@ -315,6 +353,20 @@ SkeletonASTVisitor::setupClassStaticVarDecl(VarDecl* D)
   return true;
 }
 
+ bool
+SkeletonASTVisitor::isGlobalDefinition(VarDecl* D, GlobalVariableReplacement* var)
+{
+  if (D->hasExternalStorage()){
+    return false;
+  }
+  if (var->arrayInfo && var->arrayInfo->implicitSize && D->isThisDeclarationADefinition() == VarDecl::TentativeDefinition){
+    //a weird c-style forward declaration
+    //like int x[]; which defines the symbol but doesn't actually give the size
+    return false;
+  }
+  return true;
+}
+
 bool
 SkeletonASTVisitor::setupCGlobalVar(VarDecl* D, const std::string& scopePrefix)
 {
@@ -323,8 +375,8 @@ SkeletonASTVisitor::setupCGlobalVar(VarDecl* D, const std::string& scopePrefix)
   std::stringstream newVarSstr;
   GlobalVariableReplacement var = setupGlobalReplacement(D, scopePrefix, false, false, true);
   newVarSstr << "extern int __offset_" << var.scopeUniqueVarName << "; ";
-  if (!D->hasExternalStorage()){
-    std::string initFxnName = "init_" + var.scopeUniqueVarName;
+  if (isGlobalDefinition(D, &var)){
+    std::string initFxnName = "sstmac_init_" + var.scopeUniqueVarName;
     //add an init function for it
     newVarSstr << "void " << initFxnName << "(void* ptr){";
 
@@ -350,7 +402,10 @@ SkeletonASTVisitor::setupCppGlobalVar(VarDecl* D, const std::string& scopePrefix
   Expr* init = D->hasInit() ? getUnderlyingExpr(D->getInit()) : nullptr;
   Stmt* cppCtorArgs = nullptr;
   RecordDecl* rd = D->getType().getTypePtr()->getAsCXXRecordDecl();
-  if (!D->hasExternalStorage()){
+  std::stringstream newVarSstr;
+  GlobalVariableReplacement repl = setupGlobalReplacement(D, scopePrefix, false, false, true);
+  bool isDef = isGlobalDefinition(D, &repl);
+  if (isDef){
     if (rd){
       cppCtorArgs = getCtor(D);
     } else if (init) {
@@ -358,19 +413,15 @@ SkeletonASTVisitor::setupCppGlobalVar(VarDecl* D, const std::string& scopePrefix
     }
   }
 
-
-
-  std::stringstream newVarSstr;
-  GlobalVariableReplacement repl = setupGlobalReplacement(D, scopePrefix, false, false, true);
   newVarSstr << "extern int __offset_" << repl.scopeUniqueVarName << "; ";
-  if (!D->hasExternalStorage()){
+  if (isDef){
     newVarSstr << "int __sizeof_" << repl.scopeUniqueVarName << " = sizeof(" << repl.typeStr << ");";
     auto pos = repl.typeStr.find("struct ");
     if (pos != std::string::npos){
       repl.typeStr = eraseAllStructQualifiers(repl.typeStr);
     }
 
-    newVarSstr << "static std::function<void(void*)> init_" << repl.scopeUniqueVarName
+    newVarSstr << "static std::function<void(void*)> sstmac_init_" << repl.scopeUniqueVarName
                << " = [](void* ptr){"
                   " new (ptr) " << repl.typeStr;
     if (cppCtorArgs){
@@ -394,7 +445,7 @@ SkeletonASTVisitor::setupCppGlobalVar(VarDecl* D, const std::string& scopePrefix
                << ", __sizeof_" << repl.scopeUniqueVarName
                << ", " << std::boolalpha << repl.threadLocal
                << ", \"" << D->getNameAsString() << "\""
-               << ", std::move(init_" << repl.scopeUniqueVarName << "));";
+               << ", std::move(sstmac_init_" << repl.scopeUniqueVarName << "));";
   }
   registerGlobalReplacement(D, &repl);
   delayedInsertAfter(D, newVarSstr.str());
@@ -414,7 +465,7 @@ SkeletonASTVisitor::setupFunctionStaticCpp(VarDecl* D, const std::string& scopeP
   GlobalVariableReplacement var = setupGlobalReplacement(D, scopePrefix, false, true, false);
   std::string replText = "int __sizeof_" + var.scopeUniqueVarName + " = sizeof(void*); "
       " extern int __offset_" + var.scopeUniqueVarName + "; "
-      " extern \"C\" void init_" + var.scopeUniqueVarName + "(void* ptr){ "
+      " extern \"C\" void sstmac_init_" + var.scopeUniqueVarName + "(void* ptr){ "
       "   void** ptrptr = (void**) ptr; "
       "   *ptrptr = nullptr; "
       "}";
@@ -479,7 +530,7 @@ SkeletonASTVisitor::setupFunctionStaticC(VarDecl* D, const std::string& scopePre
   GlobalVariableReplacement var = setupGlobalReplacement(D, scopePrefix, false, true, false);
   std::string replText = "int __sizeof_" + var.scopeUniqueVarName + " = sizeof(void*); "
       " extern int __offset_" + var.scopeUniqueVarName + "; "
-      " void init_" + var.scopeUniqueVarName + "(void* ptr){ "
+      " void sstmac_init_" + var.scopeUniqueVarName + "(void* ptr){ "
       "   void** ptrptr = (void**) ptr; "
       "   *ptrptr = 0; "
       "}";

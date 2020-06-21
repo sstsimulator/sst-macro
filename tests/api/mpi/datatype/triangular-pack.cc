@@ -8,7 +8,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <sstmac/replacements/mpi.h>
+#include <sstmac/replacements/mpi/mpi.h>
 #include "mpitest.h"
 
 namespace triangular_pack {

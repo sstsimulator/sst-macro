@@ -50,6 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/thread.h>
 #include <sstmac/software/api/api_fwd.h>
 #include <sstmac/software/process/operating_system_fwd.h>
+#include <sstmac/software/process/mutex.h>
 
 #include <sstmac/sst_core/integrated_component.h>
 
@@ -66,19 +67,6 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-class mutex_t  {
- public:
-  /** Blocking keys for those threads waiting on the mutex */
-  std::list<Thread*> waiters;
-  std::list<Thread*> conditionals;
-  bool locked;
-
-  mutex_t() : locked(false)
-  {
-  }
-};
-
-typedef std::map<long, mutex_t*> condition_t;
 
 /**
  * The app derived class adds to the thread base class by providing
@@ -188,17 +176,19 @@ class App : public Thread
   int allocateMutex();
 
   /**
-   * Allocate a unique ID for a condition variable
-   * @return The unique ID
-   */
-  int allocateCondition();
-
-  /**
    * Fetch a mutex object corresponding to their ID
    * @param id
    * @return The mutex object corresponding to the ID. Return NULL if no mutex is found.
    */
   mutex_t* getMutex(int id);
+
+  bool eraseMutex(int id);
+
+  /**
+   * Allocate a unique ID for a condition variable
+   * @return The unique ID
+   */
+  int allocateCondition();
 
   /**
    * Fetch a condition object corresponding to the ID
@@ -208,8 +198,6 @@ class App : public Thread
   condition_t* getCondition(int id);
 
   bool eraseCondition(int id);
-
-  bool eraseMutex(int id);
 
   void* globalsStorage() const {
     return globals_storage_;
@@ -273,13 +261,9 @@ class App : public Thread
   std::string unique_name_;
 
   int next_tls_key_;
-  int next_condition_;
-  int next_mutex_;
   uint64_t min_op_cutoff_;
 
   std::map<long, Thread*> subthreads_;
-  std::map<int, mutex_t> mutexes_;
-  std::map<int, condition_t> conditions_;
   std::map<int, destructor_fxn> tls_key_fxns_;
   //these can alias - so I can't use unique_ptr
   std::map<std::string, API*> apis_;

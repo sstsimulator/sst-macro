@@ -1,4 +1,4 @@
-int __sizeof_xyz_fxny = sizeof(void*);  extern int __offset_xyz_fxny;  void init_xyz_fxny(void* ptr){    void** ptrptr = (void**) ptr;    *ptrptr = 0; }int __sizeof_xyz_fxnx = sizeof(void*);  extern int __offset_xyz_fxnx;  void init_xyz_fxnx(void* ptr){    void** ptrptr = (void**) ptr;    *ptrptr = 0; }void fxn()
+int __sizeof_xyz_fxny = sizeof(void*);  extern int __offset_xyz_fxny;  void sstmac_init_xyz_fxny(void* ptr){    void** ptrptr = (void**) ptr;    *ptrptr = 0; }int __sizeof_xyz_fxnx = sizeof(void*);  extern int __offset_xyz_fxnx;  void sstmac_init_xyz_fxnx(void* ptr){    void** ptrptr = (void**) ptr;    *ptrptr = 0; }void fxn()
 { char* sstmac_global_data = get_sstmac_global_data();{
   static int x = 10;void** ptrsstmac_xyz_fxnx = ((void**)(sstmac_global_data + __offset_xyz_fxnx));int* sstmac_xyz_fxnx = (int*)(*ptrsstmac_xyz_fxnx); if (sstmac_xyz_fxnx == 0){   sstmac_xyz_fxnx = (int*) malloc(sizeof(int));   *ptrsstmac_xyz_fxnx = sstmac_xyz_fxnx; }*sstmac_xyz_fxnx = (int) 10;
   (*sstmac_xyz_fxnx) += 5;
@@ -6,7 +6,7 @@ int __sizeof_xyz_fxny = sizeof(void*);  extern int __offset_xyz_fxny;  void init
   static int y;void** ptrsstmac_xyz_fxny = ((void**)(sstmac_global_data + __offset_xyz_fxny));int* sstmac_xyz_fxny = (int*)(*ptrsstmac_xyz_fxny); if (sstmac_xyz_fxny == 0){   sstmac_xyz_fxny = (int*) malloc(sizeof(int));   *ptrsstmac_xyz_fxny = sstmac_xyz_fxny; }
  }}
 
-int __sizeof_xyz_next_fxn_1y = sizeof(void*);  extern int __offset_xyz_next_fxn_1y;  void init_xyz_next_fxn_1y(void* ptr){    void** ptrptr = (void**) ptr;    *ptrptr = 0; }int __sizeof_xyz_next_fxny = sizeof(void*);  extern int __offset_xyz_next_fxny;  void init_xyz_next_fxny(void* ptr){    void** ptrptr = (void**) ptr;    *ptrptr = 0; }void next_fxn()
+int __sizeof_xyz_next_fxn_1y = sizeof(void*);  extern int __offset_xyz_next_fxn_1y;  void sstmac_init_xyz_next_fxn_1y(void* ptr){    void** ptrptr = (void**) ptr;    *ptrptr = 0; }int __sizeof_xyz_next_fxny = sizeof(void*);  extern int __offset_xyz_next_fxny;  void sstmac_init_xyz_next_fxny(void* ptr){    void** ptrptr = (void**) ptr;    *ptrptr = 0; }void next_fxn()
 { char* sstmac_global_data = get_sstmac_global_data();{
   static int y = 7;void** ptrsstmac_xyz_next_fxny = ((void**)(sstmac_global_data + __offset_xyz_next_fxny));int* sstmac_xyz_next_fxny = (int*)(*ptrsstmac_xyz_next_fxny); if (sstmac_xyz_next_fxny == 0){   sstmac_xyz_next_fxny = (int*) malloc(sizeof(int));   *ptrsstmac_xyz_next_fxny = sstmac_xyz_next_fxny; }*sstmac_xyz_next_fxny = (int) 7;
   {
@@ -16,9 +16,9 @@ int __sizeof_xyz_next_fxn_1y = sizeof(void*);  extern int __offset_xyz_next_fxn_
   (*sstmac_xyz_next_fxny) += 3;
  }}
 
-int z = 0;extern int __offset_z; void init_z(void* ptr){int initer = 0; memcpy(ptr, (void*) &initer, sizeof(initer)); } int __sizeof_z = sizeof(int); 
+int z = 0;extern int __offset_z; void sstmac_init_z(void* ptr){int initer = 0; memcpy(ptr, (void*) &initer, sizeof(initer)); } int __sizeof_z = sizeof(int); 
 
-int __sizeof_xyz_fxn2a = sizeof(void*);  extern int __offset_xyz_fxn2a;  void init_xyz_fxn2a(void* ptr){    void** ptrptr = (void**) ptr;    *ptrptr = 0; }void fxn2()
+int __sizeof_xyz_fxn2a = sizeof(void*);  extern int __offset_xyz_fxn2a;  void sstmac_init_xyz_fxn2a(void* ptr){    void** ptrptr = (void**) ptr;    *ptrptr = 0; }void fxn2()
 { char* sstmac_global_data = get_sstmac_global_data();{
   static struct ayz {
     int* y;
@@ -26,7 +26,7 @@ int __sizeof_xyz_fxn2a = sizeof(void*);  extern int __offset_xyz_fxn2a;  void in
   } a = { &z, 2 };void** ptrsstmac_xyz_fxn2a = ((void**)(sstmac_global_data + __offset_xyz_fxn2a));struct ayz* sstmac_xyz_fxn2a = (struct ayz*)(*ptrsstmac_xyz_fxn2a); if (sstmac_xyz_fxn2a == 0){   sstmac_xyz_fxn2a = (struct ayz*) malloc(sizeof(struct ayz));   *ptrsstmac_xyz_fxn2a = sstmac_xyz_fxn2a; }*sstmac_xyz_fxn2a = (struct ayz) {&(*((int*)(get_sstmac_global_data() + __offset_z))), 2};
  }}
 
-int __sizeof_xyz_fxn3a = sizeof(void*);  extern int __offset_xyz_fxn3a;  void init_xyz_fxn3a(void* ptr){    void** ptrptr = (void**) ptr;    *ptrptr = 0; }void fxn3()
+int __sizeof_xyz_fxn3a = sizeof(void*);  extern int __offset_xyz_fxn3a;  void sstmac_init_xyz_fxn3a(void* ptr){    void** ptrptr = (void**) ptr;    *ptrptr = 0; }void fxn3()
 { char* sstmac_global_data = get_sstmac_global_data();{
   static struct   a_anonymous_type{
     int y;
@@ -37,17 +37,17 @@ int __sizeof_xyz_fxn3a = sizeof(void*);  extern int __offset_xyz_fxn3a;  void in
 #include <sstmac/software/process/memoize.h>
 
 extern int __sizeof_xyz_fxn2a;
-int __offset_xyz_fxn2a = 0;extern "C" void init_xyz_fxn2a(void*);
-sstmac::CppGlobalRegisterGuard xyz_fxn2a_sstmac_ctor(__offset_xyz_fxn2a, __sizeof_xyz_fxn2a, false, "xyz_fxn2a", init_xyz_fxn2a);extern int __sizeof_xyz_fxn3a;
-int __offset_xyz_fxn3a = 0;extern "C" void init_xyz_fxn3a(void*);
-sstmac::CppGlobalRegisterGuard xyz_fxn3a_sstmac_ctor(__offset_xyz_fxn3a, __sizeof_xyz_fxn3a, false, "xyz_fxn3a", init_xyz_fxn3a);extern int __sizeof_xyz_fxnx;
-int __offset_xyz_fxnx = 0;extern "C" void init_xyz_fxnx(void*);
-sstmac::CppGlobalRegisterGuard xyz_fxnx_sstmac_ctor(__offset_xyz_fxnx, __sizeof_xyz_fxnx, false, "xyz_fxnx", init_xyz_fxnx);extern int __sizeof_xyz_fxny;
-int __offset_xyz_fxny = 0;extern "C" void init_xyz_fxny(void*);
-sstmac::CppGlobalRegisterGuard xyz_fxny_sstmac_ctor(__offset_xyz_fxny, __sizeof_xyz_fxny, false, "xyz_fxny", init_xyz_fxny);extern int __sizeof_xyz_next_fxn_1y;
-int __offset_xyz_next_fxn_1y = 0;extern "C" void init_xyz_next_fxn_1y(void*);
-sstmac::CppGlobalRegisterGuard xyz_next_fxn_1y_sstmac_ctor(__offset_xyz_next_fxn_1y, __sizeof_xyz_next_fxn_1y, false, "xyz_next_fxn_1y", init_xyz_next_fxn_1y);extern int __sizeof_xyz_next_fxny;
-int __offset_xyz_next_fxny = 0;extern "C" void init_xyz_next_fxny(void*);
-sstmac::CppGlobalRegisterGuard xyz_next_fxny_sstmac_ctor(__offset_xyz_next_fxny, __sizeof_xyz_next_fxny, false, "xyz_next_fxny", init_xyz_next_fxny);extern int __sizeof_z;
-int __offset_z = 0;extern "C" void init_z(void*);
-sstmac::CppGlobalRegisterGuard z_sstmac_ctor(__offset_z, __sizeof_z, false, "z", init_z);
+int __offset_xyz_fxn2a = 0;extern "C" void sstmac_init_xyz_fxn2a(void*);
+sstmac::CppGlobalRegisterGuard xyz_fxn2a_sstmac_ctor(__offset_xyz_fxn2a, __sizeof_xyz_fxn2a, false, "xyz_fxn2a", sstmac_init_xyz_fxn2a);extern int __sizeof_xyz_fxn3a;
+int __offset_xyz_fxn3a = 0;extern "C" void sstmac_init_xyz_fxn3a(void*);
+sstmac::CppGlobalRegisterGuard xyz_fxn3a_sstmac_ctor(__offset_xyz_fxn3a, __sizeof_xyz_fxn3a, false, "xyz_fxn3a", sstmac_init_xyz_fxn3a);extern int __sizeof_xyz_fxnx;
+int __offset_xyz_fxnx = 0;extern "C" void sstmac_init_xyz_fxnx(void*);
+sstmac::CppGlobalRegisterGuard xyz_fxnx_sstmac_ctor(__offset_xyz_fxnx, __sizeof_xyz_fxnx, false, "xyz_fxnx", sstmac_init_xyz_fxnx);extern int __sizeof_xyz_fxny;
+int __offset_xyz_fxny = 0;extern "C" void sstmac_init_xyz_fxny(void*);
+sstmac::CppGlobalRegisterGuard xyz_fxny_sstmac_ctor(__offset_xyz_fxny, __sizeof_xyz_fxny, false, "xyz_fxny", sstmac_init_xyz_fxny);extern int __sizeof_xyz_next_fxn_1y;
+int __offset_xyz_next_fxn_1y = 0;extern "C" void sstmac_init_xyz_next_fxn_1y(void*);
+sstmac::CppGlobalRegisterGuard xyz_next_fxn_1y_sstmac_ctor(__offset_xyz_next_fxn_1y, __sizeof_xyz_next_fxn_1y, false, "xyz_next_fxn_1y", sstmac_init_xyz_next_fxn_1y);extern int __sizeof_xyz_next_fxny;
+int __offset_xyz_next_fxny = 0;extern "C" void sstmac_init_xyz_next_fxny(void*);
+sstmac::CppGlobalRegisterGuard xyz_next_fxny_sstmac_ctor(__offset_xyz_next_fxny, __sizeof_xyz_next_fxny, false, "xyz_next_fxny", sstmac_init_xyz_next_fxny);extern int __sizeof_z;
+int __offset_z = 0;extern "C" void sstmac_init_z(void*);
+sstmac::CppGlobalRegisterGuard z_sstmac_ctor(__offset_z, __sizeof_z, false, "z", sstmac_init_z);
