@@ -4,7 +4,7 @@
  */
 
 
-#include <sstmac/replacements/mpi.h>
+#include <sstmac/replacements/mpi/mpi.h>
 #include "mpitestconf.h"
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>

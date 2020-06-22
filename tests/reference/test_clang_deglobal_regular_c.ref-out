@@ -1,4 +1,4 @@
-int x = 10;extern int __offset_x; void init_x(void* ptr){int initer = 10; memcpy(ptr, (void*) &initer, sizeof(initer)); } int __sizeof_x = sizeof(int); 
+int x = 10;extern int __offset_x; void sstmac_init_x(void* ptr){int initer = 10; memcpy(ptr, (void*) &initer, sizeof(initer)); } int __sizeof_x = sizeof(int); 
 
 void fxn()
 { char* sstmac_global_data = get_sstmac_global_data();int* sstmac_x=(int*)(sstmac_global_data + __offset_x); {
@@ -8,7 +8,7 @@ void fxn()
 struct a {
   int x;
   int y;
-} aa;extern int __offset_aa; void init_aa(void* ptr){ } int __sizeof_aa = sizeof(struct a); 
+} aa;extern int __offset_aa; void sstmac_init_aa(void* ptr){ } int __sizeof_aa = sizeof(struct a); 
 
 void fxn2()
 { char* sstmac_global_data = get_sstmac_global_data();struct a* sstmac_aa=(struct a*)(sstmac_global_data + __offset_aa); {
@@ -18,7 +18,7 @@ void fxn2()
 #include <sstmac/software/process/memoize.h>
 
 extern int __sizeof_aa;
-int __offset_aa = 0;extern "C" void init_aa(void*);
-sstmac::CppGlobalRegisterGuard aa_sstmac_ctor(__offset_aa, __sizeof_aa, false, "aa", init_aa);extern int __sizeof_x;
-int __offset_x = 0;extern "C" void init_x(void*);
-sstmac::CppGlobalRegisterGuard x_sstmac_ctor(__offset_x, __sizeof_x, false, "x", init_x);
+int __offset_aa = 0;extern "C" void sstmac_init_aa(void*);
+sstmac::CppGlobalRegisterGuard aa_sstmac_ctor(__offset_aa, __sizeof_aa, false, "aa", sstmac_init_aa);extern int __sizeof_x;
+int __offset_x = 0;extern "C" void sstmac_init_x(void*);
+sstmac::CppGlobalRegisterGuard x_sstmac_ctor(__offset_x, __sizeof_x, false, "x", sstmac_init_x);

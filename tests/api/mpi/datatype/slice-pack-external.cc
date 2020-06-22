@@ -8,7 +8,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <sstmac/replacements/mpi.h>
+#include <sstmac/replacements/mpi/mpi.h>
 
 namespace slice_pack_external {
 static int verbose = 0;

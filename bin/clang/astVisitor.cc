@@ -448,9 +448,10 @@ SkeletonASTVisitor::isInSystemHeader(SourceLocation loc)
       return validHeaders_.find(fullpath) == validHeaders_.end();
     }
   } else {
-    std::string err_str = std::string("realpath(...) failed to resolve ") + ploc.getFilename() + ". Cannot continue.";
-    errorAbort(loc, err_str);
-    return false; //for warnings
+    return false;
+    //std::string err_str = std::string("realpath(...) failed to resolve ") + ploc.getFilename() + ". Cannot continue.";
+    //errorAbort(loc, err_str);
+    //return false; //for warnings
   }
 }
 
@@ -1213,6 +1214,7 @@ SkeletonASTVisitor::checkArray(VarDecl* D)
       info->typedefDeclString = sstr.str();
       info->retType = info->fqTypedefName + "*";
       info->needsDeref = false;
+      info->implicitSize = true;
     }
     return info;
   } else {

@@ -5,7 +5,7 @@
  */
 
 
-#include <sstmac/replacements/mpi.h>
+#include <sstmac/replacements/mpi/mpi.h>
 
 /** 
 From: hook@nas.nasa.gov (Edward C. Hook)

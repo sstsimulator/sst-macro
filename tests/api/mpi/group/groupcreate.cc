@@ -4,7 +4,7 @@
  */
 
 
-#include <sstmac/replacements/mpi.h>
+#include <sstmac/replacements/mpi/mpi.h>
 #include <stdio.h>
 /** stdlib.h Needed for malloc declaration */
 #include <stdlib.h>

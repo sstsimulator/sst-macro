@@ -18,11 +18,11 @@ A<T>::fxn(){
   B var;
 }
 
-decltype(A<int>::x) var;extern int __offset_var; int __sizeof_var = sizeof(B);static std::function<void(void*)> init_var = [](void* ptr){ new (ptr) B{}; };sstmac::CppGlobalRegisterGuard var_sstmac_ctor(__offset_var, __sizeof_var, false, "var", std::move(init_var));
+decltype(A<int>::x) var;extern int __offset_var; int __sizeof_var = sizeof(B);static std::function<void(void*)> sstmac_init_var = [](void* ptr){ new (ptr) B{}; };sstmac::CppGlobalRegisterGuard var_sstmac_ctor(__offset_var, __sizeof_var, false, "var", std::move(sstmac_init_var));
 #include <sstmac/software/process/cppglobal.h>
 #include <sstmac/software/process/memoize.h>
 
 extern int __sizeof_var;
 int __offset_var = 0;extern int __sizeof_x;
-int __offset_x = 0;extern "C" void init_x(void*);
-sstmac::CppGlobalRegisterGuard x_sstmac_ctor(__offset_x, __sizeof_x, false, "x", init_x);
+int __offset_x = 0;extern "C" void sstmac_init_x(void*);
+sstmac::CppGlobalRegisterGuard x_sstmac_ctor(__offset_x, __sizeof_x, false, "x", sstmac_init_x);

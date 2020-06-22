@@ -18,7 +18,7 @@ nobase_nodist_library_include_HEADERS =
 nobase_library_include_HEADERS = 
 
 nobase_library_include_HEADERS += \
-  mpi.h \
+  mpi/mpi.h \
   change_mpi_symbols.h \
   omp.h \
 	fixIntrinsics.h 
@@ -26,10 +26,12 @@ nobase_library_include_HEADERS += \
 if USE_REPLACEMENT_HEADERS
 nobase_library_include_HEADERS += \
   linux/mmtimer.h \
+  linux/limits.h \
   clear_symbol_macros.h \
   return_symbol_macros.h \
   sstmac_pthread_return.h \
   sys/types.h \
+  sys/sendfile.h \
   dlfcn.h \
   future \
   fstream \
@@ -64,6 +66,7 @@ nobase_library_include_HEADERS += \
   signal.h \
   sstmac_pthread_clear.h \
   time.h \
+  wait.h \
   sys/time.h \
   sys/signal.h 
 endif

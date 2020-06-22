@@ -46,6 +46,10 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include_next <unistd.h>
 
+#ifndef HOST_NAME_MAX
+#define HOST_NAME_MAX 64
+#endif
+
 #ifndef SSTMAC_NO_REPLACEMENTS
 #define sleep       sstmac_sleep
 #endif
