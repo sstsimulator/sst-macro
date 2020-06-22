@@ -80,7 +80,7 @@ def createBashWrapper(compiler, exeName, ldTarget, sstCore, sstmacExe):
    "sys.exit(rc)",
    "",
    '"""',
-   open(ldTarget).read(),
+   open(ldTarget, encoding="utf-8", errors="ignore").read(),
    '"""',
   ]
   open(exeName,"w").write("\n".join(str_arr))
@@ -290,6 +290,7 @@ def run(typ, extraLibs=""):
   parser.add_argument('--memoize', type=str,
                     help="whether to activate memoization mode that instruments and records execution. Can take a list of LLVM passes as argument.")
   parser.add_argument('-I', action="append", type=str, help="an include path", default=[])
+  parser.add_argument('-D', action="append", type=str, help="a defines", default=[])
   parser.add_argument('-W', action="append", type=str, help="activate a particular warning", default=[])
   parser.add_argument('-L', action="append", type=str, help="a library path", default=[])
   parser.add_argument('-l', action="append", type=str, help="a library to link against", default=[])
@@ -298,6 +299,7 @@ def run(typ, extraLibs=""):
   parser.add_argument('-c', '--compile', default=False, action="store_true")
   parser.add_argument('-E', '--preprocess', default=False, action="store_true")
   parser.add_argument('-V', '--version', default=False, action="store_true", help="Print SST and compiler version info")
+  parser.add_argument('--disable-mpi', default=False, action="store_true", help="Do not include virtual MPI environment")
   parser.add_argument('--flags', default=False, action="store_true", help="Print the extra flags SST automatically adds")
   parser.add_argument('--prefix', default=False, action="store_true", help="Print the SST installation prefix")
   parser.add_argument('--sst-component', default=False, action="store_true", 
@@ -378,9 +380,10 @@ def run(typ, extraLibs=""):
   #if we are in simulate mode, we have to create the "replacement" environment
   #we do this by rerouting all the headers to SST/macro headers
   if ctx.simulateMode():
-    repldir = os.path.join(cleanFlag(includeDir), "sstmac", "replacements")
+    include_root = cleanFlag(includeDir)
+    repldir = os.path.join(include_root, "sstmac", "replacements")
     repldir = cleanFlag(repldir)
-    args.I.append(os.path.join(prefix, "include", "sumi"))
+    args.I.append(os.path.join(include_root, "sumi"))
     args.I.insert(0,repldir)
 
     #also force inclusion of wrappers
@@ -390,6 +393,9 @@ def run(typ, extraLibs=""):
       ctx.directIncludes.append("stdint.h")
     ctx.directIncludes.append("sstmac/compute.h")
     ctx.directIncludes.append("sstmac/skeleton.h")
+
+    if not args.disable_mpi:
+      args.I.insert(0,os.path.join(repldir, "mpi"))
 
   sysargs = sys.argv[1:]
   asmFiles = False

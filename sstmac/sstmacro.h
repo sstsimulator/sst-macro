@@ -45,7 +45,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef SSTMACRO_THE_SSTMACRO_H
 #define SSTMACRO_THE_SSTMACRO_H
 
-#include <sstmac/replacements/mpi.h>
+#include <sstmac/replacements/mpi/mpi.h>
 #include <sstmac/util.h>
 
 #endif

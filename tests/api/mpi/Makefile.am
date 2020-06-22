@@ -23,7 +23,10 @@ AM_CPPFLAGS += \
  -I$(top_srcdir)/tests/api/mpi/include 
 
 AM_CPPFLAGS += -I$(top_srcdir)/sstmac/install -DSSTMAC=1
-AM_CPPFLAGS += -I$(top_builddir)/sstmac/replacements -I$(top_srcdir)/sstmac/replacements
+AM_CPPFLAGS += \
+  -I$(top_builddir)/sstmac/replacements \
+  -I$(top_srcdir)/sstmac/replacements \
+  -I$(top_srcdir)/sstmac/replacements/mpi
 
 EXTRA_DIST = testmpi.h include config.py
 

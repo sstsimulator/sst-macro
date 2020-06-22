@@ -49,6 +49,7 @@ def addPreprocess(ctx, sourceFile, outputFile, args, cmds):
     ppArgs.append("-include")
     ppArgs.append(entry)
   ppArgs.extend(map(lambda x: "-D%s" % x, ctx.defines))
+  ppArgs.extend(map(lambda x: "-D%s" % x, args.D))
   ppArgs.extend(map(lambda x: "-I%s" % x, args.I)) 
   ppArgs.extend(ctx.cppFlags)
   ppArgs.extend(ctx.compilerFlags)
