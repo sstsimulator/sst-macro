@@ -50,13 +50,14 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <algorithm>
 
 #if PY_MAJOR_VERSION >= 3
-#ifndef Py_TYPE
-#endif
  #define PY_OBJ_HEAD PyVarObject_HEAD_INIT(nullptr, 0)
  #define ConvertToPythonLong(x) PyLong_FromLong(x)
  #define ConvertToCppLong(x) PyLong_AsLong(x)
- #define TP_FINALIZE
+ #define ConvertToPythonString(x) PyUnicode_FromString(x)
+ #define ConvertToCppString(x) PyUnicode_AsUTF8(x)
+ #define TP_FINALIZE nullptr,
  #define TP_VECTORCALL_OFFSET 0,
+ #define TP_VECTORCALL nullptr,
  #define TP_PRINT
  #define TP_COMPARE
  #define TP_AS_SYNC nullptr,
@@ -65,8 +66,11 @@ Questions? Contact sst-macro-help@sandia.gov
  #define PY_OBJ_HEAD PyVarObject_HEAD_INIT(nullptr, 0)
  #define ConvertToPythonLong(x) PyInt_FromLong(x)
  #define ConvertToCppLong(x) PyInt_AsLong(x)
- #define TP_FINALIZE nullptr,
+ #define ConvertToPythonString(x) PyString_FromString(x)
+ #define ConvertToCppString(x) PyString_AsString(x)
+ #define TP_FINALIZE
  #define TP_VECTORCALL_OFFSET
+ #define TP_VECTORCALL
  #define TP_PRINT nullptr,
  #define TP_COMPARE nullptr,
  #define TP_AS_SYNC
@@ -186,7 +190,17 @@ static PyTypeObject SystemType = {
     (initproc)sys_init,        /* tp_init */
     nullptr,                   /* tp_alloc */
     nullptr,                   /* tp_new */
-    TP_FINALIZE
+    nullptr,                   /* tp_free */
+    nullptr,                   /* tp_is_gc */
+    nullptr,                   /* tp_bases */
+    nullptr,                   /* tp_mro */
+    nullptr,                   /* tp_cache */
+    nullptr,                   /* tp_subclasses */
+    nullptr,                   /* tp_weaklist */
+    nullptr,                   /* tp_del */
+    0,                         /* tp_version_tag */
+    TP_FINALIZE                /* Python3 only */
+    TP_VECTORCALL              /* Python3 only */
 };
 
 namespace sstmac {
