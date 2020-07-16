@@ -51,6 +51,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/ami/ami.h>
 #include <sstmac/software/libraries/library.h>
 #include <sstmac/software/process/thread_fwd.h>
+#include <sstmac/software/process/mutex.h>
 #include <sstmac/software/process/app_fwd.h>
 #include <sstmac/software/process/thread_info.h>
 #include <sstmac/software/api/api_fwd.h>
@@ -315,6 +316,36 @@ class OperatingSystem : public SubComponent
 
   static void gdbReset();
 
+  /**
+   * Allocate a unique ID for a mutex variable
+   * @return The unique ID
+   */
+  int allocateMutex();
+
+  /**
+   * Fetch a mutex object corresponding to their ID
+   * @param id
+   * @return The mutex object corresponding to the ID. Return NULL if no mutex is found.
+   */
+  mutex_t* getMutex(int id);
+
+  bool eraseMutex(int id);
+
+  /**
+   * Allocate a unique ID for a condition variable
+   * @return The unique ID
+   */
+  int allocateCondition();
+
+  /**
+   * Fetch a condition object corresponding to the ID
+   * @param id
+   * @return The condition object corresponding to the ID. Return NULL if not condition is found.
+   */
+  condition_t* getCondition(int id);
+
+  bool eraseCondition(int id);
+
  private:
   ThreadContext* activeContext();
 
@@ -375,6 +406,11 @@ class OperatingSystem : public SubComponent
   ComputeScheduler* compute_sched_;
 
   std::map<uint32_t, Thread*> running_threads_;
+
+  int next_condition_;
+  int next_mutex_;
+  std::map<int, condition_t> conditions_;
+  std::map<int, mutex_t> mutexes_;
 
   static std::unordered_map<uint32_t, Thread*> all_threads_;
   static bool hold_for_gdb_;

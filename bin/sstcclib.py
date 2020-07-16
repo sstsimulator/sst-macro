@@ -80,7 +80,7 @@ def createBashWrapper(compiler, exeName, ldTarget, sstCore, sstmacExe):
    "sys.exit(rc)",
    "",
    '"""',
-   open(ldTarget, encoding="utf-8", errors="ignore").read(),
+   configlib.read_utf8(ldTarget),
    '"""',
   ]
   open(exeName,"w").write("\n".join(str_arr))
@@ -291,10 +291,8 @@ def run(typ, extraLibs=""):
                     help="whether to activate memoization mode that instruments and records execution. Can take a list of LLVM passes as argument.")
   parser.add_argument('-I', action="append", type=str, help="an include path", default=[])
   parser.add_argument('-D', action="append", type=str, help="a defines", default=[])
-  parser.add_argument('-W', action="append", type=str, help="activate a particular warning", default=[])
   parser.add_argument('-L', action="append", type=str, help="a library path", default=[])
   parser.add_argument('-l', action="append", type=str, help="a library to link against", default=[])
-  parser.add_argument('-Wl', action="append", type=str, help="activate a particular linker argument", default=[])
   parser.add_argument('-O', type=str)
   parser.add_argument('-c', '--compile', default=False, action="store_true")
   parser.add_argument('-E', '--preprocess', default=False, action="store_true")

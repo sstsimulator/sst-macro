@@ -158,7 +158,6 @@ def addSrc2SrcCompile(ctx, sourceFile, outputFile, args, cmds):
     clangCmdArr.extend(clangLibtoolingCxxFlagsStr.split())
   else:
     clangCmdArr.extend(clangLibtoolingCFlagsStr.split())
-  clangCmdArr.extend(map(lambda x: "-W%s" % x, args.W))
 
   srcRepl = addPrefixAndRebase("sst.pp.",sourceFile,objBaseFolder)
   cxxInitSrcFile = addPrefixAndRebase("sstGlobals.pp.",sourceFile,objBaseFolder) + ".cpp"
