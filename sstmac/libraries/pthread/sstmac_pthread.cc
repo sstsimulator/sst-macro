@@ -225,7 +225,7 @@ SSTMAC_pthread_spin_destroy(sstmac_pthread_spinlock_t * lock)
 extern "C" int
 SSTMAC_pthread_mutex_destroy(sstmac_pthread_mutex_t * mutex)
 {
-  pthread_debug("pthread_mutex_destroy");
+  pthread_debug("pthread_mutex_destroy %d", int(*mutex));
   if (*mutex == SSTMAC_PTHREAD_MUTEX_INITIALIZER)
     return 0; //nothing to do here
 
@@ -233,7 +233,7 @@ SSTMAC_pthread_mutex_destroy(sstmac_pthread_mutex_t * mutex)
   Thread* thr = currentThread();
   App* a = thr->parentApp();
   bool found = a->eraseMutex(*mutex);
-  if (found){
+  if (!found){
     return EINVAL;
   } else {
     return 0;
@@ -316,7 +316,7 @@ SSTMAC_pthread_spin_unlock(sstmac_pthread_spinlock_t * lock)
 extern "C" int
 SSTMAC_pthread_mutex_unlock(sstmac_pthread_mutex_t * mutex)
 {
-  pthread_debug("pthread_mutex_unlock");  
+  pthread_debug("pthread_mutex_unlock %d", int(*mutex));
   int rc;
   if ((rc = check_mutex(mutex)) != 0){
     return rc;
@@ -508,18 +508,16 @@ SSTMAC_pthread_cond_broadcast(sstmac_pthread_cond_t *  /*cond*/)
 }
 
 extern "C" int
-SSTMAC_pthread_condattr_getpshared(const sstmac_pthread_condattr_t*  /*attr*/, int* pshared)
+SSTMAC_pthread_condattr_getpshared(const sstmac_pthread_condattr_t* attr, int* pshared)
 {
-  *pshared = SSTMAC_PTHREAD_PROCESS_PRIVATE;
+  *pshared = *attr;
   return 0;
 }
 
 extern "C" int
-SSTMAC_pthread_condattr_setpshared(sstmac_pthread_condattr_t*  /*attr*/, int pshared)
+SSTMAC_pthread_condattr_setpshared(sstmac_pthread_condattr_t*  attr, int pshared)
 {
-  if (pshared != SSTMAC_PTHREAD_PROCESS_PRIVATE){
-    sprockit::abort("SST does not yet support PTHREAD_PROCESS_SHARED condition");
-  }
+  *attr = pshared;
   return 0;
 }
 
@@ -769,18 +767,16 @@ SSTMAC_pthread_atfork(void (* /*prepare*/)(void), void (* /*parent*/)(void),
 }
 
 extern "C" int
-SSTMAC_pthread_mutexattr_getpshared(const sstmac_pthread_mutexattr_t*  /*attr*/, int* pshared)
+SSTMAC_pthread_mutexattr_getpshared(const sstmac_pthread_mutexattr_t* attr, int* pshared)
 {
-  *pshared = SSTMAC_PTHREAD_PROCESS_PRIVATE;
+  *pshared = *attr;
   return 0;
 }
 
 extern "C" int
-SSTMAC_pthread_mutexattr_setpshared(sstmac_pthread_mutexattr_t*  /*attr*/, int pshared)
+SSTMAC_pthread_mutexattr_setpshared(sstmac_pthread_mutexattr_t* attr, int pshared)
 {
-  if (pshared != SSTMAC_PTHREAD_PROCESS_PRIVATE){
-    sprockit::abort("SST does not yet support PTHREAD_PROCESS_SHARED mutex");
-  }
+  *attr = pshared;
   return 0;
 }
 
