@@ -185,6 +185,8 @@ def addSrc2SrcCompile(ctx, sourceFile, outputFile, args, cmds):
     cmdArr.append(srcRepl)
     if args.O:
       cmdArr.append("-O%s" % args.O)
+    if args.g:
+      cmdArr.append("-g")
     cmds.append([None,cmdArr,[tmpTarget]])
 
   cxxInitObjFile = addPrefix("sstGlobals.", outputFile)
@@ -200,6 +202,8 @@ def addSrc2SrcCompile(ctx, sourceFile, outputFile, args, cmds):
   cxxInitCmdArr.extend(ctx.cppFlags)
   if args.O:
     cxxInitCmdArr.append("-O%s" % args.O)
+  if args.g:
+    cxxInitCmdArr.append("-g")
   cmds.append([None,cxxInitCmdArr,[cxxInitObjFile]])
 
   mergeCmdArr = [
