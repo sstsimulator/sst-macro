@@ -97,8 +97,8 @@ def runCmdArr(cmdArr,verbose):
     return 0
     
 class TempFiles:
-  def __init__(self, doDeleteAll, doDeleteObjects, verbose, clangBin):
-    self.doDeleteAll = doDeleteAll
+  def __init__(self, doDeleteSources, doDeleteObjects, verbose, clangBin):
+    self.doDeleteSources = doDeleteSources
     self.doDeleteObjects = doDeleteObjects
     self.verbose = verbose
     self.files = []
@@ -115,8 +115,9 @@ class TempFiles:
     import sys
     import traceback
     objects = [f for f in self.files if f.endswith('.o')]
-    if self.doDeleteAll and self.files:
-        cmdall = "rm -f %s" % " ".join(self.files)
+    sources = [f for f in self.files if not f.endswith('.o')]
+    if self.doDeleteSources and sources:
+        cmdall = "rm -f %s" % " ".join(sources)
         if self.verbose:
           sys.stderr.write("%s\n" % cmdall)
         os.system(cmdall)
@@ -126,8 +127,7 @@ class TempFiles:
         if self.verbose:
           sys.stderr.write("%s\n" % cmdobjects)
         os.system(cmdobjects)
-        self.files = [f for f in self.files if not f.endswith('.o')]
-    if not self.doDeleteAll: # attempt to format the files with clangformat
+    if not self.doDeleteSources: # attempt to format the files with clangformat
         # taken from https://stackoverflow.com/questions/377017/test-if-executable-exists-in-python/12611523
         clang_format_prog = "clang-format"
         clang_format = os.path.join(self.clangBin + "bin/", clang_format_prog)
@@ -148,14 +148,14 @@ class TempFiles:
                 sys.stderr.write("Could not find %s\n" % clang_format)
 
         if has_clang_format:
-            for f in self.files:
+            for f in sources:
                 cmd = clang_format + " -i -style=llvm " + f 
                 if self.verbose:
                     sys.stderr.write(cmd + "\n")
                 os.system(cmd)
 
-def runAllCmds(cmds, verbose, doDeleteTemps, doDeleteObjects, clangBin):
-  tmpFiles = TempFiles(doDeleteTemps, doDeleteObjects, verbose, clangBin)
+def runAllCmds(cmds, verbose, doDeleteSources, doDeleteObjects, clangBin):
+  tmpFiles = TempFiles(doDeleteSources, doDeleteObjects, verbose, clangBin)
   from subprocess import check_output,STDOUT,Popen,PIPE
   import sys
   for outfile, cmdArr, tempFiles in cmds:
@@ -255,20 +255,13 @@ def run(typ, extraLibs=""):
   ctx.hasClang = bool(clangCppFlagsStr)
 
   verbose = False     #whether to print verbose output
-  delTempFiles = True #whether to delete all temp files created
-  #whether to make a shared object for loading 
-  #or a bash script that emulates an executable
-  makeBashExe = False     
-  delTempObjectFiles = True #whether to delete all temporary object files created
   if "SSTMAC_VERBOSE" in os.environ:
     flag = int(os.environ["SSTMAC_VERBOSE"])
     verbose = verbose or flag
-  if "SSTMAC_DELETE_TEMPS" in os.environ:
-    flag = int(os.environ["SSTMAC_DELETE_TEMPS"])
-    delTempFiles = delTempFiles and flag
-  if "SSTMAC_DELETE_TEMP_OFILES" in os.environ:
-    flag = int(os.environ["SSTMAC_DELETE_TEMP_OFILES"])
-    delTempObjectFiles = delTempObjectFiles and flag
+
+  #whether to make a shared object for loading
+  #or a bash script that emulates an executable
+  makeBashExe = False
   if "SSTMAC_CONFIG" in os.environ:
     flag = int(os.environ["SSTMAC_CONFIG"])
     makeBashExe = flag
@@ -307,6 +300,7 @@ def run(typ, extraLibs=""):
   parser.add_argument('-L', action="append", type=str, help="a library path", default=[])
   parser.add_argument('-l', action="append", type=str, help="a library to link against", default=[])
   parser.add_argument('-O', type=str)
+  parser.add_argument('-g', action="store_true", default=False)
   parser.add_argument('-c', '--compile', default=False, action="store_true")
   parser.add_argument('-E', '--preprocess', default=False, action="store_true")
   parser.add_argument('-V', '--version', default=False, action="store_true", help="Print SST and compiler version info")
@@ -342,6 +336,24 @@ def run(typ, extraLibs=""):
   #keep visibility arg, but not if it causes hidden symbols
   if args.fvisibility and args.fvisibility != "hidden": 
     ctx.compilerFlags.append("-fvisibility=%s" % args.fvisibility)
+
+  delTempObjectFiles = True #whether to delete all temporary object files created
+  delTempSourceFiles = True #whether to delete all temporary source files created
+
+  if "SSTMAC_DELETE_TEMPS" in os.environ:
+    flag = int(os.environ["SSTMAC_DELETE_TEMPS"])
+    delTempSourceFiles = bool(flag)
+    delTempObjectFiles = bool(flag)
+
+  if "SSTMAC_DELETE_TEMP_OBJECTS" in os.environ:
+    flag = int(os.environ["SSTMAC_DELETE_TEMP_OBJECTS"])
+    delTempObjectFiles = bool(flag)
+  elif args.g: #debug build, don't delete temps
+    delTempObjectFiles = False
+
+  if "SSTMAC_DELETE_TEMP_SOURCES" in os.environ:
+    flag = int(os.environ["SSTMAC_DELETE_TEMP_OBJECTS"])
+    delTempSourceFiles = bool(flag)
 
   skeletonizing = False
   if "SSTMAC_SKELETONIZE" in os.environ:
@@ -508,7 +520,7 @@ def run(typ, extraLibs=""):
     ]
     cmdArr.extend(sys.argv[1:])
     cmds = [ [None,cmdArr,[]] ]
-    return runAllCmds(cmds, verbose, delTempFiles, delTempObjectFiles, clangBin)
+    return runAllCmds(cmds, verbose, delTempSourceFiles, delTempObjectFiles, clangBin)
 
   #this might be an actual library, not an exe wrapper
   ldTarget = args.output
@@ -539,7 +551,7 @@ def run(typ, extraLibs=""):
   if args.preprocess:
     for srcFile in sourceFiles:
       addPreprocess(ctx, srcFile, None, args, cmds)
-    rc = runAllCmds(cmds, verbose, delTempFiles, delTempObjectFiles, clangBin)
+    rc = runAllCmds(cmds, verbose, delSourceTempFiles, delTempObjectFiles, clangBin)
     return rc
 
   generatedObjects = []
@@ -569,7 +581,7 @@ def run(typ, extraLibs=""):
       addLink(ctx, ldTarget + "_validate", args, cmds, objects, toExe=True)
 
 
-  rc = runAllCmds(cmds, verbose, delTempFiles, delTempObjectFiles, clangBin)
+  rc = runAllCmds(cmds, verbose, delTempSourceFiles, delTempObjectFiles, clangBin)
   if not rc == 0: return rc
 
   if makeBashExe:
