@@ -340,28 +340,6 @@ FatTree::connectedOutports(SwitchId src, std::vector<Connection>& conns) const
   }
 }
 
-double
-FatTree::portScaleFactor(uint32_t addr, int  /*port*/) const
-{
-  int my_level = level(addr);
-
-  int n_leaf_port = up_ports_per_leaf_switch_ + concentration();
-  int n_agg_port = up_ports_per_agg_switch_ + down_ports_per_agg_switch_;
-  int n_core_port = down_ports_per_core_switch_;
-  int min_port = std::min(n_leaf_port,n_agg_port);
-  min_port = std::min(min_port,n_core_port);
-
-  double multiplier = 1.0;
-  if (my_level == 0 && n_leaf_port > min_port)
-    multiplier *= double(n_leaf_port) / double(min_port);
-  else if (my_level == 1 && n_agg_port > min_port)
-    multiplier *= double(n_agg_port) / double(min_port);
-  else if (my_level == 2 && n_core_port > min_port)
-    multiplier *= double(n_core_port) / double(min_port);
-
-  return multiplier;
-}
-
 void
 FatTree::checkInput() const
 {
@@ -430,6 +408,16 @@ FatTree::checkInput() const
           "agg_switches_per_subtree * down_ports_per_agg_switch must equal leaf_switches_per_subtree * up_ports_per_leaf_switch (%d != %d)",
           ndown,nup);
   }
+
+#if !SSTMAC_INTEGRATED_SST_CORE
+  int agg_ports = down_ports_per_agg_switch_ + up_ports_per_agg_switch_;
+  int core_ports = down_ports_per_core_switch_;
+  int leaf_ports = concentration() + up_ports_per_leaf_switch_;
+
+  if (agg_ports != core_ports || leaf_ports != agg_ports || leaf_ports != core_ports){
+    std::cerr << "WARNING: Fat tree configured with non-uniform switches (different no. ports per switch). SST/macro may not accurately model nonuniform switch crossbars without sst-core support" << std::endl;
+  }
+#endif
 }
 
 void
