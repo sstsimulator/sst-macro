@@ -204,6 +204,7 @@ class Context:
     self.replacementIncludes = []
     self.sstCore = False
     self.hasClang = False
+    self.src2srcDebug = False
 
   def simulateMode(self):
     return self.mode == self.SKELETONIZE
@@ -354,7 +355,7 @@ def run(typ, extraLibs=""):
     delTempObjectFiles = False
 
   if "SSTMAC_DELETE_TEMP_SOURCES" in os.environ:
-    flag = int(os.environ["SSTMAC_DELETE_TEMP_OBJECTS"])
+    flag = int(os.environ["SSTMAC_DELETE_TEMP_SOURCES"])
     delTempSourceFiles = bool(flag)
 
   skeletonizing = False
@@ -372,6 +373,9 @@ def run(typ, extraLibs=""):
   if memoizing or (not args.memoize is None):
     ctx.clangArgs.append("--memoize")
     ctx.setMode(ctx.MEMOIZE)
+
+  if "SSTMAC_DEBUG_SRC2SRC" in os.environ:
+    ctx.src2srcDebug = int(os.environ["SSTMAC_DEBUG_SRC2SRC"])
 
   if args.sst_component:
     ctx.setMode(ctx.COMPONENT)

@@ -41,40 +41,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Questions? Contact sst-macro-help@sandia.gov
 */
-#ifndef sstmac_unistd_h
-#define sstmac_unistd_h
 
-#include_next <unistd.h>
-
-#ifndef HOST_NAME_MAX
-#define HOST_NAME_MAX 64
-#endif
-
-#ifndef SSTMAC_NO_REPLACEMENTS
-#define sleep       sstmac_sleep
-#endif
-
-#define gethostname sstmac_gethostname
-#define gethostid   sstmac_gethostid
-#define alarm       sstmac_alarm
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-int sstmac_gethostname(const char* name, size_t sz);
-
-long sstmac_gethostid();
-
-unsigned int sstmac_sleep(unsigned int secs);
-
-unsigned int sstmac_sleepUntil(double t);
-
-unsigned int sstmac_alarm(unsigned int);
-
-#ifdef __cplusplus
+int fxn()
+{
+#pragma sst blocking api(mpi) condition(false) timeout(1e-6)
+  int i=0;
+  return 0;
 }
-#endif
-
-
-#endif
 
