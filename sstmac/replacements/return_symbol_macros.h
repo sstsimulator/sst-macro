@@ -65,6 +65,12 @@ Questions? Contact sst-macro-help@sandia.gov
 #undef sstmac_must_return_gethostname
 #endif
 
+#ifdef sstmac_must_return_gethostid
+#undef gethostid
+#define gethostid sstmac_gethostid
+#undef sstmac_must_return_gethostid
+#endif
+
 #ifdef sstmac_must_return_mutex
 #define mutex sstmac_mutex
 #undef sstmac_must_return_mutex

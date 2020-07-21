@@ -184,6 +184,12 @@ int sstmac_gethostname(char* name, size_t len)
 }
 
 extern "C"
+long sstmac_gethostid()
+{
+  return sstmac::sw::OperatingSystem::currentOs()->addr();
+}
+
+extern "C"
 void sstmac_free(void* ptr){
 #ifdef free
 #error #sstmac free macro should not be defined in util.cc - refactor needed

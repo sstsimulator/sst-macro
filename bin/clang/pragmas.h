@@ -678,6 +678,19 @@ class SSTAdvanceTimePragma : public SSTPragma {
   std::string amount_;
 };
 
+class SSTBlockingPragma : public SSTPragma {
+ public:
+  SSTBlockingPragma(clang::SourceLocation loc,
+        std::map<std::string, std::list<std::string>>&& args);
+
+  void activate(clang::Stmt *s) override;
+
+ private:
+  std::string timeout_;
+  std::string condition_;
+  std::string api_;
+};
+
 class SSTCallFunctionPragma : public SSTPragma {
  public:
   SSTCallFunctionPragma(clang::SourceLocation loc, const std::list<clang::Token> &tokens);

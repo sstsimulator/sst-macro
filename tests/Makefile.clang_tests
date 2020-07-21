@@ -38,6 +38,7 @@ CLANGTESTS = \
   deglobal_array_c \
   deglobal_regular_c \
   deglobal_fxn_static_c \
+  pragma_sst_blocking_c \
   deglobal_anon_c 
 
 if HAVE_CXX14

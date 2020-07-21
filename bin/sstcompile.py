@@ -127,7 +127,8 @@ def addSrc2SrcCompile(ctx, sourceFile, outputFile, args, cmds):
   #First we must pre-process the file to get it read for source-to-source
   objBaseFolder, objName = os.path.split(outputFile)
   ppTmpFile = addPrefixAndRebase("pp.", sourceFile, objBaseFolder)
-  addPreprocess(ctx, sourceFile, ppTmpFile, args, cmds)
+  if not ctx.src2srcDebug:
+    addPreprocess(ctx, sourceFile, ppTmpFile, args, cmds)
 
   rawPaths = defaultIncludePaths.split(":")
   cleanPaths = []
@@ -161,7 +162,8 @@ def addSrc2SrcCompile(ctx, sourceFile, outputFile, args, cmds):
 
   srcRepl = addPrefixAndRebase("sst.pp.",sourceFile,objBaseFolder)
   cxxInitSrcFile = addPrefixAndRebase("sstGlobals.pp.",sourceFile,objBaseFolder) + ".cpp"
-  cmds.append([None,clangCmdArr,[ppTmpFile,srcRepl,cxxInitSrcFile]]) #None -> don't pipe output anywhere
+  if not ctx.src2srcDebug:
+    cmds.append([None,clangCmdArr,[ppTmpFile,srcRepl,cxxInitSrcFile]]) #None -> don't pipe output anywhere
 
   tmpTarget = addPrefix("tmp.", outputFile)
   llvmPasses = []
