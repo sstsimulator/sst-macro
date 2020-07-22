@@ -60,9 +60,6 @@ BtreeScatterActor::initBuffers()
 {
   void* dst = result_buffer_;
   void* src = send_buffer_;
-  //check dst - everyone has dst, not everyone has a source
-  if (!dst)
-    return;
 
   int me = comm_->myCommRank();
   int nproc = comm_->nproc();
@@ -70,19 +67,17 @@ BtreeScatterActor::initBuffers()
   int max_recv_buf_size = midpoint_*nelems_*type_size_;
   if (me == root_){
     int buf_size = nproc * nelems_ * type_size_;
-    send_buffer_ = my_api_->makePublicBuffer(src, buf_size);
     if (root_ != 0){
-      recv_buffer_ = my_api_->allocatePublicBuffer(max_recv_buf_size);
-      result_buffer_ = my_api_->makePublicBuffer(dst, result_size);
+      recv_buffer_ = my_api_->allocateWorkspace(max_recv_buf_size, dst);
       if (root_ == midpoint_){
         int offset = midpoint_ * nelems_ * type_size_;
         int copy_size = (nproc - midpoint_) * nelems_ * type_size_;
         void* src_buffer = (char*) send_buffer_ + offset;
         void* dst_buffer = (char*) recv_buffer_;
-        ::memcpy(dst_buffer, src_buffer, copy_size);
+        my_api_->memcopy(dst_buffer, src_buffer, copy_size);
       }
     } else {
-      ::memcpy(dst, src, result_size);
+      my_api_->memcopy(dst, src, result_size);
       recv_buffer_ = result_buffer_; //won't ever actually be used
       result_buffer_ = dst;
     }
@@ -96,13 +91,8 @@ BtreeScatterActor::initBuffers()
       me, send_buffer_, buf_size,
       me, result_buffer_, result_size);
   } else {
-    recv_buffer_ = my_api_->allocatePublicBuffer(max_recv_buf_size);
+    recv_buffer_ = my_api_->allocateWorkspace(max_recv_buf_size, dst);
     send_buffer_ = recv_buffer_;
-    if (me  % 2 == 1){ //I receive into my final buffer
-      result_buffer_ = my_api_->makePublicBuffer(dst, result_size);
-    } else {
-      result_buffer_ = dst;
-    }
     debug_printf(sprockit::dbg::sumi_collective_buffer,
       "Rank %d scatter from root %d\n"
       "Rank %d recv   buffer %p of size %d\n"
@@ -119,33 +109,26 @@ BtreeScatterActor::finalizeBuffers()
   if (!result_buffer_)
     return;
 
-  int nproc = comm_->nproc();
   int me = comm_->myCommRank();
   int result_size = nelems_*type_size_;
   int max_recv_buf_size = midpoint_*nelems_*type_size_;
   if (me == root_){
-    int buf_size = nproc * nelems_ * type_size_;
-    my_api_->unmakePublicBuffer(send_buffer_, buf_size);
     if (root_ != 0){
-      my_api_->unmakePublicBuffer(result_buffer_,result_size);
-      my_api_->freePublicBuffer(recv_buffer_,max_recv_buf_size);
+      my_api_->freeWorkspace(recv_buffer_,max_recv_buf_size);
     }
   } else {
     if (me % 2 == 0){
       //I sent from a temp buffer, need a memcpy
-      ::memcpy(result_buffer_, recv_buffer_, result_size);
-    } else {
-      //I am done
-      my_api_->unmakePublicBuffer(result_buffer_,result_size);
+      my_api_->memcopy(result_buffer_, recv_buffer_, result_size);
     }
-    my_api_->freePublicBuffer(recv_buffer_,max_recv_buf_size);
+    my_api_->freeWorkspace(recv_buffer_, max_recv_buf_size);
   }
 }
 
 void
 BtreeScatterActor::bufferAction(void *dst_buffer, void *msg_buffer, Action *ac)
 {
-  std::memcpy(dst_buffer, msg_buffer, ac->nelems * type_size_);
+  my_api_->memcopy(dst_buffer, msg_buffer, ac->nelems * type_size_);
 }
 
 void
