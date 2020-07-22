@@ -181,9 +181,11 @@ NetworkMessage::memmoveRemoteToLocal()
 void
 NetworkMessage::matchRecv(void *recv_buffer)
 {
-  ::memcpy(recv_buffer, local_buffer_, payload_bytes_);
+  if (recv_buffer && local_buffer_){
+    ::memcpy(recv_buffer, local_buffer_, payload_bytes_);
+    delete[] (char*) local_buffer_;
+  }
   local_buffer_ = recv_buffer;
-  delete[] (char*) recv_buffer;
 }
 
 void
