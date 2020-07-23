@@ -2,7 +2,8 @@
 
 \section{Basic MPI Program}
 \label{sec:tutorial:basicmpi}
-Let us go back to the simple send/recv skeleton and actually look at the code.  
+
+Let us go back to the simple send/recv skeleton and actually look at the code.
 This code should be compiled with SST compiler wrappers installed in the \inlineshell{bin} folder.
 
 \begin{CppCode}
@@ -44,7 +45,7 @@ Using \inlinecode{dlopen} tricks, SST finds the main function in the .so file an
 Just as an executable can only have one main, SST shared object files can only have a single executable in them at a time.
 
 At the very top of the file, the \inlineshell{mpi.h} header is actually mapped by the SST compiler to an \sstmacro header file.
-This header provides the MPI API and configures MPI function calls to link to \sstmacro instead of the real MPI library.  
+This header provides the MPI API and configures MPI function calls to link to \sstmacro instead of the real MPI library.
 The code now proceeds:
 
 \begin{CppCode}
@@ -67,32 +68,3 @@ The code now proceeds:
 Here the code just checks the MPI rank and sends (rank 0) or receives (rank 1) a message.
 
 For more details on what exactly the SST compiler wrapper is doing, you can specify \inlineshell{SSTMAC_VERBOSE=1} as an environment variable to have SST print out detailed commands. Additionally, you can specify \inlineshell{SSTMAC_DELETE_TEMPS=0} to examine any temporary source-to-source files.
-
-\subsection{DEPRECATED: App name macro}
-Previously, applications had to be ``named'' by using the \inlinecode{sstmac_app_name} macro.
-This macro can still be define just above main to give a descriptive name to the skeleton:
-
-\begin{CppCode}
-#include <mpi.h>
-
-#define sstmac_app_name simple_test
-
-int main(int argc, char **argv) 
-{
-\end{CppCode}
-
-This was previously required for starting applications, but now is only used
-for providing descriptive labels for certain applications.
-It is not recommended for use anymore and is ignored. An equivalent naming can just be provided by:
-
-\begin{ViFile}
-node {
- app1 {
-   exe = <PATH_TO_EXE>
-   name = simple_test
- }
-}
-\end{ViFile}
-
-
-

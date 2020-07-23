@@ -14,15 +14,18 @@ The auto-skeletonizing compiler is designed to do three main things:
 \end{itemize}
 
 \section{Pragma Overview}
+\label{sec:pragmaOverview}
 
 \begin{figure}[h!]
 \centering
-\includegraphics[width=0.66\textwidth]{figures/compilerWorkflow}
+\includegraphics[width=0.66\textwidth]{figures/compilerWorkflow.png}
 \caption{Source-to-source transformation workflow for SST compiler. For C source files, g++ can be swapped with gcc. The choice of underlying compiler is actually arbitrary and can be clang, gcc, icc, etc.}
 \label{fig:compilerWorkflow}
 \end{figure}
 
 \subsection{Compiler workflow}
+\label{subsec:compilerWorkflow}
+
 The source-to-source compiler operates on a pre-processed source file.
 The source code transformation generates a temporary source file.
 This temporary source file is then compiled into the target object file.
@@ -34,12 +37,17 @@ creating a complete \sstmacro object file with the transformed code and C++ stat
 This workflow is shown in Figure \ref{fig:compilerWorkflow}.
 
 \subsection{Compiler Environment Variables}
+\label{subsec:compilerEnv}
 
 \subsubsection{SSTMAC\_SRC2SRC: Default 1}
+\label{subsubsec:env_src2src}
+
 If set to zero, deactivates the source-to-source transformation. 
 The compiler wrapper will then compile the code into the simulator, but will not redirect any global variable accesses or perform any skeletonization.
 
 \subsubsection{SSTMAC\_SKELETONIZE: Default 0}
+\label{subsubsec:env_skeletonize}
+
 If set to zero, deactivates skeletonization. 
 This does not deactivate global variable redirection.
 Thus, with \inlineshell{SSTMAC_SRC2SRC=1} and \inlineshell{SSTMAC_SKELETONIZE=0},
@@ -50,6 +58,8 @@ Thus, with \inlineshell{SSTMAC_SRC2SRC=1} and \inlineshell{SSTMAC_SKELETONIZE=0}
 %This deactivates all global variable refactoring, all symbol interception, and all skeletonization.
 
 \subsubsection{SSTMAC\_HEADERS: No default}
+\label{subsubsec:env_headers}
+
 The compiler wrapper will only redirect global variables that it knows should definitely be modified.
 All global variables found in source files will be redirected.
 \inlinecode{extern} global variables found in header files are more difficult.
@@ -58,24 +68,33 @@ By default, global variables in a header file are NOT redirected unless explicit
 The variable \inlineshell{SSTMAC_HEADERS} should give the full path of a file containing the list of header files.
 Header file paths in the file should be one per line and should be the full path, not a relative path.
 
-\subsubsection{SSTMAC\_DELETE\_TEMPS: Default 1}
+\subsubsection{SSTMAC\_DELETE\_TEMP\_SOURCES: Default 1}
+\label{subsubsec:env_delete_temp_objects}
+
 If non-zero, the compiler cleans up all temporary source files.
 If you wish to keep temporary files to view them for debugging, set to 0.
 All temporary, intermediate source files will otherwise be deleted at the end of compilation.
 The source files are re-formatted using clang-format to make them more readable.
 The actual source files given to the compiler are very mess (with very long lines) since the source-to-source tries to preserve the original line numbers for debugging.
 
-\subsubsection{SSTMAC\_DELETE\_TEMP\_OFILES: Default 1}
+\subsubsection{SSTMAC\_DELETE\_TEMP\_OBJECTS: Default 1}
+\label{subsubsec:env_delete_temp_sources}
+
 If non-zero, the compiler cleans up all temporary object files.
 If you wish to keep temporary files for debugging, set to 0.
 Due to issues with some linkers, debug symbols do not appear correctly in gdb or lldb unless the original object files are kept.
 If you wish to get sensible output from the debugger, make sure this is set to 0.
 
 \section{Basic Replacement Pragmas}
+\label{sec:basicReplacementPragmas}
+
 When skeletonization is active (see \inlineshell{SSTMAC_SKELETONIZE}), these pragmas will cause replacements in the original source code.
 Pragmas apply to the next statement in the source code.
 For compound statements such as a for-loop with a multi-statement body, the pragma applies to the entire for-loop.
+
 \subsection{pragma sst delete: no arguments}
+\label{subsec:pragma_sst_delete}
+
 This deletes the next statement from the source code.
 If the statement declares a variable that is used later in the code, this will cause a compile error.
 Consider an example from the Lulesh source code.
@@ -88,6 +107,8 @@ In the skeleton, the residual is not actually computed and the \inlinecode{testn
 Thus this statement should be deleted and not actually executed in the skeleton.
 
 \subsection{pragma sst replace [to\_replace:string] [new\_text:C++ expression]}
+\label{subsec:pragma_sst_replace}
+
 This applies a string replace to a variable or function call in the next statement.
 Consider an example from Lulesh.
 
@@ -99,6 +120,8 @@ The function call \inlinecode{volo(0)} is not valid in the skeleton since volume
 Here we simply estimate that all cells have unit volume replacing \inlinecode{volo(0)} with \inlinecode{1}.
 
 \subsection{pragma sst init [new\_value:string]}
+\label{subsec:pragma_sst_init}
+
 This pragma can only apply to a binary equals operator assigning a value.
 The pragma changes the right-hand side to use the given new value.
 For example, in Lulesh:
@@ -111,10 +134,14 @@ The send buffer \inlinecode{domain.commDataSend} is not allocated in the skeleto
 The pragma causes the skeleton to simply set \inlinecode{destAddr} to \inlinecode{nullptr}.
 
 \subsection{pragma sst return [new\_value:C++ expression]}
+\label{subsec:pragma_sst_return}
+
 Pragma is equivalent to \inlinecode{pragma sst init}. This replaces the target of a return statement with the given expression.
 This produces a compiler error if applied to anything but a return statement.
 
 \subsection{pragma sst keep}
+\label{subsec:pragma_sst_keep}
+
 During the skeletonization process, some transformations occur automatically even without pragmas. 
 For example, all MPI calls have input buffers converted to null pointers to indicate a simulated MPI call.
 If the MPI call should be emulated with real payloads, the MPI call must be explicitly marked with \inlinecode{pragma keep}.
@@ -127,6 +154,8 @@ An example can be found in the HPCG skeleton:
 The actual allreduce operation is carried out, summing the the local number into the total number of nonzeroes.
 
 \subsection{pragma sst keep\_if [condition:C++ bool expression]}
+\label{subsec:pragma_sst_keep_if}
+
 More control over whether transformations are skipped is provided by \inlinecode{keep_if}.
 An example is found in CoMD.
 
@@ -138,10 +167,14 @@ Any small allreduce operations are kept.
 Any allreduce operations larger than a given cutoff are simulated without emulating the actual buffer operations.
 
 \subsection{pragma sst empty}
+\label{subsec:pragma_sst_empty}
+
 This pragma is applied to functions. The function prototype is kept, but an empty body is inserted instead of the actual code.
 This can be useful for deleting large blocks of computation inside a function.
 
 \subsection{pragma sst branch\_predict [condition:C++ expression]}
+\label{subsec:pragma_sst_branch_predict}
+
 The branch prediction pragma can be applied in two different contexts.
 We will revisit the pragma in the context of compute skeletonization below.
 The branch prediction pragma should only be applied to an if-statement.
@@ -158,17 +191,27 @@ However, any arbitrary C++ boolean expression can be given as the replacement.
 The new predicate expression (like the original), must not involve any null variables.
 
 \section{Memory Allocation Pragmas}
+\label{sec:memAllocPragmas}
+
 \subsection{pragma sst malloc}
+\label{subsec:pragma_sst_malloc}
+
 Applied to any statement in which the right-hand side is a malloc. This sets the left-hand side to \inlinecode{NULL}.
 This is critical for turning off large memory allocations on data structures not required for control-flow.
 
 
 \subsection{pragma sst new}
+\label{subsec:pragma_sst_new}
+
 Applied to any statement in which the right-hand side a C++ operator new. This sets the left-hand side to \inlinecode{nullptr}.
 This is critical for turning off large memory allocations on data structures not required for control-flow.
 
 \section{Data-Driven Type Pragmas}
+\label{ddtPragmas}
+
 \subsection{pragma sst null\_ptr}
+\label{subsec:pragma_sst_null_ptr}
+
 This applies to variable declarations. If pragma is not applied to a declaration, a compiler error is given.
 A null variable is one in which all operations involving the variable should be deleted.
 This usually applies to large data arrays that should never be allocated and therefore never dereferenced.
@@ -192,6 +235,8 @@ When this occurs, a compiler error is thrown flagging where the ambiguity occurs
 Another pragma must then be applied to that statement to tell the compiler how to proceed.
 
 \subsection{pragma sst null\_type [type alias] [list allowed functions]}
+\label{subsec:pragma_sst_null_type}
+
 This applies to C++ class variable declarations. If pragma is not applied to a declaration, a compiler error is given.
 This essentially works the same way as \inlinecode{null_ptr}, but allows certain member functions to be kept instead of deleted.
 Consider an example from Lulesh:
@@ -239,14 +284,16 @@ class vector {
 \end{CppCode}
 This empty vector class allows the type to track its size, but not actually hold any data.
 All places in the Lulesh code that an \inlinecode{std::vector} is used are substituted with the new type.
-
 The remaining arguments to the pragma are the list of functions we wish to mark as valid.
 In this case, even though the alias vector class provides more functions, we only allow \inlinecode{size}, \inlinecode{resize}, and \inlinecode{empty} to be called.
 
 
-
 \section{Compute Pragmas}
+\label{sec:computePragmas}
+
 \subsection{pragma sst compute and pragma omp parallel}
+\label{subsec:pragma_sst_compute}
+
 Compute-intensive should not be executed natively.
 Instead, a compute model should be used to estimate the elapsed time.
 Compute model replacements are automatically triggered by any OpenMP parallel pragmas.
@@ -259,6 +306,8 @@ For more details, see \inlinecode{sstmac_compute_detailed} in the source code.
 Numerous examples can be found in the Lulesh, HPCG, and CoMD skeleton applications.
 
 \subsection{pragma sst loop\_count [integer: C++ expression]}
+\label{subsec:pragma_sst_loop_count}
+
 If the \inlinecode{sst compute} or \inlinecode{omp parallel} pragma are applied to an outer loop with one or more inner loops,
 the compute model static analysis might fail.
 This occurs when the inner loop control flow depends on the actual execution.
@@ -282,6 +331,8 @@ However, that value is almost always 27.
 Thus we can safely tell the compiler to just assume the loop count is 27.
 
 \subsection{pragma sst branch\_predict [float: C++ expression]}
+\label{subsec:pragma_sst_branch_predict}
+
 Similar to the way that loop counts can break the static analysis, if statements inside a loop skeletonized with \inlinecode{omp parallel} or \inlinecode{sst compute} can also be problematic.
 If the predicate depends on a variable declared \emph{inside} the skeletonzied block,
 the static analysis will break since it cannot predict when and how often to assume true or false.
@@ -298,6 +349,7 @@ Based on the way CoMD constructs unit cells and halo regions, running CoMD shows
 Thus we given the branch prediction the hint 0.2.
 
 \subsection{pragma sst advance\_time [units] [time to advance by]}
+\label{subsec:pragma_sst_advance_time}
+
 This pragma advances the simulator time by the specified amounts of time. It can be placed before any statement. The units can be the following: sec, msec, usec or nsec for Seconds, milliseconds, microseconds and nanoseconds respectively. 
 
-%\input{Memoization}

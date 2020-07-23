@@ -73,11 +73,11 @@ Packets sent between two routers should take as many different paths as possible
 \end{figure}
 
 Minimal routing itself has a few complications (Figure \ref{fig:topologies:cascademinroute}).
-Each router only has a few global links.  
+Each router only has a few global links.
 Thus, traveling from e.g. the blue router at X=3,Y=2,G=0 to the red router at X=1,Y=2,G=2, there is no direct link between the routers.
 Furthermore, there is no direct link between Groups 0 and 2.
 Thus packets must route through the purple intermediate nodes.
-First, the packet hops to X=3,Y=3, G=0.  
+First, the packet hops to X=3,Y=3, G=0.
 This router has a global link to Group 2, allowing the packet to hop to the next intermediate router at X=1, Y=3, G=2.
 Finally, the minimal route completes by hopping within Group 2 to the final destination.
 

@@ -14,6 +14,7 @@ Trace collection requires both Score-P and OTF2 installations. Trace replay with
 
 \subsection{Trace Collection}
 \label{subsec:otf:traceCollection}
+
 Score-P's default collection strategy will include every function call in the trace, making even small programs produce untenably large traces. Score-P supports collection filters, which can restrict collection at a minimum to MPI and OMP function calls. At the end of the program's runtime, traces from each rank are put in a common directory.  An MPI program must be compiled with Score-P to produce traces:
 
 \begin{ShellCmd}
@@ -67,5 +68,3 @@ node {
 }
 
 \end{ViFile}
-
-

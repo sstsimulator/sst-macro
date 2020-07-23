@@ -2,8 +2,8 @@
 
 \section{Network Topologies and Routing}
 \label{sec:tutorial:topology}
-We here give a brief introduction to specifying different topologies and routing strategies.  
-We will only discuss one basic example (torus).  
+We here give a brief introduction to specifying different topologies and routing strategies.
+We will only discuss one basic example (torus).
 A more thorough introduction covering all topologies is planned for future releases.
 Excellent resources are ``Principles and Practices of Interconnection Networks'' by Brian Towles and William Dally published by Morgan Kaufman and ``High Performance Datacenter Networks'' by Dennis Abts and John Kim published by Morgan and Claypool.
 
@@ -17,8 +17,8 @@ topology.name = torus
 topology.geometry = 4 4
 \end{ViFile}
 Here we choose a 2D-torus topology with extent 4 in both the $X$ and $Y$ dimensions for a total of 16 nodes (Figure \ref{fig:torus:basic})
-The topology is laid out in a regular grid with network links connecting nearest neighbors.  
-Additionally, wrap-around links connect the nodes on each boundary.  
+The topology is laid out in a regular grid with network links connecting nearest neighbors.
+Additionally, wrap-around links connect the nodes on each boundary.
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.5\textwidth]{figures/tikz/torus/torus.png}
@@ -27,9 +27,9 @@ Additionally, wrap-around links connect the nodes on each boundary.
 \end{figure}
 
 
-The figure is actually an oversimplification.  
+The figure is actually an oversimplification.
 The \inlinefile{topology.geometry} parameter actually specifies the topology of the \emph{network switches}, not the compute nodes. 
-A torus is an example of a direct network in which each switch has one or more nodes ``directly'' connected to it.  
+A torus is an example of a direct network in which each switch has one or more nodes ``directly'' connected to it.
 A more accurate picture of the network is given in Figure \ref{fig:torus:withnodes}.
 \begin{figure}[h]
 \centering
@@ -37,7 +37,7 @@ A more accurate picture of the network is given in Figure \ref{fig:torus:withnod
 \caption{4 x 4 2D Torus of Network Switches with Compute Nodes}
 \label{fig:torus:withnodes}
 \end{figure}
-While in many previous architectures there was generally a one-to-one correspondence between compute nodes and switches, more recent architectures have multiple compute nodes per switch (e.g. Cray Gemini with two nodes, Cray Aries with four nodes).  
+While in many previous architectures there was generally a one-to-one correspondence between compute nodes and switches, more recent architectures have multiple compute nodes per switch (e.g. Cray Gemini with two nodes, Cray Aries with four nodes).
 Multiple nodes per switch can be specified via a concentration parameter:
 
 \begin{ViFile}
@@ -49,7 +49,7 @@ topology {
 \end{ViFile}
 which would now generate a torus topology with 16 switches and 32 compute nodes.
 
-Another subtle modification of torus (and other networks) can be controlled by giving the $X$, $Y$, and $Z$ directions different bandwidth.  
+Another subtle modification of torus (and other networks) can be controlled by giving the $X$, $Y$, and $Z$ directions different bandwidth.
 The above network could be modified as
 
 \begin{ViFile}
@@ -59,8 +59,8 @@ topology {
  redundant = 2 1
 }
 \end{ViFile}
-giving the the $X$-dimension twice the bandwidth of the $Y$-dimension.  
-This pattern DOES exist in some interconnects as a load-balancing strategy.  
+giving the the $X$-dimension twice the bandwidth of the $Y$-dimension.
+This pattern DOES exist in some interconnects as a load-balancing strategy.
 A very subtle point arises here. Consider two different networks:
 
 \begin{ViFile}
@@ -79,8 +79,8 @@ topology {
 }
 switch.link.bandwidth = 1GB/s
 \end{ViFile}
-For some coarse-grained models, these two networks are exactly equivalent.  
-In more fine-grained models, however, these are actually two different networks.  
+For some coarse-grained models, these two networks are exactly equivalent.
+In more fine-grained models, however, these are actually two different networks.
 The first network has ONE link carrying 2 GB/s. The second network has TWO links each carrying 1 GB/s.
 
 \subsection{Routing}
@@ -93,7 +93,7 @@ By default, \sstmacro uses the simplest possible routing algorithm: dimension-or
 \label{fig:torus:basicrouting}
 \end{figure}
 In going from source to destination, the message first travels along the $X$-dimension and then travels along the $Y$-dimension.
-The above scheme is entirely static, making no adjustments to avoid congestion in the network.  
+The above scheme is entirely static, making no adjustments to avoid congestion in the network.
 \sstmacro supports a variety of adaptive routing algorithms.  This can be specified:
 
 \begin{ViFile}
@@ -111,9 +111,9 @@ There are now multiple valid paths between network endpoints, one of which is il
 \caption{Adaptive Minimal Routing on a 2D Torus}
 \label{fig:torus:minadrouting}
 \end{figure}
-At each network hop, the router chooses the \emph{productive} path with least congestion.  
+At each network hop, the router chooses the \emph{productive} path with least congestion.
 In some cases, however, there is only one minimal path (node $(0,0)$ sending to $(2,0)$ with only $X$ different).
-For these messages, minimal adaptive is exactly equivalent to dimension-order routing.  
+For these messages, minimal adaptive is exactly equivalent to dimension-order routing.
 Other supported routing schemes are valiant and UGAL.  More routing schemes are scheduled to be added in future versions.  
 A full description of more complicated routing schemes will be given in its own chapter in future versions. 
 For now, we direct users to existing resources such as ``High Performance Datacenter Networks'' by Dennis Abts and John Kim.
