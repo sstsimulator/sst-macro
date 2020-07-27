@@ -5,6 +5,7 @@
 
 \section{Basic Application porting}
 \label{sec:skel:basic}
+
 There are three parts to successfully taking a C++ code and turning it into a scalable simulation.
 \begin{itemize}
 \item Symbol Interception: Rather than linking to MPI, pThreads, or other parallel libraries (or even calling \inlinecode{hostname}), these functions must be redirected to \sstmacro rather than calling the native libraries on the machine running the simulator.
@@ -40,7 +41,9 @@ Memoization & Yes & No & No & No \\
 \end{tabular}
 \end{center}
 
-\subsection{Loading external skeletons with the standalone core}\label{subsec:externalAppStandalone}
+\subsection{Loading external skeletons with the standalone core}
+\label{subsec:externalAppStandalone}
+
 You should always write your own skeleton applications in an external folder rather then integrating directly into the \inlineshell{sstmac} executable.
 Existing make systems can be used unmodified. Rather than producing an executable, though, SST/macro produces a shared library.
 These shared libraries are then imported into the main \inlinecode{sstmac} executable.
@@ -67,6 +70,8 @@ This allows much easier validation of the simulation. The section here briefly i
 A complete tutorial on all available pragmas is given in Chapter \ref{clangTutorial}.
 
 \subsection{Redirecting Main}
+\label{subsec:redirectMain}
+
 Your application's \inlinecode{main} has to have its symbols changed.
 The simulator itself takes over \inlinecode{main}.
 \sstmacro therefore has to capture the function pointer in your code and associate it with a string name for the input file.
@@ -74,6 +79,8 @@ This is automatically accomplished by defining the macro \inlinecode{sstmac_app_
 Even without Clang, this works for C++. For C, Clang source-to-source is required.
 
 \subsection{Memory Allocations}
+\label{subsec:memoryAllocations}
+
 To deactivate memory allocations in C code that uses \inlinecode{malloc}, use:
 \begin{CppCode}
 #pragma sst malloc
@@ -88,6 +95,8 @@ Similarly, for C++ we have
 \end{CppCode}
 
 \subsection{Computation}
+\label{subsec:computation}
+
 In general, the SST compiler captures all \inlinecode{#pragma omp parallel} statements.
 It then analyzes the for-loop or code block and attempts to derive a computational model for it.
 The computational models are quite simple (skeleton apps!), 
@@ -106,6 +115,8 @@ Based on processor speed and memory speed, it then estimates how long the kernel
 If not wanting to use OpenMP in the code, \inlinecode{#pragma sst compute} can be used instead of \inlinecode{#pragma omp parallel}.
 
 \subsection{Special Pragmas}
+\label{subsec:specialPragams}
+
 Many special cases can arise that break skeletonization.
 This is often not a limit of the SST compiler, but rather a fundemental limitation in the static analysis of the code.
 This most often arises due to nested loops. Consider the example:
@@ -139,6 +150,7 @@ This hint allows SST to skeletonize the inner loop and ``guess'' at the data dep
 
 \subsection{Skeletonization Issues}
 \label{subsec:skeletonIssues}
+
 Skeletonization challenges fall into three main categories:
 
 \begin{itemize}
@@ -170,6 +182,7 @@ For applications with heavy dynamic data dependence, we have the following strat
 
 \section{Process Encapsulation}
 \label{sec:processEncapsulation}
+
 As mentioned above, virtual processes are not real, physical processes inside the OS.
 They are explicitly managed user-space threads with a private stack, but without a private set of global variables.
 When porting an application to SST/macro, global variables used in C programs will not be mapped to separate memory addresses causing incorrect execution or even segmentation faults.

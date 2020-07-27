@@ -28,6 +28,8 @@ The developer's manual broadly covers the two main aspects of creating new compo
 \end{itemize}
 
 \section{What To Expect In The Developer's Manual}
+\label{sec:whatToExpect}
+
 The developer's manual is mainly designed for those who wish to extend the simulator or understand its internals.
 The user's manual, in contrast, is mainly designed for those who wish to perform experiments with \emph{new} applications using \emph{existing} hardware models.
 The user's manual therefore covers building and running the core set of SST/macro features.
@@ -36,6 +38,8 @@ The SST design is such that external components are built into shared object \in
 loading them into the simulator core without having to recompile the core itself.
 
 \section{Thousand Foot View of Discrete Event Simulation}
+\label{sec:thousandFoot}
+
 Ignoring the complexities of parallel discrete event simulation (PDES), 
 discrete even simulation works with a very simple set of abstractions.
 Implementing a discrete event simulation requires components, links, and events (Figure~\ref{fig:desCore}).
@@ -63,14 +67,16 @@ As long as developers obey the component, link, and event abstractions, all of t
 
 \begin{figure}
 \centering
-\includegraphics[width=0.3\textwidth]{figures/desCore}
+\includegraphics[width=0.3\textwidth]{figures/desCore.png}
 
-\includegraphics[width=0.5\textwidth]{figures/pdesCore}
+\includegraphics[width=0.5\textwidth]{figures/pdesCore.png}
 \caption{Basic structure of discrete event simulation linking components with links (of a given latency). Link delays advance the simulation clock, which is coordinated by the discrete event core. Parallel discrete event simulation involves placing components on different MPI ranks. The link objects (and simulator core) are responsible for delivering events across MPI boundaries.}
 \label{fig:desCore}
 \end{figure}
 
 \section{Use of C++}
+\label{sec:useCpp}
+
 SST/macro (Structural Simulation Toolkit for Macroscale) is a discrete event simulator designed for macroscale (system-level) experiments in HPC. 
 SST/macro is an object-oriented C++ code that makes heavy use of dynamic types and polymorphism.
 While a great deal of template machinery exists under the hood, nearly all users and even most developers will never actually need to interact with any C++ templates.
@@ -87,7 +93,9 @@ Some C++11 features like \inlinecode{unordered_map} and \inlinecode{unique_ptr} 
 \label{fig:abstractHandlers}
 \end{figure}
 
-\section{Polymorphism and Modularity}\label{sec:polymorphism}
+\section{Polymorphism and Modularity}
+\label{sec:polymorphism}
+
 The simulation progresses with different modules (classes) exchanging events.
 In general, when module 1 sends a message to module 2, module 1 only sees an abstract interface for module 2.
 The polymorphic type of module 2 can vary freely to employ different physics or congestions models without affecting the implementation of module 1. 
@@ -125,8 +133,10 @@ For example, using a fluid flow model for memory reads cannot be easily combined
 Again, pairing incompatible modules is not a compile-time error.
 Only when the types are fully defined at runtime can an incompatibility error be detected.
 
-\section{Most Important Style and Coding Rules}\label{sec:stylerules}
-Here is a selection of C++ rules we have tended to follow.  
+\section{Most Important Style and Coding Rules}
+\label{sec:stylerules}
+
+Here is a selection of C++ rules we have tended to follow.
 Detailed more below, example scripts are included to reformat the code style however you may prefer for local editing.
 However, if committing changes to the repository, only use the default formatting in the example scripts.
 \begin{itemize}

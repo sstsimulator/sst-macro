@@ -214,6 +214,8 @@ def repl_section_header(match, sectionType, count):
 
   if len(match.groups()) == 3: #labeled
     label = match.groups()[2]
+    #markdown doesn't support colons
+    label = label.replace(":", "_")
     toc_line += "(#%s)" % label
     refs[label] = ref
     text += '<a name="%s"></a>' % label
@@ -322,6 +324,7 @@ repls = [
   (section_regexp("ViFile")   , repl_code_block),
   (section_regexp("figure")   , process_figure),
   (section_regexp("itemize")   , process_itemize),
+  (section_regexp("enumerate")   , process_itemize),
   (section_regexp("center") , return_self),
   (macro_regexp('paramType') , repl_param_type),
   (paragraph_split_cleanup_regexp , "\n\n"),
@@ -410,7 +413,7 @@ text = macro_regexp('ref').sub(process_ref, text)
 text = process_paragraphs(text)
 text = make_toc(text)
 header = """---
-title: Manual for SST-Macro 8.0.x
+title: Manual for SST-Macro 10.1.x
 published: true
 category: SSTDocumentation
 ---"""

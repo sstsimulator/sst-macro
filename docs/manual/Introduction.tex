@@ -18,8 +18,7 @@ recording certain communication and computation events to a simulation trace.
 This event trace can then be replayed post-mortem in the simulator.
 Most common are MPI traces which record all MPI events, and
 \sstmacro provides the DUMPI utility (\ref{sec:tutorial:dumpi}) for collecting and replaying MPI traces. 
-Trace extrapolation can extend the usefulness of off-line simulation by estimating large or untraceable system scales without   
-having to collect a trace, but it is limited.
+Trace extrapolation can extend the usefulness of off-line simulation by estimating large or untraceable system scales without having to collect a trace, but it is limited.
 
 We turn to on-line simulation when the hardware or applications parameters need to change.
 On-line simulators instead run real application code, allowing native C/C++ to be compiled directly into the simulator.
@@ -55,6 +54,8 @@ Some MPI-3 functions and MPI one-sided functions are not implemented.
 This will lead to compile errors with an obvious ``not implement'' compiler message.
 
 \section{Preview of Things to Come}
+\label{sec:preview}
+
 Suppose you have the basic MPI application below that executes a simple send/recv operation.
 One could use \inlineshell{mpicc} or \inlineshell{mpic++} to compile and run as an actual MPI program.
 This requires spawning all the processes and running them in parallel.
@@ -106,6 +107,8 @@ but avoids as much computation and as much memory allocation as possible.
 This allows packing in as many simulated (virtual) MPI ranks as possible into your single \inlineshell{sstmac} process.
 
 \section{What To Expect In The User's Manual}
+\label{sec:whatToExpect}
+
 This user's manual is mainly designed for those who wish to perform experiments with \emph{new} applications using \emph{existing} hardware models.
 This has been the dominant use case and we therefore classify those doing application experiments as ``users'' and those making new hardware models ``developers.''
 Getting applications to run in SST/macro should be very straightforward and requires no knowledge of simulator internal code.
