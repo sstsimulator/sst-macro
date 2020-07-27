@@ -119,7 +119,7 @@ category: SSTDocumentation
             - [SSTMAC\_SRC2SRC: Default 1](#subsubsec_env_src2src)
             - [SSTMAC\_SKELETONIZE: Default 0](#subsubsec_env_skeletonize)
             - [SSTMAC\_HEADERS: No default](#subsubsec_env_headers)
-            - [SSTMAC\_DELETE\_TEMP_SOURCES: Default 1](#subsubsec_env_delete_temp_objects)
+            - [SSTMAC\_DELETE\_TEMP\_SOURCES: Default 1](#subsubsec_env_delete_temp_objects)
             - [SSTMAC\_DELETE\_TEMP\_OBJECTS: Default 1](#subsubsec_env_delete_temp_sources)
       - [Section 6.2: Basic Replacement Pragmas](#sec_basicReplacementPragmas)
          - [6.2.1: pragma sst delete: no arguments](#subsec_pragma_sst_delete)
@@ -1319,7 +1319,7 @@ More details are given in Figure [7](#fig:piscesOverview).
 
 
 ![Figure 8: Timeline of four different packets passing through a PISCES cut-through bandwidth arbitrator. The incoming bandwidth (I) and outgoing bandwidth (O) are shown for each packet.  Time is the horizontal axis. Bandwidth consumed by a packet is shown by the vertical extent of each packet. The individual events are 1) First packet arrives 2) Second packet arrives with reduced bandwidth but no available bandwidth 3) First packet finishes. Second packet can begin sending. 4) Third packet arrives and begins sending with remaining bandwidth. 5) Fourth packet arrives, but no available bandwidth. 6) Second packet finishes. Third packet increases bandwidth. Fourth packet can begin sending. 7) Third packet finishes. Fourth packet increases bandwidth. 8) Fourth packet finishes.
-Full details are given in the text.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/pisces) 
+Full details are given in the text.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/Pisces.png) 
 
 *Figure 8: Timeline of four different packets passing through a PISCES cut-through bandwidth arbitrator. The incoming bandwidth (I) and outgoing bandwidth (O) are shown for each packet.  Time is the horizontal axis. Bandwidth consumed by a packet is shown by the vertical extent of each packet. The individual events are 1) First packet arrives 2) Second packet arrives with reduced bandwidth but no available bandwidth 3) First packet finishes. Second packet can begin sending. 4) Third packet arrives and begins sending with remaining bandwidth. 5) Fourth packet arrives, but no available bandwidth. 6) Second packet finishes. Third packet increases bandwidth. Fourth packet can begin sending. 7) Third packet finishes. Fourth packet increases bandwidth. 8) Fourth packet finishes.
 Full details are given in the text.*
@@ -2767,7 +2767,7 @@ Suppose that one wanted to use the same 8-port switches to construct a 3-level f
 One possible configuration is shown in Figure~[26](#fig:topologies:taperedfattree).
 
 
-![Figure 26: A tapered fat-tree topology using uniform 8-port switches.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/topologies/fattree4-tapered.pdf) 
+![Figure 26: A tapered fat-tree topology using uniform 8-port switches.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/topologies/fattree4-tapered.png) 
 
 *Figure 26: A tapered fat-tree topology using uniform 8-port switches.*
 
@@ -2803,15 +2803,10 @@ More practical tapering becomes an option when you increase the number of ports 
 
 The following constraints must be met for a valid configuration.
 
--   Down ports must equal up ports: leaf up ports (`leaf_switches_per_subtree` \cdot `up_ports_per_leaf_switch`) must equal aggregation down ports (`agg_switches_per_subtree` \cdot `down_ports_per_agg_switch`), and total aggregation up ports (`up_ports_per_agg_switch` \cdot `agg_switches_per_subtree` \cdot `num_agg_subtrees`) must equal total core down ports (`num_core_switches` \cdot `down_ports_per_core_switch`).
--   Need enough down ports -- each switch must have at least one link into each "unit" (subtree or switch, depending on level) below it:  `down_ports_per_core_switch` must be \geq `num_agg_subtrees`, and `down_ports_per_agg_switch` must be \geq `leaf_switches_per_subtree`.
--   Need enough up ports -- each "unit" (subtree or switch) must have at least one link into each switch above it: `up_ports_per_agg_switch` \cdot `agg_switches_per_subtree` must be \geq `num_core_switches`, and `up_ports_per_leaf_switch` must be \geq `agg_switches_per_subtree`.
--   Connections need to be regular:
-  \begin{itemize}
--   `down_ports_per_core_switch` \bmod `num_agg_subtrees` must equal zero
--   `down_ports_per_agg_switch` \bmod `leaf_switches_per_subtree` must equal zero
--   `up_ports_per_leaf_switch` \bmod `agg_switches_per_subtree` must equal zero
-\end{itemize}
+-   Down ports must equal up ports: leaf up ports (`leaf_switches_per_subtree` &times; `up_ports_per_leaf_switch`) must equal aggregation down ports (`agg_switches_per_subtree` &times; `down_ports_per_agg_switch`), and total aggregation up ports (`up_ports_per_agg_switch` &times; `agg_switches_per_subtree` &times; `num_agg_subtrees`) must equal total core down ports (`num_core_switches` &times; `down_ports_per_core_switch`).
+-   Need enough down ports -- each switch must have at least one link into each "unit" (subtree or switch, depending on level) below it:  `down_ports_per_core_switch` must be &gt;= `num_agg_subtrees`, and `down_ports_per_agg_switch` must be &gt;= `leaf_switches_per_subtree`.
+-   Need enough up ports -- each "unit" (subtree or switch) must have at least one link into each switch above it: `up_ports_per_agg_switch` &times; `agg_switches_per_subtree` must be &gt;= `num_core_switches`, and `up_ports_per_leaf_switch` must be &gt;= `agg_switches_per_subtree`.
+-   Connections need to be regular: 1) `down_ports_per_core_switch` mod `num_agg_subtrees` must equal zero, 2) `down_ports_per_agg_switch` mod `leaf_switches_per_subtree` must equal zero, 3) `up_ports_per_leaf_switch` mod `agg_switches_per_subtree` must equal zero
 
 #### 4.3.1: Switch Crossbar Bandwidth Scaling<a name="subsec_fattree_xbarbw"></a>
 
@@ -3240,7 +3235,7 @@ By default, global variables in a header file are NOT redirected unless explicit
 The variable `SSTMAC_HEADERS` should give the full path of a file containing the list of header files.
 Header file paths in the file should be one per line and should be the full path, not a relative path.
 
-##### SSTMAC\_DELETE\_TEMP_SOURCES: Default 1<a name="subsubsec_env_delete_temp_objects"></a>
+##### SSTMAC\_DELETE\_TEMP\_SOURCES: Default 1<a name="subsubsec_env_delete_temp_objects"></a>
 
 
 
