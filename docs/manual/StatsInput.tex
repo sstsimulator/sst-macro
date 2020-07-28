@@ -1,6 +1,8 @@
 %% !TEX root = manual.tex
 
 \section{Statistics}
+\label{sec:Statistics}
+
 SST/macro statistics current only work in standalone mode due to the rigid structure of statistics in SST core.
 Fixes are planned for SST core for the 10.0 release in 2020.
 Until then, most of the statistics will require the standalone core.
@@ -9,6 +11,8 @@ The three abstractions for understanding statistics are collectors, groups, and 
 We will use the running example of a bytes sent statistic.
 
 \subsection{Collectors}
+\label{subsec:collectors}
+
 Statistic collectors inherit from \inlinecode{Statistic<T>} and are used by components to collect individual statistics.
 Statistics are collected through the \inlinecode{addData} function:
 
@@ -35,12 +39,16 @@ For a histogram, data collected is, e.g., a single integer, while the data outpu
 If there are ten bins, the histogram will register ten output fields at the beginning and output ten fields at the end.
 
 \subsection{Outputs}
+\label{subsec:outputs}
+
 Statistic outputs provide an abstract interface for outputting fields.
 In SQL or Pandas terminology, each statistic defines a row in a table. Each field will be a column.
 Outputs therefore map naturally to a CSV file.
 SST core also provides an HDF5 output, for those statistics that work with SST core.
 
 \subsection{Groups}
+\label{subsec:groups}
+
 Statistics can be grouped together when appropriate, for example bytes sent statistics for switches may want to be grouped together.
 Each group is associated with a given output.
 Most commonly, a group is only used to link statistics to the same output.

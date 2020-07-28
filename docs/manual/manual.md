@@ -1,11 +1,11 @@
 ---
-title: Manual for SST-Macro 8.0.x
+title: Manual for SST-Macro 10.1.x
 published: true
 category: SSTDocumentation
 ---
 
 
-# SST/macro 9.1 User's Manual
+# SST/macro 10.1 User's Manual
 
 ![](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/sstlogo.png) 
 
@@ -18,116 +18,156 @@ category: SSTDocumentation
  
 
 # Table of Contents
-   - [Chapter 1: Introduction](#sec:intro)
-      - [Section 1.1: Overview](#sec:intro:overview)
-   - [Chapter 2: Building and Running SST/macro](#chapter:building)
-      - [Section 2.1: Build and Installation of SST-macro](#sec:buildinstall)
-         - [2.1.1: Downloading](#subsec:build:downloading)
-         - [2.1.2: Dependencies](#subsec:build:dependencies)
-         - [2.1.3: Configuration and Building](#subsec:build:configure)
-            - [Build SST core](#subsec:buildSSTCore)
-            - [Build SST/macro element library](#subsec:buildElementLib)
-         - [2.1.4: Post-Build](#subsec:postbuild)
-         - [2.1.5: GNU pth for user-space threading: DEPRECATED](#subsubsec:pth)
-         - [2.1.6: fcontext](#subsubsec:fcontext)
-         - [2.1.7: Known Issues](#subsec:build:issues)
-      - [Section 2.2: Building DUMPI](#sec:building:dumpi)
-         - [2.2.1: Known Issues](#subsubsec:building:dumpi:issues)
-      - [Section 2.3: Building Clang source-to-source support](#sec:buildingClang)
-         - [2.3.1: Building Clang libTooling](#subsec:buildingClanglibTooling)
-            - [The Easy Way: Mac OS X](#subsubsec:libToolingOSX)
-            - [The Hard Way](#subsubsec:libTooling)
-      - [Section 2.4: Building with OTF2](#sec:buildingOtf2)
-      - [Section 2.5: Running an Application](#sec:building:running)
-         - [2.5.1: SST Python Scripts](#subsec:SSTPythonScripts)
-         - [2.5.2: Building Skeleton Applications](#sec:tutorial:runapp)
-         - [2.5.3: Makefiles](#subsec:tutorial:makefiles)
-         - [2.5.4: Command-line arguments](#subsec:tutorial:cmdline)
-      - [Section 2.6: Parallel Simulations in Standalone Mode](#sec:PDES)
-         - [2.6.1: Distributed Memory Parallel](#subsec:mpiparallel)
-         - [2.6.2: Shared Memory Parallel](#subsec:parallelopt)
-         - [2.6.3: Warnings for Parallel Simulation](#subsec:parallelwarn)
-      - [Section 2.7: Debug Output](#sec:dbgoutput)
-   - [Chapter 3: Basic Tutorials](#chapter:tutorials)
-         - [3.0.1: Parameter Namespace Rules](#subsec:parameterNamespace)
-         - [3.0.2: Initial Example](#subsec:initialExample)
-      - [Section 3.1: SST Python Files](#sec:pythonFiles)
-      - [Section 3.2: Network Topologies and Routing](#sec:tutorial:topology)
-         - [3.2.1: Topology](#subsec:tutorial:topology)
-         - [3.2.2: Routing](#subsec:tutorial:routing)
-      - [Section 3.3: Network Model](#sec:tutorial:networkmodel)
-         - [3.3.1: Analytic Models: MACRELS](#subsec:tutorial:macrels)
-         - [3.3.2: Packet Models: PISCES](#subsec:tutorial:pisces)
-            - [PISCES simple model](#subsubsec:tutorial:simplePisces)
-            - [PISCES cut-through model](#subsubsec:tutorial:cutThroughPisces)
-         - [3.3.3: Flow](#subsec:tutorial:flow)
-      - [Section 3.4: Basic MPI Program](#sec:tutorial:basicmpi)
-      - [Section 3.5: Launching, Allocation, and Indexing](#sec:tutorial:launchetc)
-         - [3.5.1: Launch Commands](#subsec:tutorial:launch)
-         - [3.5.2: Allocation Schemes](#subsec:tutorial:allocation)
-            - [Indexing Schemes](#subsec:tutorial:indexing)
-      - [Section 3.6: Discrete Event Simulation](#sec:tutorial:des)
-      - [Section 3.7: Using DUMPI](#sec:tutorial:dumpi)
-         - [3.7.1: Building DUMPI](#subset:dump:build)
-         - [3.7.2: Trace Collection](#subsec:dumpi:tracecollection)
-         - [3.7.3: Trace Replay](#subsec:dumpi:tracereplay)
-      - [Section 3.8: Using Score-P and OTF2](#sec:tutorial:otf)
-         - [3.8.1: Trace Collection](#subsec:otf:traceCollection)
-         - [3.8.2: Trace Replay](#subsec:otf:traceReplay)
-         - [3.8.3: Custom Statistics](#subsec:customStats)
-      - [Section 3.9: OTF2 Trace Creation](#sec:otf:traceEmission)
-      - [Section 3.10: Call Graph Visualization](#sec:tutorials:callgraph)
-      - [Section 3.11: Spyplot Diagrams](#sec:tutorials:spyplot)
-      - [Section 3.12: Fixed-Time Quanta Charts](#sec:tutorials:ftq)
-      - [Section 3.13: Network Statistics](#sec:tutorials:packetStats)
-         - [3.13.1: XmitBytes](#subsec:xmitbytes)
-         - [3.13.2: XmitWait](#subsec:xmitwait)
-         - [3.13.3: XmitFlows](#subsec:xmitflows)
-   - [Chapter 4: Topologies](#chapter:topologies)
-      - [Section 4.1: Torus](#subsec:tutorial:hypercube)
-      - [Section 4.2: Hypercube](#subsec:tutorial:hypercube)
-         - [4.2.1: Allocation and indexing](#subsec:hypercube:allocation)
-         - [4.2.2: Routing](#subsec:hypercube:routing)
-      - [Section 4.3: Fat Tree](#sec:tutorial:fattree)
-         - [4.3.1: Switch Crossbar Bandwidth Scaling](#subsec:fattree:xbarbw)
-         - [4.3.2: Routing](#subsec:fattree:routing)
-      - [Section 4.4: Cascade](#sec:tutorial:cascade)
-         - [4.4.1: Allocation and indexing](#subsec:cascade:allocatoin)
-         - [4.4.2: Routing](#subsec:cascade:routing)
-   - [Chapter 5: External Applications and Skeletonization](#chap:appsAndSkeletonization)
-      - [Section 5.1: Basic Application porting](#sec:skel:basic)
-         - [5.1.1: Loading external skeletons with the standalone core](#subsec:externalAppStandalone)
-      - [Section 5.2: Auto-skeletonization with Clang](#sec:autoSkeletonization)
-         - [5.2.1: Skeletonization Issues](#subsec:skeletonIssues)
-      - [Section 5.3: Process Encapsulation](#sec:processEncapsulation)
+   - [Chapter 1: Introduction](#sec_intro)
+      - [Section 1.1: Overview](#sec_intro_overview)
+      - [Section 1.2: Preview of Things to Come](#sec_preview)
+      - [Section 1.3: What To Expect In The User's Manual](#sec_whatToExpect)
+   - [Chapter 2: Building and Running SST/macro](#chapter_building)
+      - [Section 2.1: Build and Installation of SST-macro](#sec_buildinstall)
+         - [2.1.1: Downloading](#subsec_build_downloading)
+         - [2.1.2: Dependencies](#subsec_build_dependencies)
+         - [2.1.3: Configuration and Building](#subsec_build_configure)
+            - [Build SST core](#subsec_buildSSTCore)
+            - [Build SST/macro element library](#subsec_buildElementLib)
+         - [2.1.4: Post-Build](#subsec_postbuild)
+         - [2.1.5: GNU pth for user-space threading: DEPRECATED](#subsubsec_pth)
+         - [2.1.6: fcontext](#subsubsec_fcontext)
+         - [2.1.7: Known Issues](#subsec_build_issues)
+      - [Section 2.2: Building DUMPI](#sec_building_dumpi)
+         - [2.2.1: Known Issues](#subsubsec_building_dumpi_issues)
+      - [Section 2.3: Building Clang source-to-source support](#sec_buildingClang)
+         - [2.3.1: Building Clang libTooling](#subsec_buildingClanglibTooling)
+            - [The Easy Way: Mac OS X](#subsubsec_libToolingOSX)
+            - [The Hard Way](#subsubsec_libTooling)
+      - [Section 2.4: Building with OTF2](#sec_buildingOtf2)
+      - [Section 2.5: Running an Application](#sec_building_running)
+         - [2.5.1: SST Python Scripts](#subsec_SSTPythonScripts)
+         - [2.5.2: Building Skeleton Applications](#sec_tutorial_runapp)
+         - [2.5.3: Makefiles](#subsec_tutorial_makefiles)
+         - [2.5.4: Command-line arguments](#subsec_tutorial_cmdline)
+      - [Section 2.6: Parallel Simulations in Standalone Mode](#sec_PDES)
+         - [2.6.1: Distributed Memory Parallel](#subsec_mpiparallel)
+         - [2.6.2: Shared Memory Parallel](#subsec_parallelopt)
+         - [2.6.3: Warnings for Parallel Simulation](#subsec_parallelwarn)
+      - [Section 2.7: Debug Output](#sec_dbgoutput)
+   - [Chapter 3: Basic Tutorials](#chapter_tutorials)
+      - [Section 3.1: SST/macro Parameter files](#sec_parameters)
+         - [3.1.1: Parameter Namespace Rules](#subsec_parameterNamespace)
+         - [3.1.2: Initial Example](#subsec_initialExample)
+      - [Section 3.2: SST Python Files](#sec_pythonFiles)
+      - [Section 3.3: Network Topologies and Routing](#sec_tutorial_topology)
+         - [3.3.1: Topology](#subsec_tutorial_topology)
+         - [3.3.2: Routing](#subsec_tutorial_routing)
+      - [Section 3.4: Network Model](#sec_tutorial_networkmodel)
+         - [3.4.1: Analytic Models: MACRELS](#subsec_tutorial_macrels)
+         - [3.4.2: Packet Models: PISCES](#subsec_tutorial_pisces)
+            - [PISCES simple model](#subsubsec_tutorial_simplePisces)
+            - [PISCES cut-through model](#subsubsec_tutorial_cutThroughPisces)
+         - [3.4.3: SCULPIN](#subsec_sculpin)
+         - [3.4.4: Flow](#subsec_tutorial_flow)
+      - [Section 3.5: Basic MPI Program](#sec_tutorial_basicmpi)
+      - [Section 3.6: Launching, Allocation, and Indexing](#sec_tutorial_launchetc)
+         - [3.6.1: Launch Commands](#subsec_tutorial_launch)
+         - [3.6.2: Allocation Schemes](#subsec_tutorial_allocation)
+            - [Indexing Schemes](#subsec_tutorial_indexing)
+      - [Section 3.7: Discrete Event Simulation](#sec_tutorial_des)
+      - [Section 3.8: Using DUMPI](#sec_tutorial_dumpi)
+         - [3.8.1: Building DUMPI](#subset_dump_build)
+         - [3.8.2: Trace Collection](#subsec_dumpi_tracecollection)
+         - [3.8.3: Trace Replay](#subsec_dumpi_tracereplay)
+      - [Section 3.9: Using Score-P and OTF2](#sec_tutorial_otf)
+         - [3.9.1: Trace Collection](#subsec_otf_traceCollection)
+         - [3.9.2: Trace Replay](#subsec_otf_traceReplay)
+      - [Section 3.10: Statistics](#sec_Statistics)
+         - [3.10.1: Collectors](#subsec_collectors)
+         - [3.10.2: Outputs](#subsec_outputs)
+         - [3.10.3: Groups](#subsec_groups)
+         - [3.10.4: Custom Statistics](#subsec_customStats)
+      - [Section 3.11: OTF2 Trace Creation](#sec_otf_traceEmission)
+      - [Section 3.12: Call Graph Visualization](#sec_tutorials_callgraph)
+      - [Section 3.13: Spyplot Diagrams](#sec_tutorials_spyplot)
+      - [Section 3.14: Fixed-Time Quanta Charts](#sec_tutorials_ftq)
+      - [Section 3.15: Network Statistics](#sec_tutorials_packetStats)
+         - [3.15.1: XmitBytes](#subsec_xmitbytes)
+         - [3.15.2: XmitWait](#subsec_xmitwait)
+         - [3.15.3: XmitFlows](#subsec_xmitflows)
+   - [Chapter 4: Topologies](#chapter_topologies)
+      - [Section 4.1: Torus](#subsec_tutorial_hypercube)
+      - [Section 4.2: Hypercube](#subsec_tutorial_hypercube)
+         - [4.2.1: Allocation and indexing](#subsec_hypercube_allocation)
+         - [4.2.2: Routing](#subsec_hypercube_routing)
+      - [Section 4.3: Fat Tree](#sec_tutorial_fattree)
+         - [4.3.1: Switch Crossbar Bandwidth Scaling](#subsec_fattree_xbarbw)
+         - [4.3.2: Routing](#subsec_fattree_routing)
+      - [Section 4.4: Cascade](#sec_tutorial_cascade)
+         - [4.4.1: Allocation and indexing](#subsec_cascade_allocatoin)
+         - [4.4.2: Routing](#subsec_cascade_routing)
+   - [Chapter 5: External Applications and Skeletonization](#chap_appsAndSkeletonization)
+      - [Section 5.1: Basic Application porting](#sec_skel_basic)
+         - [5.1.1: Loading external skeletons with the standalone core](#subsec_externalAppStandalone)
+      - [Section 5.2: Auto-skeletonization with Clang](#sec_autoSkeletonization)
+         - [5.2.1: Redirecting Main](#subsec_redirectMain)
+         - [5.2.2: Memory Allocations](#subsec_memoryAllocations)
+         - [5.2.3: Computation](#subsec_computation)
+         - [5.2.4: Special Pragmas](#subsec_specialPragams)
+         - [5.2.5: Skeletonization Issues](#subsec_skeletonIssues)
+      - [Section 5.3: Process Encapsulation](#sec_processEncapsulation)
    - [Chapter 6: Clang Source-to-Source Auto-Skeletonization via Pragmas](#clangTutorial)
-      - [Section 6.1: Memoization pragmas](#sec:memoization)
-         - [6.1.1: pragma sst implicit\_state X(Y) ...](#subsec:implicitStates)
-      - [Section 6.2: Fortran](#subsec:issues:fortran)
-   - [Chapter 7: Detailed Parameter Listings](#chapter:parameters)
-      - [Section 7.1: Global namespace](#sec:globalParams)
-      - [Section 7.2: Namespace "topology"](#sec:topologyParams)
-      - [Section 7.3: Namespace "node"](#sec:nodeParams)
-         - [7.3.1: Namespace "node.nic"](#subsec:node:nic:Params)
-            - [Namespace "node.nic.ejection"](#subsubsec:node:nic:ejection:Params)
-            - [Namespace ``node.nic.injection"](#subsubsec:node:nic:injection:Params)
-         - [7.3.2: Namespace ``node.memory"](#subsec:node:memory:Params)
-         - [7.3.3: Namespace "node.os"](#subsec:node:os:Params)
-         - [7.3.4: Namespace ``node.proc"](#subsec:node:proc:Params)
-      - [Section 7.4: Namespace "mpi"](#sec:mpi:Params)
-         - [7.4.1: Namespace ``mpi.queue"](#subsec:mpi:queue:Params)
-      - [Section 7.5: Namespace "switch"](#subsec:switch:Params)
-         - [7.5.1: Namespace "switch.router"](#subsec:switch:router:Params)
-         - [7.5.2: Namespace ``switch.link"](#subsec:switch:link:Params)
-      - [Section 7.6: Namespace "appN"](#sec:appN:Params)
+      - [Section 6.1: Pragma Overview](#sec_pragmaOverview)
+         - [6.1.1: Compiler workflow](#subsec_compilerWorkflow)
+         - [6.1.2: Compiler Environment Variables](#subsec_compilerEnv)
+            - [SSTMAC\_SRC2SRC: Default 1](#subsubsec_env_src2src)
+            - [SSTMAC\_SKELETONIZE: Default 0](#subsubsec_env_skeletonize)
+            - [SSTMAC\_HEADERS: No default](#subsubsec_env_headers)
+            - [SSTMAC\_DELETE\_TEMP\_SOURCES: Default 1](#subsubsec_env_delete_temp_objects)
+            - [SSTMAC\_DELETE\_TEMP\_OBJECTS: Default 1](#subsubsec_env_delete_temp_sources)
+      - [Section 6.2: Basic Replacement Pragmas](#sec_basicReplacementPragmas)
+         - [6.2.1: pragma sst delete: no arguments](#subsec_pragma_sst_delete)
+         - [6.2.2: pragma sst replace [to\_replace:string] [new\_text:C++ expression]](#subsec_pragma_sst_replace)
+         - [6.2.3: pragma sst init [new\_value:string]](#subsec_pragma_sst_init)
+         - [6.2.4: pragma sst return [new\_value:C++ expression]](#subsec_pragma_sst_return)
+         - [6.2.5: pragma sst keep](#subsec_pragma_sst_keep)
+         - [6.2.6: pragma sst keep\_if [condition:C++ bool expression]](#subsec_pragma_sst_keep_if)
+         - [6.2.7: pragma sst empty](#subsec_pragma_sst_empty)
+         - [6.2.8: pragma sst branch\_predict [condition:C++ expression]](#subsec_pragma_sst_branch_predict)
+      - [Section 6.3: Memory Allocation Pragmas](#sec_memAllocPragmas)
+         - [6.3.1: pragma sst malloc](#subsec_pragma_sst_malloc)
+         - [6.3.2: pragma sst new](#subsec_pragma_sst_new)
+      - [Section 6.4: Data-Driven Type Pragmas](#ddtPragmas)
+         - [6.4.1: pragma sst null\_ptr](#subsec_pragma_sst_null_ptr)
+         - [6.4.2: pragma sst null\_type [type alias] [list allowed functions]](#subsec_pragma_sst_null_type)
+      - [Section 6.5: Compute Pragmas](#sec_computePragmas)
+         - [6.5.1: pragma sst compute and pragma omp parallel](#subsec_pragma_sst_compute)
+         - [6.5.2: pragma sst loop\_count [integer: C++ expression]](#subsec_pragma_sst_loop_count)
+         - [6.5.3: pragma sst branch\_predict [float: C++ expression]](#subsec_pragma_sst_branch_predict)
+         - [6.5.4: pragma sst advance\_time [units] [time to advance by]](#subsec_pragma_sst_advance_time)
+   - [Chapter 7: Issues and Limitations](#ch_issues)
+      - [Section 7.1: Polling in applications](#sec_polling)
+      - [Section 7.2: Fortran](#subsec_issues_fortran)
+   - [Chapter 8: Detailed Parameter Listings](#chapter_parameters)
+      - [Section 8.1: Global namespace](#sec_globalParams)
+      - [Section 8.2: Namespace "topology"](#sec_topologyParams)
+      - [Section 8.3: Namespace "node"](#sec_nodeParams)
+         - [8.3.1: Namespace "node.nic"](#subsec_node_nic_Params)
+            - [Namespace "node.nic.ejection"](#subsubsec_node_nic_ejection_Params)
+            - [Namespace ``node.nic.injection"](#subsubsec_node_nic_injection_Params)
+         - [8.3.2: Namespace ``node.memory"](#subsec_node_memory_Params)
+         - [8.3.3: Namespace "node.os"](#subsec_node_os_Params)
+         - [8.3.4: Namespace ``node.proc"](#subsec_node_proc_Params)
+      - [Section 8.4: Namespace "mpi"](#sec_mpi_Params)
+         - [8.4.1: Namespace ``mpi.queue"](#subsec_mpi_queue_Params)
+      - [Section 8.5: Namespace "switch"](#subsec_switch_Params)
+         - [8.5.1: Namespace "switch.router"](#subsec_switch_router_Params)
+         - [8.5.2: Namespace ``switch.link"](#subsec_switch_link_Params)
+      - [Section 8.6: Namespace "appN"](#sec_appN_Params)
 
 
 
-## Chapter 1: Introduction<a name="sec:intro"></a>
+## Chapter 1: Introduction<a name="sec_intro"></a>
 
 
 
-### Section 1.1: Overview<a name="sec:intro:overview"></a>
+### Section 1.1: Overview<a name="sec_intro_overview"></a>
 
 
 
@@ -142,9 +182,8 @@ Off-line simulators typically first run a full parallel application on a real ma
 recording certain communication and computation events to a simulation trace.
 This event trace can then be replayed post-mortem in the simulator.
 Most common are MPI traces which record all MPI events, and
-SST-macro provides the DUMPI utility ([3.7](#sec:tutorial:dumpi)) for collecting and replaying MPI traces. 
-Trace extrapolation can extend the usefulness of off-line simulation by estimating large or untraceable system scales without   
-having to collect a trace, but it is limited.
+SST-macro provides the DUMPI utility () for collecting and replaying MPI traces. 
+Trace extrapolation can extend the usefulness of off-line simulation by estimating large or untraceable system scales without having to collect a trace, but it is limited.
 
 We turn to on-line simulation when the hardware or applications parameters need to change.
 On-line simulators instead run real application code, allowing native C/C++ to be compiled directly into the simulator.
@@ -163,7 +202,7 @@ or at least not convenient.
 Simulation requires coarse-grained approximations to be practical.
 SST-macro is therefore designed for specific cost/accuracy tradeoffs.
 It should still capture complex cause/effect behavior in applications and hardware, but be efficient enough to simulate at the system-level. 
-For speeding up simulator execution, we encourage skeletonization, discussed further in Chapter [5](#chap:appsAndSkeletonization). 
+For speeding up simulator execution, we encourage skeletonization, discussed further in Chapter . 
 A high-quality skeleton is an application model that reproduces certain characteristics with only limited computation.  
 We also encourage uncertainty quantification (UQ) for validating simulator results.
 Skeletonization and UQ are the two main elements in the "canonical" SST-macro workflow (Figure [1](#fig:workflow)).
@@ -179,7 +218,10 @@ Because of its popularity, MPI is one of our main priorities in providing progra
 Some MPI-3 functions and MPI one-sided functions are not implemented.
 This will lead to compile errors with an obvious "not implement" compiler message.
 
-\section{Preview of Things to Come}
+### Section 1.2: Preview of Things to Come<a name="sec_preview"></a>
+
+
+
 Suppose you have the basic MPI application below that executes a simple send/recv operation.
 One could use `mpicc` or `mpic++` to compile and run as an actual MPI program.
 This requires spawning all the processes and running them in parallel.
@@ -230,7 +272,10 @@ In skeletonization or simulation, SST/macro will mimic as closely as possible th
 but avoids as much computation and as much memory allocation as possible.
 This allows packing in as many simulated (virtual) MPI ranks as possible into your single `sstmac` process.
 
-\section{What To Expect In The User's Manual}
+### Section 1.3: What To Expect In The User's Manual<a name="sec_whatToExpect"></a>
+
+
+
 This user's manual is mainly designed for those who wish to perform experiments with new applications using existing hardware models.
 This has been the dominant use case and we therefore classify those doing application experiments as "users" and those making new hardware models "developers."
 Getting applications to run in SST/macro should be very straightforward and requires no knowledge of simulator internal code.
@@ -239,16 +284,16 @@ Those interested in making new hardware models should consult the developer's ma
 
 
 
-## Chapter 2: Building and Running SST/macro<a name="chapter:building"></a>
+## Chapter 2: Building and Running SST/macro<a name="chapter_building"></a>
 
 
 
-### Section 2.1: Build and Installation of SST-macro<a name="sec:buildinstall"></a>
+### Section 2.1: Build and Installation of SST-macro<a name="sec_buildinstall"></a>
 
 
 
 
-#### 2.1.1: Downloading<a name="subsec:build:downloading"></a>
+#### 2.1.1: Downloading<a name="subsec_build_downloading"></a>
 
 
 
@@ -265,7 +310,7 @@ shell> git clone ssh://git@github.com/sstsimulator/sst-macro.git
 ````
 or you can download a release tarball from https://github.com/sstsimulator/sst-macro/releases.
 
-#### 2.1.2: Dependencies<a name="subsec:build:dependencies"></a>
+#### 2.1.2: Dependencies<a name="subsec_build_dependencies"></a>
 
 
 The most critical change is that C++11 is now a strict prerequisite. 
@@ -274,7 +319,7 @@ These are no longer supported.
 The following are dependencies for SST-macro.
 
 
--   (optional) Git is needed in order to clone the source code repository, but you can also download a tar (Section [2.1.1](#subsec:build:downloading)).
+-   (optional) Git is needed in order to clone the source code repository, but you can also download a tar (Section ).
 -   Autoconf: 2.68 or later
 -   Automake: 1.11.1 or later
 -   Libtool: 2.4 or later
@@ -286,7 +331,7 @@ The following are dependencies for SST-macro.
 -   (optional) KCacheGrind or QCacheGrind to display call graphs
 -   (optional) Clang development libraries to enable SST source-to-source compiler
 
-#### 2.1.3: Configuration and Building<a name="subsec:build:configure"></a>
+#### 2.1.3: Configuration and Building<a name="subsec_build_configure"></a>
 
 
 
@@ -315,13 +360,13 @@ The workflow for installing and running on the standalone SST/macro core:
 -   Build and install SST/macro standalone to generate `sstmac` executable
 -   Run `sstmac` with `*.ini` parameter files
 
-##### Build SST core<a name="subsec:buildSSTCore"></a>
+##### Build SST core<a name="subsec_buildSSTCore"></a>
 
 
 The recommended mode for maximum flexibility is to run using the SST core downloadable from http://sst-simulator.org/SSTPages/SSTMainDownloads.
 Building and installing sets up the discrete event simulation core required for all SST elements.
 
-##### Build SST/macro element library<a name="subsec:buildElementLib"></a>
+##### Build SST/macro element library<a name="subsec_buildElementLib"></a>
 
 
 If using the repo (not a release tarball), go to the top-level source directory and run:
@@ -361,7 +406,7 @@ Some common options are:
 
 Once configuration has completed, printing a summary of the things it found, simply type `make`.  
 
-#### 2.1.4: Post-Build<a name="subsec:postbuild"></a>
+#### 2.1.4: Post-Build<a name="subsec_postbuild"></a>
 
 
 
@@ -383,7 +428,7 @@ Important:  Applications and other code linking to SST-macro use Makefiles that 
 that are installed there for convenience to figure out where headers and libraries are.  When making your skeletons and components, make sure your path is properly configured.
 }
 
-#### 2.1.5: GNU pth for user-space threading: DEPRECATED<a name="subsubsec:pth"></a>
+#### 2.1.5: GNU pth for user-space threading: DEPRECATED<a name="subsubsec_pth"></a>
 
 
 By default, Linux usually ships with `ucontext` which enables user-space threading.
@@ -406,16 +451,16 @@ For MacPorts installation, this means configuring SST/macro with:
 ../configure --with-pth=/opt/local
 ````
 
-#### 2.1.6: fcontext<a name="subsubsec:fcontext"></a>
+#### 2.1.6: fcontext<a name="subsubsec_fcontext"></a>
 
 
 The fcontext library for user-space threading is now integrated directly with the SST/macro distribution.
 This provides much greater performance than GNU pth or standard Linux ucontext.
 Users may see as much as a 20\
-fcontext should be activated by default. 
+fcontext is be activated by default. 
 
 
-#### 2.1.7: Known Issues<a name="subsec:build:issues"></a>
+#### 2.1.7: Known Issues<a name="subsec_build_issues"></a>
 
 
 
@@ -439,7 +484,7 @@ the linker ignores them and throws the library out.
 It takes a dirty hack to force the linkage.
 If there are issues, contact the developers at sst-macro-help@sandia.gov and report the problem.
 
-### Section 2.2: Building DUMPI<a name="sec:building:dumpi"></a>
+### Section 2.2: Building DUMPI<a name="sec_building_dumpi"></a>
 
 
 
@@ -461,7 +506,7 @@ sst-dumpi/build> make
 sst-dumpi/build> sudo make install
 ````
 
-#### 2.2.1: Known Issues<a name="subsubsec:building:dumpi:issues"></a>
+#### 2.2.1: Known Issues<a name="subsubsec_building_dumpi_issues"></a>
 
 
 
@@ -475,17 +520,17 @@ This will clear all the erroneous linker flags.  The compilation/linkage should 
 all necessary flags are set by the wrappers.
 
 
-### Section 2.3: Building Clang source-to-source support<a name="sec:buildingClang"></a>
+### Section 2.3: Building Clang source-to-source support<a name="sec_buildingClang"></a>
 
 
 
 To enable Clang source-to-source support it is not sufficient to have a Clang compiler.  You have to install a special libTooling library for Clang.
 
-#### 2.3.1: Building Clang libTooling<a name="subsec:buildingClanglibTooling"></a>
+#### 2.3.1: Building Clang libTooling<a name="subsec_buildingClanglibTooling"></a>
 
 
 
-##### The Easy Way: Mac OS X<a name="subsubsec:libToolingOSX"></a>
+##### The Easy Way: Mac OS X<a name="subsubsec_libToolingOSX"></a>
 
 
 Using MacPorts on OS X, it is trivial to obtain a Clang installation that includes libTooling:
@@ -502,7 +547,7 @@ port select --set clang mp-clang-devel
 
 The Clang libraries will be placed into `/opt/local/libexec/llvm-devel/lib`, so the appropriate option to the sst-macro configure script is `--with-clang=/opt/local/libexec/llvm-devel`.
 
-##### The Hard Way<a name="subsubsec:libTooling"></a>
+##### The Hard Way<a name="subsubsec_libTooling"></a>
 
 
 For operating systems other than OS X, building Clang support has a few steps (and takes quite a while to build), but is straightforward.
@@ -585,7 +630,7 @@ Clang source-to-source support will now be built into the `sst++` compiler.
 If Clang development libraries are available in the default system path (as is often the case with LLVM models, e..g `module load llvm`),
 then you can just put `--with-clang`.
 
-### Section 2.4: Building with OTF2<a name="sec:buildingOtf2"></a>
+### Section 2.4: Building with OTF2<a name="sec_buildingOtf2"></a>
 
 
 OTF2 is a general purpose trace format with specialized callbacks for the MPI API. OTF2 traces are generated by programs compiled with Score-P compiler wrappers. SST/macro 8.1 supports OTF2 trace replay and OTF2 trace generation when configured with 
@@ -599,10 +644,10 @@ Detailed build and usage instructions can be found on the website.
 
 
 
-### Section 2.5: Running an Application<a name="sec:building:running"></a>
+### Section 2.5: Running an Application<a name="sec_building_running"></a>
 
 
-#### 2.5.1: SST Python Scripts<a name="subsec:SSTPythonScripts"></a>
+#### 2.5.1: SST Python Scripts<a name="subsec_SSTPythonScripts"></a>
 
 
 
@@ -629,12 +674,12 @@ shell>sstmac -f parameters.ini
 since there is no Python setup involved.
 
 
-#### 2.5.2: Building Skeleton Applications<a name="sec:tutorial:runapp"></a>
+#### 2.5.2: Building Skeleton Applications<a name="sec_tutorial_runapp"></a>
 
 
 
 To demonstrate how an external skeleton application is run in SST-macro, we'll use a very simple send-recv program located in `skeletons/sendrecv`.
-We will take a closer look at the actual code in Section [3.4](#sec:tutorial:basicmpi).
+We will take a closer look at the actual code in Section .
 After SST-macro has been installed and your PATH variable set correctly, for standalone core users can run:
 
 ````
@@ -654,7 +699,7 @@ To ensure that building apps for SST require no modification to an existing buil
 SST simple builds a shared library `runsstmac` rather than requiring renaming to the standard convention
 `librunsstmac.so`.
 
-#### 2.5.3: Makefiles<a name="subsec:tutorial:makefiles"></a>
+#### 2.5.3: Makefiles<a name="subsec_tutorial_makefiles"></a>
 
 
 We recommend structuring the Makefile for your project like the one seen in `skeletons/sendrecv/Makefile` :
@@ -674,7 +719,7 @@ LDFLAGS :=  -Wl,-rpath,$(PREFIX)/lib
 ````
 The SST compiler wrappers `sst++` and `sstcc` automagically configure and map the code for simulation. 
 
-#### 2.5.4: Command-line arguments<a name="subsec:tutorial:cmdline"></a>
+#### 2.5.4: Command-line arguments<a name="subsec_tutorial_cmdline"></a>
 
 
 
@@ -687,17 +732,17 @@ This can be relative to the current directory, an absolute path, or the name of 
 (which installs to /path-to-install/include/configurations, and gets searched along with current directory).
 -   --dumpi: If you are in a folder with all the DUMPI traces, you can invoke the main `sstmac` executable with this option.  This replays the trace in a special debug mode for quickly validating the correctness of a trace.
 -   --otf2: If you are in a folder with all the OTF2 traces, you can invoke the main `sstmac` executable with this option.  This replays the trace in a special debug mode for quickly validating the correctness of a trace.
--   -d [debug flags]: A list of debug flags to activate as a comma-separated list (no spaces) - see Section [2.7](#sec:dbgoutput)
+-   -d [debug flags]: A list of debug flags to activate as a comma-separated list (no spaces) - see Section 
 -   -p [parameter]=[value]: Setting a parameter value (overrides what is in the parameter file)
--   -c: If multithreaded, give a comma-separated list (no spaces) of the core affinities to use - see Section [2.6.2](#subsec:parallelopt)
+-   -c: If multithreaded, give a comma-separated list (no spaces) of the core affinities to use - see Section 
 
-### Section 2.6: Parallel Simulations in Standalone Mode<a name="sec:PDES"></a>
+### Section 2.6: Parallel Simulations in Standalone Mode<a name="sec_PDES"></a>
 
 
 
 SST-macro supports running parallel discrete event simulation (PDES) in distributed memory (MPI), threaded shared memory (pthreads) and hybrid (MPI+pthreads) modes.  Running these in standalone mode will be discouraged as parallel simulations should use the unified SST core. However, near-term, hybrid modes and other optimizations are not fully supported in the unified SST core. The standalone core may still be required for certain cases.
 
-#### 2.6.1: Distributed Memory Parallel<a name="subsec:mpiparallel"></a>
+#### 2.6.1: Distributed Memory Parallel<a name="subsec_mpiparallel"></a>
 
 
 Configure will automatically check for MPI.
@@ -724,7 +769,7 @@ SST-macro will notice the total number of ranks is 1 and ignore any parallel opt
 When launched with multiple MPI ranks, SST-macro will automatically figure out how many partitions (MPI processes) 
 you are using, partition the network topology into contiguous blocks, and start running in parallel.   
 
-#### 2.6.2: Shared Memory Parallel<a name="subsec:parallelopt"></a>
+#### 2.6.2: Shared Memory Parallel<a name="subsec_parallelopt"></a>
 
 
 In order to run shared memory parallel, you must configure the simulator with the `--enable-multithread` flag.
@@ -741,7 +786,7 @@ For a threaded only simulation `cpu_affinity = 4` would pin the main process to 
 The affinities can also be specified on the command line using the `-c` option.
 Job launchers may in some cases provide duplicate functionality and either method can be used.
 
-#### 2.6.3: Warnings for Parallel Simulation<a name="subsec:parallelwarn"></a>
+#### 2.6.3: Warnings for Parallel Simulation<a name="subsec_parallelwarn"></a>
 
 
 
@@ -754,7 +799,7 @@ Weak scaling is usually achievable with 100-500 simulated MPI ranks per logical 
 Even without speedup, parallel simulation can certainly be useful in overcoming memory constraints.
 
 
-### Section 2.7: Debug Output<a name="sec:dbgoutput"></a>
+### Section 2.7: Debug Output<a name="sec_dbgoutput"></a>
 
 
 SST-macro defines a set of debug flags that can be specified in the parameter file to control debug output printed by the simulator.
@@ -786,20 +831,20 @@ listing all flags you want separated by spaces.
 
 
 
-## Chapter 3: Basic Tutorials<a name="chapter:tutorials"></a>
+## Chapter 3: Basic Tutorials<a name="chapter_tutorials"></a>
 
 
 
 
 
-\section{SST/macro Parameter files}
+### Section 3.1: SST/macro Parameter files<a name="sec_parameters"></a>
+
+
 
 There are parameter files for the main network models (MACRELS, PISCES, SCULPIN, SNAPPR) in the top-level examples directory.
-
-\label{sec:parameters}
 A minimal parameter file setting up a 2D-torus topology is shown below. 
 An equivalent Python input file that reads an ini file is also shown.
-A detailed listing of parameter namespaces and keywords is given in Section [7](#chapter:parameters).
+A detailed listing of parameter namespaces and keywords is given in Section .
 Both the `ini` files and Python files make careful use of namespaces.
 
 ````
@@ -848,11 +893,11 @@ topology {
  geometry = 4,4
 }
 ````
-The input file follows a basic syntax of `parameter = value`.  
+The input file follows a basic syntax of `parameter = value`.
 Parameter names follow C++ variable rules (letters, numbers, underscore) while parameter values can contain spaces.  Trailing and leading whitespaces are stripped from parameters.
 Comments can be included on lines starting with \#.
 
-#### 3.0.1: Parameter Namespace Rules<a name="subsec:parameterNamespace"></a>
+#### 3.1.1: Parameter Namespace Rules<a name="subsec_parameterNamespace"></a>
 
 
 Periods denote nesting of parameter namespaces.
@@ -875,32 +920,32 @@ node {
 Any line containing a single string with an opening \{ starts a new namespace.
 A line containing only a closing \} ends the innermost namespace.
 The syntax is not as flexible as C++ since the opening \{ must appear on the same line as the namespace and the closing \} must be on a line of its own.
-A detailed listing of parameter namespaces and keywords is given in Section [7](#chapter:parameters).
+A detailed listing of parameter namespaces and keywords is given in Section .
 
-#### 3.0.2: Initial Example<a name="subsec:initialExample"></a>
+#### 3.1.2: Initial Example<a name="subsec_initialExample"></a>
 
 
 Continuing with the example above, we see the input file is broken into namespace sections. 
 First, application launch parameters for each node must be chosen determining what application will launch, 
-how nodes will be allocated, how ranks will be indexed, and finally what application will be run.  
-Additionally, you must specify how many processes to launch and how many to spawn per node.  
-We currently recommend using aprun syntax (the launcher for Cray machines), 
+how nodes will be allocated, how ranks will be indexed, and finally what application will be run.
+Additionally, you must specify how many processes to launch and how many to spawn per node.
+We currently recommend using aprun syntax (the launcher for Cray machines),
 although support is being added for other process management systems.
 SST-macro can simulate command line parameters by giving a value for `node.app1.argv`.
 
-A network must also be chosen.  
-In the simplest possible case, the network is modeled via a simple latency/bandwidth formula.  
-For more complicated network models, many more than two parameters will be required. 
-See [3.3](#sec:tutorial:networkmodel) for a brief explanation of SST-macro network congestion models. 
-A topology is also needed for constructing the network.  
-In this case we choose a 2-D 4X4 torus (16 switches).  The `topology.geometry` 
+A network must also be chosen.
+In the simplest possible case, the network is modeled via a simple latency/bandwidth formula.
+For more complicated network models, many more than two parameters will be required.
+See  for a brief explanation of SST-macro network congestion models.
+A topology is also needed for constructing the network.
+In this case we choose a 2-D 4X4 torus (16 switches).  The `topology.geometry`
 parameter takes an arbitrarily long list of numbers as the dimensions to the torus.
 
-Finally, we must construct a node model.  
-In this case, again, we use the simplest possible models for the node, 
-network interface controller (NIC), and memory.  
+Finally, we must construct a node model.
+In this case, again, we use the simplest possible models for the node,
+network interface controller (NIC), and memory.
 
-Parameter files can be constructed in a more modular way through the `include` statement.  
+Parameter files can be constructed in a more modular way through the `include` statement.
 An alternative parameter file would be:
 
 ````
@@ -918,14 +963,14 @@ node {
  }
 }
 ````
-where in the first line we include the file `machine.ini`.  
-All network, topology, and node parameters would be placed into a `machine.ini` file.  
-In this way, multiple experiments can be linked to a common machine.  
+where in the first line we include the file `machine.ini`.
+All network, topology, and node parameters would be placed into a `machine.ini` file.
+In this way, multiple experiments can be linked to a common machine.
 Alternatively, multiple machines could be linked to the same application by creating and including an `application.ini`.
 
 
 
-### Section 3.1: SST Python Files<a name="sec:pythonFiles"></a>
+### Section 3.2: SST Python Files<a name="sec_pythonFiles"></a>
 
 
 For SST core, SST/macro provides a Python translator for the ini files to a Python input deck.
@@ -1047,15 +1092,15 @@ Again, to see all the details of creating and linking components, refer to the `
 
 
 
-### Section 3.2: Network Topologies and Routing<a name="sec:tutorial:topology"></a>
+### Section 3.3: Network Topologies and Routing<a name="sec_tutorial_topology"></a>
 
 
-We here give a brief introduction to specifying different topologies and routing strategies.  
-We will only discuss one basic example (torus).  
+We here give a brief introduction to specifying different topologies and routing strategies.
+We will only discuss one basic example (torus).
 A more thorough introduction covering all topologies is planned for future releases.
 Excellent resources are "Principles and Practices of Interconnection Networks" by Brian Towles and William Dally published by Morgan Kaufman and "High Performance Datacenter Networks" by Dennis Abts and John Kim published by Morgan and Claypool.
 
-#### 3.2.1: Topology<a name="subsec:tutorial:topology"></a>
+#### 3.3.1: Topology<a name="subsec_tutorial_topology"></a>
 
 
 
@@ -1066,8 +1111,8 @@ topology.name = torus
 topology.geometry = 4 4
 ````
 Here we choose a 2D-torus topology with extent 4 in both the X and Y dimensions for a total of 16 nodes (Figure [2](#fig:torus:basic))
-The topology is laid out in a regular grid with network links connecting nearest neighbors.  
-Additionally, wrap-around links connect the nodes on each boundary.  
+The topology is laid out in a regular grid with network links connecting nearest neighbors.
+Additionally, wrap-around links connect the nodes on each boundary.
 
 ![Figure 2: 4 x 4 2D Torus](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/torus/torus.png) 
 
@@ -1076,9 +1121,9 @@ Additionally, wrap-around links connect the nodes on each boundary.
 
 
 
-The figure is actually an oversimplification.  
+The figure is actually an oversimplification.
 The `topology.geometry` parameter actually specifies the topology of the network switches, not the compute nodes. 
-A torus is an example of a direct network in which each switch has one or more nodes "directly" connected to it.  
+A torus is an example of a direct network in which each switch has one or more nodes "directly" connected to it.
 A more accurate picture of the network is given in Figure [3](#fig:torus:withnodes).
 
 ![Figure 3: 4 x 4 2D Torus of Network Switches with Compute Nodes](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/torus/withnodes.png) 
@@ -1086,7 +1131,7 @@ A more accurate picture of the network is given in Figure [3](#fig:torus:withnod
 *Figure 3: 4 x 4 2D Torus of Network Switches with Compute Nodes*
 
 
-While in many previous architectures there was generally a one-to-one correspondence between compute nodes and switches, more recent architectures have multiple compute nodes per switch (e.g. Cray Gemini with two nodes, Cray Aries with four nodes).  
+While in many previous architectures there was generally a one-to-one correspondence between compute nodes and switches, more recent architectures have multiple compute nodes per switch (e.g. Cray Gemini with two nodes, Cray Aries with four nodes).
 Multiple nodes per switch can be specified via a concentration parameter:
 
 ````
@@ -1098,7 +1143,7 @@ topology {
 ````
 which would now generate a torus topology with 16 switches and 32 compute nodes.
 
-Another subtle modification of torus (and other networks) can be controlled by giving the X, Y, and Z directions different bandwidth.  
+Another subtle modification of torus (and other networks) can be controlled by giving the X, Y, and Z directions different bandwidth.
 The above network could be modified as
 
 ````
@@ -1108,8 +1153,8 @@ topology {
  redundant = 2 1
 }
 ````
-giving the the X-dimension twice the bandwidth of the Y-dimension.  
-This pattern DOES exist in some interconnects as a load-balancing strategy.  
+giving the the X-dimension twice the bandwidth of the Y-dimension.
+This pattern DOES exist in some interconnects as a load-balancing strategy.
 A very subtle point arises here. Consider two different networks:
 
 ````
@@ -1128,11 +1173,11 @@ topology {
 }
 switch.link.bandwidth = 1GB/s
 ````
-For some coarse-grained models, these two networks are exactly equivalent.  
-In more fine-grained models, however, these are actually two different networks.  
+For some coarse-grained models, these two networks are exactly equivalent.
+In more fine-grained models, however, these are actually two different networks.
 The first network has ONE link carrying 2 GB/s. The second network has TWO links each carrying 1 GB/s.
 
-#### 3.2.2: Routing<a name="subsec:tutorial:routing"></a>
+#### 3.3.2: Routing<a name="subsec_tutorial_routing"></a>
 
 
 By default, SST-macro uses the simplest possible routing algorithm: dimension-order minimal routing (Figure [4](#fig:torus:basicrouting)).
@@ -1143,7 +1188,7 @@ By default, SST-macro uses the simplest possible routing algorithm: dimension-or
 
 
 In going from source to destination, the message first travels along the X-dimension and then travels along the Y-dimension.
-The above scheme is entirely static, making no adjustments to avoid congestion in the network.  
+The above scheme is entirely static, making no adjustments to avoid congestion in the network.
 SST-macro supports a variety of adaptive routing algorithms.  This can be specified:
 
 ````
@@ -1161,30 +1206,30 @@ There are now multiple valid paths between network endpoints, one of which is il
 *Figure 5: Adaptive Minimal Routing on a 2D Torus*
 
 
-At each network hop, the router chooses the productive path with least congestion.  
+At each network hop, the router chooses the productive path with least congestion.
 In some cases, however, there is only one minimal path (node (0,0) sending to (2,0) with only X different).
-For these messages, minimal adaptive is exactly equivalent to dimension-order routing.  
+For these messages, minimal adaptive is exactly equivalent to dimension-order routing.
 Other supported routing schemes are valiant and UGAL.  More routing schemes are scheduled to be added in future versions.  
 A full description of more complicated routing schemes will be given in its own chapter in future versions. 
 For now, we direct users to existing resources such as "High Performance Datacenter Networks" by Dennis Abts and John Kim.
 
 
 
-### Section 3.3: Network Model<a name="sec:tutorial:networkmodel"></a>
+### Section 3.4: Network Model<a name="sec_tutorial_networkmodel"></a>
 
 
 
 Network models can be divided into several categories.  SST/macro supports analytic models, which estimate network delays via basic latency/bandwidth formulas, and packet models, which model step-by-step the transit of individuals through the interconnect.
 A third class of models (flow models), was previously supported but are now discontinued due to the much better scalability of packet models.
 
-#### 3.3.1: Analytic Models: MACRELS<a name="subsec:tutorial:macrels"></a>
+#### 3.4.1: Analytic Models: MACRELS<a name="subsec_tutorial_macrels"></a>
 
 
 
 The analytic models in SST/macro are colloqiually referred to as MACRELS (MTL for AnalytiC REally Lightweight Simulation).
 An example file running a simple application can be found in the top-level examples folder.
 The MTL (message transfer layer) moves entire network flows from point-to-point without packetizing them into smaller chunks.
-Thus an entire 1 MB MPI message is transported as a single chunk of data.  
+Thus an entire 1 MB MPI message is transported as a single chunk of data.
 The majority of MACRELS models are based on the LogP set of approximations:
 
 
@@ -1199,20 +1244,19 @@ congestion_model = logP
 Details are shown for traffic moving from source to destination in Figure [6](#fig:macrelsOverview).
 Modeling occurs on entire flows, rather than individual packets. 
 
-\begin{enumerate}
-\item Flows queue waiting for NIC injection link to become available. Flow is forwarded to destination NIC based after computed delay. 
-\item Flows queue waiting for NIC ejection link to become available. Flow finishes after ejection link becomes available.
-\end{enumerate}
+
+-   Flows queue waiting for NIC injection link to become available. Flow is forwarded to destination NIC based after computed delay.
+-   Flows queue waiting for NIC ejection link to become available. Flow finishes after ejection link becomes available.
 
 
-![Figure 6: MACRELS (Messages with AnalytiC REally Lightweight Simulation) skips congestion modeling and approximates send delays using a simple latency/bandwidth estimate, similar to the LogGOP model. Modeling occurs on entire flows, rather than individual packets. For details on numbered steps, see text.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/macrels.pdf) 
+![Figure 6: MACRELS (Messages with AnalytiC REally Lightweight Simulation) skips congestion modeling and approximates send delays using a simple latency/bandwidth estimate, similar to the LogGOP model. Modeling occurs on entire flows, rather than individual packets. For details on numbered steps, see text.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/macrels.png) 
 
 *Figure 6: MACRELS (Messages with AnalytiC REally Lightweight Simulation) skips congestion modeling and approximates send delays using a simple latency/bandwidth estimate, similar to the LogGOP model. Modeling occurs on entire flows, rather than individual packets. For details on numbered steps, see text.*
 
 
 
 
-#### 3.3.2: Packet Models: PISCES<a name="subsec:tutorial:pisces"></a>
+#### 3.4.2: Packet Models: PISCES<a name="subsec_tutorial_pisces"></a>
 
 
 
@@ -1225,17 +1269,16 @@ Two flits in the same packet cannot take different paths through the network.
 However, they may not travel together.
 
 PISCES (Packet-flow Interconnect Simulation for Congestion at Extreme-Scale) models individual packets moving through the network. Flits (flow-control units) are approximately modeled using flow-like approximations. Packets can have partial occupancies in several different buffers, approximating wormhole routing. However, arbitration is modeled on whole packets, not individual flits (see Figure [7](#fig:piscesOverview))
-\begin{enumerate}
-\item A message (flow) is broken up into packets. Depending on available space in the Tx buffer, a limited number of packets may be able to queue up in the buffer. If credits are available in the Rx buffer for the link and the link is idle, the packet moves into the next Rx buffer after a computed delay.
-\item The router selects a path for the packet and the packet requests to the crossbar to transmit to the corresponding output port. If credits are available for the Rx buffer, the crossbar may select the packet in arbitration and move it to the output buffer. After moving, the Rx buffer returns credits to the previous Tx buffer for that packet.
-\item Step 1 is repeated for the next Rx buffer, waiting for credits and link availability.
-\item Repeat Step 2
-\item Repeat Step 3
-\item Packet arrives in NIC Rx queue and queues waiting to inject into local memory. After injection, the Rx buffer returns credits to the corresponding Tx buffer.
-\end{enumerate}
+
+-   A message (flow) is broken up into packets. Depending on available space in the Tx buffer, a limited number of packets may be able to queue up in the buffer. If credits are available in the Rx buffer for the link and the link is idle, the packet moves into the next Rx buffer after a computed delay.
+-   The router selects a path for the packet and the packet requests to the crossbar to transmit to the corresponding output port. If credits are available for the Rx buffer, the crossbar may select the packet in arbitration and move it to the output buffer. After moving, the Rx buffer returns credits to the previous Tx buffer for that packet.
+-   Step 1 is repeated for the next Rx buffer, waiting for credits and link availability.
+-   Repeat Step 2
+-   Repeat Step 3
+-   Packet arrives in NIC Rx queue and queues waiting to inject into local memory. After injection, the Rx buffer returns credits to the corresponding Tx buffer.
 
 
-![Figure 7](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/pisces_overview.pdf) 
+![Figure 7](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/pisces_overview.png) 
 
 *Figure 7*
 
@@ -1244,7 +1287,7 @@ PISCES (Packet-flow Interconnect Simulation for Congestion at Extreme-Scale) mod
 
 PISCES provides two mechanisms for treating flit-level flow control discussed next.
 
-##### PISCES simple model<a name="subsubsec:tutorial:simplePisces"></a>
+##### PISCES simple model<a name="subsubsec_tutorial_simplePisces"></a>
 
 
 In the simple model, each router uses a basic store-and-forward mechanism.
@@ -1270,13 +1313,13 @@ Packet sizes on production supercomputers are often small (96-128B).
 Small packet sizes with the simple model can be a good compromise for having more fine-grained routing but cheaper congestion modeling in the arbitrator.
 More details are given in Figure [7](#fig:piscesOverview).
 
-##### PISCES cut-through model<a name="subsubsec:tutorial:cutThroughPisces"></a>
+##### PISCES cut-through model<a name="subsubsec_tutorial_cutThroughPisces"></a>
 
 
 
 
 ![Figure 8: Timeline of four different packets passing through a PISCES cut-through bandwidth arbitrator. The incoming bandwidth (I) and outgoing bandwidth (O) are shown for each packet.  Time is the horizontal axis. Bandwidth consumed by a packet is shown by the vertical extent of each packet. The individual events are 1) First packet arrives 2) Second packet arrives with reduced bandwidth but no available bandwidth 3) First packet finishes. Second packet can begin sending. 4) Third packet arrives and begins sending with remaining bandwidth. 5) Fourth packet arrives, but no available bandwidth. 6) Second packet finishes. Third packet increases bandwidth. Fourth packet can begin sending. 7) Third packet finishes. Fourth packet increases bandwidth. 8) Fourth packet finishes.
-Full details are given in the text.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/pisces) 
+Full details are given in the text.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/Pisces.png) 
 
 *Figure 8: Timeline of four different packets passing through a PISCES cut-through bandwidth arbitrator. The incoming bandwidth (I) and outgoing bandwidth (O) are shown for each packet.  Time is the horizontal axis. Bandwidth consumed by a packet is shown by the vertical extent of each packet. The individual events are 1) First packet arrives 2) Second packet arrives with reduced bandwidth but no available bandwidth 3) First packet finishes. Second packet can begin sending. 4) Third packet arrives and begins sending with remaining bandwidth. 5) Fourth packet arrives, but no available bandwidth. 6) Second packet finishes. Third packet increases bandwidth. Fourth packet can begin sending. 7) Third packet finishes. Fourth packet increases bandwidth. 8) Fourth packet finishes.
 Full details are given in the text.*
@@ -1338,20 +1381,22 @@ There is some available bandwidth. After the third packet finishes, the fourth p
 Because of the initial delay, the outgoing bandwidth is somewhat reduced.
 We have H=3.0, T=4.38, and O=0.73.
 
-\subsection{SCULPIN}
+#### 3.4.3: SCULPIN<a name="subsec_sculpin"></a>
+
+
+
 Under current architectural trends, switches have ample buffer space and crossbar bandwidth, making the mostly likely bottleneck edge bandwidth through the output ports.
 An example file running a simple application can be found in the top-level examples folder.
 SCULPIN (Simple Congestion Unbuffered Latency Packet Interconnection Network) models the main source of contention in today's networks occurring on the output port ser/des. Unlike PISCES, individual flits are not able to wormhole route across links interspersed with flits from other packets.
-\begin{enumerate}
-\item A message (flow) is broken up into packets. Each packet waits in the queue to send based on link availability and QoS.
-\item After being selected, the packets are forwarded to the switch. Packets are immediately routed to the correct output port, skipping crossbar arbitration. Packets wait in unbounded queues, thereby assuming sufficient buffer space is always available.
-\item Repeat Step 1. Packet waits in queue until link becomes available based on QoS. Packet is immediately forwarded to next output port, skipping arbitration
-\item Repeat Step 1.
-\item Packet arrives in NIC Rx queue (no credits, buffer assumed to always have space). Packets queue waiting to inject into local memory.
-\end{enumerate}
+
+-   A message (flow) is broken up into packets. Each packet waits in the queue to send based on link availability and QoS.
+-   After being selected, the packets are forwarded to the switch. Packets are immediately routed to the correct output port, skipping crossbar arbitration. Packets wait in unbounded queues, thereby assuming sufficient buffer space is always available.
+-   Repeat Step 1. Packet waits in queue until link becomes available based on QoS. Packet is immediately forwarded to next output port, skipping arbitration
+-   Repeat Step 1.
+-   Packet arrives in NIC Rx queue (no credits, buffer assumed to always have space). Packets queue waiting to inject into local memory.
 
 
-![Figure 9](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/sculpin.pdf) 
+![Figure 9](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/sculpin.png) 
 
 *Figure 9*
 
@@ -1362,21 +1407,21 @@ Because of the coarse-grained mechanisms used in PISCES and SCULPIN, it can be d
 SNAPPR (Simulator Network for Adaptive Priority Packet Routing) uses a coarse-grained cycle-based simulation that allows priority queues based on QoS or restricting injection rate for congestion control. The model is configured in much the same way as the other models.  SNAPPR is slightly more expensive than the other models, but provides by far the most flexibility and most detailed statistics.
 An example file running a simple application can be found in the top-level examples folder.
 
-#### 3.3.3: Flow<a name="subsec:tutorial:flow"></a>
+#### 3.4.4: Flow<a name="subsec_tutorial_flow"></a>
 
 
 The flow model, in simple cases, corrects the most severe problems of the packet model.
 Instead of discrete chunks, messages are modeled as fluid flows moving through the network.
 Congestion is treated as a fluid dynamics problem, sharing bandwidth between competing flows.
 In contrast to LogP models, flow models can account fairly well for congestion.
-Without congestion, a flow only requires a FLOW START and FLOW STOP event to be modeled (see tutorial on discrete event simulation in [3.6](#sec:tutorial:des)).
+Without congestion, a flow only requires a FLOW START and FLOW STOP event to be modeled (see tutorial on discrete event simulation in ).
 While the packet model would require many, many events to simulate a 1 MB message, the flow model might only require two.
-With congestion, flow update events must be scheduled whenever congestion changes on a network link.  
+With congestion, flow update events must be scheduled whenever congestion changes on a network link.
 For limited congestion, only a few update events must occur.
 The flow model also corrects the latency and multiplexing problems in the PISCES simple model, providing higher-accuracy for coarse-grained simulation.
 
 The flow model starts to break down for large systems or under heavy congestion.
-In the packet model, all congestion events are "local" to a given router.  
+In the packet model, all congestion events are "local" to a given router.
 The number of events is also constant in packet models regardless of congestion since we are modeling a fixed number of discrete units.
 In flow models, flow update events can be "non-local," propagating across the system and causing flow update events on other routers.
 When congestion occurs, this "ripple effect" can cause the number of events to explode, overwhelming the simulator.
@@ -1384,12 +1429,11 @@ For large systems or heavy congestion, the flow model is actually much slower th
 
 
 
+### Section 3.5: Basic MPI Program<a name="sec_tutorial_basicmpi"></a>
 
 
-### Section 3.4: Basic MPI Program<a name="sec:tutorial:basicmpi"></a>
 
-
-Let us go back to the simple send/recv skeleton and actually look at the code.  
+Let us go back to the simple send/recv skeleton and actually look at the code.
 This code should be compiled with SST compiler wrappers installed in the `bin` folder.
 
 ````
@@ -1431,7 +1475,7 @@ Using `dlopen` tricks, SST finds the main function in the .so file and calls it 
 Just as an executable can only have one main, SST shared object files can only have a single executable in them at a time.
 
 At the very top of the file, the `mpi.h` header is actually mapped by the SST compiler to an SST-macro header file.
-This header provides the MPI API and configures MPI function calls to link to SST-macro instead of the real MPI library.  
+This header provides the MPI API and configures MPI function calls to link to SST-macro instead of the real MPI library.
 The code now proceeds:
 
 ````
@@ -1455,45 +1499,16 @@ Here the code just checks the MPI rank and sends (rank 0) or receives (rank 1) a
 
 For more details on what exactly the SST compiler wrapper is doing, you can specify `SSTMAC_VERBOSE=1` as an environment variable to have SST print out detailed commands. Additionally, you can specify `SSTMAC_DELETE_TEMPS=0` to examine any temporary source-to-source files.
 
-\subsection{DEPRECATED: App name macro}
-Previously, applications had to be ``named" by using the `sstmac_app_name` macro.
-This macro can still be define just above main to give a descriptive name to the skeleton:
 
-````
-#include <mpi.h>
 
-#define sstmac_app_name simple_test
-
-int main(int argc, char **argv) 
-{
-````
-
-This was previously required for starting applications, but now is only used
-for providing descriptive labels for certain applications.
-It is not recommended for use anymore and is ignored. An equivalent naming can just be provided by:
-
-````
-node {
- app1 {
-   exe = <PATH_TO_EXE>
-   name = simple_test
- }
-}
-````
+### Section 3.6: Launching, Allocation, and Indexing<a name="sec_tutorial_launchetc"></a>
 
 
 
+#### 3.6.1: Launch Commands<a name="subsec_tutorial_launch"></a>
 
 
-
-### Section 3.5: Launching, Allocation, and Indexing<a name="sec:tutorial:launchetc"></a>
-
-
-
-#### 3.5.1: Launch Commands<a name="subsec:tutorial:launch"></a>
-
-
-Just as jobs must be launched on a shared supercomputer using Slurm or aprun, 
+Just as jobs must be launched on a shared supercomputer using Slurm or aprun,
 SST/macro requires the user to specify a launch command for the application.
 Currently, we encourage the user to use aprun from Cray, for which documentation can easily be found online.
 In the parameter file you specify, e.g.
@@ -1509,7 +1524,7 @@ node {
 which launches an external user C++ application with eight ranks and two ranks per node.
 The aprun command has many command line options (see online documentation), some of which may be supported in future versions of SST/macro.  In particular, we are in the process of adding support for thread affinity, OpenMP thread allocation, and NUMA containment flags.  Most flags, if included, will simply be ignored.
 
-#### 3.5.2: Allocation Schemes<a name="subsec:tutorial:allocation"></a>
+#### 3.6.2: Allocation Schemes<a name="subsec_tutorial_allocation"></a>
 
 
 In order for a job to launch, it must first allocate nodes to run on. Here we choose a simple 2D torus
@@ -1519,7 +1534,7 @@ topology.name = torus
 topology.geometry = 3 3
 topology.concentration = 1
 ````
-which has 9 nodes arranged in a 3x3 mesh.  
+which has 9 nodes arranged in a 3x3 mesh.
 For the launch command `aprun -n 8 -N 2`, we must allocate 4 compute nodes from the pool of 9.
 Our first option is to specify the first available allocation scheme (Figure [10](#fig:allocation:first_available))
 
@@ -1552,7 +1567,7 @@ app1 {
 
 
 Rather than just looping through the list of available nodes, we explicitly allocate a 2x2 block from the torus.
-If testing how "topology agnostic" your application is, you can also choose a random allocation.
+If testing how ``topology agnostic" your application is, you can also choose a random allocation.
 
 ````
 node.app1.allocation = random
@@ -1570,7 +1585,7 @@ However, results may still differ slightly since the allocation strategies still
 which means a random allocation will give different results from Cartesian and first available.
 
 
-##### Indexing Schemes<a name="subsec:tutorial:indexing"></a>
+##### Indexing Schemes<a name="subsec_tutorial_indexing"></a>
 
 
 Once nodes are allocated, the MPI ranks (or equivalent) must be assigned to physical nodes, i.e. indexed.
@@ -1671,7 +1686,7 @@ A random allocation (unless allocating the whole machine) will not give a contig
 
 
 
-### Section 3.6: Discrete Event Simulation<a name="sec:tutorial:des"></a>
+### Section 3.7: Discrete Event Simulation<a name="sec_tutorial_des"></a>
 
 
 Although not necessary for using the simulator, a basic understanding of discrete event simulation can be helpful in giving users an intuition for network models and parameters.
@@ -1684,7 +1699,7 @@ SST-macro is driven by a simulation thread which manages the user-space thread s
 In the most common (and simplest) use case, all user-space threads are serialized, running one at a time.
 The main simulation thread must manage all synchronizations, yielding execution to process threads at the appropriate times.
 The main simulation thread is usually abbreviated as the DES (discrete event simulation) thread.
-The simulation progresses by scheduling future events.  
+The simulation progresses by scheduling future events.
 For example, if a message is estimated to take 5 &mu;s to arrive,
 the simulator will schedule a MESSAGE ARRIVED event 5 &mu;s ahead of the current time stamp.
 Every simulation starts by scheduling the same set of events: launch process 0, launch process 1, etc.
@@ -1696,7 +1711,7 @@ Every simulation starts by scheduling the same set of events: launch process 0, 
 
 
 
-The simulation begins at time t=0&mu; s.  
+The simulation begins at time t=0&mu; s.
 The simulation thread runs the first event, launching process 0.
 The context of process 0 is switched in, and SST-macro proceeds running code as if it were actually process 0.
 Process 0 starts a blocking send in Event 1.
@@ -1731,11 +1746,11 @@ The DES thread will run out of events, bringing the simulation to an end.
 
 
 
-### Section 3.7: Using DUMPI<a name="sec:tutorial:dumpi"></a>
+### Section 3.8: Using DUMPI<a name="sec_tutorial_dumpi"></a>
 
 
 
-#### 3.7.1: Building DUMPI<a name="subset:dump:build"></a>
+#### 3.8.1: Building DUMPI<a name="subset_dump_build"></a>
 
 
 As noted in the introduction, SST-macro is primarily intended to be an on-line simulator. Real application code runs, but SST-macro  intercepts calls to communication (MPI) and computation functions to simulate time passing.  However, SST-macro can also run off-line, replaying application traces collected from real production runs.  This trace collection and trace replay library is called DUMPI.
@@ -1763,7 +1778,7 @@ your_project/build> ../configure CC=mpicc CXX=mpicxx \
                                   LDFLAGS="-L$DUMPI_PATH/lib -ldumpi"
 ````
 
-#### 3.7.2: Trace Collection<a name="subsec:dumpi:tracecollection"></a>
+#### 3.8.2: Trace Collection<a name="subsec_dumpi_tracecollection"></a>
 
 
 DUMPI works by overriding weak symbols in the MPI library.
@@ -1838,7 +1853,7 @@ subversion=1
 subsubversion=0
 ````
 
-#### 3.7.3: Trace Replay<a name="subsec:dumpi:tracereplay"></a>
+#### 3.8.3: Trace Replay<a name="subsec_dumpi_tracereplay"></a>
 
 
 It is often useful to validate the correctness of a trace.  Sometimes there can be problems with trace collection. 
@@ -1975,7 +1990,7 @@ The MPI ranks are mapped to physical nodes entirely independent of the trace.
 
 
 
-### Section 3.8: Using Score-P and OTF2<a name="sec:tutorial:otf"></a>
+### Section 3.9: Using Score-P and OTF2<a name="sec_tutorial_otf"></a>
 
 
 
@@ -1988,7 +2003,8 @@ http://www.vi-hps.org/projects/score-p
 Trace collection requires both Score-P and OTF2 installations. Trace replay with SST/macro requires only OTF2.
 
 
-#### 3.8.1: Trace Collection<a name="subsec:otf:traceCollection"></a>
+#### 3.9.1: Trace Collection<a name="subsec_otf_traceCollection"></a>
+
 
 
 Score-P's default collection strategy will include every function call in the trace, making even small programs produce untenably large traces. Score-P supports collection filters, which can restrict collection at a minimum to MPI and OMP function calls. At the end of the program's runtime, traces from each rank are put in a common directory.  An MPI program must be compiled with Score-P to produce traces:
@@ -2022,7 +2038,7 @@ To view a plain-text representation of the trace after running, use the otf2-pri
 otf2-print scorep-*/traces.otf2
 ````
 
-#### 3.8.2: Trace Replay<a name="subsec:otf:traceReplay"></a>
+#### 3.9.2: Trace Replay<a name="subsec_otf_traceReplay"></a>
 
 
 SST/macro will use a trace replay skeleton for OTF2 in much the same way as it does for dumpi. SST/macro trace replays configured using *.ini files. 
@@ -2047,9 +2063,10 @@ node {
 
 
 
+### Section 3.10: Statistics<a name="sec_Statistics"></a>
 
 
-\section{Statistics}
+
 SST/macro statistics current only work in standalone mode due to the rigid structure of statistics in SST core.
 Fixes are planned for SST core for the 10.0 release in 2020.
 Until then, most of the statistics will require the standalone core.
@@ -2057,7 +2074,10 @@ Both standalone and SST core do follow the same basic structure, however, and th
 The three abstractions for understanding statistics are collectors, groups, and outputs.
 We will use the running example of a bytes sent statistic.
 
-\subsection{Collectors}
+#### 3.10.1: Collectors<a name="subsec_collectors"></a>
+
+
+
 Statistic collectors inherit from `Statistic<T>` and are used by components to collect individual statistics.
 Statistics are collected through the `addData` function:
 
@@ -2082,13 +2102,19 @@ For an accumulator, data collected and data output are the same (sum of collecte
 For a histogram, data collected is, e.g., a single integer, while the data output is the counts in a series of bins.
 If there are ten bins, the histogram will register ten output fields at the beginning and output ten fields at the end.
 
-\subsection{Outputs}
+#### 3.10.2: Outputs<a name="subsec_outputs"></a>
+
+
+
 Statistic outputs provide an abstract interface for outputting fields.
 In SQL or Pandas terminology, each statistic defines a row in a table. Each field will be a column.
 Outputs therefore map naturally to a CSV file.
 SST core also provides an HDF5 output, for those statistics that work with SST core.
 
-\subsection{Groups}
+#### 3.10.3: Groups<a name="subsec_groups"></a>
+
+
+
 Statistics can be grouped together when appropriate, for example bytes sent statistics for switches may want to be grouped together.
 Each group is associated with a given output.
 Most commonly, a group is only used to link statistics to the same output.
@@ -2139,7 +2165,7 @@ xmit_bytes,nid1,5,1000,870,439,322,11,1292
 xmit_bytes,nid2,5,1000,838,396,279,11,1551
 ````
 
-#### 3.8.3: Custom Statistics<a name="subsec:customStats"></a>
+#### 3.10.4: Custom Statistics<a name="subsec_customStats"></a>
 
 
 Certain statistics (examples below) do not fit into the model of row/column tables and require special `addData` functions.
@@ -2150,7 +2176,7 @@ Here, the statistic can only have a single type and works with a specific output
 
 
 
-### Section 3.9: OTF2 Trace Creation<a name="sec:otf:traceEmission"></a>
+### Section 3.11: OTF2 Trace Creation<a name="sec_otf_traceEmission"></a>
 
 
 SST/macro can emit OTF2 traces from MPI simulations, if compiled with:
@@ -2159,7 +2185,7 @@ SST/macro can emit OTF2 traces from MPI simulations, if compiled with:
 build> ../configure --enable-otf2=$PATH_TO_OTF2
 ````
 
-This is an example of a custom statistic, discussed in [3.8.3](#subsec:customStats).
+This is an example of a custom statistic, discussed in .
 This gets activated by:
 
 ````
@@ -2185,7 +2211,7 @@ Good practice is generally to name the group after the app.
 
 
 
-### Section 3.10: Call Graph Visualization<a name="sec:tutorials:callgraph"></a>
+### Section 3.12: Call Graph Visualization<a name="sec_tutorials_callgraph"></a>
 
 
 Generating call graphs requires a special build of SST-macro.
@@ -2224,12 +2250,12 @@ This is highly recommended for Mac users.
 
 
 
-The basic QCachegrind GUI is shown in Figure [16](#fig:qcgui).  
+The basic QCachegrind GUI is shown in Figure [16](#fig:qcgui).
 On the left, a sidebar contains the list of all functions instrumented with the percent of total execution time spent in the function.
-In the center pane, the call graph is shown.  
+In the center pane, the call graph is shown.
 To navigate the call graph, a small window in the bottom right corner can be used to change the view pane.
 Zooming into one region (Figure [17](#fig:qcgraphone)), we see a set of MPI functions (Barrier, Scan, Allgatherv).
-Each of the functions enters a polling loop, which dominates the total execution time.  
+Each of the functions enters a polling loop, which dominates the total execution time.
 A small portion of the polling loop calls the ``Handle Socket Header" function.
 Double-clicking this node unrolls more details in the call graph (Figure [18](#fig:qcgraphtwo)).
 Here we see the function splits execution time between buffering messages (memcpy) and posting headers (Compute Time).
@@ -2277,7 +2303,7 @@ app1.rank0.thread0,MPI_Allgather,memcopy,3034190336
 
 
 
-### Section 3.11: Spyplot Diagrams<a name="sec:tutorials:spyplot"></a>
+### Section 3.13: Spyplot Diagrams<a name="sec_tutorials_spyplot"></a>
 
 
 
@@ -2317,7 +2343,7 @@ The type of the statistic must be spyplot, but the output can be other formats (
 
 
 
-### Section 3.12: Fixed-Time Quanta Charts<a name="sec:tutorials:ftq"></a>
+### Section 3.14: Fixed-Time Quanta Charts<a name="sec_tutorials_ftq"></a>
 
 
 
@@ -2378,7 +2404,7 @@ where the `fileroot` a path and a file name prefix.
 
 
 
-### Section 3.13: Network Statistics<a name="sec:tutorials:packetStats"></a>
+### Section 3.15: Network Statistics<a name="sec_tutorials_packetStats"></a>
 
 
 
@@ -2387,7 +2413,7 @@ These statistics are usually collected on either the NIC, switch crossbar, or sw
 These are based on the XmitWait and XmitBytes performance counters from OmniPath,
 and aim to provide similar statistics as those from production systems.
 
-#### 3.13.1: XmitBytes<a name="subsec:xmitbytes"></a>
+#### 3.15.1: XmitBytes<a name="subsec_xmitbytes"></a>
 
 
 To active a message size histogram on the NIC or the switches to determine the data sent by individual packets, the parameter file should include, for example:
@@ -2408,7 +2434,7 @@ node {
 In contrast the custom statistics above, this is a row-table statistic that can have different types and outputs.
 The same stat can be activated in both the `node.nic.injection` and `switch` namespaces.
 
-#### 3.13.2: XmitWait<a name="subsec:xmitwait"></a>
+#### 3.15.2: XmitWait<a name="subsec_xmitwait"></a>
 
 
 To estimate congestion, SST/macro provides an `xmit_wait` statistic.
@@ -2430,7 +2456,7 @@ node {
 ````
 The same stat can be activated in both the `node.nic.injection` and `switch` namespaces.
 
-#### 3.13.3: XmitFlows<a name="subsec:xmitflows"></a>
+#### 3.15.3: XmitFlows<a name="subsec_xmitflows"></a>
 
 
 The previous statistics track the bytes sent by packets and as such are agnostic to the messages (or flows) sending them.
@@ -2455,15 +2481,14 @@ node {
 
 
 
-## Chapter 4: Topologies<a name="chapter:topologies"></a>
-
+## Chapter 4: Topologies<a name="chapter_topologies"></a>
 
 
 
 The torus topology is straightforward and easy to understand.
 Here we introduce the basics of other topologies within SST that are more complex and require extra documentation to configure properly.
-These are generally higher-radix or path-diverse topologies like fat tree, dragonfly, and flattened butterfly.  
-As noted in [3.2](#sec:tutorial:topology), a more thorough and excellent discussions of these topologies is given in "High Performance Datacenter Networks" by Dennis Abts and John Kim.
+These are generally higher-radix or path-diverse topologies like fat tree, dragonfly, and flattened butterfly.
+As noted in , a more thorough and excellent discussions of these topologies is given in "High Performance Datacenter Networks" by Dennis Abts and John Kim.
 
 
 
@@ -2514,7 +2539,7 @@ As noted in [3.2](#sec:tutorial:topology), a more thorough and excellent discuss
 
 
 
-### Section 4.1: Torus<a name="subsec:tutorial:hypercube"></a>
+### Section 4.1: Torus<a name="subsec_tutorial_hypercube"></a>
 
 
 
@@ -2579,7 +2604,7 @@ The last entry in `cart_sizes` indicates that both nodes on each switch should b
 
 
 
-### Section 4.2: Hypercube<a name="subsec:tutorial:hypercube"></a>
+### Section 4.2: Hypercube<a name="subsec_tutorial_hypercube"></a>
 
 
 
@@ -2616,7 +2641,7 @@ topology.geometry = 4 5 6
 where now we have full connections within horizontal rows, horizontal columns, and vertical columns.
 Here each switch has radix 12 (3 connections in X, 4 connections in Y, 5 connections in Z). 
 
-#### 4.2.1: Allocation and indexing<a name="subsec:hypercube:allocation"></a>
+#### 4.2.1: Allocation and indexing<a name="subsec_hypercube_allocation"></a>
 
 
 
@@ -2652,7 +2677,7 @@ Each line then defines where MPI ranks 0-4 will be placed
 
 
 
-#### 4.2.2: Routing<a name="subsec:hypercube:routing"></a>
+#### 4.2.2: Routing<a name="subsec_hypercube_routing"></a>
 
 
 
@@ -2681,15 +2706,15 @@ Although it increases the hop count and therefore the point-to-point latency, it
 
 
 
-### Section 4.3: Fat Tree<a name="sec:tutorial:fattree"></a>
+### Section 4.3: Fat Tree<a name="sec_tutorial_fattree"></a>
 
 
 
-SST provides a very flexible fat-tree topology which allows both full bandwidth and tapered bandwidth configurations using either uniform or non-uniform switches.  
+SST provides a very flexible fat-tree topology which allows both full bandwidth and tapered bandwidth configurations using either uniform or non-uniform switches.
 This flexibility requires a farily complicated set of input parameters which are best introduced by examining a couple of example configurations.  Consider the full-bandwidth topology in Figure~[25](#fig:topologies:fullfattree) which uses uniform 8-port switches throughout.
 
 
-![Figure 25: Full-bandwidth fat-tree topology using uniform 8-port switches.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/topologies/fattree4.pdf) 
+![Figure 25: Full-bandwidth fat-tree topology using uniform 8-port switches.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/topologies/fattree4.png) 
 
 *Figure 25: Full-bandwidth fat-tree topology using uniform 8-port switches.*
 
@@ -2742,7 +2767,7 @@ Suppose that one wanted to use the same 8-port switches to construct a 3-level f
 One possible configuration is shown in Figure~[26](#fig:topologies:taperedfattree).
 
 
-![Figure 26: A tapered fat-tree topology using uniform 8-port switches.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/topologies/fattree4-tapered.pdf) 
+![Figure 26: A tapered fat-tree topology using uniform 8-port switches.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/topologies/fattree4-tapered.png) 
 
 *Figure 26: A tapered fat-tree topology using uniform 8-port switches.*
 
@@ -2778,17 +2803,12 @@ More practical tapering becomes an option when you increase the number of ports 
 
 The following constraints must be met for a valid configuration.
 
--   Down ports must equal up ports: leaf up ports (`leaf_switches_per_subtree` \cdot `up_ports_per_leaf_switch`) must equal aggregation down ports (`agg_switches_per_subtree` \cdot `down_ports_per_agg_switch`), and total aggregation up ports (`up_ports_per_agg_switch` \cdot `agg_switches_per_subtree` \cdot `num_agg_subtrees`) must equal total core down ports (`num_core_switches` \cdot `down_ports_per_core_switch`).
--   Need enough down ports -- each switch must have at least one link into each "unit" (subtree or switch, depending on level) below it:  `down_ports_per_core_switch` must be \geq `num_agg_subtrees`, and `down_ports_per_agg_switch` must be \geq `leaf_switches_per_subtree`.
--   Need enough up ports -- each "unit" (subtree or switch) must have at least one link into each switch above it: `up_ports_per_agg_switch` \cdot `agg_switches_per_subtree` must be \geq `num_core_switches`, and `up_ports_per_leaf_switch` must be \geq `agg_switches_per_subtree`.
--   Connections need to be regular:
-  \begin{itemize}
--   `down_ports_per_core_switch` \bmod `num_agg_subtrees` must equal zero
--   `down_ports_per_agg_switch` \bmod `leaf_switches_per_subtree` must equal zero
--   `up_ports_per_leaf_switch` \bmod `agg_switches_per_subtree` must equal zero
-\end{itemize}
+-   Down ports must equal up ports: leaf up ports (`leaf_switches_per_subtree` &times; `up_ports_per_leaf_switch`) must equal aggregation down ports (`agg_switches_per_subtree` &times; `down_ports_per_agg_switch`), and total aggregation up ports (`up_ports_per_agg_switch` &times; `agg_switches_per_subtree` &times; `num_agg_subtrees`) must equal total core down ports (`num_core_switches` &times; `down_ports_per_core_switch`).
+-   Need enough down ports -- each switch must have at least one link into each "unit" (subtree or switch, depending on level) below it:  `down_ports_per_core_switch` must be &gt;= `num_agg_subtrees`, and `down_ports_per_agg_switch` must be &gt;= `leaf_switches_per_subtree`.
+-   Need enough up ports -- each "unit" (subtree or switch) must have at least one link into each switch above it: `up_ports_per_agg_switch` &times; `agg_switches_per_subtree` must be &gt;= `num_core_switches`, and `up_ports_per_leaf_switch` must be &gt;= `agg_switches_per_subtree`.
+-   Connections need to be regular: 1) `down_ports_per_core_switch` mod `num_agg_subtrees` must equal zero, 2) `down_ports_per_agg_switch` mod `leaf_switches_per_subtree` must equal zero, 3) `up_ports_per_leaf_switch` mod `agg_switches_per_subtree` must equal zero
 
-#### 4.3.1: Switch Crossbar Bandwidth Scaling<a name="subsec:fattree:xbarbw"></a>
+#### 4.3.1: Switch Crossbar Bandwidth Scaling<a name="subsec_fattree_xbarbw"></a>
 
 
 
@@ -2804,7 +2824,7 @@ topology.agg_bandwidth_multiplier = 1.0
 topology.core_bandwidth_multiplier = 1.0
 ````
 
-#### 4.3.2: Routing<a name="subsec:fattree:routing"></a>
+#### 4.3.2: Routing<a name="subsec_fattree_routing"></a>
 
 
 
@@ -2813,7 +2833,7 @@ There is a `fat_tree_minimal` router which will use the lowest numbered valid po
 
 
 
-### Section 4.4: Cascade<a name="sec:tutorial:cascade"></a>
+### Section 4.4: Cascade<a name="sec_tutorial_cascade"></a>
 
 
 
@@ -2844,7 +2864,7 @@ The caveat is that in many implementations global links are grouped together for
 These demonstrate well-balanced ratios.
 In general, scaling out a cascade should not increase the size of a group, only the number of groups.
 
-#### 4.4.1: Allocation and indexing<a name="subsec:cascade:allocatoin"></a>
+#### 4.4.1: Allocation and indexing<a name="subsec_cascade_allocatoin"></a>
 
 
 
@@ -2864,7 +2884,7 @@ To complete the specification, the number of global links (h) for each router mu
 topology.group_connections = 10
 ````
 
-#### 4.4.2: Routing<a name="subsec:cascade:routing"></a>
+#### 4.4.2: Routing<a name="subsec_cascade_routing"></a>
 
 
 
@@ -2888,11 +2908,11 @@ Packets sent between two routers should take as many different paths as possible
 
 
 Minimal routing itself has a few complications (Figure [28](#fig:topologies:cascademinroute)).
-Each router only has a few global links.  
+Each router only has a few global links.
 Thus, traveling from e.g. the blue router at X=3,Y=2,G=0 to the red router at X=1,Y=2,G=2, there is no direct link between the routers.
 Furthermore, there is no direct link between Groups 0 and 2.
 Thus packets must route through the purple intermediate nodes.
-First, the packet hops to X=3,Y=3, G=0.  
+First, the packet hops to X=3,Y=3, G=0.
 This router has a global link to Group 2, allowing the packet to hop to the next intermediate router at X=1, Y=3, G=2.
 Finally, the minimal route completes by hopping within Group 2 to the final destination.
 
@@ -2947,11 +2967,12 @@ router = ugal
 
 
 
-## Chapter 5: External Applications and Skeletonization<a name="chap:appsAndSkeletonization"></a>
+## Chapter 5: External Applications and Skeletonization<a name="chap_appsAndSkeletonization"></a>
 
 
 
-### Section 5.1: Basic Application porting<a name="sec:skel:basic"></a>
+### Section 5.1: Basic Application porting<a name="sec_skel_basic"></a>
+
 
 
 There are three parts to successfully taking a C++ code and turning it into a scalable simulation.
@@ -2982,7 +3003,8 @@ There are generally 3 modes of using an application common with SST/macro:
 | Memoization | Yes | No | No | No |
 
 
-#### 5.1.1: Loading external skeletons with the standalone core<a name="subsec:externalAppStandalone"></a>
+#### 5.1.1: Loading external skeletons with the standalone core<a name="subsec_externalAppStandalone"></a>
+
 
 
 You should always write your own skeleton applications in an external folder rather then integrating directly into the `sstmac` executable.
@@ -2999,11 +3021,11 @@ If your application is named `runapp`, you would run it with `sstmac`:
 ````
 directing to load the library as a skeleton executable.
 
-### Section 5.2: Auto-skeletonization with Clang<a name="sec:autoSkeletonization"></a>
+### Section 5.2: Auto-skeletonization with Clang<a name="sec_autoSkeletonization"></a>
 
 
 
-The build of the Clang toolchain is described in Section [2.3](#sec:buildingClang). 
+The build of the Clang toolchain is described in Section . 
 This enables a source-to-source translation capability in the `sst++` compiler that can auto-skeletonize computation and fix global variable references.
 Some of this can be accomplished automatically (global variables), but most of it (removing computation and memory allocations) must occur through pragmas.
 A good example of skeletonization can be found in the lulesh2.0.3 example in the skeletons folder. Most of the available SST pragmas are used there.
@@ -3011,14 +3033,20 @@ Pragmas are preferred since they allow switching easily back and forth between s
 This allows much easier validation of the simulation. The section here briefly introduces the SST pragma language.
 A complete tutorial on all available pragmas is given in Chapter [6](#clangTutorial).
 
-\subsection{Redirecting Main}
+#### 5.2.1: Redirecting Main<a name="subsec_redirectMain"></a>
+
+
+
 Your application's `main` has to have its symbols changed.
 The simulator itself takes over `main`.
 SST-macro therefore has to capture the function pointer in your code and associate it with a string name for the input file.
 This is automatically accomplished by defining the macro `sstmac_app_name` either in your code or through a `-D=` build flag to the name of your application (unquoted!). The value of the macro will become the string name used for launching the application via `node.app1.name=X`.
 Even without Clang, this works for C++. For C, Clang source-to-source is required.
 
-\subsection{Memory Allocations}
+#### 5.2.2: Memory Allocations<a name="subsec_memoryAllocations"></a>
+
+
+
 To deactivate memory allocations in C code that uses `malloc`, use:
 ````
 #pragma sst malloc
@@ -3032,7 +3060,10 @@ Similarly, for C++ we have
   int* ptr = new int[...]
 ````
 
-\subsection{Computation}
+#### 5.2.3: Computation<a name="subsec_computation"></a>
+
+
+
 In general, the SST compiler captures all `#pragma omp parallel` statements.
 It then analyzes the for-loop or code block and attempts to derive a computational model for it.
 The computational models are quite simple (skeleton apps!), 
@@ -3050,7 +3081,10 @@ The SST compiler deduces 16N bytes read, 8N bytes written, and 16N flops (or 8N 
 Based on processor speed and memory speed, it then estimates how long the kernel will take without actually executing the loop.
 If not wanting to use OpenMP in the code, `#pragma sst compute` can be used instead of `#pragma omp parallel`.
 
-\subsection{Special Pragmas}
+#### 5.2.4: Special Pragmas<a name="subsec_specialPragams"></a>
+
+
+
 Many special cases can arise that break skeletonization.
 This is often not a limit of the SST compiler, but rather a fundemental limitation in the static analysis of the code.
 This most often arises due to nested loops. Consider the example:
@@ -3082,7 +3116,8 @@ This hint allows SST to skeletonize the inner loop and "guess" at the data depen
 
 
 
-#### 5.2.1: Skeletonization Issues<a name="subsec:skeletonIssues"></a>
+#### 5.2.5: Skeletonization Issues<a name="subsec_skeletonIssues"></a>
+
 
 
 Skeletonization challenges fall into three main categories:
@@ -3111,7 +3146,8 @@ For applications with heavy dynamic data dependence, we have the following strat
 -   Synthetic - It may be possible to replace communication with randomly-generated data and decisions, which emulate how the original application worked. This occurs in the CoMD skeleton.
 -   Hybrid - It is possible to construct meta-traces that describe the problem from a real run, and read them into SST-macro to reconstruct the communication that happens.  This occurs in the `boxml` aplications.
 
-### Section 5.3: Process Encapsulation<a name="sec:processEncapsulation"></a>
+### Section 5.3: Process Encapsulation<a name="sec_processEncapsulation"></a>
+
 
 
 As mentioned above, virtual processes are not real, physical processes inside the OS.
@@ -3119,7 +3155,7 @@ They are explicitly managed user-space threads with a private stack, but without
 When porting an application to SST/macro, global variables used in C programs will not be mapped to separate memory addresses causing incorrect execution or even segmentation faults.
 If you have avoided global variables, there is no major issue.  
 If you have read-only global variables with the same value on each machine, there is still no issue.
-If you have mutable global variables, you should use the `sst++` clang-based compiler wrappers to auto-refactor your code (Section [5.2](#sec:autoSkeletonization)).
+If you have mutable global variables, you should use the `sst++` clang-based compiler wrappers to auto-refactor your code (Section ).
 This feature is current labeled Beta, but is stable for numerous tests and will be fully supported for release 7.1.
 
 
@@ -3138,16 +3174,21 @@ The auto-skeletonizing compiler is designed to do three main things:
 -   Turn off large memory allocations that would prevent scalable simulation
 -   Estimate time of compute-intensive kernels instead of executing them
 
-\section{Pragma Overview}
+### Section 6.1: Pragma Overview<a name="sec_pragmaOverview"></a>
 
 
-![Figure 30: Source-to-source transformation workflow for SST compiler. For C source files, g++ can be swapped with gcc. The choice of underlying compiler is actually arbitrary and can be clang, gcc, icc, etc.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/compilerWorkflow) 
+
+
+![Figure 30: Source-to-source transformation workflow for SST compiler. For C source files, g++ can be swapped with gcc. The choice of underlying compiler is actually arbitrary and can be clang, gcc, icc, etc.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/compilerWorkflow.png) 
 
 *Figure 30: Source-to-source transformation workflow for SST compiler. For C source files, g++ can be swapped with gcc. The choice of underlying compiler is actually arbitrary and can be clang, gcc, icc, etc.*
 
 
 
-\subsection{Compiler workflow}
+#### 6.1.1: Compiler workflow<a name="subsec_compilerWorkflow"></a>
+
+
+
 The source-to-source compiler operates on a pre-processed source file.
 The source code transformation generates a temporary source file.
 This temporary source file is then compiled into the target object file.
@@ -3158,13 +3199,21 @@ The corresponding object file is merged with the original object file,
 creating a complete SST-macro object file with the transformed code and C++ static registrations.
 This workflow is shown in Figure [30](#fig:compilerWorkflow).
 
-\subsection{Compiler Environment Variables}
+#### 6.1.2: Compiler Environment Variables<a name="subsec_compilerEnv"></a>
 
-\subsubsection{SSTMAC\_SRC2SRC: Default 1}
+
+
+##### SSTMAC\_SRC2SRC: Default 1<a name="subsubsec_env_src2src"></a>
+
+
+
 If set to zero, deactivates the source-to-source transformation. 
 The compiler wrapper will then compile the code into the simulator, but will not redirect any global variable accesses or perform any skeletonization.
 
-\subsubsection{SSTMAC\_SKELETONIZE: Default 0}
+##### SSTMAC\_SKELETONIZE: Default 0<a name="subsubsec_env_skeletonize"></a>
+
+
+
 If set to zero, deactivates skeletonization. 
 This does not deactivate global variable redirection.
 Thus, with `SSTMAC_SRC2SRC=1` and `SSTMAC_SKELETONIZE=0`,
@@ -3174,7 +3223,10 @@ SST-macro will act as an MPI emulator executing a full code but with global vari
 
 
 
-\subsubsection{SSTMAC\_HEADERS: No default}
+##### SSTMAC\_HEADERS: No default<a name="subsubsec_env_headers"></a>
+
+
+
 The compiler wrapper will only redirect global variables that it knows should definitely be modified.
 All global variables found in source files will be redirected.
 `extern` global variables found in header files are more difficult.
@@ -3183,24 +3235,37 @@ By default, global variables in a header file are NOT redirected unless explicit
 The variable `SSTMAC_HEADERS` should give the full path of a file containing the list of header files.
 Header file paths in the file should be one per line and should be the full path, not a relative path.
 
-\subsubsection{SSTMAC\_DELETE\_TEMPS: Default 1}
+##### SSTMAC\_DELETE\_TEMP\_SOURCES: Default 1<a name="subsubsec_env_delete_temp_objects"></a>
+
+
+
 If non-zero, the compiler cleans up all temporary source files.
 If you wish to keep temporary files to view them for debugging, set to 0.
 All temporary, intermediate source files will otherwise be deleted at the end of compilation.
 The source files are re-formatted using clang-format to make them more readable.
 The actual source files given to the compiler are very mess (with very long lines) since the source-to-source tries to preserve the original line numbers for debugging.
 
-\subsubsection{SSTMAC\_DELETE\_TEMP\_OFILES: Default 1}
+##### SSTMAC\_DELETE\_TEMP\_OBJECTS: Default 1<a name="subsubsec_env_delete_temp_sources"></a>
+
+
+
 If non-zero, the compiler cleans up all temporary object files.
 If you wish to keep temporary files for debugging, set to 0.
 Due to issues with some linkers, debug symbols do not appear correctly in gdb or lldb unless the original object files are kept.
 If you wish to get sensible output from the debugger, make sure this is set to 0.
 
-\section{Basic Replacement Pragmas}
+### Section 6.2: Basic Replacement Pragmas<a name="sec_basicReplacementPragmas"></a>
+
+
+
 When skeletonization is active (see `SSTMAC_SKELETONIZE`), these pragmas will cause replacements in the original source code.
 Pragmas apply to the next statement in the source code.
 For compound statements such as a for-loop with a multi-statement body, the pragma applies to the entire for-loop.
-\subsection{pragma sst delete: no arguments}
+
+#### 6.2.1: pragma sst delete: no arguments<a name="subsec_pragma_sst_delete"></a>
+
+
+
 This deletes the next statement from the source code.
 If the statement declares a variable that is used later in the code, this will cause a compile error.
 Consider an example from the Lulesh source code.
@@ -3212,7 +3277,10 @@ Consider an example from the Lulesh source code.
 In the skeleton, the residual is not actually computed and the `testnorms_data` array is not actually allocated.
 Thus this statement should be deleted and not actually executed in the skeleton.
 
-\subsection{pragma sst replace [to\_replace:string] [new\_text:C++ expression]}
+#### 6.2.2: pragma sst replace [to\_replace:string] [new\_text:C++ expression]<a name="subsec_pragma_sst_replace"></a>
+
+
+
 This applies a string replace to a variable or function call in the next statement.
 Consider an example from Lulesh.
 
@@ -3223,7 +3291,10 @@ Consider an example from Lulesh.
 The function call `volo(0)` is not valid in the skeleton since volumes are not actually computed.
 Here we simply estimate that all cells have unit volume replacing `volo(0)` with `1`.
 
-\subsection{pragma sst init [new\_value:string]}
+#### 6.2.3: pragma sst init [new\_value:string]<a name="subsec_pragma_sst_init"></a>
+
+
+
 This pragma can only apply to a binary equals operator assigning a value.
 The pragma changes the right-hand side to use the given new value.
 For example, in Lulesh:
@@ -3235,11 +3306,17 @@ For example, in Lulesh:
 The send buffer `domain.commDataSend` is not allocated in the skeleton and thus is not valid to use.
 The pragma causes the skeleton to simply set `destAddr` to `nullptr`.
 
-\subsection{pragma sst return [new\_value:C++ expression]}
+#### 6.2.4: pragma sst return [new\_value:C++ expression]<a name="subsec_pragma_sst_return"></a>
+
+
+
 Pragma is equivalent to `pragma sst init`. This replaces the target of a return statement with the given expression.
 This produces a compiler error if applied to anything but a return statement.
 
-\subsection{pragma sst keep}
+#### 6.2.5: pragma sst keep<a name="subsec_pragma_sst_keep"></a>
+
+
+
 During the skeletonization process, some transformations occur automatically even without pragmas. 
 For example, all MPI calls have input buffers converted to null pointers to indicate a simulated MPI call.
 If the MPI call should be emulated with real payloads, the MPI call must be explicitly marked with `pragma keep`.
@@ -3251,7 +3328,10 @@ An example can be found in the HPCG skeleton:
 ````
 The actual allreduce operation is carried out, summing the the local number into the total number of nonzeroes.
 
-\subsection{pragma sst keep\_if [condition:C++ bool expression]}
+#### 6.2.6: pragma sst keep\_if [condition:C++ bool expression]<a name="subsec_pragma_sst_keep_if"></a>
+
+
+
 More control over whether transformations are skipped is provided by `keep_if`.
 An example is found in CoMD.
 
@@ -3262,11 +3342,17 @@ An example is found in CoMD.
 Any small allreduce operations are kept. 
 Any allreduce operations larger than a given cutoff are simulated without emulating the actual buffer operations.
 
-\subsection{pragma sst empty}
+#### 6.2.7: pragma sst empty<a name="subsec_pragma_sst_empty"></a>
+
+
+
 This pragma is applied to functions. The function prototype is kept, but an empty body is inserted instead of the actual code.
 This can be useful for deleting large blocks of computation inside a function.
 
-\subsection{pragma sst branch\_predict [condition:C++ expression]}
+#### 6.2.8: pragma sst branch\_predict [condition:C++ expression]<a name="subsec_pragma_sst_branch_predict"></a>
+
+
+
 The branch prediction pragma can be applied in two different contexts.
 We will revisit the pragma in the context of compute skeletonization below.
 The branch prediction pragma should only be applied to an if-statement.
@@ -3282,18 +3368,33 @@ Thus most uses of this pragma will simply supply `true` or `false` as the replac
 However, any arbitrary C++ boolean expression can be given as the replacement.
 The new predicate expression (like the original), must not involve any null variables.
 
-\section{Memory Allocation Pragmas}
-\subsection{pragma sst malloc}
+### Section 6.3: Memory Allocation Pragmas<a name="sec_memAllocPragmas"></a>
+
+
+
+#### 6.3.1: pragma sst malloc<a name="subsec_pragma_sst_malloc"></a>
+
+
+
 Applied to any statement in which the right-hand side is a malloc. This sets the left-hand side to `NULL`.
 This is critical for turning off large memory allocations on data structures not required for control-flow.
 
 
-\subsection{pragma sst new}
+#### 6.3.2: pragma sst new<a name="subsec_pragma_sst_new"></a>
+
+
+
 Applied to any statement in which the right-hand side a C++ operator new. This sets the left-hand side to `nullptr`.
 This is critical for turning off large memory allocations on data structures not required for control-flow.
 
-\section{Data-Driven Type Pragmas}
-\subsection{pragma sst null\_ptr}
+### Section 6.4: Data-Driven Type Pragmas<a name="ddtPragmas"></a>
+
+
+
+#### 6.4.1: pragma sst null\_ptr<a name="subsec_pragma_sst_null_ptr"></a>
+
+
+
 This applies to variable declarations. If pragma is not applied to a declaration, a compiler error is given.
 A null variable is one in which all operations involving the variable should be deleted.
 This usually applies to large data arrays that should never be allocated and therefore never dereferenced.
@@ -3316,7 +3417,10 @@ it may affect control flow, e.g., if the variable is used inside an if-statement
 When this occurs, a compiler error is thrown flagging where the ambiguity occurs.
 Another pragma must then be applied to that statement to tell the compiler how to proceed.
 
-\subsection{pragma sst null\_type [type alias] [list allowed functions]}
+#### 6.4.2: pragma sst null\_type [type alias] [list allowed functions]<a name="subsec_pragma_sst_null_type"></a>
+
+
+
 This applies to C++ class variable declarations. If pragma is not applied to a declaration, a compiler error is given.
 This essentially works the same way as `null_ptr`, but allows certain member functions to be kept instead of deleted.
 Consider an example from Lulesh:
@@ -3364,14 +3468,18 @@ class vector {
 ````
 This empty vector class allows the type to track its size, but not actually hold any data.
 All places in the Lulesh code that an `std::vector` is used are substituted with the new type.
-
 The remaining arguments to the pragma are the list of functions we wish to mark as valid.
 In this case, even though the alias vector class provides more functions, we only allow `size`, `resize`, and `empty` to be called.
 
 
+### Section 6.5: Compute Pragmas<a name="sec_computePragmas"></a>
 
-\section{Compute Pragmas}
-\subsection{pragma sst compute and pragma omp parallel}
+
+
+#### 6.5.1: pragma sst compute and pragma omp parallel<a name="subsec_pragma_sst_compute"></a>
+
+
+
 Compute-intensive should not be executed natively.
 Instead, a compute model should be used to estimate the elapsed time.
 Compute model replacements are automatically triggered by any OpenMP parallel pragmas.
@@ -3383,7 +3491,10 @@ These four counters are passed to a coarse-grained processor model for time esti
 For more details, see `sstmac_compute_detailed` in the source code.
 Numerous examples can be found in the Lulesh, HPCG, and CoMD skeleton applications.
 
-\subsection{pragma sst loop\_count [integer: C++ expression]}
+#### 6.5.2: pragma sst loop\_count [integer: C++ expression]<a name="subsec_pragma_sst_loop_count"></a>
+
+
+
 If the `sst compute` or `omp parallel` pragma are applied to an outer loop with one or more inner loops,
 the compute model static analysis might fail.
 This occurs when the inner loop control flow depends on the actual execution.
@@ -3406,7 +3517,10 @@ The static analysis fails on `cur_nnz`.
 However, that value is almost always 27.
 Thus we can safely tell the compiler to just assume the loop count is 27.
 
-\subsection{pragma sst branch\_predict [float: C++ expression]}
+#### 6.5.3: pragma sst branch\_predict [float: C++ expression]<a name="subsec_pragma_sst_branch_predict"></a>
+
+
+
 Similar to the way that loop counts can break the static analysis, if statements inside a loop skeletonized with `omp parallel` or `sst compute` can also be problematic.
 If the predicate depends on a variable declared inside the skeletonzied block,
 the static analysis will break since it cannot predict when and how often to assume true or false.
@@ -3422,153 +3536,22 @@ Inside the compute block, a compute may or may not occur depending on whether a 
 Based on the way CoMD constructs unit cells and halo regions, running CoMD shows that about 1 in 5 neighbor interactions are actually below the cutoff.
 Thus we given the branch prediction the hint 0.2.
 
-\subsection{pragma sst advance\_time [units] [time to advance by]}
+#### 6.5.4: pragma sst advance\_time [units] [time to advance by]<a name="subsec_pragma_sst_advance_time"></a>
+
+
+
 This pragma advances the simulator time by the specified amounts of time. It can be placed before any statement. The units can be the following: sec, msec, usec or nsec for Seconds, milliseconds, microseconds and nanoseconds respectively. 
 
 
 
-### Section 6.1: Memoization pragmas<a name="sec:memoization"></a>
+
+## Chapter 7: Issues and Limitations<a name="ch_issues"></a>
 
 
 
-\subsection{Memoization models}
-To understand the memoization pragmas, we first introduce how models get constructed in the SST/macro runtime.
-Source-to-source transformations based on the pragmas causes the following hooks to get inserted:
-
-````
-int sstmac_start_memoize(const char* token, const char* model);
-void sstmac_finish_memoize0(int tag, const char* token);
-void sstmac_finish_memoize1(int tag, const char* token, double p1);
-void sstmac_finish_memoize2(int tag, const char* token, double p1, double p2);
-...
-````
-A start call begins a memoization region for a specific name.
-The start function must return an integer tag identifying the memoization instance.
-This tag gets passed back into the finish function above.
-This is primarily useful for thread-safe collection, but can be generally more useful.
-The finish functions take input parameters. 
-Given input parameters x,y causes a function F(x,y) to be fit to the timer or performance counters.
-
-If building a skeleton application that uses memoization data, a different hook gets inserted:
-````
-void sstmac_compute_memoize0(const char* token);
-void sstmac_compute_memoize1(const char* token, double p1);
-void sstmac_compute_memoize2(const char* token, double p1, double p2);
-...
-````
-Assuming a model F(x,y) has been fit in a memoization pass,
-that function is invoked with the given parameters to estimate a time or performance counter.
-
-Memoization models are implemented by inheriting from a standard class
-
-````
-struct RegressionModel {
-...
-virtual double compute(int n_params, const double params[], ImplicitState* state) = 0;
-virtual int StartCollection() = 0;
-virtual void finishCollection(int n_params, const double params[], ImplicitState* state) = 0;
-...
-````
-A call to `sstmac_finish_memoize2` causes `finishCollection(2,..)` to get invoked on the model.
-The `states` object is discussed more later in [6.1.1](#subsec:implicitStates).
-For now, `compute` only returns a double (total time).
-Generalized performance models are planned for future versions.
-Models are registered using the SST/macro factory system. 
-If wanting to add a least-squares model, factory register as:
-
-````
-struct least_squares : public regression model {
- FactoryRegister("least_squares", OperatingSystem::RegressionModel, least_squares)
-````
-
-\subsection{pragma sst memoize [skeletonize(...)] [model(...)] [inputs(...)] [name(...)]}
-
--   skeletonize: boolean for whether code block should still be executed or remove entirely (default: true)
--   model: string name for a type of model (e.g. linear, kmeans) specifying which model to construct and fit (no default)
--   inputs: a comma-separated list of C++ expressions that are the numeric inputs
--   name: a unique name to use for identifying the memoization region (default: see below)
-If the `name` parameter is not given, the file and line number is used for basic expressions while the function name is used if applied to a function.
-Consider the example:
-
-````
-#pragma sst memoize skeletonize(true) model(least_squares) inputs(ncol,nlink,nrow) 
-void dgemm(int ncol, int nlink, int nrow, double* left, double* right);
-````
-When running the memoization pass, the memoization hooks get invoked as:
-
-````
-int tag = sstmac_start_memoize("dgemm", "least_squares");
-dgemm(....);
-sstmac_finish_memoize3(tag, "dgemm", ncol, nlink, nrow);
-````
-With `skeletonize` set to true, the skeleton app would be:
-
-````
-sstmac_computeMemoize("dgemm", ncol, nlink, nrow);
-````
-With skeletonize set to false:
-
-````
-sstmac_computeMemoize("dgemm", ncol, nlink, nrow);
-dgemm(...);
-````
-Both the memoization function and the original function would both get invoked.
-
-#### 6.1.1: pragma sst implicit\_state X(Y) ...<a name="subsec:implicitStates"></a>
+### Section 7.1: Polling in applications<a name="sec_polling"></a>
 
 
-The implicit state pragma sets certain hardware or software states not captured by the inputs to the memoization pragma.
-This might involve DVFS states, different runs of a task in which data is "cold" or "hot" in cache, or different types of cores.
-The implicit state lasts for the scope of the statement:
-
-````
-#pragma sst implict_state ...
-{
- //all statements here have that state
-}
-
-#pragma sst ImplicitState ...
-fxn(...) //implicit state lasts the entire function
-````
-
-The arguments to the pragma are best understood by example:
-
-````
-#pragma sst ImplicitState dvfs(1) cache(hot)
-fxn(...)
-````
-This causes a source code transformation to:
-
-````
-sstmac_set_ImplicitState2(dvfs,1,cache,hot);
-fxn(...);
-sstmac_unset_ImplicitState2(dvfs,cache);
-````
-For now, the functions take integer arguments (this may get relaxed to arbitrary strings).
-Thus, e.g. enums must be available or compilation will fail:
-
-````
-enum states {
- dvfs=0,
- cache=1
-};
-enum cache_states {
- cold=0,
- hot=1
-};
-````
-
-If a `sstmac_finish_memoize` function got invoked, the states could be read.
-The class `ImplicitState` is a base class only and carries no data by default.
-Specific memoization models are intended to be used only with known implicit state classes.
-As such, the memoization model `collect`, etc, functions must dynamic cast to an expected type.
-A library of standard implicit state implementations is planned for future releases.
-
-
-
-
-\chapter{Issues and Limitations}
-\section{Polling in applications}
 
 Use of probe non-blocking functions in a loop, such as:
 
@@ -3582,7 +3565,7 @@ creates problems for the simulation. Virtual time never advances in the MPI\_Ipr
 This causes an infinite loop that never returns to the discrete event manager. 
 Even if configured so that time progresses, the code will work but will take a very long time to run.
 
-### Section 6.2: Fortran<a name="subsec:issues:fortran"></a>
+### Section 7.2: Fortran<a name="subsec_issues_fortran"></a>
 
 
 
@@ -3596,7 +3579,7 @@ For profiling existing apps written with Fortran, DUMPI traces can still be gene
 
 
 
-## Chapter 7: Detailed Parameter Listings<a name="chapter:parameters"></a>
+## Chapter 8: Detailed Parameter Listings<a name="chapter_parameters"></a>
 
 
 The following chapter is organized by parameter namespaces. Tables in each namespace are organized as
@@ -3626,7 +3609,7 @@ The allowed parameter types are:
 | filepath | A valid filepath to an existing file, either absolute or relative |
 | quantiy | A catch-all for a quantity with units. Any of frequency, bandwidth, byte length, or time can be given |
 
-### Section 7.1: Global namespace<a name="sec:globalParams"></a>
+### Section 8.1: Global namespace<a name="sec_globalParams"></a>
 
 
 
@@ -3638,16 +3621,16 @@ The allowed parameter types are:
 | backup\_buffer\_size (byte length) | 1 MB |  | Size to allocate for special overflow buffers when the standard buffer is overrun. This is the base size and continues to grow if buffers overflow again in a time window. This should be large enough so that buffers do not continuously overflow, but not so large that memory gets filled up. |
 | cpu\_affinity (vector of int) | No default | Invalid cpu IDs give undefined behavior | When in multi-threading, specifies the list of core IDs that threads will be pinned to. |
 
-### Section 7.2: Namespace "topology"<a name="sec:topologyParams"></a>
+### Section 8.2: Namespace "topology"<a name="sec_topologyParams"></a>
 
 
 
 
 | Name (type) | Default | Allowed | Description |
 |-------------|---------|---------|-------------|
-| geometry (vector of int) | No default | See Topology section | Geometry configuration of the topology. For details of the keyword, users should refer to Section [4](#chapter:topologies) |
+| geometry (vector of int) | No default | See Topology section | Geometry configuration of the topology. For details of the keyword, users should refer to Section  |
 | auto (bool) | false | Whether to auto-generate the topology based on the application size. |
-| name (string) | No default | torus, cascade, dragonfly, fat\_tree, crossbar, tapered\_fat\_tree | The name of the topology to build. For details, see Section [4](#chapter:topologies) |
+| name (string) | No default | torus, cascade, dragonfly, fat\_tree, crossbar, tapered\_fat\_tree | The name of the topology to build. For details, see Section  |
 | seed (long) | System time |  | If no value given, random numbers for topology will be generated from system time |
 | concentration (int) | 1 | Positive int | The number of nodes per network switch. For indirect networks, this is the number of nodes per leaf switch. |
 | num\_leaf\_switches (int) | No default | Positive int | Only relevant for fat trees. This is the number of switches at the lowest level of the tree that are connected to compute nodes. Depending on how the fat tree is specified, this number may not be required. |
@@ -3660,7 +3643,7 @@ The allowed parameter types are:
 | group\_connections (int) | No default | Positive int | For cascase ir dragonfly, the number of intergroup connections on each switch in a Dragonfly group |
 | redundant (vector of int) | vector of 1's | Positive ints | For Cartesian topologies (hypercube, cascadem, dragonfly, torus) this specifies a bandwidth (redundancy) multiplier for network links in each dimension. |
 
-### Section 7.3: Namespace "node"<a name="sec:nodeParams"></a>
+### Section 8.3: Namespace "node"<a name="sec_nodeParams"></a>
 
 
 
@@ -3669,7 +3652,7 @@ The allowed parameter types are:
 |-------------|---------|---------|-------------|
 | name (string) | simple | simple | The type of node model (level of detail) for node-level operations |
 
-#### 7.3.1: Namespace "node.nic"<a name="subsec:node:nic:Params"></a>
+#### 8.3.1: Namespace "node.nic"<a name="subsec_node_nic_Params"></a>
 
 
 
@@ -3679,19 +3662,19 @@ The allowed parameter types are:
 | name (string) | No default | pisces, logp, sculpin | The type of NIC model (level of detail) for modeling injection of messages (flows) to/from the network. |
 | negligible\_size (byte length) | 256B |  | Messages (flows) smaller than size will not go through detailed congestion modeling. They will go through a simple analytic model to compute the delay. |
 
-##### Namespace "node.nic.ejection"<a name="subsubsec:node:nic:ejection:Params"></a>
+##### Namespace "node.nic.ejection"<a name="subsubsec_node_nic_ejection_Params"></a>
 
 
 These parameters do not need to be specified, but can be given.
 Generally, the simulation assumes an infinite buffer size (unlimited memory) and no latency.
 All other parameters can be filled in from `node.nic.injection`.
 
-##### Namespace ``node.nic.injection"<a name="subsubsec:node:nic:injection:Params"></a>
+##### Namespace ``node.nic.injection"<a name="subsubsec_node_nic_injection_Params"></a>
 
 
 
 
-#### 7.3.2: Namespace ``node.memory"<a name="subsec:node:memory:Params"></a>
+#### 8.3.2: Namespace ``node.memory"<a name="subsec_node_memory_Params"></a>
 
 
 
@@ -3704,7 +3687,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | total\_bandwidth | No default |  | The total memory bandwidth possible across all memory controllers. |
 | max\_single\_bandwidth | Computed |  | The maximum memory bandwidth of a single stream of requests. Essentially the bandwidth of a single memory controller. If not given, this defaults the value of total\_bandwidth. |
 
-#### 7.3.3: Namespace "node.os"<a name="subsec:node:os:Params"></a>
+#### 8.3.3: Namespace "node.os"<a name="subsec_node_os_Params"></a>
 
 
 
@@ -3715,7 +3698,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | stack\_size (byte length) | 64 KB |  | The size of user-space thread stack to allocate for each virtual application |
 | stack\_chunk\_size (byte length) | 1 MB |  | The size of memory to allocate at a time when allocating new thread stacks. Rather than allocating one thread stack at a time, multiple stacks are allocated and added to a pool as needed. |
 
-#### 7.3.4: Namespace ``node.proc"<a name="subsec:node:proc:Params"></a>
+#### 8.3.4: Namespace ``node.proc"<a name="subsec_node_proc_Params"></a>
 
 
 
@@ -3725,7 +3708,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | frequency | No default |  | The baseline frequency of the node |
 | parallelism (double) | 1.0 | Positive number | Fudge factor to account for superscalar processor. Number of flops per cycle performed by processor. |
 
-### Section 7.4: Namespace "mpi"<a name="sec:mpi:Params"></a>
+### Section 8.4: Namespace "mpi"<a name="sec_mpi_Params"></a>
 
 
 
@@ -3736,7 +3719,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | iprobe\_delay (time) | 0 |  | The minimum time spent by MPI on each MPI\_Iprobe call |
 | otf2\_dir\_basename (time) | empty string |  | Enables OTF2 and combines this parameter with a timestamp to name the archive |
 
-#### 7.4.1: Namespace ``mpi.queue"<a name="subsec:mpi:queue:Params"></a>
+#### 8.4.1: Namespace ``mpi.queue"<a name="subsec_mpi_queue_Params"></a>
 
 
 
@@ -3749,7 +3732,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | post\_header\_delay (time) | 0 |  | The mimimum time spent by MPI sending headers into pre-allocated mailboxes |
 | poll\_delay (time) | 0 |  | The minimum time spent by MPI each time it polls for incoming messages |
 
-### Section 7.5: Namespace "switch"<a name="subsec:switch:Params"></a>
+### Section 8.5: Namespace "switch"<a name="subsec_switch_Params"></a>
 
 
 
@@ -3759,7 +3742,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | name (string) | No default | logp, pisces, sculpin | The type of switch model (level of detail) for modeling network traffic. |
 | mtu (byte length) | 1024B |  | The packet size. All messages (flows) will be broken into units of this size. |
 
-#### 7.5.1: Namespace "switch.router"<a name="subsec:switch:router:Params"></a>
+#### 8.5.1: Namespace "switch.router"<a name="subsec_switch_router_Params"></a>
 
 
 
@@ -3780,7 +3763,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | credits (byte length) | No default |  | The number of initial credits for the component. Corresponds to an input buffer on another component. In many cases, SST/macro can compute this from other parameters and fill in the value. In some cases, it will be required. |
 
 
-#### 7.5.2: Namespace ``switch.link"<a name="subsec:switch:link:Params"></a>
+#### 8.5.2: Namespace ``switch.link"<a name="subsec_switch_link_Params"></a>
 
 
 
@@ -3793,7 +3776,7 @@ All other parameters can be filled in from `node.nic.injection`.
 
 
 
-### Section 7.6: Namespace "appN"<a name="sec:appN:Params"></a>
+### Section 8.6: Namespace "appN"<a name="sec_appN_Params"></a>
 
 
 This is a series of namespaces `app1`, `app2`, and so on for each of the launched applications. These should be contained within the `node` namespace.
@@ -3801,7 +3784,7 @@ This is a series of namespaces `app1`, `app2`, and so on for each of the launche
 
 | Name (type) | Default | Allowed | Description |
 |-------------|---------|---------|-------------|
-| name (string) | No default | parsedumpi, cxx\_full\_main, cxx\_empty\_main | The name of the application to launch. Very few applications are built-in. Registration of external apps is shown starting in Section [3.4](#sec:tutorial:basicmpi). |
+| name (string) | No default | parsedumpi, cxx\_full\_main, cxx\_empty\_main | The name of the application to launch. Very few applications are built-in. Registration of external apps is shown starting in Section . |
 | size (int) | No default | Positive int | The number of procs (MPI ranks) to launch. If launch\_cmd given, this parameter is not required. |
 | start (int) | 0 |  | The time at which a launch request for the application will be made |
 | concentration (int) | 1 | Positive int | The number of procs (MPI ranks) per compute node |

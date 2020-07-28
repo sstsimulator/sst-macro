@@ -3,12 +3,12 @@
 \section{Fat Tree}
 \label{sec:tutorial:fattree}
 
-SST provides a very flexible fat-tree topology which allows both full bandwidth and tapered bandwidth configurations using either uniform or non-uniform switches.  
+SST provides a very flexible fat-tree topology which allows both full bandwidth and tapered bandwidth configurations using either uniform or non-uniform switches.
 This flexibility requires a farily complicated set of input parameters which are best introduced by examining a couple of example configurations.  Consider the full-bandwidth topology in Figure~\ref{fig:topologies:fullfattree} which uses uniform 8-port switches throughout.
 
 \begin{figure}[h!]
 \centering
-\includegraphics[width=0.7\textwidth]{figures/topologies/fattree4.pdf}
+\includegraphics[width=0.7\textwidth]{figures/topologies/fattree4.png}
 \caption{Full-bandwidth fat-tree topology using uniform 8-port switches.}
 \label{fig:topologies:fullfattree}
 \end{figure}
@@ -61,7 +61,7 @@ One possible configuration is shown in Figure~\ref{fig:topologies:taperedfattree
 
 \begin{figure}[h!]
 \centering
-\includegraphics[width=0.7\textwidth]{figures/topologies/fattree4-tapered.pdf}
+\includegraphics[width=0.7\textwidth]{figures/topologies/fattree4-tapered.png}
 \caption{A tapered fat-tree topology using uniform 8-port switches.}
 \label{fig:topologies:taperedfattree}
 \end{figure}
@@ -100,12 +100,7 @@ The following constraints must be met for a valid configuration.
 \item Down ports must equal up ports: leaf up ports (\inlineshell{leaf_switches_per_subtree} $\cdot$ \inlineshell{up_ports_per_leaf_switch}) must equal aggregation down ports (\inlineshell{agg_switches_per_subtree} $\cdot$ \inlineshell{down_ports_per_agg_switch}), and total aggregation up ports (\inlineshell{up_ports_per_agg_switch} $\cdot$ \inlineshell{agg_switches_per_subtree} $\cdot$ \inlineshell{num_agg_subtrees}) must equal total core down ports (\inlineshell{num_core_switches} $\cdot$ \inlineshell{down_ports_per_core_switch}).
 \item Need enough down ports -- each switch must have at least one link into each "unit" (subtree or switch, depending on level) below it:  \inlineshell{down_ports_per_core_switch} must be $\geq$ \inlineshell{num_agg_subtrees}, and \inlineshell{down_ports_per_agg_switch} must be $\geq$ \inlineshell{leaf_switches_per_subtree}.
 \item Need enough up ports -- each "unit" (subtree or switch) must have at least one link into each switch above it: \inlineshell{up_ports_per_agg_switch} $\cdot$ \inlineshell{agg_switches_per_subtree} must be $\geq$ \inlineshell{num_core_switches}, and \inlineshell{up_ports_per_leaf_switch} must be $\geq$ \inlineshell{agg_switches_per_subtree}.
-\item Connections need to be regular:
-  \begin{itemize}
-  \item \inlineshell{down_ports_per_core_switch} $\bmod$ \inlineshell{num_agg_subtrees} must equal zero
-  \item \inlineshell{down_ports_per_agg_switch} $\bmod$ \inlineshell{leaf_switches_per_subtree} must equal zero
-  \item \inlineshell{up_ports_per_leaf_switch} $\bmod$ \inlineshell{agg_switches_per_subtree} must equal zero
-  \end{itemize}
+\item Connections need to be regular: 1) \inlineshell{down_ports_per_core_switch} $\bmod$ \inlineshell{num_agg_subtrees} must equal zero, 2) \inlineshell{down_ports_per_agg_switch} $\bmod$ \inlineshell{leaf_switches_per_subtree} must equal zero, 3) \inlineshell{up_ports_per_leaf_switch} $\bmod$ \inlineshell{agg_switches_per_subtree} must equal zero
 \end{itemize}
 
 \subsection{Switch Crossbar Bandwidth Scaling}

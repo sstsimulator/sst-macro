@@ -12,7 +12,7 @@ User-space threading is necessary for large simulations since otherwise the kern
 In the most common (and simplest) use case, all user-space threads are serialized, running one at a time.
 The main simulation thread must manage all synchronizations, yielding execution to process threads at the appropriate times.
 The main simulation thread is usually abbreviated as the DES (discrete event simulation) thread.
-The simulation progresses by scheduling future events.  
+The simulation progresses by scheduling future events.
 For example, if a message is estimated to take 5 $\mu$s to arrive,
 the simulator will schedule a MESSAGE ARRIVED event 5 $\mu$s ahead of the current time stamp.
 Every simulation starts by scheduling the same set of events: launch process 0, launch process 1, etc.
@@ -24,7 +24,7 @@ Every simulation starts by scheduling the same set of events: launch process 0, 
 \label{fig:des}
 \end{figure}
 
-The simulation begins at time $t=0\mu s$.  
+The simulation begins at time $t=0\mu s$.
 The simulation thread runs the first event, launching process 0.
 The context of process 0 is switched in, and \sstmacro proceeds running code as if it were actually process 0.
 Process 0 starts a blocking send in Event 1.

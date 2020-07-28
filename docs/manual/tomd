@@ -139,7 +139,7 @@ def process_itemize(match):
 
 include_fig_optargs_regexp = optmacro_regexp("includegraphics")
 include_fig_regexp = macro_regexp("includegraphics")
-def get_figure_text(label, caption, text):
+def get_figure_text(label, caption, text, figpath):
   fname = include_fig_regexp.search(text)
   if not fname:
     fname = include_fig_optargs_regexp.search(text)
@@ -160,11 +160,11 @@ def get_figure_text(label, caption, text):
   else:
     captionText = "*%s*" % caption
 
-  return "\n![%s](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/%s) %s\n\n%s\n\n" % (caption, fname, "", captionText)
+  return "\n![%s](https://github.com/sstsimulator/sst-macro/blob/devel/docs/%s/%s) %s\n\n%s\n\n" % (caption, figpath, fname, "", captionText)
 
-def process_title_pic(match):
+def process_title_pic(match, figpath):
   text = match.groups()[0] + "}"
-  return get_figure_text(None, "", text)
+  return get_figure_text(None, "", text, figpath)
 
 label_regexp = macro_regexp("label")
 caption_regexp = macro_regexp("caption")
@@ -214,6 +214,8 @@ def repl_section_header(match, sectionType, count):
 
   if len(match.groups()) == 3: #labeled
     label = match.groups()[2]
+    #markdown doesn't support colons
+    label = label.replace(":", "_")
     toc_line += "(#%s)" % label
     refs[label] = ref
     text += '<a name="%s"></a>' % label
@@ -224,7 +226,7 @@ def repl_section_header(match, sectionType, count):
 
 
 
-def process_figure(match):
+def process_figure(match, figpath):
   global figureCount
   text = match.groups()[0]
 
@@ -244,7 +246,7 @@ def process_figure(match):
     caption = "Figure %d" % next_fig_id
 
     
-  return get_figure_text(label, caption, text)
+  return get_figure_text(label, caption, text, figpath)
 
 
 def delete_comment(x):
@@ -306,6 +308,9 @@ def header_pair(sectionName, count):
 def return_bold(match):
   return "**%s**" % match.groups()[0]
 
+startFile = sys.argv[1]
+root = sys.argv[2]
+
 repls = [
   (newcommand_regexp, ''),
   (arrayStretch_regexp, ''),
@@ -320,8 +325,9 @@ repls = [
   (section_regexp("CppCode")  , repl_code_block),
   (section_regexp("ShellCmd") , repl_code_block),
   (section_regexp("ViFile")   , repl_code_block),
-  (section_regexp("figure")   , process_figure),
+  (section_regexp("figure")   , lambda x: process_figure(x, root)),
   (section_regexp("itemize")   , process_itemize),
+  (section_regexp("enumerate")   , process_itemize),
   (section_regexp("center") , return_self),
   (macro_regexp('paramType') , repl_param_type),
   (paragraph_split_cleanup_regexp , "\n\n"),
@@ -331,7 +337,7 @@ repls = [
   (inline_math_regexp, repl_inline_math),
   (macro_regexp('title') , repl_title),
   (macro_regexp('aside') , return_self),
-  (macro_regexp('titlepic') , process_title_pic),
+  (macro_regexp('titlepic') , lambda x: process_title_pic(x, root)),
   (macro_regexp('inlineshell') , return_code),
   (macro_regexp('inlinecode') , return_code),
   (macro_regexp('inlinefile') , return_code),
@@ -340,6 +346,9 @@ repls = [
   (macro_regexp('textit') , return_self),
   (macro_regexp('author') , ""),
   (macro_regexp('url') , return_self),
+  (r'\geq', '&gt;='),
+  (r'\bmod', 'mod'),
+  (r'\cdot', '&times;'),
   (r'\times', 'X'),
   (r'\Delta', '&Delta;'),
   (r'\alpha', '&alpha;'),
@@ -385,7 +394,6 @@ def processFile(f):
 doProcessFile = processFile
 
 
-startFile = sys.argv[1]
 
 sections = {
   "chapter" : 2,
@@ -410,7 +418,7 @@ text = macro_regexp('ref').sub(process_ref, text)
 text = process_paragraphs(text)
 text = make_toc(text)
 header = """---
-title: Manual for SST-Macro 8.0.x
+title: Manual for SST-Macro 10.1.x
 published: true
 category: SSTDocumentation
 ---"""

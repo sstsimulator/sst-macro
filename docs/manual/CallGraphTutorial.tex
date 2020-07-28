@@ -39,12 +39,12 @@ This is highly recommended for Mac users.
 \label{fig:qcgui}
 \end{figure}
 
-The basic QCachegrind GUI is shown in Figure \ref{fig:qcgui}.  
+The basic QCachegrind GUI is shown in Figure \ref{fig:qcgui}.
 On the left, a sidebar contains the list of all functions instrumented with the percent of total execution time spent in the function.
-In the center pane, the call graph is shown.  
+In the center pane, the call graph is shown.
 To navigate the call graph, a small window in the bottom right corner can be used to change the view pane.
 Zooming into one region (Figure \ref{fig:qcgraphone}), we see a set of MPI functions (Barrier, Scan, Allgatherv).
-Each of the functions enters a polling loop, which dominates the total execution time.  
+Each of the functions enters a polling loop, which dominates the total execution time.
 A small portion of the polling loop calls the ``Handle Socket Header'' function.
 Double-clicking this node unrolls more details in the call graph (Figure \ref{fig:qcgraphtwo}).
 Here we see the function splits execution time between buffering messages (memcpy) and posting headers (Compute Time).
