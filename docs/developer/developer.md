@@ -8,7 +8,7 @@ category: SSTDocumentation
 # SST/macro 10.1: Developer's Reference
 
 
-![](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/sstlogo.png) 
+![](https://github.com/sstsimulator/sst-macro/blob/devel/docs/developer/figures/sstlogo.png) 
 
 
 
@@ -146,7 +146,7 @@ creating an event order violation.
 As long as developers obey the component, link, and event abstractions, all of these complexities are handled automatically by the simulation core.
 
 
-![Figure 1: Basic structure of discrete event simulation linking components with links (of a given latency). Link delays advance the simulation clock, which is coordinated by the discrete event core. Parallel discrete event simulation involves placing components on different MPI ranks. The link objects (and simulator core) are responsible for delivering events across MPI boundaries.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/desCore.png) 
+![Figure 1: Basic structure of discrete event simulation linking components with links (of a given latency). Link delays advance the simulation clock, which is coordinated by the discrete event core. Parallel discrete event simulation involves placing components on different MPI ranks. The link objects (and simulator core) are responsible for delivering events across MPI boundaries.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/developer/figures/desCore.png) 
 
 *Figure 1: Basic structure of discrete event simulation linking components with links (of a given latency). Link delays advance the simulation clock, which is coordinated by the discrete event core. Parallel discrete event simulation involves placing components on different MPI ranks. The link objects (and simulator core) are responsible for delivering events across MPI boundaries.*
 
@@ -166,7 +166,7 @@ Boost is no longer required or even used.
 Some C++11 features like `unordered_map` and `unique_ptr` are used heavily throughout the code.
 
 
-![Figure 2: Structure of the simulation connecting components with links and event handlers.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/EventHandler) 
+![Figure 2: Structure of the simulation connecting components with links and event handlers.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/developer/figures/EventHandler) 
 
 *Figure 2: Structure of the simulation connecting components with links and event handlers.*
 
@@ -1081,7 +1081,7 @@ Virtual time in the simulation therefore advances inside the `MPI_Send` call,
 but the details of how this happens are not apparent in the skeleton app.
 
 
-![Figure 3: Flow of events for completing a send operation.  Shows basic function calls, block/unblock context switches, and event schedules. User-space thread (application) operations are shown in blue. Main event thread (OS/kernel) operations are shown in pink.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/DES.png) 
+![Figure 3: Flow of events for completing a send operation.  Shows basic function calls, block/unblock context switches, and event schedules. User-space thread (application) operations are shown in blue. Main event thread (OS/kernel) operations are shown in pink.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/developer/figures/DES.png) 
 
 *Figure 3: Flow of events for completing a send operation.  Shows basic function calls, block/unblock context switches, and event schedules. User-space thread (application) operations are shown in blue. Main event thread (OS/kernel) operations are shown in pink.*
 
@@ -1227,14 +1227,14 @@ The router requires topology information to compute paths. For adaptive routing 
 The network switch requires the computed paths (ports) from the router.
 
 
-![Figure 4: Components used modeling interconnect and dependencies between them.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/components.png) 
+![Figure 4: Components used modeling interconnect and dependencies between them.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/developer/figures/components.png) 
 
 *Figure 4: Components used modeling interconnect and dependencies between them.*
 
 
 
 
-![Figure 5: Decision diagram showing the various control flow operations that occur as a message is transport across the network via individual packet operations.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/DecisionFlow.png) 
+![Figure 5: Decision diagram showing the various control flow operations that occur as a message is transport across the network via individual packet operations.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/developer/figures/DecisionFlow.png) 
 
 *Figure 5: Decision diagram showing the various control flow operations that occur as a message is transport across the network via individual packet operations.*
 
@@ -1243,7 +1243,7 @@ The network switch requires the computed paths (ports) from the router.
 We can dive in deeper to the operations that occur on an individual component, mos importantly the crossbar on the network switch. Figure [6](#fig:xbarFlow) shows code and program flow for a packet arriving at a network switch.  The packet is routed (virtual function, configurable via input file parameters), credits are allocated to the packet, and finally the packet is arbitrated across the crossbar. After arbitration, a statistics callback can be invoked to collect any performance metrics of interest (congestion, traffic, idle time).
 
 
-![Figure 6: Code flow for routing and arbitration of packets traversing the crossbar on the network switch.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/RoutingFlow.png) 
+![Figure 6: Code flow for routing and arbitration of packets traversing the crossbar on the network switch.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/developer/figures/RoutingFlow.png) 
 
 *Figure 6: Code flow for routing and arbitration of packets traversing the crossbar on the network switch.*
 
