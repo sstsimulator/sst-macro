@@ -160,14 +160,9 @@ makeBiNetworkLink(comp1,comp1Id,port,
 The code in the Python script causes \inlinecode{connectOutput} and \inlinecode{connectInput} to be invoked on port 0 for each of the components.
 
 \subsection{Makefile}
-The Makefile uses compiler wrappers installed with \sstmacro.
-These differ from the compiler wrappers used for skeleton applications discussed in the user's manual.
+\label{subsec:makefile}
 
-\begin{ViFile}
-CXX :=    libsst++
-CC :=     libsstcc
-CXXFLAGS := -fPIC
-\end{ViFile}
+The Makefile uses compiler wrappers installed with \sstmacro with the special `--sst-component` flag since you are building components, not skeletons.
 All components should be compiled with \inlineshell{-fPIC} for use in shared library.
 Making generates a \inlinecode{libtest.so} that can be loaded using the Python setup or through the \inlinefile{external_libs} parameter in a \inlinefile{.ini} file.
 
