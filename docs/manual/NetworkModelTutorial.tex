@@ -185,6 +185,8 @@ SCULPIN (Simple Congestion Unbuffered Latency Packet Interconnection Network) mo
 \end{figure}
 
 \subsection{SNAPPR}
+\label{subsec:snappr}
+
 Because of the coarse-grained mechanisms used in PISCES and SCULPIN, it can be difficult to model more advanced mechanisms like QoS or congestion control. 
 SNAPPR (Simulator Network for Adaptive Priority Packet Routing) uses a coarse-grained cycle-based simulation that allows priority queues based on QoS or restricting injection rate for congestion control. The model is configured in much the same way as the other models.  SNAPPR is slightly more expensive than the other models, but provides by far the most flexibility and most detailed statistics.
 An example file running a simple application can be found in the top-level examples folder.

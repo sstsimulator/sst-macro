@@ -235,7 +235,7 @@ def process_figure(match, figpath):
 
   label = label_regexp.search(text)
   if label: 
-    label = label.groups()[0].strip()
+    label = label.groups()[0].strip().replace(":","_")
     refs[label] = "%d" % next_fig_id
   
   caption = caption_regexp.search(text)
@@ -257,7 +257,7 @@ def return_code(x):
 
 def process_ref(match):
   try:
-    label = match.groups()[0]
+    label = match.groups()[0].replace(":","_")
     return "[%s](#%s)" % (refs[label], label)
   except KeyError:
     return ""
@@ -319,7 +319,7 @@ repls = [
   (r'\topcls','\inlinecode{topology}'),
   (r'\switchid','\inlinecode{SwitchId}'),
   (r'\nodeid','\inlinecode{NodeId}'),
-  (r'\evhandler','\inlinecode{EventHandler'),
+  (r'\evhandler','\inlinecode{EventHandler}'),
   (r'\evscheduler','\inlinecode{EventScheduler}'),
   (r'\evmgr','\inlinecode{EventManager}'),
   (section_regexp("CppCode")  , repl_code_block),
@@ -346,6 +346,7 @@ repls = [
   (macro_regexp('textit') , return_self),
   (macro_regexp('author') , ""),
   (macro_regexp('url') , return_self),
+  (r'\rightarrow', '->'),
   (r'\geq', '&gt;='),
   (r'\bmod', 'mod'),
   (r'\cdot', '&times;'),
