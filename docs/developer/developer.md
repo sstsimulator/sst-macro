@@ -36,6 +36,7 @@ category: SSTDocumentation
       - [Section 3.1: Required Functions](#sec_requiredFunctions)
       - [Section 3.2: Example External Component](#sec_exampleComponent)
          - [3.2.1: Python configuration](#subsec_pythonConfig)
+         - [3.2.2: Makefile](#subsec_makefile)
    - [Chapter 4: SProCKit](#chapter_sprockit)
       - [Section 4.1: Debug](#sec_debug)
       - [Section 4.2: Serialization](#sec_serialize)
@@ -122,7 +123,7 @@ loading them into the simulator core without having to recompile the core itself
 
 Ignoring the complexities of parallel discrete event simulation (PDES), 
 discrete even simulation works with a very simple set of abstractions.
-Implementing a discrete event simulation requires components, links, and events (Figure~[1](#fig:desCore)).
+Implementing a discrete event simulation requires components, links, and events (Figure~[1](#fig_desCore)).
 Components (or agents) perform operations. Components create, send, and receive events - and that's basically all they do. 
 In one example, each component could represent a compute node in the system.
 Links between components could represent actual, physical links in the network.
@@ -189,7 +190,7 @@ void handle(Event* ev){
 }
 ````
 The prototype therefore accepts any event type. 
-The interaction of these types is illustrated in Figure~[2](#fig:abstractHandlers)).
+The interaction of these types is illustrated in Figure~[2](#fig_abstractHandlers)).
 Event handlers are created as dispatch wrappers to member functions of a `Component` or `SubComponent`.
 There are special helper functions and template classes in SST/macro designed to simplify this process.
 A `Link` is created connecting two components.
@@ -659,15 +660,11 @@ makeBiNetworkLink(comp1,comp1Id,port,
 ````
 The code in the Python script causes `connectOutput` and `connectInput` to be invoked on port 0 for each of the components.
 
-\subsection{Makefile}
-The Makefile uses compiler wrappers installed with SST-macro.
-These differ from the compiler wrappers used for skeleton applications discussed in the user's manual.
+#### 3.2.2: Makefile<a name="subsec_makefile"></a>
 
-````
-CXX :=    libsst++
-CC :=     libsstcc
-CXXFLAGS := -fPIC
-````
+
+
+The Makefile uses compiler wrappers installed with SST-macro with the special `--sst-component` flag since you are building components, not skeletons.
 All components should be compiled with `-fPIC` for use in shared library.
 Making generates a `libtest.so` that can be loaded using the Python setup or through the `external_libs` parameter in a `.ini` file.
 
@@ -926,7 +923,7 @@ There are generally two basic event types in SST-macro, which we now introduce.
 #### 5.1.1: Event Handlers<a name="subsec_eventHandlers"></a>
 
 
-In most cases, the event is represented as an event sent to an object called an `EventHandler at a specific simulation time.
+In most cases, the event is represented as an event sent to an object called an `EventHandler` at a specific simulation time.
 In handling the event, the event handlers change their internal state and may cause more events
 by scheduling new events at other event handlers (or scheduling messages to itself) at a future time.
 
@@ -936,7 +933,7 @@ In most cases, events are created by calling the function
 auto* ev = newCallback(this, &Actor::act);
 ````
 
-This then creates a class of type \inlinecode{ExecutionEvent`, for which the execute function is
+This then creates a class of type `ExecutionEvent`, for which the execute function is
 
 ````
 template <int ...S> void dispatch(seq<S...>){
@@ -1071,7 +1068,7 @@ We can illustrate time advancing with a simple `MPI_Send` example.
 We have discussed that a user-space thread is allocated for each virtual MPI rank.
 The discrete event core, however, still runs on the main application thread (stack).
 Generally, the main thread (DES thread) will handle hardware events while the user-space threads will handle software events (this is relaxed in some places for optimization purposes).
-Figure [3](#fig:desThreadsMPISend), shows a flow chart for execution of the send.
+Figure [3](#fig_desThreadsMPISend), shows a flow chart for execution of the send.
 Operations occurring on the application user-space thread are shaded in blue while operations on the DES thread are shaded in pink.
 Function calls do not advance time (shown in black), but scheduling events (shown in green) do advance time.
 Again, this is just the nature of discrete event simulation.
@@ -1110,7 +1107,7 @@ To access a specific API, a special helper template function `getApi` exists on 
 Thus, instead of calling a global function `MPI_Send`,
 SST/macro redirects to a member function `send` on an `mpi_api` object that is specific to a virtual MPI rank.
 
-|| OS | Node | API | Service |
+| | OS | Node | API | Service |
 |----------------------------------------------------------------------------------------------------------------|----|------|-----|---------|
 | Runs on Thread | Both user-space and main DES thread | Only main DES thread (user-space with rare exceptions for optimization) | Only user-space thread | Only main DES thread |
 | How Advances Time | Both blocking and scheduling events, depending on context | Scheduling events to other components | Blocking or unblocking | Scheduling events to other components |
@@ -1167,7 +1164,7 @@ accessible through the event accessor function `libName`.
 #### 6.2.1: API<a name="subsec_softwareAPI"></a>
 
 
-The SST/macro definition of API was alluded to in .
+The SST/macro definition of API was alluded to in [6.1.1](#subsec_threadStorage).
 The base `api` class inherits from `library`.
 All API code must execute on a user-space thread.
 API calls are always associated with a specific virtual MPI rank.
@@ -1212,7 +1209,7 @@ To better understand how hardware models are put together for simulating interco
 -   Packets arrive at destination NIC and are reassembled (potentially out-of-order)
 -   Message flow is pushed up network software stack
 
-Through the network, packets must move through buffers (waiting for credits) and arbitrate for bandwidth through the switch crossbar and then through the ser/des link on the switch output buffers.  The control-flow diagram for transporting a flow from one endpoint to another via packets is shown in Figure [5](#fig:controlFlow)
+Through the network, packets must move through buffers (waiting for credits) and arbitrate for bandwidth through the switch crossbar and then through the ser/des link on the switch output buffers.  The control-flow diagram for transporting a flow from one endpoint to another via packets is shown in Figure [5](#fig_controlFlow)
 
 In general, sending data across the network (as in, e.g.., MPI), requires the following components:
 
@@ -1222,7 +1219,7 @@ In general, sending data across the network (as in, e.g.., MPI), requires the fo
 -   Fabric management (not yet implemented in SST)
 -   Routing: handled by `router` class. Using the defined topology, compute the path that should be taken by a packet. The path is defined by the port numbers that should be taken.
 -   Flow control and congestion: handled by `NetworkSwitch` class. Once a path is defined by the router, arbitrate packets (flits) when they contend for bandwidth.
-As much as possible, these components try to be independent. However, there are inter-dependencies, as shown in Figure [4](#fig:dependencies).
+As much as possible, these components try to be independent. However, there are inter-dependencies, as shown in Figure [4](#fig_dependencies).
 The router requires topology information to compute paths. For adaptive routing decisions, the router also requires contention information from the network switch.
 The network switch requires the computed paths (ports) from the router.
 
@@ -1240,7 +1237,7 @@ The network switch requires the computed paths (ports) from the router.
 
 
 
-We can dive in deeper to the operations that occur on an individual component, mos importantly the crossbar on the network switch. Figure [6](#fig:xbarFlow) shows code and program flow for a packet arriving at a network switch.  The packet is routed (virtual function, configurable via input file parameters), credits are allocated to the packet, and finally the packet is arbitrated across the crossbar. After arbitration, a statistics callback can be invoked to collect any performance metrics of interest (congestion, traffic, idle time).
+We can dive in deeper to the operations that occur on an individual component, mos importantly the crossbar on the network switch. Figure [6](#fig_xbarFlow) shows code and program flow for a packet arriving at a network switch.  The packet is routed (virtual function, configurable via input file parameters), credits are allocated to the packet, and finally the packet is arbitrated across the crossbar. After arbitration, a statistics callback can be invoked to collect any performance metrics of interest (congestion, traffic, idle time).
 
 
 ![Figure 6: Code flow for routing and arbitration of packets traversing the crossbar on the network switch.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/developer/figures/RoutingFlow.png) 
@@ -1343,7 +1340,7 @@ To summarize, we have:
 With a basic overview of how the simulation proceeds, we can now look at the actual SST/macro class types.
 While in common usage, SST-macro follows a well-defined machine model (see below),
 it generally allows any set of components to be connected. 
-As discussed in Chapter , the simulation proceeds by having event components exchange events,
+As discussed in Chapter [5](#chapter_des), the simulation proceeds by having event components exchange events,
 each scheduled to arrive at a specific time.
 SST-macro provides a generic interface for any set of hardware components to be linked together.
 Any hardware component that connects to other components and exchanges events must inherit from the `Connectable` class.
@@ -1387,12 +1384,12 @@ Some "meta"-object should create connections between objects.
 In general, this work is left to a `interconnect` object.
 An object should never be responsible for knowing about the "world" outside itself.
 A topology or interconnect tells the object to make a connection rather than the object deciding to make the connection itself.
-This will be illustrated below in .
+This will be illustrated below in [7.4](#sec_topology).
 
 The second rule to follow is that a connect function should never call another connect function.
 In general, a single call to a connect function should create a single link.
 If connect functions start calling other connect functions, you can end up a with a recursive mess.
-If you need a bidirectional link (A \rightarrow B, B \rightarrow A),
+If you need a bidirectional link (A -> B, B -> A),
 two separate function calls should be made
 
 ````
@@ -1924,7 +1921,7 @@ The interconnect is the workhorse for building all hardware components.
 After receiving the partition information from the `EventManager`,
 the interconnect creates all the nodes, switches, and NICs the current MPI rank is responsible for.
 In parallel runs, each MPI rank only gets assigned a unique, disjoint subset of the components.
-The interconnect then also creates all the connections between components that are linked based on the topology input (see Section ).
+The interconnect then also creates all the connections between components that are linked based on the topology input (see Section [7.3](#sec_Connectables)).
 For components that are not owned by the current MPI rank, the interconnect inserts a dummy handler that informs the `EventManager`
 that the message needs to be re-routed to another MPI rank.
 
