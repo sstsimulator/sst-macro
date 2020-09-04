@@ -146,7 +146,7 @@ class FullyConnectedMinimalRouter : public Router {
   void route(Packet *pkt) override {
     SwitchId ej_addr = pkt->toaddr() / full_->concentration();
     if (ej_addr == my_addr_){
-      pkt->setEdgeOutport(pkt->toaddr() % full_->concentration());
+      pkt->setEdgeOutport(full_->numSwitches() + pkt->toaddr() % full_->concentration());
     } else {
       pkt->setEdgeOutport(ej_addr);
     }

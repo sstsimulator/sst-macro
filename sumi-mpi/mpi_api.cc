@@ -141,7 +141,7 @@ MpiApi::MpiApi(SST::Params& params, sstmac::sw::App* app,
   double probe_delay_s = params.find<SST::UnitAlgebra>("iprobe_delay", "0s").getValue().toDouble();
   iprobe_delay_us_ = probe_delay_s * 1e6;
 
-  double test_delay_s = params.find<SST::UnitAlgebra>("test_delay", "0s").getValue().toDouble();
+  double test_delay_s = params.find<SST::UnitAlgebra>("test_delay", "1us").getValue().toDouble();
   test_delay_us_ = test_delay_s * 1e6;
 
 #if !SSTMAC_INTEGRATED_SST_CORE
