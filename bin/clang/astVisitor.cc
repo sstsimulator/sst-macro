@@ -1040,6 +1040,9 @@ SkeletonASTVisitor::TraverseCallExpr(CallExpr* expr, DataRecursionQueue*  /*queu
     PragmaActivateGuard pag(expr, this);
     if (pag.skipVisit()) return true;
 
+    //first go into the call expression to see if we should even keep it
+    //we might get a delete exception, in which case we should skip traversal
+    //if we got here, we are safe to modify the function name
     if (CompilerGlobals::modeActive(SKELETONIZE | SHADOWIZE)) {
       Expr* fxn = getUnderlyingExpr(const_cast<Expr*>(expr->getCallee()));
       if (fxn->getStmtClass() == Stmt::DeclRefExprClass){
@@ -1939,6 +1942,9 @@ SkeletonASTVisitor::traverseFunctionBody(clang::Stmt* s)
 bool
 SkeletonASTVisitor::TraverseFunctionDecl(clang::FunctionDecl* D)
 {
+  if (!D->isThisDeclarationADefinition()){
+    return true;
+  }
   if (D->isMain() && CompilerGlobals::refactorMain){
     replaceMain(D);
   } else if (D->isTemplateInstantiation()   
@@ -2399,7 +2405,6 @@ SkeletonASTVisitor::TraverseArraySubscriptExpr(ArraySubscriptExpr* expr, DataRec
   PushGuard<Expr*> pg(activeDerefs_, expr);
   TraverseStmt(expr->getBase());
   TraverseStmt(expr->getIdx());
-
   return true;
 }
 
@@ -2443,7 +2448,7 @@ SkeletonASTVisitor::TraverseDecl(Decl *D)
     PragmaActivateGuard pag(D, this);
     if (pag.skipVisit()) return true;
 
-    RecursiveASTVisitor<SkeletonASTVisitor>::TraverseDecl(D);
+    return RecursiveASTVisitor<SkeletonASTVisitor>::TraverseDecl(D);
   } catch (DeclDeleteException& e) {
     if (e.deleted != D) throw e;
   }
@@ -2697,16 +2702,19 @@ bool
 FirstPassASTVisitor::TraverseFunctionDecl(FunctionDecl *fd, DataRecursionQueue* /*queue*/)
 {
   PushGuard<FunctionDecl*> pg(CompilerGlobals::astContextLists.enclosingFunctionDecls, fd);
-  Parent::TraverseFunctionDecl(fd);
-  return true;
+  PragmaActivateGuard pag(fd, this, true/*always do first pass pragmas*/);
+  if (fd->isThisDeclarationADefinition()){
+    return Parent::TraverseFunctionDecl(fd);
+  } else {
+    return true;
+  }
 }
 
 bool
 FirstPassASTVisitor::TraverseCompoundStmt(CompoundStmt* cs, DataRecursionQueue* /*queue*/)
 {
   PushGuard<CompoundStmt*> pg(CompilerGlobals::astContextLists.compoundStmtBlocks, cs);
-  Parent::TraverseCompoundStmt(cs);
-  return true;
+  return Parent::TraverseCompoundStmt(cs);
 }
 
 FirstPassASTVisitor::FirstPassASTVisitor(SSTPragmaList& prgs) :
