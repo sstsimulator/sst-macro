@@ -70,34 +70,29 @@ BruckAlltoallActor::initBuffers()
   int log2nproc, num_rounds, nprocs_extra_round;
   BruckTree::computeTree(dom_nproc_, log2nproc, midpoint_, num_rounds, nprocs_extra_round);
 
-  if (src){
-    //put everything into the dst buffer to begin
-    //but we have to shuffle for bruck algorithm
-    int offset = dom_me_ * nelems_ * type_size_;
-    int total_size = dom_nproc_ * nelems_ * type_size_;
-    char* srcPtr = (char*) src;
-    char* dstPtr = (char*) dst;
-    int copySize = total_size - offset;
-    std::memcpy(dstPtr, srcPtr + offset, copySize);
-    std::memcpy(dstPtr + copySize, srcPtr, offset);
+  //put everything into the dst buffer to begin
+  //but we have to shuffle for bruck algorithm
+  int offset = dom_me_ * nelems_ * type_size_;
+  int total_size = dom_nproc_ * nelems_ * type_size_;
+  char* srcPtr = (char*) src;
+  char* dstPtr = (char*) dst;
+  int copySize = total_size - offset;
+  my_api_->memcopy(dstPtr, srcPtr + offset, copySize);
+  my_api_->memcopy(dstPtr + copySize, srcPtr, offset);
 
-    int tmp_buffer_size = nelems_ * type_size_ * midpoint_;
-    result_buffer_ = my_api_->makePublicBuffer(dst, total_size);
-    send_buffer_ = my_api_->allocatePublicBuffer(tmp_buffer_size);
-    recv_buffer_ = my_api_->allocatePublicBuffer(tmp_buffer_size);
-  }
+  int tmp_buffer_size = nelems_ * type_size_ * midpoint_;
+  result_buffer_ = dst;
+  send_buffer_ = my_api_->allocateWorkspace(tmp_buffer_size, src);
+  recv_buffer_ = my_api_->allocateWorkspace(tmp_buffer_size, src);
 }
 
 void
 BruckAlltoallActor::finalizeBuffers()
 {
-  if (send_buffer_){
-    int buffer_size = nelems_ * type_size_ * comm_->nproc();
-    int tmp_buffer_size = nelems_ * type_size_ * midpoint_;
-    my_api_->unmakePublicBuffer(result_buffer_, buffer_size);
-    my_api_->freePublicBuffer(recv_buffer_, tmp_buffer_size);
-    my_api_->freePublicBuffer(send_buffer_, tmp_buffer_size);
-  }
+  int buffer_size = nelems_ * type_size_ * comm_->nproc();
+  int tmp_buffer_size = nelems_ * type_size_ * midpoint_;
+  my_api_->freeWorkspace(recv_buffer_, tmp_buffer_size);
+  my_api_->freeWorkspace(send_buffer_, tmp_buffer_size);
 }
 
 void
@@ -203,7 +198,7 @@ BruckAlltoallActor::initDag()
 void
 BruckAlltoallActor::bufferAction(void *dst_buffer, void *msg_buffer, Action* ac)
 {
-  std::memcpy(dst_buffer, msg_buffer, ac->nelems * type_size_);
+  my_api_->memcopy(dst_buffer, msg_buffer, ac->nelems * type_size_);
 }
 
 void
@@ -239,24 +234,14 @@ BruckAlltoallActor::finalize()
 void
 DirectAlltoallActor::initBuffers()
 {
-  void* dst = result_buffer_;
-  void* src = send_buffer_;
-  if (src){
-    total_send_size_ = nelems_ * type_size_;
-    total_recv_size_ = nelems_ * type_size_;
-    result_buffer_ = my_api_->makePublicBuffer(dst, total_recv_size_);
-    send_buffer_ = my_api_->makePublicBuffer(src, total_send_size_);
-    recv_buffer_ = result_buffer_;
-  }
+  total_send_size_ = nelems_ * type_size_;
+  total_recv_size_ = nelems_ * type_size_;
+  recv_buffer_ = result_buffer_;
 }
 
 void
 DirectAlltoallActor::finalizeBuffers()
 {
-  if (result_buffer_){
-    my_api_->unmakePublicBuffer(result_buffer_, total_recv_size_);
-    my_api_->unmakePublicBuffer(send_buffer_, total_send_size_);
-  }
 }
 
 void
@@ -314,7 +299,7 @@ DirectAlltoallActor::initDag()
 void
 DirectAlltoallActor::bufferAction(void *dst_buffer, void *msg_buffer, Action* ac)
 {
-  std::memcpy(dst_buffer, msg_buffer, ac->nelems * type_size_);
+  my_api_->memcopy(dst_buffer, msg_buffer, ac->nelems * type_size_);
 }
 
 void

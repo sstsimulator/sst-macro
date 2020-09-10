@@ -520,14 +520,14 @@ MpiQueue::finishProgressLoop(const std::vector<MpiRequest*>&)
 void
 MpiQueue::memcopy(uint64_t bytes)
 {
-  api_->memcopy(bytes);
+  api_->memcopyDelay(bytes);
 }
 
 void
 MpiQueue::bufferUnexpected(MpiMessage* msg)
 {
   CallGraphAppend(MPIQueueBufferUnexpectedMessage);
-  api_->memcopy(msg->payloadBytes());
+  api_->memcopyDelay(msg->payloadBytes());
 }
 
 }

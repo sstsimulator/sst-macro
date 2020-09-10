@@ -68,6 +68,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/factory.h>
 #include <sprockit/util.h>
 
+#include <sstmac/null_buffer.h>
+
 #include <unordered_map>
 #include <queue>
 
@@ -163,20 +165,13 @@ class SimTransport : public Transport, public sstmac::sw::API {
 
   sstmac::Timestamp now() const override;
 
-  void* allocatePublicBuffer(uint64_t size) override {
-    return ::malloc(size);
-  }
+  void* allocateWorkspace(uint64_t size, void* parent) override;
 
-  void* makePublicBuffer(void* buffer, uint64_t size) override {
-    pinRdma(size);
-    return buffer;
-  }
+  void freeWorkspace(void *buf, uint64_t size) override;
 
-  void freePublicBuffer(void* buf, uint64_t  /*size*/) override {
-    ::free(buf);
-  }
+  void memcopy(void* dst, void* src, uint64_t bytes) override;
 
-  void memcopy(uint64_t bytes) override;
+  void memcopyDelay(uint64_t bytes) override;
 
   int* nidlist() const override;
 

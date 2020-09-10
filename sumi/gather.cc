@@ -67,25 +67,21 @@ BtreeGatherActor::initBuffers()
 {
   void* dst = result_buffer_;
   void* src = send_buffer_;
-  if (!src)
-    return;
 
   int me = comm_->myCommRank();
-  int nproc = comm_->nproc();
 
   if (me == root_){
-    int buf_size = nproc * nelems_ * type_size_;
-    result_buffer_ = my_api_->makePublicBuffer(dst, buf_size);
+    result_buffer_ = dst;
     recv_buffer_ = result_buffer_;
     send_buffer_ = result_buffer_;
   } else {
     int max_recv_buf_size = midpoint_*nelems_*type_size_;
-    recv_buffer_ = my_api_->allocatePublicBuffer(max_recv_buf_size);
+    recv_buffer_ = my_api_->allocateWorkspace(max_recv_buf_size, src);
     send_buffer_ = recv_buffer_;
     result_buffer_ = recv_buffer_;
   }
 
-  ::memcpy(recv_buffer_, src, nelems_*type_size_);
+  my_api_->memcopy(recv_buffer_, src, nelems_*type_size_);
 }
 
 void
@@ -94,14 +90,10 @@ BtreeGatherActor::finalizeBuffers()
   if (!result_buffer_)
     return;
 
-  int nproc = comm_->nproc();
   int me = comm_->myCommRank();
-  if (me == root_){
-    int buf_size = nproc * nelems_ * type_size_;
-    my_api_->unmakePublicBuffer(result_buffer_, buf_size);
-  } else {
+  if (me != root_){
     int max_recv_buf_size = midpoint_*nelems_*type_size_;
-    my_api_->freePublicBuffer(recv_buffer_,max_recv_buf_size);
+    my_api_->freeWorkspace(recv_buffer_,max_recv_buf_size);
   }
 }
 
@@ -121,7 +113,7 @@ BtreeGatherActor::startShuffle(Action *ac)
 void
 BtreeGatherActor::bufferAction(void *dst_buffer, void *msg_buffer, Action *ac)
 {
-  std::memcpy(dst_buffer, msg_buffer, ac->nelems * type_size_);
+  my_api_->memcopy(dst_buffer, msg_buffer, ac->nelems * type_size_);
 }
 
 void

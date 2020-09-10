@@ -46,14 +46,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi/transport.h>
 #include <sumi/communicator.h>
 #include <sprockit/output.h>
+#include <sstmac/null_buffer.h>
 #include <cstring>
 #include <utility>
-
-/*
-#undef debug_printf
-#define debug_printf(flags, ...) \
-  if (tag_ == 221) std::cout << sprockit::spkt_printf(__VA_ARGS__) << std::endl
-*/
 
 RegisterDebugSlot(sumi_collective_buffer);
 
@@ -591,7 +586,7 @@ DagCollectiveActor::dataRecved(Action* ac_, CollectiveWorkMessage* msg, void *re
   //this just walks through the communication pattern
   //without actually passing around large payloads or doing memcpy's
   //if we end up here, we have a real buffer
-  if (recv_buffer_){
+  if (isNonNullBuffer(recv_buffer_)){
     int my_comm_rank =  comm_->myCommRank();
     int sender_comm_rank = msg->domSender();
     if (my_comm_rank == sender_comm_rank){
@@ -599,42 +594,25 @@ DagCollectiveActor::dataRecved(Action* ac_, CollectiveWorkMessage* msg, void *re
         ac->round, 0, nelems_, type_size_, recv_buffer_);
     } else {
 
-      /**
-      do_sumi_debug_print("currently",
-       rank_str().c_str(), ac->partner,
-       ac->round, ac->offset, ac->nelems, type_size_,
-       dst_buffer);
-
-      do_sumi_debug_print("receiving",
-        rank_str().c_str(), ac->partner,
-        ac->round,
-        ac->offset, ac->nelems, type_size_,
-        recvd_buffer);
-        */
-
       RecvAction::recv_type_t recv_ty = RecvAction::recv_type(
             msg->protocol() == CollectiveWorkMessage::eager, ac->buf_type);
-
-      //printf("%d %d -> %d\n",
-      //       msg->payload_type() == message::eager_payload,
-      //       ac->buf_type, recv_ty);
 
       switch(recv_ty){
        //eager and rdvz reduce are the same
        case RecvAction::eager_reduce:
        case RecvAction::rdvz_reduce:
-        my_api_->memcopy(ac->nelems*type_size_);
+        my_api_->memcopyDelay(ac->nelems*type_size_);
         slicer_->unpackReduce(recvd_buffer, result_buffer_, ac->offset, ac->nelems);
         break;
        case RecvAction::eager_in_place:
        case RecvAction::eager_unpack_temp_buf:
        case RecvAction::rdvz_unpack_temp_buf:
-        my_api_->memcopy(ac->nelems*type_size_);
+        my_api_->memcopyDelay(ac->nelems*type_size_);
         slicer_->unpackRecvBuf(recvd_buffer, result_buffer_, ac->offset, ac->nelems);
         break;
        case RecvAction::eager_packed_temp_buf:
         //I am copying from packed to packed
-        my_api_->memcopy(ac->nelems*type_size_);
+        my_api_->memcopyDelay(ac->nelems*type_size_);
         slicer_->memcpyPackedBufs(recv_buffer_, recvd_buffer, ac->nelems);
         break;
        case RecvAction::rdvz_packed_temp_buf:
@@ -787,7 +765,7 @@ DagCollectiveActor::incomingHeader(CollectiveWorkMessage* msg)
       } else {
         //data recved will clear the actions
 #if SSTMAC_SANITY_CHECK
-        if (recv_buffer_ && !msg->smsgBuffer() && msg->byteLength()){
+        if (isNonNullBuffer(recv_buffer_) && isNullBuffer(msg->smsgBuffer()) && msg->byteLength()){
           spkt_abort_printf("Flow %llu: no SMSG buffer: %s", msg->flowId(), msg->toString().c_str());
         }
 #endif
@@ -949,171 +927,51 @@ VirtualRankMap::virtualToReal(int virtual_rank) const
 void*
 DagCollectiveActor::messageBuffer(void* buffer, int offset)
 {
-  if (isNonNull(buffer)){
+  if (isNonNullBuffer(buffer)){
     int total_stride = type_size_ * offset;
     char* tmp = ((char*)buffer) + total_stride;
     return tmp;
   }
   //nope, no buffer
-  return 0;
+  return buffer;
 }
 
-#ifdef FEATURE_TAG_SUMI_RESILIENCE
-void
-dag_collective_actor::dense_partner_ping_failed(int dense_rank)
-{
-  debug_printf(sumi_collective,
-     "Rank %s on collective %s - partner %s returned failed ping",
-      rank_str().c_str(), collective::tostr(type_),
-      rank_str(dense_rank).c_str());
-  failed_ranks_.insert(dense_rank);
-  fail_actions(dense_rank);
+size_t
+DefaultSlicer::packsendBuf(void* packedBuf, void* unpackedObj,
+          int offset, int nelems) const {
+  if (isNonNullBuffer(unpackedObj)){
+    char* dstptr = (char*) packedBuf;
+    char* srcptr = (char*) unpackedObj + offset*type_size;
+    ::memcpy(dstptr, srcptr, nelems*type_size);
+  }
+  return nelems*type_size;
 }
 
 void
-collective_actor::validate_pings_cleared()
-{
-  int size = ping_refcounts_.size();
-  if (size){
-    spkt_throw_printf(sprockit::illformed_error,
-        "dag_collective_actor::rank %d still has %d outstanding pings\n",
-        my_api_->rank(), ping_refcounts_.size());
+DefaultSlicer::unpackRecvBuf(void* packedBuf, void* unpackedObj,
+          int offset, int nelems) const {
+  if (isNonNullBuffer(unpackedObj)){
+    char* dstptr = (char*) unpackedObj + offset*type_size;
+    char* srcptr = (char*) packedBuf;
+    ::memcpy(dstptr, srcptr, nelems*type_size);
   }
 }
 
 void
-collective_actor::partner_ping_failed(int global_rank)
-{
-  //map this to virtual rank
-  int comm_rank =  cfg_.dom->global_to_comm_rank(global_rank);
-  int dense_rank = rank_map_.dense_rank(comm_rank);
-  dense_partner_ping_failed(dense_rank);
+DefaultSlicer::memcpyPackedBufs(void *dst, void *src, int nelems) const {
+  if (isNonNullBuffer(dst) && isNonNullBuffer(src)){
+    ::memcpy(dst, src, nelems*type_size);
+  }
 }
 
 void
-collective_actor::cancel_ping(int dense_rank)
-{
-  if (!fault_aware_)
-    return;
+DefaultSlicer::unpackReduce(void *packedBuf, void *unpackedObj,
+                int offset, int nelems) const {
 
-  int cm_rank = comm_rank(dense_rank);
-  if (cm_rank ==  cfg_.dom->my_comm_rank())  //no need to ping self
-    return;
-
-  std::map<int,int>::iterator it = ping_refcounts_.find(cm_rank);
-  if (it == ping_refcounts_.end())
-    spkt_throw_printf(sprockit::illformed_error,
-        "dag_collective_actor trying to cancel non-existent ping");
-
-  int& refcount = it->second;
-  --refcount;
-  if (refcount == 0){
-    int global_phys_rank =  cfg_.dom->comm_to_global_rank(cm_rank);
-    debug_printf(sumi_collective | sumi_ping,
-      "Rank %s collective %s(%p) erase ping for partner %d:%d:%d on tag=%d ",
-      rank_str().c_str(), toString().c_str(), this,
-      dense_rank, cm_rank, global_phys_rank, tag_);
-      ping_refcounts_.erase(it);
-      stop_check_neighbor(global_phys_rank);
-  } else {
-    debug_printf(sumi_collective | sumi_ping,
-        "Rank %s collective %s(%p) decrement ping refcount to %d for partner %d:%d on tag=%d ",
-    rank_str().c_str(), toString().c_str(), this,
-    refcount,
-    dense_rank, cm_rank, tag_);
+  if (isNonNullBuffer(unpackedObj)){
+    char* dstptr = (char*) unpackedObj + offset*type_size;
+    (fxn)(dstptr, packedBuf, nelems);
   }
 }
-
-bool
-collective_actor::ping_rank(int comm_rank, int dense_rank)
-{
-  int& refcount = ping_refcounts_[comm_rank];
-  if (refcount != 0){
-     debug_printf(sumi_collective | sumi_ping,
-         "Rank %s collective %s(%p) already pinging %d with refcount=%d on tag=%d ",
-         rank_str().c_str(), toString().c_str(), this,
-         comm_rank, refcount, tag_);
-    //we be pinging in the rain, just pinging in the rain
-    ++refcount;
-    return false; //all is well, we think - we have a pending ping
-  } else {
-    int global_phys_rank =  cfg_.dom->comm_to_global_rank(comm_rank);
-    debug_printf(sumi_collective | sumi_ping,
-      "Rank %s collective %s(%p) begin pinging %d:%d on tag=%d ",
-      rank_str().c_str(), toString().c_str(), this,
-      comm_rank, global_phys_rank, tag_);
-
-    //we don't know anything - do a more extensive check
-    bool is_dead = check_neighbor(global_phys_rank);
-    if (is_dead){
-      debug_printf(sumi_collective | sumi_ping,
-        "Rank %s collective %s(%p) sees that %d:%d is apparently dead on tag=%d ",
-        rank_str().c_str(), toString().c_str(), this,
-        comm_rank, global_phys_rank, tag_);
-      failed_ranks_.insert(dense_rank);
-      ping_refcounts_.erase(comm_rank);
-      return true;
-    } else {
-      debug_printf(sumi_collective | sumi_ping,
-        "Rank %s collective %s(%p) has started new ping to %s on tag=%d ",
-        rank_str().c_str(), toString().c_str(), this,
-        rank_str(dense_rank).c_str(),
-        tag_);
-      ++refcount;
-      return false; //nope, all good
-    }
-  }
-}
-
-bool
-collective_actor::do_ping_neighbor(int dense_rank)
-{
-  int cm_rank = comm_rank(dense_rank);
-  if (cm_rank ==  cfg_.dom->my_comm_rank()){
-    //no reason to ping self
-    return false;
-  }
-  return ping_rank(cm_rank, dense_rank);
-}
-
-bool
-collective_actor::ping_neighbor(int dense_rank)
-{
-  if (!fault_aware_){
-    return false; //not failed
-  } else if (is_failed(dense_rank)){
-    //this guy is failed - no reason to communicate
-    return true;
-  } else {
-    return do_ping_neighbor(dense_rank);
-  }
-}
-
-std::string
-collective_actor::failed_proc_string() const
-{
-  std::stringstream sstr;
-  sstr << "{";
-  auto end = failed_ranks_.start_iteration();
-  for (auto it = failed_ranks_.begin(); it != end; ++it){
-    sstr << " " << *it;
-  }
-  failed_ranks_.end_iteration();
-  sstr << " }";
-  return sstr.str();
-}
-
-bool
-collective_actor::check_neighbor(int global_phys_rank)
-{
-  return my_api_->start_watching(global_phys_rank, timeout_);
-}
-
-void
-collective_actor::stop_check_neighbor(int global_phys_rank)
-{
-  my_api_->stop_watching(global_phys_rank, timeout_);
-}
-#endif
 
 }
