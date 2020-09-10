@@ -67,33 +67,21 @@ BtreeScattervActor::initBuffers()
 {
   void* dst = result_buffer_;
   void* src = send_buffer_;
-  //check dst - everyone has dst, not everyone has a source
-  if (!dst)
-    return;
 
   int me = comm_->myCommRank();
-  int nproc = comm_->nproc();
   int result_size = recvcnt_ * type_size_;
   int max_recv_buf_size = midpoint_*recvcnt_*type_size_;
   if (me == root_){
-    int buf_size = nproc * recvcnt_ * type_size_;
-    send_buffer_ = my_api_->makePublicBuffer(src, buf_size);
     if (root_ != 0){
-      recv_buffer_ = my_api_->allocatePublicBuffer(max_recv_buf_size);
-      result_buffer_ = my_api_->makePublicBuffer(dst, result_size);
+      recv_buffer_ = my_api_->allocateWorkspace(max_recv_buf_size, dst);
     } else {
-      ::memcpy(dst, src, result_size);
+      my_api_->memcopy(dst, src, result_size);
       recv_buffer_ = result_buffer_; //won't ever actually be used
       result_buffer_ = dst;
     }
   } else {
-    recv_buffer_ = my_api_->allocatePublicBuffer(max_recv_buf_size);
+    recv_buffer_ = my_api_->allocateWorkspace(max_recv_buf_size, dst);
     send_buffer_ = recv_buffer_;
-    if (me  % 2 == 1){ //I receive into my final buffer
-      result_buffer_ = my_api_->makePublicBuffer(dst, result_size);
-    } else {
-      result_buffer_ = dst;
-    }
   }
 }
 
@@ -105,7 +93,7 @@ BtreeScattervActor::finalizeBuffers()
 void
 BtreeScattervActor::bufferAction(void *dst_buffer, void *msg_buffer, Action *ac)
 {
-  std::memcpy(dst_buffer, msg_buffer, ac->nelems * type_size_);
+  my_api_->memcopy(dst_buffer, msg_buffer, ac->nelems * type_size_);
 }
 
 void

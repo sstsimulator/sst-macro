@@ -80,32 +80,25 @@ BruckActor::initBuffers()
   void* dst = result_buffer_;
   void* src = send_buffer_;
   bool in_place = dst == src;
-  if (src){
-    int block_size = nelems_ * type_size_;
-    if (in_place){
-      if (dom_me_ != 0){
-        int inPlaceOffset = dom_me_* block_size;
-        void* inPlaceSrc = ((char*)src + inPlaceOffset);
-        std::memcpy(dst, inPlaceSrc, block_size);
-      }
-    } else {
-      //put everything into the dst buffer to begin
-      std::memcpy(dst, src, block_size);
+  int block_size = nelems_ * type_size_;
+  if (in_place){
+    if (dom_me_ != 0){
+      int inPlaceOffset = dom_me_* block_size;
+      void* inPlaceSrc = ((char*)src + inPlaceOffset);
+      my_api_->memcopy(dst, inPlaceSrc, block_size);
     }
-    uint64_t buffer_size = nelems_ * type_size_ * comm_->nproc();
-    result_buffer_ = my_api_->makePublicBuffer(dst, buffer_size);
-    send_buffer_ = result_buffer_;
-    recv_buffer_ = result_buffer_;
+  } else {
+    //put everything into the dst buffer to begin
+    my_api_->memcopy(dst, src, block_size);
   }
+  result_buffer_ = dst;
+  send_buffer_ = result_buffer_;
+  recv_buffer_ = result_buffer_;
 }
 
 void
 BruckActor::finalizeBuffers()
 {
-  if (result_buffer_){
-    uint64_t buffer_size = nelems_ * type_size_ * comm_->nproc();
-    my_api_->unmakePublicBuffer(send_buffer_, buffer_size);
-  }
 }
 
 void
@@ -174,7 +167,7 @@ BruckActor::initDag()
 void
 BruckActor::bufferAction(void *dst_buffer, void *msg_buffer, Action* ac)
 {
-  std::memcpy(dst_buffer, msg_buffer, ac->nelems * type_size_);
+  my_api_->memcopy(dst_buffer, msg_buffer, ac->nelems * type_size_);
 }
 
 void
@@ -191,7 +184,7 @@ BruckActor::finalize()
   int total_nelems = nelems_* dom_nproc_;
   int total_size = total_nelems * type_size_;
   char* tmp = new char[total_size];
-  std::memcpy(tmp, result_buffer_, total_size);
+  my_api_->memcopy(tmp, result_buffer_, total_size);
 
 
   int my_offset = nelems_ * dom_me_;
@@ -201,13 +194,13 @@ BruckActor::finalize()
 
   void* src = tmp;
   void* dst = ((char*)result_buffer_) + copy_offset;
-  std::memcpy(dst, src, copy_size);
+  my_api_->memcopy(dst, src, copy_size);
 
   copy_size = my_offset * type_size_;
   copy_offset = (total_nelems - my_offset) * type_size_;
   src = tmp + copy_offset;
   dst = result_buffer_;
-  std::memcpy(dst, src, copy_size);
+  my_api_->memcopy(dst, src, copy_size);
 
   delete[] tmp;
 }
@@ -215,32 +208,18 @@ BruckActor::finalize()
 void
 RingAllgatherActor::initBuffers()
 {
-  void* dst = result_buffer_;
-  void* src = send_buffer_;
-  if (src){
-    auto total_send_size = nelems_ * type_size_;
-    auto total_recv_size = nelems_ * type_size_;
-    result_buffer_ = my_api_->makePublicBuffer(dst, total_recv_size);
-    send_buffer_ = my_api_->makePublicBuffer(src, total_send_size);
-    recv_buffer_ = result_buffer_;
-  }
+  recv_buffer_ = result_buffer_;
 }
 
 void
 RingAllgatherActor::finalizeBuffers()
 {
-  if (result_buffer_){
-    auto total_send_size = nelems_ * type_size_;
-    auto total_recv_size = nelems_ * type_size_;
-    my_api_->unmakePublicBuffer(result_buffer_, total_recv_size);
-    my_api_->unmakePublicBuffer(send_buffer_, total_send_size);
-  }
 }
 
 void
 RingAllgatherActor::bufferAction(void *dst_buffer, void *msg_buffer, Action *ac)
 {
-  std::memcpy(dst_buffer, msg_buffer, ac->nelems * type_size_);
+  my_api_->memcopy(dst_buffer, msg_buffer, ac->nelems * type_size_);
 }
 
 void

@@ -44,14 +44,30 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef sstmac_null_buffer_h
 #define sstmac_null_buffer_h
 
-static void* sstmac_null_ptr = ((void*)0x123);
+#include <stdint.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+extern void* sstmac_nullptr;
+extern void* sstmac_nullptr_range_max;
 
 static inline bool isNonNullBuffer(const void* buf){
-  return buf && buf != sstmac_null_ptr;
+  if (buf){
+    //see if buffer falls in the reserved "null buffer" range
+    return ( (buf < sstmac_nullptr) || (buf >= sstmac_nullptr_range_max) );
+  } else {
+    return false;
+  }
 }
 
 static inline bool isNullBuffer(const void* buf){
   return !(isNonNullBuffer(buf));
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

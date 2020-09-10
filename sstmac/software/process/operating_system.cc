@@ -70,6 +70,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/libraries/compute/compute_event.h>
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/common/thread_lock.h>
+#include <sstmac/null_buffer.h>
 
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/hardware/processor/processor.h>
@@ -106,6 +107,10 @@ RegisterKeywords(
 );
 
 #include <sstmac/software/process/gdb.h>
+
+extern "C" void* sstmac_nullptr = nullptr;
+extern "C" void* sstmac_nullptr_range_max = nullptr;
+static uintptr_t sstmac_nullptr_range = 0;
 
 void sst_gdb_swap(){
 }
@@ -161,6 +166,18 @@ OperatingSystem::OperatingSystem(uint32_t id, SST::Params& params, hw::Node* par
   next_mutex_(0)
 {
   my_addr_ = node_ ? node_->addr() : 0;
+
+  if (sstmac_nullptr == nullptr){
+
+    int range_bit_size = 30;
+    sstmac_nullptr_range = 1ULL<<range_bit_size;
+    sstmac_nullptr = mmap(nullptr, sstmac_nullptr_range,
+                          PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if (sstmac_nullptr == ((void*)-1)){
+      spkt_abort_printf("sstmac address reservation failed in mmap: %s", ::strerror(errno));
+    }
+    sstmac_nullptr_range_max = ((char*)sstmac_nullptr) + sstmac_nullptr_range;
+  }
 
   //assume macro for now
   compute_sched_ = sprockit::create<ComputeScheduler>(

@@ -211,19 +211,24 @@ class Transport {
     return t;
   }
 
-  virtual void memcopy(uint64_t bytes) = 0;
+  virtual void memcopy(void* dst, void* src, uint64_t bytes) = 0;
+
+  virtual void memcopyDelay(uint64_t bytes) = 0;
 
   virtual double wallTime() const = 0;
 
   virtual sstmac::Timestamp now() const = 0;
 
-  virtual void* allocatePublicBuffer(uint64_t size) = 0;
+  /**
+   * @brief allocateWorkspace
+   * @param size     The amount of data to allocate
+   * @param parent   The parent buffer the workspace is used for
+   *                 usually a send or recv buffer for a collective
+   * @return
+   */
+  virtual void* allocateWorkspace(uint64_t size, void* parent) = 0;
 
-  virtual void* makePublicBuffer(void* buffer, uint64_t size) = 0;
-
-  virtual void unmakePublicBuffer(void*, uint64_t){}
-
-  virtual void freePublicBuffer(void* buf, uint64_t size) = 0;
+  virtual void freeWorkspace(void* buf, uint64_t size) = 0;
 
   virtual int* nidlist() const = 0;
   
@@ -560,16 +565,6 @@ class CollectiveEngine
   int ack_qos_;
 
 };
-
-static void* sumi_null_ptr = ((void*)0x123);
-
-static inline bool isNonNull(void* buf){
-  return buf && buf != sumi_null_ptr;
-}
-
-static inline bool isNull(void* buf){
-  return !(sumi::isNonNull(buf));
-}
 
 }
 
