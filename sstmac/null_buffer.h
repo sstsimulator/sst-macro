@@ -50,7 +50,17 @@ Questions? Contact sst-macro-help@sandia.gov
 extern "C" {
 #endif
 
+// sentinel value that is a reserved address from mmap
+// but points to no real data
+// used to fake a real pointer, but cannot be accessed
 extern void* sstmac_nullptr;
+// for cases in which send/recv buffers cannot alias
+// this creates two pointers that won't overlap
+extern void* sstmac_nullptr_send;
+extern void* sstmac_nullptr_recv;
+// the maximum pointer in the reserved mmap range
+// all pointers between sstmac_nullptr and this
+// are not real data
 extern void* sstmac_nullptr_range_max;
 
 static inline bool isNonNullBuffer(const void* buf){

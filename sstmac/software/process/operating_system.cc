@@ -109,6 +109,8 @@ RegisterKeywords(
 #include <sstmac/software/process/gdb.h>
 
 extern "C" void* sstmac_nullptr = nullptr;
+extern "C" void* sstmac_nullptr_send = nullptr;
+extern "C" void* sstmac_nullptr_recv = nullptr;
 extern "C" void* sstmac_nullptr_range_max = nullptr;
 static uintptr_t sstmac_nullptr_range = 0;
 
@@ -176,6 +178,8 @@ OperatingSystem::OperatingSystem(uint32_t id, SST::Params& params, hw::Node* par
     if (sstmac_nullptr == ((void*)-1)){
       spkt_abort_printf("sstmac address reservation failed in mmap: %s", ::strerror(errno));
     }
+    sstmac_nullptr_send = sstmac_nullptr;
+    sstmac_nullptr_recv = ((char*)sstmac_nullptr) + (sstmac_nullptr_range/2);
     sstmac_nullptr_range_max = ((char*)sstmac_nullptr) + sstmac_nullptr_range;
   }
 
