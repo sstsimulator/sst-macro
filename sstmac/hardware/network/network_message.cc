@@ -182,11 +182,21 @@ NetworkMessage::memmoveRemoteToLocal()
 void
 NetworkMessage::matchRecv(void *recv_buffer)
 {
-  if (isNonNullBuffer(recv_buffer) && isNonNullBuffer(local_buffer_)){
-    ::memcpy(recv_buffer, local_buffer_, payload_bytes_);
-    delete[] (char*) local_buffer_;
+  void* message_buffer = nullptr;
+  switch (type_){
+    case rdma_get_payload:
+    case rdma_put_payload:
+      break;
+    case smsg_send:
+    case posted_send:
+      if (isNonNullBuffer(smsg_buffer_) && isNonNullBuffer(recv_buffer)){
+        ::memcpy(recv_buffer, smsg_buffer_, payload_bytes_);
+        delete[] (char*) smsg_buffer_;
+      }
+      break;
+    default:
+      break;
   }
-  local_buffer_ = recv_buffer;
 }
 
 void

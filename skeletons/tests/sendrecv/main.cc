@@ -53,15 +53,37 @@ int main(int argc, char** argv)
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-  char buf[1024];
+  int nelems = 100; 
+#define VALIDATE_BUFFERS
+#ifdef VALIDATE_BUFFERS
+  int buf[1024];
+  if (rank == 0){
+    for (int i=0; i < nelems; ++i){
+      buf[i] = i;
+    }
+  } else {
+    for (int i=0; i < nelems; ++i){
+      buf[i] = -1;
+    }
+  }
+#else
+  void* buf = sstmac_nullptr;
+#endif
 
   int tag = 42;
   if (rank == 0){
     int partner = 1;
-    MPI_Send(buf, 1, MPI_INT, partner, tag, MPI_COMM_WORLD);
+    MPI_Send(buf, nelems, MPI_INT, partner, tag, MPI_COMM_WORLD);
   } else {
     int partner = 0;
-    MPI_Recv(buf, 1, MPI_INT, partner, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    MPI_Recv(buf, nelems, MPI_INT, partner, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+#ifdef VALIDATE_BUFFERS
+    for (int i=0; i < nelems; ++i){
+      if (buf[i] != i){
+        printf("A[%d] = %d != %d\n", i, buf[i], i);
+      }
+    }
+#endif
   }
 
   MPI_Barrier(MPI_COMM_WORLD);
@@ -71,6 +93,10 @@ int main(int argc, char** argv)
   }
 
   MPI_Finalize();
+
+  if (rank == 0){
+    printf("Passed finalize\n");
+  }
 
   return 0;
 }
