@@ -265,7 +265,6 @@ SSTPragmaHandler::configure(bool delOnUse, Token&  /*PragmaTok*/, Preprocessor& 
     maxPragmaDepth = 0;
   }
   --pragmaDepth;
-  fsp->depth = pragmaDepth;
 }
 
 void

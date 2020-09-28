@@ -30,6 +30,7 @@ CLANGTESTS = \
   pragma_sst_scoped_replace_cpp \
   pragma_sst_replace_cpp \
   pragma_sst_memory_cpp \
+  pragma_sst_multi_pragma_cpp \
   pragma_sst_compute_cpp \
   pragma_sst_compute_global_var_cpp \
   pragma_sst_loop_count_cpp \

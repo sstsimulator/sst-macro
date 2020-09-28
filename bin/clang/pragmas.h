@@ -75,7 +75,6 @@ struct SSTPragma {
   clang::SourceLocation startPragmaLoc;
   clang::SourceLocation endPragmaLoc;
   clang::SourceLocation targetLoc;
-  int depth;
   bool deleteOnUse;
   std::uintptr_t classId;
 
