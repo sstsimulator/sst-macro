@@ -33,6 +33,7 @@ libsstmac_test_skeletons_la_SOURCES = \
   compute.cc \
   mpi_coverage_test.cc \
   mpi_ping_all.cc \
+  mpi_tournament.cc \
   mpi_ping_pong.cc \
   mpi_all_collectives.cc \
   mpi_smp_collectives.cc \
