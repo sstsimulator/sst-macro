@@ -50,24 +50,31 @@ Questions? Contact sst-macro-help@sandia.gov
 #define one_indent "  "
 #define two_indent "    "
 
-#if 0
+#if PISCES_DEBUG_INDIVIDUAL_HISTORY
+#define dprintf(flag, ...) \
+  history_.push_back(sprockit::sprintf(__VA_ARGS__))
+#else
+#define dprintf(flag, ...) debug_printf(flag, __VA_ARGS__)
+#endif
+
+#if PISCES_DETAILED_DEBUG
 #define pflow_arb_debug_printf_l0(format_str, ...) \
-  debug_printf(sprockit::dbg::pisces,  \
+  dprintf(sprockit::dbg::pisces,  \
     " [arbitrator] " format_str , \
     __VA_ARGS__)
 
 #define pflow_arb_debug_printf_l1(format_str, ...) \
-  debug_printf(sprockit::dbg::pisces,  \
+  dprintf(sprockit::dbg::pisces,  \
     one_indent " [arbitrator] " format_str , \
     __VA_ARGS__)
 
 #define pflow_arb_debug_printf_l2(format_str, ...) \
-  debug_printf(sprockit::dbg::pisces,  \
+  dprintf(sprockit::dbg::pisces,  \
     two_indent " [arbitrator] " format_str , \
     __VA_ARGS__)
 
 #define pflow_arb_debug_print_l2(format_str) \
-  debug_printf(sprockit::dbg::pisces,  \
+  dprintf(sprockit::dbg::pisces,  \
     two_indent " [arbitrator] " format_str "%s", "")
 #else
 #define pflow_arb_debug_printf_l0(format_str, ...)
@@ -188,6 +195,10 @@ PiscesCutThroughArbitrator::clearOut(Timestamp now)
     cut_through_epoch_debug("clearing at %9.5e", now.sec());
     Timestamp end = epoch->start + epoch->numCycles * cycleLength_;
     if (now <= epoch->start){
+      if (!epoch->next){
+        //this is the last epoch, restore it to full size
+        epoch->numCycles = std::numeric_limits<uint32_t>::max();
+      }
       return;
     } else if (now < end){
       if (epoch->next){
@@ -205,6 +216,16 @@ PiscesCutThroughArbitrator::clearOut(Timestamp now)
         Epoch* next = epoch->next;
         delete epoch;
         head_ = next;
+#if SSTMAC_SANITY_CHECK
+        if (head_ == nullptr){
+#if PISCES_DEBUG_INDIVIDUAL_HISTORY
+          for (auto& str : history_){
+            std::cerr << str << std::endl;
+          }
+#endif
+          spkt_abort_printf("internal error: head epoch is null in PiscesCutThroughArbitrator");
+        }
+#endif
         epoch = next;
       } else {
         //this is the last epoch - restore it to "full size"
@@ -223,6 +244,16 @@ PiscesCutThroughArbitrator::advance(Epoch* epoch, Epoch* prev)
   if (prev) prev->next = epoch->next;
   else head_ = next;
   delete epoch;
+#if SSTMAC_SANITY_CHECK
+  if (head_ == nullptr){
+  #if PISCES_DEBUG_INDIVIDUAL_HISTORY
+    for (auto& str : history_){
+      std::cerr << str << std::endl;
+    }
+  #endif
+    spkt_abort_printf("internal error: head epoch is null in PiscesCutThroughArbitrator");
+  }
+#endif
   return next;
 }
 
@@ -232,7 +263,7 @@ PiscesCutThroughArbitrator::arbitrate(IncomingPacket &st)
   pflow_arb_debug_printf_l0("Cut-through: arbitrator %p starting packet %p:%llu of size %u with byte_delay=%9.5e epoch_delay=%9.5e start=%9.5e: %s",
                           this, st.pkt, st.pkt->flowId(), st.pkt->numBytes(), st.pkt->byteDelay().sec(),
                           byteDelay_.sec(), st.now.sec(),
-                          (st.pkt->orig() ? sprockit::toString(st.pkt->orig()).c_str() : "null payload"));
+                          (st.pkt->flow() ? sprockit::toString(st.pkt->flow()).c_str() : "null payload"));
 
 #define PRINT_EPOCHS 0
 #if PRINT_EPOCHS
@@ -257,6 +288,11 @@ PiscesCutThroughArbitrator::arbitrate(IncomingPacket &st)
   while (bytesLeft > 2){ //we often end up with 1,2 byte stragglers - ignore them for efficiency
 #if SSTMAC_SANITY_CHECK
     if (!epoch){
+#if PISCES_DEBUG_INDIVIDUAL_HISTORY
+      for (auto& str : history_){
+        std::cerr << str << std::endl;
+      }
+#endif
       spkt_abort_printf("ran out of epochs on arbitrator %p: this should not be possible", this);
     }
 #endif
@@ -265,7 +301,7 @@ PiscesCutThroughArbitrator::arbitrate(IncomingPacket &st)
     if (st.pkt->byteDelay() <= cycleLength_){
       //every cycle gets used, arriving faster than leaving
       if (epoch->numCycles <= bytesLeft){
-        cut_through_arb_debug_noargs("used all cycles")
+        cut_through_arb_debug_noargs("used all cycles");
         //epoch is completely busy
         bytesSent += epoch->numCycles;
         bytesLeft -= epoch->numCycles;
