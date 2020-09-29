@@ -152,6 +152,9 @@ static void tokenToString(const Token& tok, std::ostream& os)
   case tok::kw_true:
     os << "true";
     break;
+  case tok::kw_void:
+    os << "void";
+    break;
   case tok::kw_false:
     os << "false";
     break;
