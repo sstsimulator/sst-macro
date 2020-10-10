@@ -41,61 +41,28 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Questions? Contact sst-macro-help@sandia.gov
 */
-#ifndef sstmac_string_h_included
-#define sstmac_string_h_included
 
-#ifndef SSTMAC_INSIDE_STL
-#define SSTMAC_INSIDE_STL
-#include <sstmac/replacements/sstmac_pthread_clear.h>
-#include <sstmac/replacements/clear_symbol_macros.h>
-#define STRING_H_OWNS_STL
-#endif
-
-#include_next <string.h>
-
-#ifdef SSTMAC_INSIDE_STL
-#define sstmac_must_return_memcpy
-#define sstmac_must_return_memset
-#else
-#ifndef memset
-#define memset sstmac_memset
-#endif
-#ifndef memcpy
-#define memcpy sstmac_memcpy
-#endif
-#endif
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
-#if defined(__clang__) // Remove pragma warnings if clang
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunknown-pragmas"
-#endif
-
-#pragma sst null_ptr safe
-void* sstmac_memset(void* ptr, int value, unsigned long  sz);
-
-#pragma sst null_ptr safe
-void* sstmac_memcpy(void* dst, const void* src, unsigned long sz);
-
-#if defined(__clang__) // Add back the warnings
-#pragma clang diagnostic pop
-#endif
-
-#ifdef __cplusplus
+int fxn()
+{
+  int i=0;
+  int mul = 0;
+  double* x = new double[10];
+  int* idx = new int[5];
+#pragma sst memory 10
+#pragma sst compute
+  for (i=0; i < 5; ++i){
+    mul *= i;
+    for (int j=0; j < 10; ++j){
+      mul += (j-1);
+      x[j] += i;
+      mul -= x[j];
+      j=7;
+      mul += x[j];
+      mul *= x[idx[i]];
+      idx[i] -= 3;
+      mul *= x[idx[i]];
+    }
+  }
+  return 0;
 }
-#endif
-
-#ifdef STRING_H_OWNS_STL
-#undef STRING_H_OWNS_STL
-#undef SSTMAC_INSIDE_STL
-#include <sstmac/replacements/sstmac_pthread_return.h>
-#include <sstmac/replacements/return_symbol_macros.h>
-#endif
-
-#endif
-
 
