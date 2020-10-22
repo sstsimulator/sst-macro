@@ -272,6 +272,7 @@ AC_CONFIG_FILES([bin/sstcc], [chmod +x bin/sstcc])
 AC_CONFIG_FILES([bin/sstccvars.py])
 AC_CONFIG_FILES([tests/runtest], [chmod +x tests/runtest])
 AC_CONFIG_FILES([tests/checktest], [chmod +x tests/checktest])
+AC_CONFIG_FILES([tests/checkdiff], [chmod +x tests/checkdiff])
 
 AC_OUTPUT
 
