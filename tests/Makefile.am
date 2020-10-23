@@ -32,8 +32,8 @@ endif
 
 # runtest arguments are:
 #   <timeout, in seconds> <output file> <executable> <arguments passed to executable...>
-PYRUNTEST = $(top_srcdir)/tests/runtest
-PYVALIDATE = $(top_srcdir)/tests/checktest
+PYRUNTEST = $(top_builddir)/tests/runtest
+PYVALIDATE = $(top_builddir)/tests/checktest
 
 NOOP = $(top_srcdir)/tests/noop
 DIFF=diff -u
@@ -58,8 +58,7 @@ EXTRA_DIST = \
   runtest \
   checktest \
   checkdiff \
-  noop \
-  configlib.py
+  noop
 
 
 CORE_LIBS = ../sstmac/install/libsstmac.la ../sprockit/sprockit/libsprockit.la
