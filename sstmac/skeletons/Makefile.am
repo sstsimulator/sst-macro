@@ -23,6 +23,9 @@ nobase_library_include_HEADERS = \
 libsstmac_skeletons_la_LDFLAGS = 
 
 libsstmac_skeletons_la_SOURCES = \
+  fft/fft.cc \
+  halo3d-26/halo3d-26.cc \
+  sweep3d/sweep3d.cc \
   traffic_matrix/main.cc \
   undumpi/parsedumpi.cc \
   undumpi/parsedumpi_callbacks.cc 

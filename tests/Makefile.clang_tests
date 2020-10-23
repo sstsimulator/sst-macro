@@ -67,7 +67,7 @@ CLANGTEMP=$(CLANGTESTS:%=test_clang_%.tmp-out)
 .PRECIOUS: $(CLANGTEMP)
 
 test_clang_%.$(CHKSUF): test_clang_%.tmp-out
-	$(top_srcdir)/tests/checkdiff $< $(top_srcdir)
+	$(top_builddir)/tests/checkdiff $< $(top_srcdir)
 
 test_clang_%_cpp.tmp-out: sst.pp.%.cc $(SSTMAC_DEGLOBAL) 
 	-$(CXX) -std=c++11 -c $< -o tmp.o \

@@ -5,6 +5,9 @@
 
 CORETESTS+= \
   test_sumi_collective \
+  test_core_apps_fft \
+  test_core_apps_halo3d \
+  test_core_apps_sweep3d \
   test_core_apps_ping_pong_snappr \
   test_core_apps_ping_pong_mem_thrash \
   test_core_apps_ping_all_dfly_snappr \
