@@ -59,6 +59,10 @@ namespace hw {
 
 class TableRouter : public Router {
  private:
+  struct header : public Packet::Header {
+    uint8_t num_hops;
+  };
+
   struct Port {
     Port(const nlohmann::json& pch) :
       rotater(0)
@@ -97,7 +101,8 @@ class TableRouter : public Router {
 
   TableRouter(SST::Params& params, Topology* top, NetworkSwitch* sw) :
     Router(params, top, sw),
-    table_(top->numNodes())
+    table_(top->numNodes()),
+    num_vcs_(1)
   {
     std::string fname = params.find<std::string>("filename");
     std::ifstream in(fname);
@@ -137,10 +142,15 @@ class TableRouter : public Router {
       }
     }
 
+    increment_vcs_ = params.find<bool>("increment_vcs", false);
+    if (increment_vcs_){
+      num_vcs_ = params.find<int>("num_vcs");
+    }
+
   }
 
   int numVC() const override {
-    return 1;
+    return num_vcs_;
   }
 
   std::string toString() const override {
@@ -150,13 +160,23 @@ class TableRouter : public Router {
   void route(Packet *pkt) override {
     int port = table_[pkt->toaddr()].nextPort();
     pkt->setEdgeOutport(port);
-    //for now only valid on topologies with minimal/no vcs
-    pkt->setDeadlockVC(0);
-    rter_debug("packet to %d sent to port %d", pkt->toaddr(), port);
+
+    auto* hdr = pkt->rtrHeader<header>();
+    if (increment_vcs_){
+      pkt->setDeadlockVC(hdr->num_hops);
+      hdr->num_hops++;
+    } else {
+      //for only valid on topologies with minimal/no vcs
+      pkt->setDeadlockVC(0);
+    }
+    rter_debug("packet to %d sent to port %d:%d",
+               pkt->toaddr(), port, pkt->deadlockVC());
   }
 
  private:
   std::vector<Port> table_;
+  bool increment_vcs_;
+  int num_vcs_;
 };
 
 }
