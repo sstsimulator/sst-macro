@@ -367,6 +367,12 @@ struct FifoPortArbitrator : public SnapprPortArbitrator
                      const std::vector<int>& /*vls_per_qos*/){}
 
   void insert(uint64_t  /*cycle*/, SnapprPacket *pkt) override {
+#if SSTMAC_SANITY_CHECK
+    if (pkt->virtualLane() >= vls_.size()){
+      spkt_abort_printf("got invalid VL=%d, max is %d",
+                        pkt->virtualLane(), int(vls_.size() - 1));
+    }
+#endif
     VirtualLane& vl = vls_[pkt->virtualLane()];
     vl.occupancy += 1;
     if (vl.credits >= pkt->numBytes()){
@@ -743,6 +749,12 @@ struct WRR_PortArbitrator : public SnapprPortArbitrator
 
   void insert(uint64_t cycle, SnapprPacket *pkt) override {
     int vl = pkt->virtualLane();
+#if SSTMAC_SANITY_CHECK
+    if (vl >= vls_.size()){
+      spkt_abort_printf("got invalid VL=%d, max is %d",
+                        vl, int(vls_.size() - 1));
+    }
+#endif
     VirtualLane& v = vls_[vl];
     if (v.pending.empty()){
       if (v.credits >= pkt->numBytes()){
@@ -920,6 +932,12 @@ struct WRR_PortArbitrator : public SnapprPortArbitrator
   }
 
   void addCredits(int vl, uint32_t credits) override {
+#if SSTMAC_SANITY_CHECK
+    if (vl >= vls_.size()){
+      spkt_abort_printf("got invalid VL=%d, max is %d",
+                        vl, int(vls_.size() - 1));
+    }
+#endif
     VirtualLane& v = vls_[vl];
     port_debug("WRR %p VL %d adding %" PRIu32 " credits to existing=%" PRIu32,
                this, vl, credits, v.credits)
