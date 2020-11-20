@@ -26,7 +26,7 @@ libsstmac_skeletons_la_SOURCES = \
   fft/fft.cc \
   halo3d-26/halo3d-26.cc \
   sweep3d/sweep3d.cc \
-  traffic_matrix/main.cc \
+  offered_load/main.cc \
   undumpi/parsedumpi.cc \
   undumpi/parsedumpi_callbacks.cc 
 
