@@ -76,13 +76,15 @@ void
 Packet::serialize_order(serializer& ser)
 {
   Event::serialize_order(ser);
-  ser & payload_;
-  ser & num_bytes_;
+  ser & toaddr_;
+  ser & fromaddr_;
   ser & flow_id_;
+  ser & num_bytes_;
+  ser & qos_;
+  ser & payload_;
   ser & rtr_metadata_;
   ser & stats_metadata_;
   ser & nic_metadata_;
-  ser & qos_;
 }
 
 }

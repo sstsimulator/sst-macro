@@ -86,14 +86,17 @@ SnapprPacket::toString() const
 void
 SnapprPacket::serialize_order(serializer& ser)
 {
-  //routable::serialize_order(ser);
   Packet::serialize_order(ser);
+  ser & seqnum_;
   ser & arrival_;
   ser & time_to_send_;
+  ser & congestion_delay_;
+  ser & offset_;
+  ser & vl_;
   ser & priority_;
   ser & inport_;
-  ser & vl_;
   ser & input_vl_;
+  ser & deadlocked_;
 }
 
 std::string
@@ -105,8 +108,8 @@ void
 SnapprCredit::serialize_order(serializer &ser)
 {
   Event::serialize_order(ser);
-  ser & port_;
   ser & num_bytes_;
+  ser & port_;
   ser & vl_;
 }
 
