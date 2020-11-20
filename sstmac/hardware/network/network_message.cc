@@ -247,15 +247,19 @@ void
 NetworkMessage::serialize_order(serializer& ser)
 {
   Flow::serialize_order(ser);
-  ser & time_started_;
-  ser & injection_started_;
   ser & aid_;
-  ser & qos_;
   ser & needs_ack_;
+  ser & payload_bytes_;
   ser & toaddr_;
   ser & fromaddr_;
   ser & type_;
   ser & qos_;
+  ser & qos_;
+  ser & time_started_;
+  ser & injection_started_;
+  ser & injection_delay_;
+  ser & min_delay_;
+  ser & congestion_delay_;
   if (type_ == null_netmsg_type){
     spkt_abort_printf("failed serializing network message - got null type");
   }
@@ -264,7 +268,6 @@ NetworkMessage::serialize_order(serializer& ser)
   ser.primitive(smsg_buffer_);
   ser & sstmac::array(wire_buffer_, payload_bytes_);
   //this has to go here, weirdness with sstmac::array
-  ser & payload_bytes_;
 }
 
 #if !SSTMAC_INTEGRATED_SST_CORE
