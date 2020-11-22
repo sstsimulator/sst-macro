@@ -77,8 +77,8 @@ SnapprPacket::SnapprPacket(
 std::string
 SnapprPacket::toString() const
 {
-  return sprockit::sprintf("pkt bytes=%" PRIu32 " flow=%" PRIu64 " offset=%" PRIu64 ": %s",
-                          numBytes(), flowId(), offset_,
+  return sprockit::sprintf("pkt bytes=%" PRIu32 " flow=%" PRIu64 " offset=%" PRIu64 " %d->%d: %s",
+                          numBytes(), flowId(), offset_, int(fromaddr()), int(toaddr()),
                           (flow() ? flow()->toString().c_str() : "no payload"));
 
 }
