@@ -91,7 +91,7 @@ class TorusMinimalRouter : public Router {
   void upPath(int dim, int srcX, int dstX, header* hdr) const
   {
     auto& dimensions_ = torus_->dimensions();
-    if ((srcX + 1) % dimensions_[dim] == dstX){
+    if (srcX % dimensions_[dim] == dstX){
       //move onto next dimension
       hdr->deadlock_vc = 0;
       hdr->crossed_timeline = 0;
@@ -107,7 +107,7 @@ class TorusMinimalRouter : public Router {
   void downPath(int dim, int src, int dst, header* hdr) const
   {
     auto& dimensions_ = torus_->dimensions();
-    if (src == ((dst + 1) % dimensions_[dim])){
+    if (src == (dst % dimensions_[dim])){
       //move onto next dimension
       hdr->deadlock_vc = 0;
       hdr->crossed_timeline = 0;
