@@ -57,10 +57,19 @@ Questions? Contact sst-macro-help@sandia.gov
  #define ConvertToCppString(x) PyUnicode_AsUTF8(x)
  #define TP_FINALIZE nullptr,
  #define TP_VECTORCALL_OFFSET 0,
- #define TP_VECTORCALL nullptr,
  #define TP_PRINT
  #define TP_COMPARE
  #define TP_AS_SYNC nullptr,
+ #if PY_MINOR_VERSION == 8
+    #define TP_PRINT_DEP nullptr,
+ #else
+    #define TP_PRINT_DEP
+ #endif
+ #if PY_MINOR_VERSION >= 8
+    #define TP_VECTORCALL nullptr,
+ #else
+    #define TP_VECTORCALL
+ #endif
 #else
  #define Py_TYPE(ob) (((PyObject*)(ob))->ob_type)
  #define PY_OBJ_HEAD PyVarObject_HEAD_INIT(nullptr, 0)
@@ -74,6 +83,8 @@ Questions? Contact sst-macro-help@sandia.gov
  #define TP_PRINT nullptr,
  #define TP_COMPARE nullptr,
  #define TP_AS_SYNC
+ #define TP_VECTORCALL
+ #define TP_PRINT_DEP
 #endif
 
 
@@ -201,6 +212,7 @@ static PyTypeObject SystemType = {
     0,                         /* tp_version_tag */
     TP_FINALIZE                /* Python3 only */
     TP_VECTORCALL              /* Python3 only */
+    TP_PRINT_DEP               /* Python3.8 only */
 };
 
 namespace sstmac {
