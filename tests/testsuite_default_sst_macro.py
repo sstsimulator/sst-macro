@@ -48,7 +48,7 @@ class testcase_sst_macro(SSTTestCase):
 
 #####
 
-    def sst_macro_test_template(self, testcase, testtimeout = 60):
+    def sst_macro_test_template(self, testcase, testtimeout = 120):
         # Get the path to the test files
         test_path = self.get_testsuite_dir()
         outdir = self.get_test_output_run_dir()
