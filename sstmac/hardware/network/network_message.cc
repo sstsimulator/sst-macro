@@ -285,6 +285,9 @@ void
 NetworkMessage::serialize_order(serializer& ser)
 {
   Flow::serialize_order(ser);
+  ser & time_started_;
+  ser & time_arrived_;
+  ser & injection_started_;
   ser & aid_;
   ser & needs_ack_;
   ser & payload_bytes_;
