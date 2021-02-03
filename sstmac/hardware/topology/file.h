@@ -154,18 +154,11 @@ class FileTopology : public Topology
 //  }
 
   std::string switchIdToName(SwitchId id) const override {
-    // find switch name
-    std::string key;
-    for (auto &i : switch_name_map_) {
-       if (i.second == id) {
-          key = i.first;
-          break;
-       }
-    }
-    return key;
+    return switch_id_map_.at(id);
   }
 
-  nlohmann::json getSwitchJson(const std::string& name) const {
+  nlohmann::json getSwitchJson(SwitchId sid) const {
+    std::string name = switchIdToName(sid);
     return switches_.at(name);
   }
 
@@ -180,8 +173,9 @@ class FileTopology : public Topology
   nlohmann::json json_;
   nlohmann::json switches_;
   nlohmann::json nodes_;
-  std::map<std::string,int> node_name_map_;
-  std::map<std::string,int> switch_name_map_;
+  std::unordered_map<std::string,int> node_name_map_;
+  std::unordered_map<int, std::string> switch_id_map_;
+  std::unordered_map<std::string,int> switch_name_map_;
 };
 
 }

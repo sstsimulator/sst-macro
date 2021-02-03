@@ -54,6 +54,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/topology/topology_fwd.h>
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/common/stats/ftq_tag.h>
+#include <sstmac/libraries/nlohmann/json.hpp>
 #include <sprockit/sim_parameters_fwd.h>
 #include <sprockit/debug.h>
 #include <sprockit/factory.h>
@@ -514,6 +515,11 @@ class Topology : public sprockit::printable
 
   static std::string getPortNamespace(int port);
 
+  const nlohmann::json& getRoutingTable(SwitchId sid) const {
+    std::string name = switchIdToName(sid);
+    return routing_tables_.at(name).at("routes");
+  }
+
  protected:
   Topology(SST::Params& params);
 
@@ -531,6 +537,7 @@ class Topology : public sprockit::printable
   std::string dot_file_;
   std::string xyz_file_;
   std::string dump_file_;
+  nlohmann::json routing_tables_;
 
 };
 

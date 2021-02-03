@@ -74,26 +74,26 @@ test_core_apps_compute.$(CHKSUF): $(SSTMACEXEC)
 test_core_apps_ping_all_tree_table.$(CHKSUF): $(SSTMACEXEC)
 	$(PYRUNTEST) 15 $(top_srcdir) $@ Exact \
    $(SSTMACEXEC) -f $(srcdir)/test_configs/test_ping_all_tree_table.ini \
-   -p switch.router.filename=$(top_srcdir)/tests/test_configs/rtr_tbl.json \
+   -p topology.routing_tables=$(top_srcdir)/tests/test_configs/rtr_tbl.json \
    --no-wall-time
 
 test_core_apps_ping_all_tree_table_vcs.$(CHKSUF): $(SSTMACEXEC)
 	$(PYRUNTEST) 15 $(top_srcdir) $@ Exact \
    $(SSTMACEXEC) -f $(srcdir)/test_configs/test_ping_all_tree_table_vcs.ini \
-   -p switch.router.filename=$(top_srcdir)/tests/test_configs/rtr_tbl.json \
+   -p topology.routing_tables=$(top_srcdir)/tests/test_configs/rtr_tbl.json \
    --no-wall-time
 
 test_core_apps_ping_all_file.$(CHKSUF): $(SSTMACEXEC)
 	$(PYRUNTEST) 15 $(top_srcdir) $@ Exact \
    $(SSTMACEXEC) -f $(srcdir)/test_configs/test_ping_all_file.ini \
-   -p switch.router.filename=$(top_srcdir)/tests/test_configs/rtr_tbl_file_topology1.json \
+   -p topology.routing_tables=$(top_srcdir)/tests/test_configs/rtr_tbl_file_topology1.json \
    -p topology.filename=$(top_srcdir)/tests/test_configs/file_topology1.json \
    --no-wall-time
 
 test_core_apps_ping_all_port_channel.$(CHKSUF): $(SSTMACEXEC)
 	$(PYRUNTEST) 15 $(top_srcdir) $@ Exact \
    $(SSTMACEXEC) -f $(srcdir)/test_configs/test_ping_all_file.ini \
-   -p switch.router.filename=$(top_srcdir)/tests/test_configs/testbed_rtr_tbl.json \
+   -p topology.routing_tables=$(top_srcdir)/tests/test_configs/testbed_rtr_tbl.json \
    -p topology.filename=$(top_srcdir)/tests/test_configs/testbed_topology.json \
    --no-wall-time
 

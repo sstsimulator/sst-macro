@@ -120,6 +120,18 @@ Topology::Topology(SST::Params& params)
   if (params.contains("dump_file")){
     dump_file_ = params.find<std::string>("dump_file");
   }
+
+  if (params.contains("routing_tables")){
+    std::string router_fname = params.find<std::string>("routing_tables");
+    std::ifstream rin(router_fname);
+    nlohmann::json rtr_jsn;
+    try {
+      rin >> rtr_jsn;
+    } catch (nlohmann::detail::exception& e) {
+      spkt_abort_printf("failed parsing json file %s", router_fname.c_str());
+    }
+    routing_tables_ = rtr_jsn.at("switches");
+  }
 }
 
 Topology::~Topology()

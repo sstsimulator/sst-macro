@@ -82,8 +82,10 @@ FileTopology::FileTopology(SST::Params& params) :
   switches_ = json_.at("switches");
   num_switches_ = switches_.size();
   i=0;
-  for (auto it = switches_.begin(); it != switches_.end(); ++it, ++i)
+  for (auto it = switches_.begin(); it != switches_.end(); ++it, ++i){
     switch_name_map_[it.key()] = i;
+    switch_id_map_[i] = it.key();
+  }
 
   // loop through and analyze switch ports
   std::set<int> leafs;
@@ -131,14 +133,11 @@ FileTopology::connectedOutports(SwitchId src, std::vector<Connection>& conns) co
 {
   conns.clear();
 
-  // find switch name
-  string key;
-  for (auto &i : switch_name_map_) {
-     if (i.second == src) {
-        key = i.first;
-        break;
-     }
+  auto iter = switch_id_map_.find(src);
+  if (iter == switch_id_map_.end()){
+    spkt_abort_printf("Switch %d not found in json map", src);
   }
+  std::string key = iter->second;
 
   json outports = switches_.at(key).at("outports");
   for (auto prt = outports.begin(); prt != outports.end(); ++prt) {
