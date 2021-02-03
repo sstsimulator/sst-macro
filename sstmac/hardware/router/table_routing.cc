@@ -104,24 +104,23 @@ class TableRouter : public Router {
     table_(top->numNodes()),
     num_vcs_(1)
   {
-    std::string fname = params.find<std::string>("filename");
-    std::ifstream in(fname);
-    nlohmann::json jsn;
-    in >> jsn;
-    FileTopology* file_topo = dynamic_cast<FileTopology*>(top);
 
-    std::string myName = top->switchIdToName(my_addr_);
-    nlohmann::json routes =
-        jsn.at("switches").at(myName).at("routes");
+    FileTopology* file_topo = dynamic_cast<FileTopology*>(top);
     nlohmann::json port_channels;
     if (file_topo){
-      nlohmann::json switch_ports = file_topo->getSwitchJson(myName);
-      auto pch_it = switch_ports.find("port_channels");
-      if (pch_it != switch_ports.end()){
-        port_channels = *pch_it;
+      try {
+        nlohmann::json switch_ports = file_topo->getSwitchJson(my_addr_);
+        auto pch_it = switch_ports.find("port_channels");
+        if (pch_it != switch_ports.end()){
+          port_channels = *pch_it;
+        }
+      } catch (nlohmann::detail::exception& e) {
+        spkt_abort_printf("failed getting switch JSON info in TableRouter for switch %d",
+                          int(addr()));
       }
     }
 
+    nlohmann::json routes = top->getRoutingTable(my_addr_);
     for (auto it = routes.begin(); it != routes.end(); ++it){
       NodeId dest_nid = top->nodeNameToId(it.key());
       if (it.value().is_number()){
