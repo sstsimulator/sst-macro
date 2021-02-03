@@ -108,10 +108,15 @@ class TableRouter : public Router {
     FileTopology* file_topo = dynamic_cast<FileTopology*>(top);
     nlohmann::json port_channels;
     if (file_topo){
-      nlohmann::json switch_ports = file_topo->getSwitchJson(my_addr_);
-      auto pch_it = switch_ports.find("port_channels");
-      if (pch_it != switch_ports.end()){
-        port_channels = *pch_it;
+      try {
+        nlohmann::json switch_ports = file_topo->getSwitchJson(my_addr_);
+        auto pch_it = switch_ports.find("port_channels");
+        if (pch_it != switch_ports.end()){
+          port_channels = *pch_it;
+        }
+      } catch (nlohmann::detail::exception& e) {
+        spkt_abort_printf("failed getting switch JSON info in TableRouter for switch %d",
+                          int(addr()));
       }
     }
 

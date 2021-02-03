@@ -286,6 +286,11 @@ NIC::recordMessage(NetworkMessage* netmsg)
 void
 NIC::internodeSend(NetworkMessage* netmsg)
 {
+  if (netmsg->toaddr() >= top_->numNodes()){
+    spkt_abort_printf("Got bad destination %d on NIC %d for %s",
+                      int(netmsg->toaddr()), int(addr()), netmsg->toString().c_str());
+  }
+
   recordMessage(netmsg);
   nic_debug("internode send payload %llu of size %d %s",
     netmsg->flowId(), int(netmsg->byteLength()), netmsg->toString().c_str());
