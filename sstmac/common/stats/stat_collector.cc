@@ -83,6 +83,14 @@ StatisticFieldsOutput::implRegisterField(const char *fieldName)
 }
 
 void
+StatisticFieldsOutput::output(StatisticBase* stat, bool endOfSimFlag)
+{
+  startOutputEntries(stat);
+  stat->outputStatisticFields(this, endOfSimFlag);
+  stopOutputEntries();
+}
+
+void
 StatisticFieldsOutput::registerStatistic(StatisticBase *stat)
 {
   active_stat_ = stat;

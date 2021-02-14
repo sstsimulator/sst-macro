@@ -187,11 +187,7 @@ class StatisticFieldsOutput : public StatisticOutput
   virtual void outputField(fieldHandle_t fieldHandle, float data) = 0;
   virtual void outputField(fieldHandle_t fieldHandle, double data) = 0;
 
-  void output(StatisticBase* stat, bool endOfSimFlag) override {
-    startOutputEntries(stat);
-    stat->outputStatisticFields(this, endOfSimFlag);
-    stopOutputEntries();
-  }
+  void output(StatisticBase* stat, bool endOfSimFlag) override;
 
   void registerStatistic(StatisticBase* stat) override;
 
