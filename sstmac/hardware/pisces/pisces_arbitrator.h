@@ -51,6 +51,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/factory.h>
 #include <sstmac/hardware/noise/noise.h>
 
+#define PISCES_DEBUG_INDIVIDUAL_HISTORY 0
+#define PISCES_DETAILED_DEBUG 0
+
 namespace sstmac {
 namespace hw {
 
@@ -99,6 +102,9 @@ class PiscesBandwidthArbitrator
 
  protected:
   TimeDelta byteDelay_;
+#if PISCES_DEBUG_INDIVIDUAL_HISTORY
+  std::vector<std::string> history_;
+#endif
 
 };
 

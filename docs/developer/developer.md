@@ -1,14 +1,14 @@
 ---
-title: Manual for SST-Macro 8.0.x
+title: Manual for SST-Macro 10.1.x
 published: true
 category: SSTDocumentation
 ---
 
 
-# SST/macro 8.0: Developer's Reference
+# SST/macro 10.1: Developer's Reference
 
 
-![](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/sstlogo.png) 
+![](https://github.com/sstsimulator/sst-macro/blob/devel/docs/developer/figures/sstlogo.png) 
 
 
 
@@ -20,61 +20,68 @@ category: SSTDocumentation
  
 
 # Table of Contents
-   - [Chapter 1: Introduction](#chapter:intro)
-      - [Section 1.1: Overview](#sec:intro:overview)
-      - [Section 1.2: Polymorphism and Modularity](#sec:polymorphism)
-      - [Section 1.3: Most Important Style and Coding Rules](#sec:stylerules)
-   - [Chapter 2: SST-macro Classes](#chapter:classes)
-      - [Section 2.1: Factory Types](#sec:factory)
-         - [2.1.1: Usage](#subsec:usage)
-         - [2.1.2: Base Class](#subsec:baseClass)
-         - [2.1.3: Child Class](#subsec:childClass)
-   - [Chapter 3: SST-macro Connectable Interface](#chapter:Connectables)
-   - [Chapter 4: SProCKit](#chapter:sprockit)
-      - [Section 4.1: Debug](#sec:debug)
-      - [Section 4.2: Serialization](#sec:serialize)
-   - [Chapter 5: Discrete Event Simulation](#chapter:des)
-      - [Section 5.1: Event Managers](#sec:eventManagers)
-         - [5.1.1: Event Handlers](#subsec:eventHandlers)
-         - [5.1.2: Event Heap/Map](#subsec:eventHeap)
-      - [Section 5.2: Event Schedulers](#sec:eventSchedulers)
-   - [Chapter 6: Software Models](#chapter:software)
-      - [Section 6.1: Applications and User-space Threads](#sec:appThreads)
-         - [6.1.1: Thread-specific storage](#subsec:threadStorage)
-      - [Section 6.2: Libraries](#sec:libraries)
-         - [6.2.1: API](#subsec:softwareAPI)
-         - [6.2.2: Service](#subsec:service)
-   - [Chapter 7: Hardware Models](#chapter:hardware)
-      - [Section 7.1: Overview](#sec:topOverview)
-      - [Section 7.2: Connectables](#sec:Connectables)
-      - [Section 7.3: Topology](#sec:topology)
-      - [Section 7.4: Router](#sec:router)
-      - [Section 7.5: Network Switch: Flow Control](#sec:networkSwitch)
-      - [Section 7.6: Interconnect: Putting it all together](#sec:topInterconnect)
-      - [Section 7.7: Node](#sec:node)
-      - [Section 7.8: Network Interface (NIC)](#sec:nic)
-      - [Section 7.9: Memory Model](#sec:memModel)
-   - [Chapter 8: A Custom Object: Beginning To End](#chapter:custom)
-   - [Chapter 9: How SST-macro Launches](#chapter:launching)
-      - [Section 9.1: Configuration of Simulation](#sec:simConfig)
-      - [Section 9.2: Building and configuration of simulator components](#sec:buildConfig)
-         - [9.2.1: Event Manager](#sec:eventMan)
-         - [9.2.2: Interconnect](#subsec:interconnect)
-         - [9.2.3: Applications](#subsec:apps)
-      - [Section 9.3: Running](#sec:running)
-   - [Chapter 10: Statistics Collection](#chapter:stats)
-      - [Section 10.1: Setting Up Objects](#sec:setupStats)
-      - [Section 10.2: Dumping Data](#sec:dumping)
-      - [Section 10.3: Reduction and Aggregation](#sec:reduceStats)
-      - [Section 10.4: Storage Contraints](#sec:storageStats)
+   - [Chapter 1: Introduction](#chapter_intro)
+      - [Section 1.1: Overview](#sec_intro_overview)
+      - [Section 1.2: What To Expect In The Developer's Manual](#sec_whatToExpect)
+      - [Section 1.3: Thousand Foot View of Discrete Event Simulation](#sec_thousandFoot)
+      - [Section 1.4: Use of C++](#sec_useCpp)
+      - [Section 1.5: Polymorphism and Modularity](#sec_polymorphism)
+      - [Section 1.6: Most Important Style and Coding Rules](#sec_stylerules)
+   - [Chapter 2: SST-macro Classes](#chapter_classes)
+      - [Section 2.1: Factory Types](#sec_factory)
+         - [2.1.1: Usage](#subsec_usage)
+         - [2.1.2: Base Class](#subsec_baseClass)
+         - [2.1.3: Child Class](#subsec_childClass)
+   - [Chapter 3: SST-macro Connectable Interface](#chapter_Connectables)
+      - [Section 3.1: Required Functions](#sec_requiredFunctions)
+      - [Section 3.2: Example External Component](#sec_exampleComponent)
+         - [3.2.1: Python configuration](#subsec_pythonConfig)
+         - [3.2.2: Makefile](#subsec_makefile)
+   - [Chapter 4: SProCKit](#chapter_sprockit)
+      - [Section 4.1: Debug](#sec_debug)
+      - [Section 4.2: Serialization](#sec_serialize)
+   - [Chapter 5: Discrete Event Simulation](#chapter_des)
+      - [Section 5.1: Event Managers](#sec_eventManagers)
+         - [5.1.1: Event Handlers](#subsec_eventHandlers)
+         - [5.1.2: Event Heap/Map](#subsec_eventHeap)
+      - [Section 5.2: Event Schedulers](#sec_eventSchedulers)
+   - [Chapter 6: Software Models](#chapter_software)
+      - [Section 6.1: Applications and User-space Threads](#sec_appThreads)
+         - [6.1.1: Thread-specific storage](#subsec_threadStorage)
+      - [Section 6.2: Libraries](#sec_libraries)
+         - [6.2.1: API](#subsec_softwareAPI)
+   - [Chapter 7: Hardware Models](#chapter_hardware)
+      - [Section 7.1: Overview](#sec_topOverview)
+      - [Section 7.2: Packets](#sec_packets)
+      - [Section 7.3: Connectables](#sec_Connectables)
+      - [Section 7.4: Topology](#sec_topology)
+      - [Section 7.5: Router](#sec_router)
+      - [Section 7.6: Network Switch: Flow Control](#sec_networkSwitch)
+      - [Section 7.7: Interconnect: Putting it all together](#sec_topInterconnect)
+      - [Section 7.8: Node](#sec_node)
+      - [Section 7.9: Network Interface (NIC)](#sec_nic)
+      - [Section 7.10: Memory Model](#sec_memModel)
+   - [Chapter 8: A Custom Object: Beginning To End](#chapter_custom)
+   - [Chapter 9: How SST-macro Launches](#chapter_launching)
+      - [Section 9.1: Configuration of Simulation](#sec_simConfig)
+      - [Section 9.2: Building and configuration of simulator components](#sec_buildConfig)
+         - [9.2.1: Event Manager](#sec_eventMan)
+         - [9.2.2: Interconnect](#subsec_interconnect)
+         - [9.2.3: Applications](#subsec_apps)
+      - [Section 9.3: Running](#sec_running)
+   - [Chapter 10: Statistics Collection](#chapter_stats)
+      - [Section 10.1: Setting Up Objects](#sec_setupStats)
+      - [Section 10.2: Dumping Data](#sec_dumping)
+      - [Section 10.3: Reduction and Aggregation](#sec_reduceStats)
+      - [Section 10.4: Storage Contraints](#sec_storageStats)
 
 
 
-## Chapter 1: Introduction<a name="chapter:intro"></a>
+## Chapter 1: Introduction<a name="chapter_intro"></a>
 
 
 
-### Section 1.1: Overview<a name="sec:intro:overview"></a>
+### Section 1.1: Overview<a name="sec_intro_overview"></a>
 
 
 
@@ -99,7 +106,10 @@ The developer's manual broadly covers the two main aspects of creating new compo
 -   Setting up components to match the `Connectable` interface linking components together via ports and event handlers
 -   Registering components with the factory system to make them usable in simulation input files
 
-\section{What To Expect In The Developer's Manual}
+### Section 1.2: What To Expect In The Developer's Manual<a name="sec_whatToExpect"></a>
+
+
+
 The developer's manual is mainly designed for those who wish to extend the simulator or understand its internals.
 The user's manual, in contrast, is mainly designed for those who wish to perform experiments with new applications using existing hardware models.
 The user's manual therefore covers building and running the core set of SST/macro features.
@@ -107,10 +117,13 @@ The developer's manual covers what you need to know to add new features.
 The SST design is such that external components are built into shared object `.so` files,
 loading them into the simulator core without having to recompile the core itself.
 
-\section{Thousand Foot View of Discrete Event Simulation}
+### Section 1.3: Thousand Foot View of Discrete Event Simulation<a name="sec_thousandFoot"></a>
+
+
+
 Ignoring the complexities of parallel discrete event simulation (PDES), 
 discrete even simulation works with a very simple set of abstractions.
-Implementing a discrete event simulation requires components, links, and events (Figure~[1](#fig:desCore)).
+Implementing a discrete event simulation requires components, links, and events (Figure~[1](#fig_desCore)).
 Components (or agents) perform operations. Components create, send, and receive events - and that's basically all they do. 
 In one example, each component could represent a compute node in the system.
 Links between components could represent actual, physical links in the network.
@@ -134,13 +147,16 @@ creating an event order violation.
 As long as developers obey the component, link, and event abstractions, all of these complexities are handled automatically by the simulation core.
 
 
-![Figure 1: Basic structure of discrete event simulation linking components with links (of a given latency). Link delays advance the simulation clock, which is coordinated by the discrete event core. Parallel discrete event simulation involves placing components on different MPI ranks. The link objects (and simulator core) are responsible for delivering events across MPI boundaries.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/desCore) 
+![Figure 1: Basic structure of discrete event simulation linking components with links (of a given latency). Link delays advance the simulation clock, which is coordinated by the discrete event core. Parallel discrete event simulation involves placing components on different MPI ranks. The link objects (and simulator core) are responsible for delivering events across MPI boundaries.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/developer/figures/desCore.png) 
 
 *Figure 1: Basic structure of discrete event simulation linking components with links (of a given latency). Link delays advance the simulation clock, which is coordinated by the discrete event core. Parallel discrete event simulation involves placing components on different MPI ranks. The link objects (and simulator core) are responsible for delivering events across MPI boundaries.*
 
 
 
-\section{Use of C++}
+### Section 1.4: Use of C++<a name="sec_useCpp"></a>
+
+
+
 SST/macro (Structural Simulation Toolkit for Macroscale) is a discrete event simulator designed for macroscale (system-level) experiments in HPC. 
 SST/macro is an object-oriented C++ code that makes heavy use of dynamic types and polymorphism.
 While a great deal of template machinery exists under the hood, nearly all users and even most developers will never actually need to interact with any C++ templates.
@@ -151,13 +167,14 @@ Boost is no longer required or even used.
 Some C++11 features like `unordered_map` and `unique_ptr` are used heavily throughout the code.
 
 
-![Figure 2: Structure of the simulation connecting components with links and event handlers.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/EventHandler) 
+![Figure 2: Structure of the simulation connecting components with links and event handlers.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/developer/figures/EventHandler) 
 
 *Figure 2: Structure of the simulation connecting components with links and event handlers.*
 
 
 
-### Section 1.2: Polymorphism and Modularity<a name="sec:polymorphism"></a>
+### Section 1.5: Polymorphism and Modularity<a name="sec_polymorphism"></a>
+
 
 
 The simulation progresses with different modules (classes) exchanging events.
@@ -173,7 +190,7 @@ void handle(Event* ev){
 }
 ````
 The prototype therefore accepts any event type. 
-The interaction of these types is illustrated in Figure~[2](#fig:abstractHandlers)).
+The interaction of these types is illustrated in Figure~[2](#fig_abstractHandlers)).
 Event handlers are created as dispatch wrappers to member functions of a `Component` or `SubComponent`.
 There are special helper functions and template classes in SST/macro designed to simplify this process.
 A `Link` is created connecting two components.
@@ -197,10 +214,11 @@ For example, using a fluid flow model for memory reads cannot be easily combined
 Again, pairing incompatible modules is not a compile-time error.
 Only when the types are fully defined at runtime can an incompatibility error be detected.
 
-### Section 1.3: Most Important Style and Coding Rules<a name="sec:stylerules"></a>
+### Section 1.6: Most Important Style and Coding Rules<a name="sec_stylerules"></a>
 
 
-Here is a selection of C++ rules we have tended to follow.  
+
+Here is a selection of C++ rules we have tended to follow.
 Detailed more below, example scripts are included to reformat the code style however you may prefer for local editing.
 However, if committing changes to the repository, only use the default formatting in the example scripts.
 
@@ -240,11 +258,11 @@ where conflicts require a prefix. Functions for modifying variables are prefixed
 
 
 
-## Chapter 2: SST-macro Classes<a name="chapter:classes"></a>
+## Chapter 2: SST-macro Classes<a name="chapter_classes"></a>
 
 
 
-### Section 2.1: Factory Types<a name="sec:factory"></a>
+### Section 2.1: Factory Types<a name="sec_factory"></a>
 
 
 We here introduce factory types, i.e. polymorphic types linked to keywords in the input file.
@@ -255,7 +273,7 @@ There are factories for topology, NIC, node, memory, switch, routing algorithm -
 Here show how to declare a new factory type and implement various polymorphic instances.
 The example files can be found in `tutorials/programming/factories`.
 
-#### 2.1.1: Usage<a name="subsec:usage"></a>
+#### 2.1.1: Usage<a name="subsec_usage"></a>
 
 
 Before looking at how to implement factory types, let's look at how they are used.
@@ -333,7 +351,7 @@ SST/macro ran for       0.0025 seconds
 Changing the values produces a different class type and different behavior.
 Thus we can manage polymorphic types by changing the input file.
 
-#### 2.1.2: Base Class<a name="subsec:baseClass"></a>
+#### 2.1.2: Base Class<a name="subsec_baseClass"></a>
 
 
 To declare a new factory type, you must include the factory header file
@@ -391,7 +409,7 @@ Actor::Actor(SST::Params& params)
 ````
 We initialize the member variable from the parameter object.  
 
-#### 2.1.3: Child Class<a name="subsec:childClass"></a>
+#### 2.1.3: Child Class<a name="subsec_childClass"></a>
 
 
 Let's now look at a fully implemented, complete `Actor` type.  We declare it
@@ -478,11 +496,13 @@ Another example `guest.h` and `guest.cc` in the code folder shows the implementa
 
 
 
-## Chapter 3: SST-macro Connectable Interface<a name="chapter:Connectables"></a>
+## Chapter 3: SST-macro Connectable Interface<a name="chapter_Connectables"></a>
 
 
 
-\section{Required Functions}
+### Section 3.1: Required Functions<a name="sec_requiredFunctions"></a>
+
+
 
 Hardware components communicate via ports. Component 1 sends an event out on one port.
 Component 2 receive the event in on another port.
@@ -564,7 +584,10 @@ LinkHandler* Test::payloadHandler(int port) const {
 }
 ````
 
-\section{Example External Component}
+### Section 3.2: Example External Component<a name="sec_exampleComponent"></a>
+
+
+
 An example component source file, corresponding Makefile for generating the external library, and parameter file demonstrating its usage can be found in `skeletons/sst_component_example`.
 Some critical things to note from the file `component.cc` are the component registration macro and the Python module generation.
 The Python module generation is specific to SST core and is not part of SST-macro.
@@ -597,7 +620,10 @@ The final field is a documentation string.
 
 All of the required connection functions are implemented in `component.cc`.
 
-\subsection{Python configuration}
+#### 3.2.1: Python configuration<a name="subsec_pythonConfig"></a>
+
+
+
 The Python file `run.py` in the same folder shows the simplest possible setup with two components connected by a single both on port 0.
 First, we import the necessary modules. The file `component.cc` implements a module called `test` that we load by calling `import sst.test`.
 We also load all Python functions provided by the macro library.
@@ -634,15 +660,11 @@ makeBiNetworkLink(comp1,comp1Id,port,
 ````
 The code in the Python script causes `connectOutput` and `connectInput` to be invoked on port 0 for each of the components.
 
-\subsection{Makefile}
-The Makefile uses compiler wrappers installed with SST-macro.
-These differ from the compiler wrappers used for skeleton applications discussed in the user's manual.
+#### 3.2.2: Makefile<a name="subsec_makefile"></a>
 
-````
-CXX :=    libsst++
-CC :=     libsstcc
-CXXFLAGS := -fPIC
-````
+
+
+The Makefile uses compiler wrappers installed with SST-macro with the special `--sst-component` flag since you are building components, not skeletons.
 All components should be compiled with `-fPIC` for use in shared library.
 Making generates a `libtest.so` that can be loaded using the Python setup or through the `external_libs` parameter in a `.ini` file.
 
@@ -650,7 +672,7 @@ Making generates a `libtest.so` that can be loaded using the Python setup or thr
 
 
 
-## Chapter 4: SProCKit<a name="chapter:sprockit"></a>
+## Chapter 4: SProCKit<a name="chapter_sprockit"></a>
 
 
 SST-macro is largely built on the Sandia Productivity C++ Toolkit (SProCKit),
@@ -660,7 +682,7 @@ move to running the application on real machines while still using the SProCKit 
 One of the major contributions is reference counted pointer types.
 The parameter files and input deck are also part of SProCKit.
 
-### Section 4.1: Debug<a name="sec:debug"></a>
+### Section 4.1: Debug<a name="sec_debug"></a>
 
 
 The goal of the SProCKit debug framework is to be both lightweight and flexible.
@@ -708,7 +730,7 @@ launch.cc
 RegisterDebugSlot(job_launch);
 ````
 
-### Section 4.2: Serialization<a name="sec:serialize"></a>
+### Section 4.2: Serialization<a name="sec_serialize"></a>
 
 
 Internally, SST-macro makes heavy use of object serialization/deserialization in order to run in parallel with MPI.
@@ -844,7 +866,7 @@ The child object should always remember to invoke the parent serialization metho
 
 
 
-## Chapter 5: Discrete Event Simulation<a name="chapter:des"></a>
+## Chapter 5: Discrete Event Simulation<a name="chapter_des"></a>
 
 
 There are abundant tutorials on discrete event simulation around the web.
@@ -855,10 +877,10 @@ When an event runs, it can create new events in the future.
 A simulation driver gradually progresses time, running events when their time stamp is reached.
 As discussed in the user's manual, we must be careful in the vocabulary.
 Simulation time or simulated time is the predicted time discrete events are happening in the simulated hardware.
-Wall time or {wall clock time} is the time SST-macro itself has been running.
+Wall time or wall clock time is the time SST-macro itself has been running.
 There are a variety of classes the cooperate in driving the simulation, which we now describe.
 
-### Section 5.1: Event Managers<a name="sec:eventManagers"></a>
+### Section 5.1: Event Managers<a name="sec_eventManagers"></a>
 
 
 The driver for simulations is an event manager that provides the function
@@ -898,10 +920,10 @@ class ExecutionEvent
 The execute function is invoked by the `EventManager` to run the underlying event.
 There are generally two basic event types in SST-macro, which we now introduce.
 
-#### 5.1.1: Event Handlers<a name="subsec:eventHandlers"></a>
+#### 5.1.1: Event Handlers<a name="subsec_eventHandlers"></a>
 
 
-In most cases, the event is represented as an event sent to an object called an `EventHandler at a specific simulation time.
+In most cases, the event is represented as an event sent to an object called an `EventHandler` at a specific simulation time.
 In handling the event, the event handlers change their internal state and may cause more events
 by scheduling new events at other event handlers (or scheduling messages to itself) at a future time.
 
@@ -911,7 +933,7 @@ In most cases, events are created by calling the function
 auto* ev = newCallback(this, &Actor::act);
 ````
 
-This then creates a class of type \inlinecode{ExecutionEvent`, for which the execute function is
+This then creates a class of type `ExecutionEvent`, for which the execute function is
 
 ````
 template <int ...S> void dispatch(seq<S...>){
@@ -942,7 +964,7 @@ a->act(42);
 ````
 
 
-#### 5.1.2: Event Heap/Map<a name="subsec:eventHeap"></a>
+#### 5.1.2: Event Heap/Map<a name="subsec_eventHeap"></a>
 
 
 The major distinction between different event containers is the data structured used.
@@ -951,7 +973,7 @@ The event manager needs to always be processing the minimum event time, which ma
 Insertion and removal are therefore log(N) operations where N is the number of currently scheduled events.
 For most cases, the number and length of events is such that the min-heap is fine.
 
-### Section 5.2: Event Schedulers<a name="sec:eventSchedulers"></a>
+### Section 5.2: Event Schedulers<a name="sec_eventSchedulers"></a>
 
 
 The simulation is partitioned into objects that are capable of scheduling events.
@@ -970,7 +992,7 @@ all subcomponents must belong to a component.  A subcomponent cannot be separate
 
 
 
-## Chapter 6: Software Models<a name="chapter:software"></a>
+## Chapter 6: Software Models<a name="chapter_software"></a>
 
 
 
@@ -978,12 +1000,12 @@ The driver for most simulations is a skeleton application.
 Although this can be arbitrary source code, we will consider the example of an MPI application below.
 We will discuss distributed services in Section  below, which is similar to an application.  In general, when we refer to applications we mean scientific codes or client codes that are doing "domain-specific" work.  These will be different from service applications like parallel file systems.
 
-We will be very specific with the use of the terms "virtual" and "real" or "physical".  
-Virtual refers to anything being modeled in the simulator. 
+We will be very specific with the use of the terms "virtual" and "real" or "physical".
+Virtual refers to anything being modeled in the simulator.
 Real or physical refers to actual processes running on a host system.
 When referring to a skeleton application in the simulator, we refer only to virtual MPI ranks.
 The term process only applies to physical MPI ranks since virtual MPI ranks are not true processes, 
-but rather a user-space thread.  
+but rather a user-space thread.
 Many virtual MPI ranks can be colocated within the same process. A physical process generally has:
 
 -   A heap
@@ -1001,7 +1023,7 @@ While the heap and stack are easy to provide for each virtual MPI rank,
 there is no easy way to provide a unique global variable segment to each MPI rank.
 This therefore requires the Clang source-to-source compiler to redirect all global variable accesses to user-space thread specific locations.
 
-### Section 6.1: Applications and User-space Threads<a name="sec:appThreads"></a>
+### Section 6.1: Applications and User-space Threads<a name="sec_appThreads"></a>
 
 
 
@@ -1046,7 +1068,7 @@ We can illustrate time advancing with a simple `MPI_Send` example.
 We have discussed that a user-space thread is allocated for each virtual MPI rank.
 The discrete event core, however, still runs on the main application thread (stack).
 Generally, the main thread (DES thread) will handle hardware events while the user-space threads will handle software events (this is relaxed in some places for optimization purposes).
-Figure [3](#fig:desThreadsMPISend), shows a flow chart for execution of the send.
+Figure [3](#fig_desThreadsMPISend), shows a flow chart for execution of the send.
 Operations occurring on the application user-space thread are shaded in blue while operations on the DES thread are shaded in pink.
 Function calls do not advance time (shown in black), but scheduling events (shown in green) do advance time.
 Again, this is just the nature of discrete event simulation.
@@ -1056,7 +1078,7 @@ Virtual time in the simulation therefore advances inside the `MPI_Send` call,
 but the details of how this happens are not apparent in the skeleton app.
 
 
-![Figure 3: Flow of events for completing a send operation.  Shows basic function calls, block/unblock context switches, and event schedules. User-space thread (application) operations are shown in blue. Main event thread (OS/kernel) operations are shown in pink.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/DES) 
+![Figure 3: Flow of events for completing a send operation.  Shows basic function calls, block/unblock context switches, and event schedules. User-space thread (application) operations are shown in blue. Main event thread (OS/kernel) operations are shown in pink.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/developer/figures/DES.png) 
 
 *Figure 3: Flow of events for completing a send operation.  Shows basic function calls, block/unblock context switches, and event schedules. User-space thread (application) operations are shown in blue. Main event thread (OS/kernel) operations are shown in pink.*
 
@@ -1066,7 +1088,7 @@ When the ACK arrives back from the NIC, the ACK signals to MPI that the operatio
 The ACK is handled by a `service` object (which is the SST-specific implementation of an MPI server). 
 A `service` is a special type of object, that we will discuss in more detail below.
 
-#### 6.1.1: Thread-specific storage<a name="subsec:threadStorage"></a>
+#### 6.1.1: Thread-specific storage<a name="subsec_threadStorage"></a>
 
 
 Let us look at the capture of the `MPI_Send` call. 
@@ -1085,18 +1107,14 @@ To access a specific API, a special helper template function `getApi` exists on 
 Thus, instead of calling a global function `MPI_Send`,
 SST/macro redirects to a member function `send` on an `mpi_api` object that is specific to a virtual MPI rank.
 
-\begin{table}
-
-
-| p{2cm} >{\raggedright}p{3cm} >{\raggedright}p{3cm} >{\raggedright}p{3cm} >{\raggedright\arraybackslash}p{3cm}} | OS | Node | API | Service |
+| | OS | Node | API | Service |
 |----------------------------------------------------------------------------------------------------------------|----|------|-----|---------|
 | Runs on Thread | Both user-space and main DES thread | Only main DES thread (user-space with rare exceptions for optimization) | Only user-space thread | Only main DES thread |
 | How Advances Time | Both blocking and scheduling events, depending on context | Scheduling events to other components | Blocking or unblocking | Scheduling events to other components |
 | Receives Events Via | Function calls from API/Service or from Node via `handle_event` function | Function calls from OS, receives scheduled events via the `handle` function | Does not usually receive events - only blocks or unblocks | OS forwards messages to `incoming_event` function |
 | Sends Events Via | Makes function calls and schedules events to Node | Makes function calls and schedules events to NIC, Memory | Does not usually send events - only blocks or unblocks | Makes function calls and schedules events to OS, unblocks APIs |
-\end{table}
 
-### Section 6.2: Libraries<a name="sec:libraries"></a>
+### Section 6.2: Libraries<a name="sec_libraries"></a>
 
 
 The creating and handling of software events is managed through `library` objects.
@@ -1143,10 +1161,10 @@ In order to route events to the correct library, the operating system maintains 
 All events associated with that library must be constructed with the correct string label, 
 accessible through the event accessor function `libName`.
 
-#### 6.2.1: API<a name="subsec:softwareAPI"></a>
+#### 6.2.1: API<a name="subsec_softwareAPI"></a>
 
 
-The SST/macro definition of API was alluded to in [6.1.1](#subsec:threadStorage).
+The SST/macro definition of API was alluded to in [6.1.1](#subsec_threadStorage).
 The base `api` class inherits from `library`.
 All API code must execute on a user-space thread.
 API calls are always associated with a specific virtual MPI rank.
@@ -1172,140 +1190,13 @@ The most prominent example of an API is the `MpiApi` object for encapsulating an
 Other prominent examples include the various computation APIs such as `BlasApi` that provides bindings for simulation various linear algebra functions.
 
 
-#### 6.2.2: Service<a name="subsec:service"></a>
 
 
-In contrast to an API that always executes on a user-space, services always execute on the main event thread.
-They therefore never block (or unblock).
-Services do not perform compute-heavy operations and therefore, in a simulator approximation, do not consume resources. 
-For software to advance time, it must block and then unblock after a virtual time delay.
-Services therefore have no ability to advance time and therefore all service operations are "instantaneous."
-Again, this is an approximation for the sake of simulation simplicity and efficiency.
-While an API can have several instances on a node (e.g. several MPI ranks on the same compute node), services are generally unique.
-Examples of services are MPI or filesystem services that sort messages arriving from the NIC and pass them off to the correct API or library object.
-If a service is "heavy-weight" and must model computational delays,
-it must run as a full thread with its own user-space thread stack.
+## Chapter 7: Hardware Models<a name="chapter_hardware"></a>
 
 
 
-
-
-
-
-
-
-
-
-
-%````
-%void example_service::run()
-%{
-% //some init
-% bool block  = true;
-% message* msg = poll_for_message(block);
-% while (msg && !terminated()){
-%   process(msg);
-%   msg = poll_for_message(block);
-% }
-%}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-%\begin{CppCode}
-%SpktRegister("filesystem", distributed_service, test_filesystem);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-%\begin{CppCode}
-%void sendPayload(int dst, message* msg, bool needs_ack);
-
-
-
-
-
-
-%\begin{CppCode}
-%void client_server_send(
-%  int dest_rank,
-%  NodeId dest_node,
-%  app_id dest_app,
-%  sumi::message* msg);
-
-
-
-
-
-
-%\begin{CppCode}
-%sstmac::sw::app_launch* srv = sstmac::sw::app_launch::service_info("filesystem");
-
-
-
-
-
-
-
-
-
-
-
-
-%\begin{CppCode}
-%void shutdown_server(
-%  int dest_rank,
-%  NodeId dest_node,
-%  app_id dest_app);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-## Chapter 7: Hardware Models<a name="chapter:hardware"></a>
-
-
-
-### Section 7.1: Overview<a name="sec:topOverview"></a>
+### Section 7.1: Overview<a name="sec_topOverview"></a>
 
 
 To better understand how hardware models are put together for simulating interconnects, we should try to understand the basic flow of event in SST/macro involved in sending a message between two network endpoints.  We have already seen in skeleton applications in previous sections how an application-level call to a function like `MPI_Send` is mapping to an operating system function and finally a hardware-level injection of the message flow.  Overall, the following steps are required:
@@ -1318,7 +1209,7 @@ To better understand how hardware models are put together for simulating interco
 -   Packets arrive at destination NIC and are reassembled (potentially out-of-order)
 -   Message flow is pushed up network software stack
 
-Through the network, packets must move through buffers (waiting for credits) and arbitrate for bandwidth through the switch crossbar and then through the ser/des link on the switch output buffers.  The control-flow diagram for transporting a flow from one endpoint to another via packets is shown in Figure [5](#fig:controlFlow)
+Through the network, packets must move through buffers (waiting for credits) and arbitrate for bandwidth through the switch crossbar and then through the ser/des link on the switch output buffers.  The control-flow diagram for transporting a flow from one endpoint to another via packets is shown in Figure [5](#fig_controlFlow)
 
 In general, sending data across the network (as in, e.g.., MPI), requires the following components:
 
@@ -1328,34 +1219,37 @@ In general, sending data across the network (as in, e.g.., MPI), requires the fo
 -   Fabric management (not yet implemented in SST)
 -   Routing: handled by `router` class. Using the defined topology, compute the path that should be taken by a packet. The path is defined by the port numbers that should be taken.
 -   Flow control and congestion: handled by `NetworkSwitch` class. Once a path is defined by the router, arbitrate packets (flits) when they contend for bandwidth.
-As much as possible, these components try to be independent. However, there are inter-dependencies, as shown in Figure [4](#fig:dependencies).
+As much as possible, these components try to be independent. However, there are inter-dependencies, as shown in Figure [4](#fig_dependencies).
 The router requires topology information to compute paths. For adaptive routing decisions, the router also requires contention information from the network switch.
 The network switch requires the computed paths (ports) from the router.
 
 
-![Figure 4: Components used modeling interconnect and dependencies between them.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/components) 
+![Figure 4: Components used modeling interconnect and dependencies between them.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/developer/figures/components.png) 
 
 *Figure 4: Components used modeling interconnect and dependencies between them.*
 
 
 
 
-![Figure 5: Decision diagram showing the various control flow operations that occur as a message is transport across the network via individual packet operations.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/DecisionFlow) 
+![Figure 5: Decision diagram showing the various control flow operations that occur as a message is transport across the network via individual packet operations.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/developer/figures/DecisionFlow.png) 
 
 *Figure 5: Decision diagram showing the various control flow operations that occur as a message is transport across the network via individual packet operations.*
 
 
 
-We can dive in deeper to the operations that occur on an individual component, mos importantly the crossbar on the network switch. Figure [6](#fig:xbarFlow) shows code and program flow for a packet arriving at a network switch.  The packet is routed (virtual function, configurable via input file parameters), credits are allocated to the packet, and finally the packet is arbitrated across the crossbar. After arbitration, a statistics callback can be invoked to collect any performance metrics of interest (congestion, traffic, idle time).
+We can dive in deeper to the operations that occur on an individual component, mos importantly the crossbar on the network switch. Figure [6](#fig_xbarFlow) shows code and program flow for a packet arriving at a network switch.  The packet is routed (virtual function, configurable via input file parameters), credits are allocated to the packet, and finally the packet is arbitrated across the crossbar. After arbitration, a statistics callback can be invoked to collect any performance metrics of interest (congestion, traffic, idle time).
 
 
-![Figure 6: Code flow for routing and arbitration of packets traversing the crossbar on the network switch.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/RoutingFlow) 
+![Figure 6: Code flow for routing and arbitration of packets traversing the crossbar on the network switch.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/developer/figures/RoutingFlow.png) 
 
 *Figure 6: Code flow for routing and arbitration of packets traversing the crossbar on the network switch.*
 
 
 
-\section{Packets}
+### Section 7.2: Packets<a name="sec_packets"></a>
+
+
+
 Packet must hold information for endpoint control on the NIC, routing decisions, and flow control. 
 Packets therefore suffer from a "combinatorial explosion" depending on which NIC model is coupled with which flow control mechanism and which routing algorithm.
 For example, the simulator is intended to support at least two different network contention models (PISCES, SCULPIN);
@@ -1370,7 +1264,7 @@ Inheritance from the base packet class is used to create packet types that are c
 For different routing or endpoint (NIC) methods, the packet object allocates blocks to be used as metadata for the different classes. 
 These metadata blocks can then be cast as needed for each of the different functions.
 
-\begin{CppCode}
+````
 char rtr_metadata_[MAX_HEADER_BYTES];
 char nic_metadata_[MAX_NIC_BYTES];
 ````
@@ -1428,7 +1322,7 @@ serializable* payload_;
 ````
 This covers the source and destination nodes, a unique ID for the flow (e.g. MPI message) the packet came from, the number of bytes of the flow, and optionally a payload object carrying extra data.
 
-To summarize, we have: \\
+To summarize, we have:
 
 
 | Information | Where Stored | Access Method |
@@ -1440,13 +1334,13 @@ To summarize, we have: \\
 | Flow control | Subclass of `packet` | Dynamic cast `packet` | 
 
 
-### Section 7.2: Connectables<a name="sec:Connectables"></a>
+### Section 7.3: Connectables<a name="sec_Connectables"></a>
 
 
 With a basic overview of how the simulation proceeds, we can now look at the actual SST/macro class types.
 While in common usage, SST-macro follows a well-defined machine model (see below),
 it generally allows any set of components to be connected. 
-As discussed in Chapter [5](#chapter:des), the simulation proceeds by having event components exchange events,
+As discussed in Chapter [5](#chapter_des), the simulation proceeds by having event components exchange events,
 each scheduled to arrive at a specific time.
 SST-macro provides a generic interface for any set of hardware components to be linked together.
 Any hardware component that connects to other components and exchanges events must inherit from the `Connectable` class.
@@ -1490,12 +1384,12 @@ Some "meta"-object should create connections between objects.
 In general, this work is left to a `interconnect` object.
 An object should never be responsible for knowing about the "world" outside itself.
 A topology or interconnect tells the object to make a connection rather than the object deciding to make the connection itself.
-This will be illustrated below in [7.3](#sec:topology).
+This will be illustrated below in [7.4](#sec_topology).
 
 The second rule to follow is that a connect function should never call another connect function.
 In general, a single call to a connect function should create a single link.
 If connect functions start calling other connect functions, you can end up a with a recursive mess.
-If you need a bidirectional link (A \rightarrow B, B \rightarrow A),
+If you need a bidirectional link (A -> B, B -> A),
 two separate function calls should be made
 
 ````
@@ -1513,7 +1407,7 @@ Combining the factory system for polymorphic types and the Connectable system fo
 SST-macro provides flexibility for building essentially any machine model you want.
 However, SST-macro provides a recommended machine structure to guide constructing machine models.
 
-### Section 7.3: Topology<a name="sec:topology"></a>
+### Section 7.4: Topology<a name="sec_topology"></a>
 
 
 Of critical importance for the network modeling is the topology of the interconnect.
@@ -1590,7 +1484,7 @@ The topology provides the geometry of the network, but does not tell packets whi
 That task is left to the router.
 
 
-### Section 7.4: Router<a name="sec:router"></a>
+### Section 7.5: Router<a name="sec_router"></a>
 
 
 The router has a simple public interface
@@ -1627,7 +1521,7 @@ The control flow component (switch), is responsible for using the deadlock virtu
 
 
 
-### Section 7.5: Network Switch: Flow Control<a name="sec:networkSwitch"></a>
+### Section 7.6: Network Switch: Flow Control<a name="sec_networkSwitch"></a>
 
 
 The topology and the router only provide path information and do not actually model congestion.
@@ -1654,7 +1548,7 @@ If a payload packet (rather than a credit), the router object selects the next d
 The packet is then passed to the crossbar for arbitration.
 A switch inherits from `Connectable`, requiring it to implement the `connectOutput/connectInput` and `payloadHandler/creditHandler` functions.
 
-### Section 7.6: Interconnect: Putting it all together<a name="sec:topInterconnect"></a>
+### Section 7.7: Interconnect: Putting it all together<a name="sec_topInterconnect"></a>
 
 
 For all standard runs, the entire hardware model is driven by the interconnect object.
@@ -1704,7 +1598,7 @@ The `connectedOutports` function takes a given source switch and returns all the
 switch is supposed to make.  Each switch must provide `payloadHandler` and `ack_handler` functions to return
 the `EventHandler` that should receive either new packets (payload) or credits (ack) for the connections.
 
-### Section 7.7: Node<a name="sec:node"></a>
+### Section 7.8: Node<a name="sec_node"></a>
 
 
 Although the `node` can be implemented as a very complex model, it fundamentally only requires a single set of functions to meet the public interface.
@@ -1722,7 +1616,7 @@ A node is only required to implement those functions that it needs to do.
 The various function parameters are enums for the different operations a node may perform:
 computation or communication. Computation functions are those that require compute resources. Service functions are special functions that run in the background and "lightweight" such that any modeling of processor allocation should be avoided. Service functions are run "for free" with no compute 
 
-### Section 7.8: Network Interface (NIC)<a name="sec:nic"></a>
+### Section 7.9: Network Interface (NIC)<a name="sec_nic"></a>
 
 
 The network interface can implement many services, but the basic public interface requires the NIC to do three things:
@@ -1781,7 +1675,7 @@ it should provide a message handler.
 A special completion queue object tracks chunks and processes out-of-order arrivals,
 notifying the NIC when the entire message is done.
 
-### Section 7.9: Memory Model<a name="sec:memModel"></a>
+### Section 7.10: Memory Model<a name="sec_memModel"></a>
 
 
 As with the NIC and node, the memory model class can have a complex implementation under the hood,
@@ -1803,7 +1697,7 @@ see the User's manual.
 
 
 
-## Chapter 8: A Custom Object: Beginning To End<a name="chapter:custom"></a>
+## Chapter 8: A Custom Object: Beginning To End<a name="chapter_custom"></a>
 
 
 
@@ -1945,7 +1839,7 @@ topology.xpress_jump_size = 5
 
 
 
-## Chapter 9: How SST-macro Launches<a name="chapter:launching"></a>
+## Chapter 9: How SST-macro Launches<a name="chapter_launching"></a>
 
 
 
@@ -1958,7 +1852,7 @@ It is useful for an intuitive understanding of the code to walk through the step
 
 We can walk through each of these steps in more detail.
 
-### Section 9.1: Configuration of Simulation<a name="sec:simConfig"></a>
+### Section 9.1: Configuration of Simulation<a name="sec_simConfig"></a>
 
 
 The configuration proceeds through the following basic steps:
@@ -1989,7 +1883,7 @@ After creation of the `manager` object,
 since all of the parameters even from the input file are now available,
 a more detailed configuration of the `manager` and `parallel_runtime` can be done.
 
-### Section 9.2: Building and configuration of simulator components<a name="sec:buildConfig"></a>
+### Section 9.2: Building and configuration of simulator components<a name="sec_buildConfig"></a>
 
 
 Inside the constructor for `manager`,
@@ -2001,7 +1895,7 @@ There are three important components to build.
 -   The interconnect object that directs the creation of all the hardware components
 -   The generation of application objects that will drive the software events. This is built indirectly through node objects that are built by the interconnect.
 
-#### 9.2.1: Event Manager<a name="sec:eventMan"></a>
+#### 9.2.1: Event Manager<a name="sec_eventMan"></a>
 
 
 The `EventManager` object is a polymorphic type that depends on 1) what sort of parallelism is being used and 2) what sort of data structure is being used.
@@ -2020,18 +1914,18 @@ For now, the event manager reads the topology information from the input file.
 It then determines the total number of hardware components and does the partitioning.
 This partitioning object is passed on to the interconnect.
 
-#### 9.2.2: Interconnect<a name="subsec:interconnect"></a>
+#### 9.2.2: Interconnect<a name="subsec_interconnect"></a>
 
 
 The interconnect is the workhorse for building all hardware components.
 After receiving the partition information from the `EventManager`,
 the interconnect creates all the nodes, switches, and NICs the current MPI rank is responsible for.
 In parallel runs, each MPI rank only gets assigned a unique, disjoint subset of the components.
-The interconnect then also creates all the connections between components that are linked based on the topology input (see Section [7.2](#sec:Connectables)).
+The interconnect then also creates all the connections between components that are linked based on the topology input (see Section [7.3](#sec_Connectables)).
 For components that are not owned by the current MPI rank, the interconnect inserts a dummy handler that informs the `EventManager`
 that the message needs to be re-routed to another MPI rank.
 
-#### 9.2.3: Applications<a name="subsec:apps"></a>
+#### 9.2.3: Applications<a name="subsec_apps"></a>
 
 
 All events generated in the simulation ultimately originate from application objects.
@@ -2109,7 +2003,7 @@ This is only relevant where two distinct applications are running.
 In most cases, only a single application is being used, in which case the application ID is always one.
 
 
-### Section 9.3: Running<a name="sec:running"></a>
+### Section 9.3: Running<a name="sec_running"></a>
 
 
 Now that all hardware components have been created and all application objects have been assigned to physical nodes,
@@ -2121,7 +2015,7 @@ Thus, the first events to run are always the application launch events generated
 
 
 
-## Chapter 10: Statistics Collection<a name="chapter:stats"></a>
+## Chapter 10: Statistics Collection<a name="chapter_stats"></a>
 
 
 
@@ -2138,7 +2032,7 @@ in many cases the storage overhead is minimal.
 This is particularly important for thread safety that stats collection be done on independent, non-interfering objects.
 At the very end, the `stat_collector` interface defines hooks for aggregating results if you want, e.g., a global histogram for all nodes.
 
-### Section 10.1: Setting Up Objects<a name="sec:setupStats"></a>
+### Section 10.1: Setting Up Objects<a name="sec_setupStats"></a>
 
 
 We use the example here of a the network interface histogram declared in `nic.h`.
@@ -2183,7 +2077,7 @@ Internally in the event manager, all objects with the same file root are grouped
 Thus the `fileroot` parameter is critical for defining unique groups of stats object.
 This is important during simulation post-processing when the event manager wants to aggregate results from each individual node.
 
-### Section 10.2: Dumping Data<a name="sec:dumping"></a>
+### Section 10.2: Dumping Data<a name="sec_dumping"></a>
 
 
 The first set of virtual functions that every stats object must provide are
@@ -2205,7 +2099,7 @@ The last method, `dump_global_data`, dumps aggregate data for all nodes.
 Here a unique filename based on the file root parameter is generated.
 For the default histogram, a data file and gnuplot script are created.
 
-### Section 10.3: Reduction and Aggregation<a name="sec:reduceStats"></a>
+### Section 10.3: Reduction and Aggregation<a name="sec_reduceStats"></a>
 
 
 Before the `dump_global_data` function can be called, an aggregation of results must be performed.
@@ -2266,7 +2160,7 @@ void stat_histogram::globalReduce(parallel_runtime* rt)
 }
 ````
 
-### Section 10.4: Storage Contraints<a name="sec:storageStats"></a>
+### Section 10.4: Storage Contraints<a name="sec_storageStats"></a>
 
 
 In some cases, storage constraints prevent each node from having its own copy of the data.

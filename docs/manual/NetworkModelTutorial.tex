@@ -12,7 +12,7 @@ A third class of models (flow models), was previously supported but are now disc
 The analytic models in SST/macro are colloqiually referred to as MACRELS (MTL for AnalytiC REally Lightweight Simulation).
 An example file running a simple application can be found in the top-level examples folder.
 The MTL (message transfer layer) moves entire network flows from point-to-point without packetizing them into smaller chunks.
-Thus an entire 1 MB MPI message is transported as a single chunk of data.  
+Thus an entire 1 MB MPI message is transported as a single chunk of data.
 The majority of MACRELS models are based on the LogP set of approximations:
 
 \[
@@ -34,7 +34,7 @@ Modeling occurs on entire flows, rather than individual packets.
 
 \begin{figure}
 \centering
-\includegraphics[width=0.9\textwidth]{figures/macrels.pdf}
+\includegraphics[width=0.9\textwidth]{figures/macrels.png}
 \caption{MACRELS (Messages with AnalytiC REally Lightweight Simulation) skips congestion modeling and approximates send delays using a simple latency/bandwidth estimate, similar to the LogGOP model. Modeling occurs on entire flows, rather than individual packets. For details on numbered steps, see text.}
 \label{fig:macrelsOverview}
 \end{figure}
@@ -63,7 +63,7 @@ PISCES (Packet-flow Interconnect Simulation for Congestion at Extreme-Scale) mod
 
 \begin{figure}[h!]
 \centering
-\includegraphics[width=0.9\textwidth]{figures/pisces_overview.pdf}
+\includegraphics[width=0.9\textwidth]{figures/pisces_overview.png}
 \caption[PISCES model]{PISCES (Packet-flow Interconnect Simulation for Congestion at Extreme-Scale) models individual packets moving through the network. Flits (flow-control units) are approximately modeled using flow-like approximations. For details on numbered steps, see text.}
 \label{fig:piscesOverview}
 \end{figure}
@@ -101,7 +101,7 @@ More details are given in Figure \ref{fig:piscesOverview}.
 
 \begin{figure}
 \centering
-\includegraphics[width=0.6\textwidth]{figures/pisces}
+\includegraphics[width=0.6\textwidth]{figures/Pisces.png}
 \caption{Timeline of four different packets passing through a PISCES cut-through bandwidth arbitrator. The incoming bandwidth (I) and outgoing bandwidth (O) are shown for each packet.  Time is the horizontal axis. Bandwidth consumed by a packet is shown by the vertical extent of each packet. The individual events are 1) First packet arrives 2) Second packet arrives with reduced bandwidth but no available bandwidth 3) First packet finishes. Second packet can begin sending. 4) Third packet arrives and begins sending with remaining bandwidth. 5) Fourth packet arrives, but no available bandwidth. 6) Second packet finishes. Third packet increases bandwidth. Fourth packet can begin sending. 7) Third packet finishes. Fourth packet increases bandwidth. 8) Fourth packet finishes.
 Full details are given in the text.}
 \label{fig:pisces}
@@ -164,6 +164,8 @@ Because of the initial delay, the outgoing bandwidth is somewhat reduced.
 We have $H$=3.0, $T$=4.38, and $O$=0.73.
 
 \subsection{SCULPIN}
+\label{subsec:sculpin}
+
 Under current architectural trends, switches have ample buffer space and crossbar bandwidth, making the mostly likely bottleneck edge bandwidth through the output ports.
 An example file running a simple application can be found in the top-level examples folder.
 SCULPIN (Simple Congestion Unbuffered Latency Packet Interconnection Network) models the main source of contention in today's networks occurring on the output port ser/des. Unlike PISCES, individual flits are not able to wormhole route across links interspersed with flits from other packets.
@@ -177,12 +179,14 @@ SCULPIN (Simple Congestion Unbuffered Latency Packet Interconnection Network) mo
 
 \begin{figure}
 \centering
-\includegraphics[width=0.9\textwidth]{figures/sculpin.pdf}
+\includegraphics[width=0.9\textwidth]{figures/sculpin.png}
 \caption[SCULPIN model]{SCULPIN (Simple Congestion Unbuffered Latency Packet Interconnection Network) models the main source of contention in today's networks occurring on the output port ser/des. For details on numbered steps, see text.}
 \label{fig:sculpin}
 \end{figure}
 
 \subsection{SNAPPR}
+\label{subsec:snappr}
+
 Because of the coarse-grained mechanisms used in PISCES and SCULPIN, it can be difficult to model more advanced mechanisms like QoS or congestion control. 
 SNAPPR (Simulator Network for Adaptive Priority Packet Routing) uses a coarse-grained cycle-based simulation that allows priority queues based on QoS or restricting injection rate for congestion control. The model is configured in much the same way as the other models.  SNAPPR is slightly more expensive than the other models, but provides by far the most flexibility and most detailed statistics.
 An example file running a simple application can be found in the top-level examples folder.
@@ -195,15 +199,13 @@ Congestion is treated as a fluid dynamics problem, sharing bandwidth between com
 In contrast to LogP models, flow models can account fairly well for congestion.
 Without congestion, a flow only requires a FLOW START and FLOW STOP event to be modeled (see tutorial on discrete event simulation in \ref{sec:tutorial:des}).
 While the packet model would require many, many events to simulate a 1 MB message, the flow model might only require two.
-With congestion, flow update events must be scheduled whenever congestion changes on a network link.  
+With congestion, flow update events must be scheduled whenever congestion changes on a network link.
 For limited congestion, only a few update events must occur.
 The flow model also corrects the latency and multiplexing problems in the PISCES simple model, providing higher-accuracy for coarse-grained simulation.
 
 The flow model starts to break down for large systems or under heavy congestion.
-In the packet model, all congestion events are ``local'' to a given router.  
+In the packet model, all congestion events are ``local'' to a given router.
 The number of events is also constant in packet models regardless of congestion since we are modeling a fixed number of discrete units.
 In flow models, flow update events can be ``non-local,'' propagating across the system and causing flow update events on other routers.
 When congestion occurs, this ``ripple effect'' can cause the number of events to explode, overwhelming the simulator.
 For large systems or heavy congestion, the flow model is actually much slower than the packet model. Support for this model has been completely removed.
-
-

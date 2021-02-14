@@ -3,6 +3,7 @@
 \chapter{\sstmacro Connectable Interface}\label{chapter:Connectables}
 
 \section{Required Functions}
+\label{sec:requiredFunctions}
 
 Hardware components communicate via ports. Component 1 sends an event out on one port.
 Component 2 receive the event in on another port.
@@ -85,6 +86,8 @@ LinkHandler* Test::payloadHandler(int port) const {
 \end{CppCode}
 
 \section{Example External Component}
+\label{sec:exampleComponent}
+
 An example component source file, corresponding Makefile for generating the external library, and parameter file demonstrating its usage can be found in \inlineshell{skeletons/sst_component_example}.
 Some critical things to note from the file \inlineshell{component.cc} are the component registration macro and the Python module generation.
 The Python module generation is specific to SST core and is not part of \sstmacro.
@@ -118,6 +121,8 @@ The final field is a documentation string.
 All of the required connection functions are implemented in \inlinecode{component.cc}.
 
 \subsection{Python configuration}
+\label{subsec:pythonConfig}
+
 The Python file \inlineshell{run.py} in the same folder shows the simplest possible setup with two components connected by a single both on port 0.
 First, we import the necessary modules. The file \inlineshell{component.cc} implements a module called \inlinecode{test} that we load by calling \inlinecode{import sst.test}.
 We also load all Python functions provided by the macro library.
@@ -155,14 +160,9 @@ makeBiNetworkLink(comp1,comp1Id,port,
 The code in the Python script causes \inlinecode{connectOutput} and \inlinecode{connectInput} to be invoked on port 0 for each of the components.
 
 \subsection{Makefile}
-The Makefile uses compiler wrappers installed with \sstmacro.
-These differ from the compiler wrappers used for skeleton applications discussed in the user's manual.
+\label{subsec:makefile}
 
-\begin{ViFile}
-CXX :=    libsst++
-CC :=     libsstcc
-CXXFLAGS := -fPIC
-\end{ViFile}
+The Makefile uses compiler wrappers installed with \sstmacro with the special `--sst-component` flag since you are building components, not skeletons.
 All components should be compiled with \inlineshell{-fPIC} for use in shared library.
 Making generates a \inlinecode{libtest.so} that can be loaded using the Python setup or through the \inlinefile{external_libs} parameter in a \inlinefile{.ini} file.
 

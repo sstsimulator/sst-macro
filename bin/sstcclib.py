@@ -242,18 +242,10 @@ def run(typ, extraLibs=""):
   from sstccvars import clangCppFlagsStr, clangLdFlagsStr
   from sstccutils import cleanFlag, getProcTree, swapSuffix
 
-  ctx = Context()
-  ctx.sstCore = sstCore
-  ctx.cc = spackcc if spackcc else cc
-  ctx.cxx = spackcxx if spackcxx else cxx
-  ctx.typ = typ
 
   needfPIC = "fPIC" in sstCxxFlagsStr
 
   sstmacExe = cleanFlag(os.path.join(prefix, "bin", "sstmac"))
-
-  ctx.sstCore = sstCore
-  ctx.hasClang = bool(clangCppFlagsStr)
 
   verbose = False     #whether to print verbose output
   if "SSTMAC_VERBOSE" in os.environ:
@@ -280,11 +272,6 @@ def run(typ, extraLibs=""):
     if numCmakes > 1:
         makeBashExe = True
 
-
-  for entry in sstCppFlags:
-    clean = cleanFlag(entry)
-    if clean: #don't add empty flags
-      ctx.cppFlags.append(clean)
 
   import argparse
   parser = argparse.ArgumentParser(description='Process flags for the SST/macro compiler wrapper')
@@ -320,16 +307,31 @@ def run(typ, extraLibs=""):
   
   args, extraArgs = parser.parse_known_args()
 
+  ctx = Context()
+
+  for entry in sstCppFlags:
+    clean = cleanFlag(entry)
+    if clean: #don't add empty flags
+      ctx.cppFlags.append(clean)
+
+  ctx.sstCore = sstCore
+  ctx.cc = spackcc if spackcc else cc
+  ctx.cxx = spackcxx if spackcxx else cxx
+  ctx.typ = typ
+  ctx.sstCore = sstCore
+  ctx.hasClang = bool(clangCppFlagsStr)
+
+
   #it is possible to override the host compilers use to do preprocessing/compilation
   if args.host_cxx:
-    cxx = args.host_cxx
+    ctx.cxx = args.host_cxx
   elif "SSTMAC_CXX" in os.environ:
-    cxx = os.environ["SSTMAC_CXX"]
+    ctx.cxx = os.environ["SSTMAC_CXX"]
 
   if args.host_cc:
-    cc = args.host_cc
+    ctx.cc = args.host_cc
   elif "SSTMAC_CC" in os.environ:
-    cc = os.environ["SSTMAC_CC"]
+    ctx.cc = os.environ["SSTMAC_CC"]
 
   if args.no_integrated_cpp:
     sys.exit("SST compiler wrapper cannot handle --no-integrated-cpp flag")
@@ -468,8 +470,8 @@ def run(typ, extraLibs=""):
   compiler = ""
   sstCompilerFlags = []
   if typ.lower() == "c++":
-    ctx.compiler = cxx
-    ctx.ld = cxx
+    ctx.compiler = ctx.cxx
+    ctx.ld = ctx.cxx
     ctx.compilerFlags = ctx.cxxFlags
     if args.std:
 #        let's turn off this warning for now
@@ -482,12 +484,12 @@ def run(typ, extraLibs=""):
       pass
     ctx.compilerFlags = ctx.cxxFlags[:]
   elif typ.lower() == "c":
-    ctx.compiler = cc
+    ctx.compiler = ctx.cc
     if ctx.hasClang:
       #always use c++ for linking since we are bringing a bunch of sstmac C++ into the game
-      ctx.ld = cxx
+      ctx.ld = ctx.cxx
     else:
-      ctx.ld = cc 
+      ctx.ld = ctx.cc
     if args.std:
       ctx.cFlags.append("-std=%s" % args.std)
     elif sstCArgs.std:
@@ -500,7 +502,7 @@ def run(typ, extraLibs=""):
     import inspect, os
     pathStr = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
     print(pathStr)
-    cmd = "%s --version" % (cxx)
+    cmd = "%s --version" % (ctx.cxx)
     os.system(cmd)
     sys.exit()
   elif args.flags:
@@ -520,7 +522,7 @@ def run(typ, extraLibs=""):
   if asmFiles:
     #just execute the command as-is with no frills
     cmdArr = [
-      cc
+      ctx.cc
     ]
     cmdArr.extend(sys.argv[1:])
     cmds = [ [None,cmdArr,[]] ]

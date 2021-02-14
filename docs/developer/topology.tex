@@ -34,14 +34,14 @@ The network switch requires the computed paths (ports) from the router.
 
 \begin{figure}
 \centering
-\includegraphics[width=1.0\textwidth]{figures/components}
+\includegraphics[width=1.0\textwidth]{figures/components.png}
 \caption{Components used modeling interconnect and dependencies between them.}
 \label{fig:dependencies}
 \end{figure}
 
 \begin{figure}
 \centering
-\includegraphics[width=0.75\textwidth]{figures/DecisionFlow}
+\includegraphics[width=0.75\textwidth]{figures/DecisionFlow.png}
 \caption{Decision diagram showing the various control flow operations that occur as a message is transport across the network via individual packet operations.}
 \label{fig:controlFlow}
 \end{figure}
@@ -49,12 +49,14 @@ The network switch requires the computed paths (ports) from the router.
 We can dive in deeper to the operations that occur on an individual component, mos importantly the crossbar on the network switch. Figure \ref{fig:xbarFlow} shows code and program flow for a packet arriving at a network switch.  The packet is routed (virtual function, configurable via input file parameters), credits are allocated to the packet, and finally the packet is arbitrated across the crossbar. After arbitration, a statistics callback can be invoked to collect any performance metrics of interest (congestion, traffic, idle time).
 
 \begin{figure}
-\includegraphics[width=0.9\textwidth]{figures/RoutingFlow}
+\includegraphics[width=0.9\textwidth]{figures/RoutingFlow.png}
 \caption{Code flow for routing and arbitration of packets traversing the crossbar on the network switch.}
 \label{fig:xbarFlow}
 \end{figure}
 
 \section{Packets}
+\label{sec:packets}
+
 Packet must hold information for endpoint control on the NIC, routing decisions, and flow control. 
 Packets therefore suffer from a ``combinatorial explosion'' depending on which NIC model is coupled with which flow control mechanism and which routing algorithm.
 For example, the simulator is intended to support at least two different network contention models (PISCES, SCULPIN);

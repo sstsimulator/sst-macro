@@ -117,8 +117,8 @@ class NetworkMessage : public Flow
    void* buf,
    post_send  /*ctor_tag*/) :
     NetworkMessage(qos, flow_id, libname, aid, to, from,
-                    size, size, needs_ack, nullptr, nullptr, buf,
-                    posted_send)
+                   size, size, needs_ack, nullptr, nullptr, buf,
+                   posted_send)
   {
   }
 
@@ -324,6 +324,10 @@ class NetworkMessage : public Flow
     injection_started_ = now;
   }
 
+  void setTimeArrived(Timestamp now){
+    time_arrived_ = now;
+  }
+
  protected:
   void convertToAck();
 
@@ -399,6 +403,8 @@ class NetworkMessage : public Flow
   int qos_;
 
   Timestamp time_started_;
+
+  Timestamp time_arrived_;
 
   Timestamp injection_started_;
 

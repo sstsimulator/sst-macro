@@ -65,24 +65,13 @@ SkeletonASTConsumer::HandleTopLevelDecl(DeclGroupRef DR)
 {
   for (DeclGroupRef::iterator b = DR.begin(), e = DR.end(); b != e; ++b){
     Decl* d = *b;
-    switch(d->getKind()){
-     case Decl::Function: {
-        FunctionDecl* fd = cast<FunctionDecl>(d);
-        //the function decl will have its body filled in later
-        //possibly - we need to make sure to only add the function once
-        if (fd->isThisDeclarationADefinition()){
-          //also, we only really care about the definition anyway
-          allTopLevelDecls_.push_back(d);
-        }
-        if (isNullWhitelisted(fd->getNameAsString())){
-          CompilerGlobals::astNodeMetadata.nullSafeFunctions[fd] = nullptr;
-        }
+    if (d->getKind() == Decl::Function){
+      FunctionDecl* fd = cast<FunctionDecl>(d);
+      if (isNullWhitelisted(fd->getNameAsString())){
+        CompilerGlobals::astNodeMetadata.nullSafeFunctions[fd] = nullptr;
       }
-      break;
-     default:
-      allTopLevelDecls_.push_back(d);
-      break;
     }
+    allTopLevelDecls_.push_back(d);
   }
   return true;
 }

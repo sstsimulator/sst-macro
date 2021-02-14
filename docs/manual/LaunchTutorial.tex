@@ -5,7 +5,7 @@
 
 \subsection{Launch Commands}
 \label{subsec:tutorial:launch}
-Just as jobs must be launched on a shared supercomputer using Slurm or aprun, 
+Just as jobs must be launched on a shared supercomputer using Slurm or aprun,
 SST/macro requires the user to specify a launch command for the application.
 Currently, we encourage the user to use aprun from Cray, for which documentation can easily be found online.
 In the parameter file you specify, e.g.
@@ -31,7 +31,7 @@ topology.name = torus
 topology.geometry = 3 3
 topology.concentration = 1
 \end{ViFile}
-which has 9 nodes arranged in a 3x3 mesh.  
+which has 9 nodes arranged in a 3x3 mesh.
 For the launch command \inlinefile{aprun -n 8 -N 2}, we must allocate 4 compute nodes from the pool of 9.
 Our first option is to specify the first available allocation scheme (Figure \ref{fig:allocation:first_available})
 

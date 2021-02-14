@@ -198,8 +198,6 @@ class FatTree :
 
   void connectedOutports(SwitchId src, std::vector<Connection>& conns) const override;
 
-  double portScaleFactor(uint32_t addr, int port) const override;
-
   int minimalDistance(SwitchId src, SwitchId dst) const {
     if (src == dst){
       return 0;

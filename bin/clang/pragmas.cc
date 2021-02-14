@@ -152,6 +152,9 @@ static void tokenToString(const Token& tok, std::ostream& os)
   case tok::kw_true:
     os << "true";
     break;
+  case tok::kw_void:
+    os << "void";
+    break;
   case tok::ampamp:
     os << "&&";
     break;
@@ -268,7 +271,6 @@ SSTPragmaHandler::configure(bool delOnUse, Token&  /*PragmaTok*/, Preprocessor& 
     maxPragmaDepth = 0;
   }
   --pragmaDepth;
-  fsp->depth = pragmaDepth;
 }
 
 void

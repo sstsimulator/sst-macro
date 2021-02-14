@@ -1,10 +1,9 @@
 %% !TEX root = manual.tex
 
 \section{SST/macro Parameter files}
+\label{sec:parameters}
 
 There are parameter files for the main network models (MACRELS, PISCES, SCULPIN, SNAPPR) in the top-level examples directory.
-
-\label{sec:parameters}
 A minimal parameter file setting up a 2D-torus topology is shown below. 
 An equivalent Python input file that reads an ini file is also shown.
 A detailed listing of parameter namespaces and keywords is given in Section \ref{chapter:parameters}.
@@ -56,7 +55,7 @@ topology {
  geometry = 4,4
 }
 \end{ViFile}
-The input file follows a basic syntax of \inlinefile{parameter = value}.  
+The input file follows a basic syntax of \inlinefile{parameter = value}.
 Parameter names follow C++ variable rules (letters, numbers, underscore) while parameter values can contain spaces.  Trailing and leading whitespaces are stripped from parameters.
 Comments can be included on lines starting with \#.
 
@@ -88,25 +87,25 @@ A detailed listing of parameter namespaces and keywords is given in Section \ref
 \label{subsec:initialExample}
 Continuing with the example above, we see the input file is broken into namespace sections. 
 First, application launch parameters for each node must be chosen determining what application will launch, 
-how nodes will be allocated, how ranks will be indexed, and finally what application will be run.  
-Additionally, you must specify how many processes to launch and how many to spawn per node.  
-We currently recommend using aprun syntax (the launcher for Cray machines), 
+how nodes will be allocated, how ranks will be indexed, and finally what application will be run.
+Additionally, you must specify how many processes to launch and how many to spawn per node.
+We currently recommend using aprun syntax (the launcher for Cray machines),
 although support is being added for other process management systems.
 \sstmacro can simulate command line parameters by giving a value for \inlinefile{node.app1.argv}.
 
-A network must also be chosen.  
-In the simplest possible case, the network is modeled via a simple latency/bandwidth formula.  
-For more complicated network models, many more than two parameters will be required. 
-See \ref{sec:tutorial:networkmodel} for a brief explanation of \sstmacro network congestion models. 
-A topology is also needed for constructing the network.  
-In this case we choose a 2-D 4$\times$4 torus (16 switches).  The \inlinefile{topology.geometry} 
+A network must also be chosen.
+In the simplest possible case, the network is modeled via a simple latency/bandwidth formula.
+For more complicated network models, many more than two parameters will be required.
+See \ref{sec:tutorial:networkmodel} for a brief explanation of \sstmacro network congestion models.
+A topology is also needed for constructing the network.
+In this case we choose a 2-D 4$\times$4 torus (16 switches).  The \inlinefile{topology.geometry}
 parameter takes an arbitrarily long list of numbers as the dimensions to the torus.
 
-Finally, we must construct a node model.  
-In this case, again, we use the simplest possible models for the node, 
-network interface controller (NIC), and memory.  
+Finally, we must construct a node model.
+In this case, again, we use the simplest possible models for the node,
+network interface controller (NIC), and memory.
 
-Parameter files can be constructed in a more modular way through the \inlinefile{include} statement.  
+Parameter files can be constructed in a more modular way through the \inlinefile{include} statement.
 An alternative parameter file would be:
 
 \begin{ViFile}
@@ -125,7 +124,7 @@ node {
 }
 
 \end{ViFile}
-where in the first line we include the file \inlinefile{machine.ini}.  
-All network, topology, and node parameters would be placed into a \inlinefile{machine.ini} file.  
-In this way, multiple experiments can be linked to a common machine.  
+where in the first line we include the file \inlinefile{machine.ini}.
+All network, topology, and node parameters would be placed into a \inlinefile{machine.ini} file.
+In this way, multiple experiments can be linked to a common machine.
 Alternatively, multiple machines could be linked to the same application by creating and including an \inlinefile{application.ini}.
