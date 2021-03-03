@@ -30,6 +30,7 @@ CORETESTS+= \
   test_core_apps_direct_alltoall \
   test_core_apps_bruck_alltoall \
   test_core_apps_ring_allgather \
+  test_core_apps_tournament_dragonfly \
   test_core_apps_ping_all_dragonfly_par \
   test_core_apps_ping_all_dragonfly_par_small \
   test_core_apps_ping_all_dragonfly_par_alltoall \
