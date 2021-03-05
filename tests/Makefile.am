@@ -35,7 +35,7 @@ endif
 PYRUNTEST = $(top_builddir)/tests/runtest
 PYVALIDATE = $(top_builddir)/tests/checktest
 
-NOOP = $(top_srcdir)/tests/noop
+NOOP = $(top_builddir)/tests/noop
 DIFF=diff -u
 if INTEGRATED_SST_CORE
 SSTMACEXEC = $(top_builddir)/bin/sstmac-check
