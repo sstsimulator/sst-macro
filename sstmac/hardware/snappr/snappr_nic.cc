@@ -147,6 +147,8 @@ SnapprNIC::SnapprNIC(uint32_t id, SST::Params& params, Node* parent) :
 
   buffer_remaining_ = params.find<SST::UnitAlgebra>("buffer", "4MB").getRoundedValue();
   ignore_memory_ = params.find<bool>("ignore_memory", true);
+
+  configureLinks();
 }
 
 void

@@ -192,7 +192,8 @@ SnapprSwitch::SnapprSwitch(uint32_t id, SST::Params& params) :
   for (int i=0; i < inports_.size(); ++i){
     inports_[i].number = i;
   }
-  initLinks(params);
+
+  configureLinks();
 }
 
 SnapprSwitch::~SnapprSwitch()

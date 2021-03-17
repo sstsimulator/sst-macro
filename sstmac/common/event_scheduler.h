@@ -308,45 +308,8 @@ protected:
 class IntegratedComponent
   : public IntegratedBaseComponent<SST::Component>
 {
- public:
-  /**
-   * @brief connectInput All of these classes should implement the
-   *        Connectable interface
-   * @param src_outport
-   * @param dst_inport
-   * @param mod
-   */
-  virtual void connectInput(int src_outport, int dst_inport, EventLinkPtr&& link) = 0;
-
-  /**
-   * @brief connectOutput  All of these classes should implement
-   *                        the Connectable interface
-   * @param src_outport
-   * @param dst_inport
-   * @param mod
-   */
-  virtual void connectOutput(int src_outport, int dst_inport, EventLinkPtr&& link) = 0;
-
-  /**
-   * @brief payloadHandler
-   * @param port
-   * @return The handler that will receive payloads from an SST link
-   */
-  virtual SST::Event::HandlerBase* payloadHandler(int port) = 0;
-
-  /**
-   * @brief creditHandler
-   * @param port
-   * @return The handler that will receive credits from an SST link
-   */
-  virtual SST::Event::HandlerBase* creditHandler(int port) = 0;
-
-  void initLinks(SST::Params& params);
-
  protected:
   IntegratedComponent(uint32_t id);
-
-  SST::LinkMap* link_map_;
 
 };
 
@@ -408,8 +371,6 @@ class MacroBaseComponent
   void sendExecutionEvent(Timestamp arrival, ExecutionEvent* ev);
 
   void endSimulation();
-
-  void initLinks(SST::Params&){} //need for SST core compatibility
 
   template <class T, class... Args> T* loadSub(const std::string& name, const std::string& /*iface*/, int slot_id,
                                 SST::Params& params, Args&&... args){

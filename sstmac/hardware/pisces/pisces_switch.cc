@@ -145,7 +145,7 @@ PiscesSwitch::PiscesSwitch(uint32_t id, SST::Params& params)
     spkt_abort_printf("MTU %d is larger than credits %d", mtu_, link_credits_);
   }
 
-  initLinks(params);
+  configureLinks();
 }
 
 PiscesSwitch::~PiscesSwitch()

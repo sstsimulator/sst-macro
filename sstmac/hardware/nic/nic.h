@@ -191,6 +191,10 @@ class NIC : public ConnectableSubcomponent
  protected:
   NIC(uint32_t id, SST::Params& params, hw::Node* parent);
 
+  void configureLogPLinks();
+
+  void configureLinks();
+
   Node* parent() const {
     return parent_;
   }

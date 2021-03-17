@@ -78,6 +78,8 @@ PiscesNIC::PiscesNIC(uint32_t id, SST::Params& params, Node* parent) :
   auto buf_name = sprockit::sprintf("%s:port0",top_->nodeIdToName(parent_->addr()).c_str());
   inj_buffer_ = new PiscesBuffer(inj_params, buf_name, componentId(), arb, inj_bw,
                                  packet_size_, parent_, 1/*single vc for inj*/);
+
+  configureLinks();
 }
 
 void

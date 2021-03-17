@@ -107,6 +107,8 @@ class NetworkSwitch :
  protected:
   NetworkSwitch(uint32_t id, SST::Params& params);
 
+  void configureLinks();
+
   SwitchId my_addr_;
   Topology* top_;
 

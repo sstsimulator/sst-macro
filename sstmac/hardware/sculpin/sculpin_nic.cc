@@ -70,6 +70,8 @@ SculpinNIC::SculpinNIC(uint32_t id, SST::Params& params, Node* parent) :
 
   packet_size_ = inj_params.find<SST::UnitAlgebra>("mtu").getRoundedValue();
   inj_byte_delay_ = TimeDelta(inj_params.find<SST::UnitAlgebra>("bandwidth").getValue().inverse().toDouble());
+
+  configureLinks();
 }
 
 void

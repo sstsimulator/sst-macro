@@ -16,15 +16,15 @@ CONFIGTESTS = \
   test_configs_hopper_amm2_macrels \
   test_configs_hopper_amm3_macrels \
   test_configs_deepthought \
-  test_configs_exa1_pisces \
   test_configs_exa1_macrels \
-  test_configs_exa2_pisces \
   test_configs_exa2_macrels 
 
 
 
 if !INTEGRATED_SST_CORE
 COVERAGETESTS = \
+  test_configs_exa1_pisces \
+  test_configs_exa2_pisces \
   test_feature_nic_contention \
   test_memory_leak \
   test_feature_excl_job_launcher \
