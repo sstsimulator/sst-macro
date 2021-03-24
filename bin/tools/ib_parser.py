@@ -91,7 +91,8 @@ def gen_routing_tables(text):
     for l in text.split('\n'):
         stats = parse_switch_line(l)
         if stats:
-            cur_switch_guid = stats['switch_guid']
+            #cur_switch_guid = stats['switch_guid']
+            cur_switch_guid = stats['switch_name']  # Joe demands a name
             route_table[cur_switch_guid] = {'routes': {}}
             continue
 
@@ -127,6 +128,7 @@ def parse_ibnetdiscover_endpoint_from_block_gen(block):
 
 
 def parse_switch_block(block):
+    """Parse a block."""
     try:
         switch_guid = re.findall("switchguid=(\w+)\(.*\)", block)[0]
     except:
@@ -178,7 +180,6 @@ def print_dict(d):
 if __name__ == "__main__":
     args = parse_args()
     out_dict = {}
-    print(args)
 
     if args.dump_fts:
         dump_fts_text = read_file(args.dump_fts)
@@ -189,7 +190,7 @@ if __name__ == "__main__":
         if not args.dump_fts:
             raise Exception(
                 'set "--dump_fts" to a file containing the output of "dump_fts"')
-        out_dict['routing_tables'] = gen_routing_tables(dump_fts_text)
+        out_dict['switches'] = gen_routing_tables(dump_fts_text)
     if args.switch_links or args.all:
         if not args.ibnetdiscover:
             raise Exception(
