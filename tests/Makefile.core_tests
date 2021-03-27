@@ -30,6 +30,7 @@ CORETESTS+= \
   test_core_apps_direct_alltoall \
   test_core_apps_bruck_alltoall \
   test_core_apps_ring_allgather \
+  test_core_apps_tournament_dragonfly \
   test_core_apps_ping_all_dragonfly_par \
   test_core_apps_ping_all_dragonfly_par_small \
   test_core_apps_ping_all_dragonfly_par_alltoall \
@@ -53,6 +54,7 @@ CORETESTS+= \
   test_core_apps_ping_pong \
   test_core_apps_ping_pong_slow \
   test_core_apps_ping_all_tree_table \
+  test_core_apps_ping_all_tree_table_vcs \
   test_core_apps_ping_all_port_channel \
   test_core_apps_ping_all_fattree2 \
   test_core_apps_ping_all_fattree4 \
@@ -72,6 +74,12 @@ test_core_apps_compute.$(CHKSUF): $(SSTMACEXEC)
 test_core_apps_ping_all_tree_table.$(CHKSUF): $(SSTMACEXEC)
 	$(PYRUNTEST) 15 $(top_srcdir) $@ Exact \
    $(SSTMACEXEC) -f $(srcdir)/test_configs/test_ping_all_tree_table.ini \
+   -p switch.router.filename=$(top_srcdir)/tests/test_configs/rtr_tbl.json \
+   --no-wall-time
+
+test_core_apps_ping_all_tree_table_vcs.$(CHKSUF): $(SSTMACEXEC)
+	$(PYRUNTEST) 15 $(top_srcdir) $@ Exact \
+   $(SSTMACEXEC) -f $(srcdir)/test_configs/test_ping_all_tree_table_vcs.ini \
    -p switch.router.filename=$(top_srcdir)/tests/test_configs/rtr_tbl.json \
    --no-wall-time
 

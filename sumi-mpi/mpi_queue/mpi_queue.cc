@@ -500,8 +500,10 @@ void
 MpiQueue::forwardProgress(double timeout)
 {
   mpi_queue_debug("starting forward progress with timeout=%f", timeout);
-  sumi::Message* msg = api_->poll(true, timeout); //block until timeout
-  if (msg) incomingMessage(msg);
+  sumi::Message* msg = queue_.find_any(true, timeout); //block until timeout
+  if (msg){
+    incomingMessage(msg);
+  }
 }
 
 void
