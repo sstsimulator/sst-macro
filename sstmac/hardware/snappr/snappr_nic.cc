@@ -77,22 +77,22 @@ struct SnapprRequest : public MemoryModel::Request {
 SnapprNIC::SnapprNIC(uint32_t id, SST::Params& params, Node* parent) :
   NIC(id, params, parent)
 {
-  SST::Params inj_params = params.find_scoped_params("injection");
+  packet_size_ = params.find<SST::UnitAlgebra>("mtu").getRoundedValue();
 
-  packet_size_ = inj_params.find<SST::UnitAlgebra>("mtu").getRoundedValue();
+  SST::Params inj_params = params.find_scoped_params("injection");
 
   //configure for a single port for now
   int num_ports = 1;
   outports_.resize(num_ports);
-  std::string arbtype = inj_params.find<std::string>("arbitrator", "fifo");
+  //std::string arbtype = inj_params.find<std::string>("arbitrator", "fifo");
   qos_levels_ = params.find<int>("qos_levels", 1);
   rdma_get_req_qos_ = params.find<int>("rdma_get_qos", -1);
-  flow_control_ = inj_params.find<bool>("flow_control", true);
+  flow_control_ = params.find<bool>("flow_control", true);
   std::vector<uint32_t> credits_per_qos(qos_levels_);
   if (flow_control_){
-    if (inj_params.contains("qos_credits")){
+    if (params.contains("qos_credits")){
       std::vector<std::string> qos_credits;
-      inj_params.find_array("qos_credits", qos_credits);
+      params.find_array("qos_credits", qos_credits);
       if (qos_levels_ != qos_credits.size()){
         spkt_abort_printf("Have %d QoS levels, but given credit array of size %d",
           qos_levels_, int(qos_credits.size()));
@@ -100,8 +100,8 @@ SnapprNIC::SnapprNIC(uint32_t id, SST::Params& params, Node* parent) :
       for (int q=0; q < qos_levels_; ++q){
         credits_per_qos[q] = SST::UnitAlgebra(qos_credits[q]).getRoundedValue();
       }
-    } else if (inj_params.contains("credits")){
-      uint32_t credits = inj_params.find<SST::UnitAlgebra>("credits").getRoundedValue();
+    } else if (params.contains("credits")){
+      uint32_t credits = params.find<SST::UnitAlgebra>("credits").getRoundedValue();
       uint32_t credits_per = credits / qos_levels_;
       for (int q=0; q < qos_levels_; ++q){
         credits_per_qos[q] = credits_per;
@@ -121,12 +121,11 @@ SnapprNIC::SnapprNIC(uint32_t id, SST::Params& params, Node* parent) :
     vls_per_qos[q] = 1;
   }
 
-  inj_byte_delay_ = TimeDelta(inj_params.find<SST::UnitAlgebra>("bandwidth").getValue().inverse().toDouble());
+  inj_byte_delay_ = TimeDelta(params.find<SST::UnitAlgebra>("bandwidth").getValue().inverse().toDouble());
   for (int i=0; i < num_ports; ++i){
     std::string subId = sprockit::sprintf("NIC%d:%d", addr(), i);
     outports_[i] = loadSub<SnapprOutPort>("snappr", "outport", i, inj_params,
-                                          arbtype, subId, "NIC_send", i,
-                                          inj_byte_delay_,
+                                          subId, "NIC_send", i,
                                           true/*always need congestion on NIC*/,
                                           flow_control_,  NIC::parent(),
                                           vls_per_qos);

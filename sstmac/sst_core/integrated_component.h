@@ -79,6 +79,8 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #define SST_ELI_DOCUMENT_STATISTICS(...)
 
+#define SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS(...)
+
 #define SST_ELI_ELEMENT_VERSION(...)
 
 #define SST_ELI_DOCUMENT_PORTS(...)

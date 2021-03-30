@@ -232,17 +232,20 @@ class IntegratedBaseComponent :
 
   template <class T, class... Args> T* loadSub(const std::string& name, const std::string& iface, int slot_id,
                                                SST::Params& params, Args&&... args){
-    auto* sub = Base::template loadAnonymousSubComponent<T>("macro." + name + "_" + iface, iface, slot_id,
-                                          SST::ComponentInfo::SHARE_PORTS | SST::ComponentInfo::SHARE_STATS,
-                                          params, std::forward<Args>(args)...);
+    auto* sub = Base::template loadUserSubComponent<T>(iface, SST::ComponentInfo::SHARE_NONE, std::forward<Args>(args)...);
+    if (!sub){
+      sub = Base::template loadAnonymousSubComponent<T>("macro." + name + "_" + iface, iface, slot_id,
+                                            SST::ComponentInfo::SHARE_PORTS | SST::ComponentInfo::SHARE_STATS,
+                                            params, std::forward<Args>(args)...);
+    }
     return dynamic_cast<T*>(sub);
   }
 
   template <class T, class... Args> T* newSub(const std::string& name, int slot_id,
                                SST::Params& params, Args&&... args){
     auto* sub = Base::template loadAnonymousSubComponent<T>("macro." + name, name, slot_id,
-                                          SST::ComponentInfo::SHARE_PORTS | SST::ComponentInfo::SHARE_STATS,
-                                          params, std::forward<Args>(args)...);
+                                            SST::ComponentInfo::SHARE_PORTS | SST::ComponentInfo::SHARE_STATS,
+                                            params, std::forward<Args>(args)...);
     return dynamic_cast<T*>(sub);
   }
 

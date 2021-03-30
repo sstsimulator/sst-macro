@@ -109,7 +109,8 @@ ConnectableSubcomponent::initInputLink(int src_outport, int dst_inport)
   std::string name = sprockit::sprintf("input%d", dst_inport);
   SST::Link* link = configureLink(name, SharedBaseComponent::timeConverter(), payloadHandler(dst_inport));
   if (!link){
-    spkt_abort_printf("cannot find input link for port %s on connectable component", name.c_str());
+    spkt_abort_printf("cannot find input link for port %s on connectable component %s",
+                      name.c_str(), getName().c_str());
   }
   EventLink::ptr ev_link{new EventLink(name, TimeDelta(), link)};
   connectInput(src_outport, dst_inport, std::move(ev_link));
@@ -123,7 +124,8 @@ ConnectableSubcomponent::initOutputLink(int src_outport, int dst_inport)
   std::string name = sprockit::sprintf("output%d", src_outport);
   SST::Link* link = configureLink(name, SharedBaseComponent::timeConverter(), creditHandler(src_outport));
   if (!link){
-    spkt_abort_printf("cannot find output link for port %s on connectable component", name.c_str());
+    spkt_abort_printf("cannot find output link for port %s on connectable component named %s",
+                      name.c_str(), getName().c_str());
   }
   EventLink::ptr ev_link{new EventLink(name, TimeDelta(), link)};
   connectOutput(src_outport, dst_inport, std::move(ev_link));
@@ -138,7 +140,8 @@ ConnectableComponent::initInputLink(int src_outport, int dst_inport)
   std::string name = sprockit::sprintf("input%d", dst_inport);
   SST::Link* link = configureLink(name, SharedBaseComponent::timeConverter(), payloadHandler(dst_inport));
   if (!link){
-    spkt_abort_printf("cannot find input link for port %s on connectable component", name.c_str());
+    spkt_abort_printf("cannot find input link for port %s on connectable component named %s",
+                      name.c_str(), getName().c_str());
   }
   EventLink::ptr ev_link{new EventLink(name, TimeDelta(), link)};
   connectInput(src_outport, dst_inport, std::move(ev_link));
@@ -152,7 +155,8 @@ ConnectableComponent::initOutputLink(int src_outport, int dst_inport)
   std::string name = sprockit::sprintf("output%d", src_outport);
   SST::Link* link = configureLink(name, SharedBaseComponent::timeConverter(), creditHandler(src_outport));
   if (!link){
-    spkt_abort_printf("cannot find output link for port %s on connectable component", name.c_str());
+    spkt_abort_printf("cannot find output link for port %s on connectable component %s",
+                      name.c_str(), getName().c_str());
   }
   EventLink::ptr ev_link{new EventLink(name, TimeDelta(), link)};
   connectOutput(src_outport, dst_inport, std::move(ev_link));

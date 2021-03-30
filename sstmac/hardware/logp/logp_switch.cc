@@ -60,15 +60,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 MakeDebugSlot(logp)
 
-RegisterKeywords(
- { "bandwidth", "" },
- { "hop_latency", "" },
- { "out_in_latency", "" },
- { "random_seed", "a seed for creating randomized message arrivals"},
- { "random_max_extra_latency", "the maximum extra latency allowed in random scenarios"},
- { "random_max_extra_byte_delay", "the maximum extra delay per byte in random scenarios"},
-);
-
 namespace sstmac {
 namespace hw {
 

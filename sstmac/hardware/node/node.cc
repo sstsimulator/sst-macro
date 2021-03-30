@@ -104,15 +104,9 @@ Node::Node(uint32_t id, SST::Params& params)
 
   SST::Params nic_params = params.find_scoped_params("nic");
   auto nic_name = nic_params.find<std::string>("name");
-  if (nic_name.empty()){
-    spkt_abort_printf("Missing node.nic.name parameter");
-  }
 
   SST::Params mem_params = params.find_scoped_params("memory");
   auto mem_name = mem_params.find<std::string>("name");
-  if (mem_name.empty()){
-    spkt_abort_printf("Missing node.memory.name parameter");
-  }
   mem_model_ = loadSub<MemoryModel>(mem_name, "memory", MEMORY_SLOT, mem_params, this);
 
   SST::Params proc_params = params.find_scoped_params("proc");

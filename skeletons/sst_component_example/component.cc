@@ -145,10 +145,6 @@ class DummySwitch : public TestComponent {
   DummySwitch(uint32_t id, SST::Params& params) :
    TestComponent(id,params), id_(id)
   {
-    //make sure this function gets called
-    //unfortunately, due to virtual function initialization order
-    //this has to be called in the base child class
-    initLinks(params);
     //init params
     num_ping_pongs_ = params.find<int>("num_ping_pongs", 2);
     latency_ = TimeDelta(params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
