@@ -46,7 +46,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/hardware/node/node.h>
-#include <sstmac/hardware/logp/logp_switch.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/common/event_manager.h>
 #include <sstmac/common/event_callback.h>
@@ -113,6 +112,27 @@ NIC::NIC(uint32_t id, SST::Params& params, Node* parent) :
   spy_bytes_ = dynamic_cast<StatSpyplot<int,uint64_t>*>(spy);
 
   xmit_flows_ = registerStatistic<uint64_t>(params, "xmit_flows", subname);
+}
+
+void
+NIC::configureLogPLinks()
+{
+  //set up LogP management/shortcut network
+  initOutputLink(hw::NIC::LogP, addr());
+  initInputLink(addr(), hw::NIC::LogP);
+}
+
+void
+NIC::configureLinks()
+{
+  configureLogPLinks();
+
+  std::vector<Topology::InjectionPort> ports;
+  top_->injectionPorts(addr(), ports);
+  for (Topology::InjectionPort& port : ports){
+    initOutputLink(port.ep_port, port.switch_port);
+    initInputLink(port.switch_port, port.ep_port);
+  }
 }
 
 NIC::~NIC()

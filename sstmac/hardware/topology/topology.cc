@@ -333,6 +333,20 @@ Topology::portConfigDump(const std::string & /*dumpFile*/)
   spkt_abort_printf("Topology chosen does not support port dump");
 }
 
+void
+Topology::injectionPorts(NodeId nid, std::vector<InjectionPort>& node_ports)
+{
+  node_ports.clear();
+  SwitchId sid = endpointToSwitch(nid);
+  std::vector<InjectionPort> switch_ports;
+  endpointsConnectedToEjectionSwitch(sid, switch_ports);
+  for (InjectionPort& switch_port : switch_ports){
+    if (switch_port.nid == nid){
+      node_ports.push_back(switch_port);
+    }
+  }
+}
+
 class MerlinTopology : public Topology {
 
  public:

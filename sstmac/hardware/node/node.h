@@ -88,6 +88,11 @@ class Node : public ConnectableComponent
   SST_ELI_DECLARE_DEFAULT_INFO()
   SST_ELI_DECLARE_CTOR(uint32_t, SST::Params&)
 
+  SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS(
+      {"nic", "The network interface controller", "sstmac::NIC"},
+      {"memory", "The subcomponent modeling the memory subsystem", "sstmac::MemoryModel"},
+  )
+
   void setup() override;
 
   void init(unsigned int phase) override;

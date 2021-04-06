@@ -56,9 +56,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sst/core/eli/elibase.h>
 
 #define SSTMAC_VALID_PORTS \
-   {"input %(out)d %(in)d",  "Will receive new payloads here",      {}}, \
-   {"output %(out)d %(in)d", "Will receive new acks(credits) here", {}}, \
-   {"in-out %(out)d %(in)d", "Will send/recv payloads here",        {}}, \
+   {"input%(in)d",  "Will receive new payloads here",      {}}, \
+   {"output%(out)d", "Will receive new acks(credits) here", {}}, \
    {"rtr",                   "Special link to Merlin router",       {}}
 
 
@@ -79,6 +78,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #define SST_ELI_DECLARE_DEFAULT_INFO()
 
 #define SST_ELI_DOCUMENT_STATISTICS(...)
+
+#define SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS(...)
 
 #define SST_ELI_ELEMENT_VERSION(...)
 

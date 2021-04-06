@@ -82,6 +82,28 @@ NetworkSwitch::NetworkSwitch(uint32_t id, SST::Params& params)
 }
 
 void
+NetworkSwitch::configureLinks()
+{
+  std::vector<Topology::Connection> conns;
+  top_->connectedOutports(addr(), conns);
+  for (Topology::Connection& conn : conns){
+    //std::cout << "Have output connection " << conn.src << ":" << conn.src_outport
+    //          << "->" << conn.dst << ":" << conn.dst_inport << std::endl;
+    initOutputLink(conn.src_outport, conn.dst_inport);
+    initInputLink(conn.dst_inport, conn.src_outport);
+  }
+
+  std::vector<Topology::InjectionPort> injs;
+  top_->endpointsConnectedToInjectionSwitch(addr(), injs);
+  for (Topology::InjectionPort& port : injs){
+    //std::cout << "Have inject connection " << addr() << ":" << port.switch_port
+    //          << "->" << port.nid << ":" << port.ep_port << std::endl;
+    initOutputLink(port.switch_port, port.ep_port);
+    initInputLink(port.ep_port, port.switch_port);
+  }
+}
+
+void
 NetworkSwitch::init(SSTMAC_MAYBE_UNUSED unsigned int phase)
 {
 #if SSTMAC_INTEGRATED_SST_CORE

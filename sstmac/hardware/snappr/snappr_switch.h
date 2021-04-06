@@ -78,8 +78,12 @@ class SnapprSwitch :
 
   SST_ELI_DOCUMENT_PORTS(SSTMAC_VALID_PORTS)
 
+  SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS(
+      {"outport%(num_ports)d", "The output ports for the Switch", "sstmac::SnapprOutport"},
+  )
+
   SST_ELI_DOCUMENT_STATISTICS(
-    { "traffic_intensity",    "Count the traffic on a port", "unit of traffic", 1},
+    {"traffic_intensity",    "Count the traffic on a port", "unit of traffic", 1},
     {"xmit_stall", "congestion statistic", "cycles", 1}, // Name, Desc, Units, Enable Level
     {"xmit_active", "activity statistic", "cycles", 1}, // Name, Desc, Units, Enable Level
     {"xmit_idle", "idle statistic", "cycles", 1}, // Name, Desc, Units, Enable Level
@@ -116,8 +120,6 @@ class SnapprSwitch :
   void deadlockCheck(int vl);
 
   std::vector<Router*> routers_;
-
-  double link_bw_;
 
   int qos_levels_;
 

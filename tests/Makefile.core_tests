@@ -63,6 +63,7 @@ CORETESTS+= \
 #  test_core_apps_ping_all_torus_pos_snappr \
 #  test_core_apps_ping_all_fat_tree_snappr \
 #  test_core_apps_distributed_service 
+#  test_core_apps_ping_all_cascade
 
 test_sumi_%.$(CHKSUF): sumi/sst_%
 	$(PYRUNTEST) 5 $(top_srcdir) $@ Exact sumi/sst_$* -f $(srcdir)/sumi/ini/test_sst_$*.ini --no-wall-time

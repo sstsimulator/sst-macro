@@ -109,14 +109,13 @@ SnapprSwitch::SnapprSwitch(uint32_t id, SST::Params& params) :
   bool congestion = params.find<bool>("congestion", true);
 
   SST::Params link_params = params.find_scoped_params("link");
-  link_bw_ = link_params.find<SST::UnitAlgebra>("bandwidth").getValue().toDouble();
 
   bool flow_control = params.find<bool>("flow_control", true);
   std::vector<uint32_t> credits_per_vl(num_vl_);
   if (flow_control){
-    if (link_params.contains("vl_credits")){
+    if (params.contains("vl_credits")){
       std::vector<std::string> vl_credits;
-      link_params.find_array("vl_credits", vl_credits);
+      params.find_array("vl_credits", vl_credits);
       if (vl_credits.size() != num_vl_){
         spkt_abort_printf("Have %d VLs, but given credit array of size %d",
           num_vl_, int(vl_credits.size()));
@@ -125,9 +124,9 @@ SnapprSwitch::SnapprSwitch(uint32_t id, SST::Params& params) :
         uint32_t credits = SST::UnitAlgebra(vl_credits[vl]).getRoundedValue();
         credits_per_vl[vl] = credits;
       }
-    } else if (link_params.contains("qos_credits")){
+    } else if (params.contains("qos_credits")){
       std::vector<std::string> qos_credits;
-      link_params.find_array("qos_credits", qos_credits);
+      params.find_array("qos_credits", qos_credits);
       if (qos_levels_ != qos_credits.size()){
         spkt_abort_printf("Have %d QoS levels, but given credit array of size %d",
           qos_levels_, int(qos_credits.size()));
@@ -142,8 +141,8 @@ SnapprSwitch::SnapprSwitch(uint32_t id, SST::Params& params) :
         }
         vl_offset += rtr->numVC();
       }
-    } else if (link_params.contains("credits")){
-      uint32_t credits = link_params.find<SST::UnitAlgebra>("credits").getRoundedValue();
+    } else if (params.contains("credits")){
+      uint32_t credits = params.find<SST::UnitAlgebra>("credits").getRoundedValue();
       uint32_t credits_per = credits / num_vl_;
       for (int vl=0; vl < num_vl_; ++vl){
         credits_per_vl[vl] = credits_per;
@@ -173,17 +172,14 @@ SnapprSwitch::SnapprSwitch(uint32_t id, SST::Params& params) :
   //vtk_ = registerStatistic<uint64_t,int,double,int>("traffic_intensity", getName());
   //if (vtk_) vtk_->configure(my_addr_, top_);
 
-  TimeDelta byte_delay(1.0/link_bw_);
-  std::string sw_arbtype = params.find<std::string>("arbitrator", "fifo");
-  std::string link_arbtype = link_params.find<std::string>("arbitrator", sw_arbtype);
   outports_.resize(top_->maxNumPorts());
   inports_.resize(top_->maxNumPorts());
   for (int i=0; i < top_->maxNumPorts(); ++i){
     std::string subId = sprockit::sprintf("Switch:%d.Port:%d", addr(), i);
     std::string portName = top_->portTypeName(addr(), i);
     outports_[i] = loadSub<SnapprOutPort>("snappr", "outport", i, link_params,
-                                          link_arbtype, subId, portName, i,
-                                          byte_delay, congestion, flow_control, this,
+                                          subId, portName, i,
+                                          congestion, flow_control, this,
                                           vls_per_qos);
     outports_[i]->setVirtualLanes(credits_per_vl);
     outports_[i]->inports = inports_.data();
@@ -192,7 +188,8 @@ SnapprSwitch::SnapprSwitch(uint32_t id, SST::Params& params) :
   for (int i=0; i < inports_.size(); ++i){
     inports_[i].number = i;
   }
-  initLinks(params);
+
+  configureLinks();
 }
 
 SnapprSwitch::~SnapprSwitch()
@@ -206,14 +203,15 @@ void
 SnapprSwitch::connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link)
 {
   double scale_factor = top_->portScaleFactor(my_addr_, src_outport);
-  double port_bw = scale_factor * link_bw_;
   SnapprOutPort* p = outports_[src_outport];
   if (p->link){
     spkt_abort_printf("Bad connection on switch outport %d:%d -> %d - port already occupied",
                       addr(), src_outport, dst_inport);
   }
   p->link = std::move(link);
-  p->byte_delay = TimeDelta(1.0/port_bw);
+  if (scale_factor != 1.0){
+    p->byte_delay /= scale_factor;
+  }
   p->dst_port = dst_inport;
   p->scaleBuffers(scale_factor);
   switch_debug("connecting output port %d to input port %d with scale=%10.4f byte_delay=%10.5e",

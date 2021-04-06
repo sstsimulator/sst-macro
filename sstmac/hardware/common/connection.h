@@ -100,9 +100,12 @@ class ConnectableComponent :
   public Component,
   public Connectable
 {
- protected:
-  ConnectableComponent(uint32_t cid, SST::Params& params);
+  public:
+    void initOutputLink(int src_outport, int dst_inport);
+    void initInputLink(int src_outport, int dst_inport);
 
+  protected:
+    ConnectableComponent(uint32_t cid, SST::Params& params);
 };
 
 class ConnectableSubcomponent :
@@ -114,6 +117,9 @@ class ConnectableSubcomponent :
     : SubComponent(id,selfname,parent)
   {
   }
+
+  void initOutputLink(int src_outport, int dst_inport);
+  void initInputLink(int src_outport, int dst_inport);
 
 };
 

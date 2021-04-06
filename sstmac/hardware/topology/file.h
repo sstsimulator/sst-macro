@@ -86,9 +86,8 @@ class FileTopology : public Topology
     return num_nodes_ - 1;
   }
 
-  SwitchId endpointToSwitch(NodeId) const override {
-    spkt_abort_printf("endpointToSwitch() not implemented");
-    return SwitchId(0);
+  SwitchId endpointToSwitch(NodeId id) const override {
+    return node_to_switch_[id];
   }
 
   SwitchId numLeafSwitches() const override {
@@ -182,6 +181,7 @@ class FileTopology : public Topology
   nlohmann::json nodes_;
   std::map<std::string,int> node_name_map_;
   std::map<std::string,int> switch_name_map_;
+  std::vector<SwitchId> node_to_switch_;
 };
 
 }

@@ -340,15 +340,26 @@ sys_init(SystemPy_t* self, PyObject* args, PyObject* kwargs)
     sstmac::py_extract_params(kwargs, params);
   }
 
-  sprockit::SimParameters::ptr sw_params = params->getNamespace("switch");
-  std::string model_name = sw_params->getParam("name");
-  std::transform(model_name.begin(), model_name.end(), model_name.begin(), ::tolower);
-  self->logp = model_name == "logp";
+  //we have new and old style params to deal with, which gets messy
 
-  sprockit::SimParameters::ptr top_params = params->getNamespace("topology");
   SST::Params sst_params;
-  for (auto it=top_params->begin(); it != top_params->end(); ++it){
-    sst_params.insert("topology." + it->first, it->second.value);
+  if (params->hasNamespace("switch") && params->hasNamespace("topology")){
+    //old style from ini file
+    sprockit::SimParameters::ptr sw_params = params->getNamespace("switch");
+    std::string model_name = sw_params->getParam("name");
+    std::transform(model_name.begin(), model_name.end(), model_name.begin(), ::tolower);
+    self->logp = model_name == "logp";
+
+    sprockit::SimParameters::ptr top_params = params->getNamespace("topology");
+    for (auto it=top_params->begin(); it != top_params->end(); ++it){
+      sst_params.insert("topology." + it->first, it->second.value);
+    }
+  } else {
+    self->logp = false;
+    //new style directly from python file
+    for (auto it=params->begin(); it != params->end(); ++it){
+      sst_params.insert("topology." + it->first, it->second.value);
+    }
   }
 
   self->macro_topology = sstmac::hw::Topology::staticTopology(sst_params);

@@ -118,6 +118,21 @@ FileTopology::FileTopology(SST::Params& params) :
   // compute max number of ports (switch ports + node ports)
   // +2 because we start indexing at zero
   maxNumPorts_ += max_node_ports + 2;
+
+  node_to_switch_.resize(numNodes());
+  for (auto &i : switch_name_map_) {
+    SwitchId src = i.second;
+    json outports = switches_.at(i.first).at("outports");
+    for (auto prt = outports.begin(); prt != outports.end(); ++prt) {
+      auto it = idmap_.find(prt->at("destination"));
+      if( it != idmap_.end() ) {
+        NodeId nid = it->second;
+        node_to_switch_[nid] = src;
+      }
+    }
+  }
+
+
 }
 
 void
