@@ -250,7 +250,7 @@ SnapprSwitch::deadlockCheck()
 void
 SnapprSwitch::deadlockCheck(int vl)
 {
-  for (auto* p : outports_){
+  for (SnapprOutPort* p : outports_){
     p->deadlockCheck(vl);
   }
 }

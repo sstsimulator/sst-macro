@@ -154,6 +154,10 @@ struct SnapprOutPort : public SubComponent {
     return portName_;
   }
 
+  int number() const {
+    return number_;
+  }
+
   int queueLength(int vl) const {
     return arb_->queueLength(vl);
   }

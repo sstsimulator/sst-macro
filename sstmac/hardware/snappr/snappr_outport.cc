@@ -253,6 +253,8 @@ SnapprOutPort::deadlockCheck(SSTMAC_MAYBE_UNUSED int vl)
   auto* pkt = arb_->popDeadlockCheck(vl);
   if (pkt){
     std::cerr << "Deadlocked on PORT=" << number_ <<   " VL=" << vl << ": " << pkt->toString() << std::endl;
+    std::cout << "packet going out VL=" << pkt->virtualLane()
+              << " that came in on VL=" << pkt->inputVirtualLane() << std::endl;
     pkt->setDeadlocked();
     link->deliver(pkt);
   }
@@ -389,13 +391,25 @@ struct FifoPortArbitrator : public SnapprPortArbitrator
   }
 
   SnapprPacket* popDeadlockCheck(int vl) override {
-    VirtualLane& v = vls_[vl];
-    if (!v.pending.empty()){
+    for (VirtualLane& v : vls_){
+      if (v.pending.empty()){
+        continue;
+      }
+
       SnapprPacket* pkt = v.pending.front();
-      return pkt;
-    } else {
-      return nullptr;
+      std::queue<SnapprPacket*> save;
+      while (!v.pending.empty() && pkt->inputVirtualLane() != vl){
+        save.push(pkt);
+        v.pending.pop();
+        pkt = v.pending.front();
+      }
+      v.pending = save;
+
+      if (pkt->inputVirtualLane() == vl){
+        return pkt;
+      }
     }
+    return nullptr;
   }
 
   int queueLength(int vl) const override {
