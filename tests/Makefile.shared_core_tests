@@ -15,8 +15,7 @@ CORETESTS+= \
   test_core_apps_ping_all_torus_pisces_new \
   test_core_apps_ping_all_torus_pisces_ugal \
   test_core_apps_ping_all_torus_valiant \
-  test_core_apps_ping_all_hypercube \
-  test_core_apps_ping_all_cascade 
+  test_core_apps_ping_all_hypercube
 
 #  test_core_apps_ping_all_big_dfly_snappr \
 #  test_core_apps_ping_all_dfly_plus_qos \

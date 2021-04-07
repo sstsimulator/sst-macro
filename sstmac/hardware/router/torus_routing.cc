@@ -62,6 +62,7 @@ class TorusMinimalRouter : public Router {
  public:
   struct header : public Packet::Header {
      char crossed_timeline : 1;
+     char last_dim;
   };
 
   SST_ELI_REGISTER_DERIVED(
@@ -91,32 +92,32 @@ class TorusMinimalRouter : public Router {
   void upPath(int dim, int srcX, int dstX, header* hdr) const
   {
     auto& dimensions_ = torus_->dimensions();
-    if ((srcX + 1) % dimensions_[dim] == dstX){
-      //move onto next dimension
-      hdr->deadlock_vc = 0;
-      hdr->crossed_timeline = 0;
-    } else if (srcX == (dimensions_[dim]-1)){
+    if (srcX == (dimensions_[dim]-1)){
       hdr->crossed_timeline = 1;
       hdr->deadlock_vc = 1;
+    } else if (dim != hdr->last_dim){
+      hdr->deadlock_vc = 0;
+      hdr->crossed_timeline = 0;
     } else {
       hdr->deadlock_vc = hdr->crossed_timeline ? 1 : 0;
     }
+    hdr->last_dim = dim;
     hdr->edge_port = torus_->convertToPort(dim, Torus::pos);
   }
 
   void downPath(int dim, int src, int dst, header* hdr) const
   {
     auto& dimensions_ = torus_->dimensions();
-    if (src == ((dst + 1) % dimensions_[dim])){
-      //move onto next dimension
-      hdr->deadlock_vc = 0;
-      hdr->crossed_timeline = 0;
-    } else if (src == 0){
+    if (src == 0){
       hdr->crossed_timeline = 1;
       hdr->deadlock_vc = 1;
+    } else if (dim != hdr->last_dim){
+      hdr->deadlock_vc = 0;
+      hdr->crossed_timeline = 0;
     } else {
       hdr->deadlock_vc = hdr->crossed_timeline ? 1 : 0;
     }
+    hdr->last_dim = dim;
     hdr->edge_port = torus_->convertToPort(dim, Torus::neg);
   }
 

@@ -62,6 +62,8 @@ LogPNIC::LogPNIC(uint32_t id, SST::Params& params, Node* node) :
   SST::Params inj_params = params.find_scoped_params("injection");
   inj_byte_delay_ = TimeDelta(inj_params.find<SST::UnitAlgebra>("bandwidth").getValue().inverse().toDouble());
   inj_lat_ = TimeDelta(inj_params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
+
+  configureLogPLinks();
 }
 
 LogPNIC::~LogPNIC()

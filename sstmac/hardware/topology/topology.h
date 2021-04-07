@@ -340,7 +340,6 @@ class Topology : public sprockit::printable
   virtual void connectedOutports(SwitchId src,
                      std::vector<Topology::Connection>& conns) const = 0;
 
-
   /**
      For indirect networks, this includes all switches -
      those connected directly to nodes and internal
@@ -421,6 +420,8 @@ class Topology : public sprockit::printable
 
   static void outputBox(std::ostream& os,
                        const Topology::VTKBoxGeometry& box);
+
+  void injectionPorts(NodeId nid, std::vector<InjectionPort>& ports);
 
   /**
      For a given input switch, return all nodes connected to it.

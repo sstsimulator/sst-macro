@@ -49,6 +49,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/processor/processor.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/libraries/compute/compute_event.h>
+#include <sstmac/hardware/topology/topology.h>
 
 #if SSTMAC_HAVE_SST_ELEMENTS
 #include <sst/elements/ariel/arielnotify.h>
@@ -72,8 +73,6 @@ SimpleNode::~SimpleNode()
 SimpleNode::SimpleNode(uint32_t id, SST::Params& params)
   : Node(id, params)
 {
-  initLinks(params);
-
 #if SSTMAC_HAVE_SST_ELEMENTS
   int ncores = proc_->ncores();
   unblock_links_.resize(ncores);

@@ -109,7 +109,8 @@ SculpinSwitch::SculpinSwitch(uint32_t id, SST::Params& params) :
     ports_[i].id = i;
     ports_[i].seqnum = 0;
   }
-  initLinks(params);
+
+  configureLinks();
 
   if (params.contains("filter_stat_source")){
     std::vector<int> filter;

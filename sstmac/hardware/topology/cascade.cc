@@ -64,6 +64,11 @@ namespace hw {
 SSTMAC_MAYBE_UNUSED
 static const double PI = 3.141592653589793238462;
 
+static inline int mod(int a, int b){
+  int rem = a % b;
+  return rem < 0 ? rem + b : rem;
+}
+
 Cascade::Cascade(SST::Params& params) :
   CartesianTopology(params)
 {
@@ -300,10 +305,19 @@ Cascade::portScaleFactor(uint32_t  /*addr*/, int port) const
 int
 Cascade::xygDirToGroup(int myX, int myY, int myG, int dir) const
 {
-  int gspace = std::max(1, g_ / group_con_);
-  int myid = myX + myY * x_;
-  int gset = myid % g_;
-  return (myG + gset + gspace * dir) % g_;
+  int myA = myX * y_ + myY;
+  int half = group_con_ / 2;
+  if (dir >= half){
+    int h = dir - half;
+    //minus G
+    int minusG = mod(myG - myA*half - h, g_);
+    return minusG;
+  } else {
+    //plus G
+    int h = dir;
+    int plusG = mod(myG + myA*half + h, g_);
+    return plusG;
+  }
 }
 
 coordinates

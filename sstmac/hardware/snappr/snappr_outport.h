@@ -82,9 +82,8 @@ struct SnapprOutPort : public SubComponent {
 
 #if SSTMAC_INTEGRATED_SST_CORE
   SST_ELI_REGISTER_SUBCOMPONENT_API(sstmac::hw::SnapprOutPort,
-                                    const std::string& /*arb*/,
                                     const std::string& /*subId*/, const std::string& /*portName*/, int /*number*/,
-                                    TimeDelta /*byte_delay*/, bool /*congestion*/, bool /*flow_control*/, Component* /*parent*/,
+                                    bool /*congestion*/, bool /*flow_control*/, Component* /*parent*/,
                                     const std::vector<int>& /*vls_per_qos*/)
   SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(
     SnapprOutPort,
@@ -96,9 +95,9 @@ struct SnapprOutPort : public SubComponent {
 #else
   SST_ELI_DECLARE_BASE(SnapprOutPort)
   SST_ELI_DECLARE_DEFAULT_INFO()
-  SST_ELI_DECLARE_CTOR(uint32_t /*id*/, SST::Params& /*params*/, const std::string& /*arb*/,
+  SST_ELI_DECLARE_CTOR(uint32_t /*id*/, SST::Params& /*params*/,
                        const std::string& /*subId*/, const std::string& /*portName*/, int /*number*/,
-                       TimeDelta /*byte_delay*/, bool /*congestion*/, bool /*flow_control*/, Component* /*parent*/,
+                       bool /*congestion*/, bool /*flow_control*/, Component* /*parent*/,
                        const std::vector<int>& /*vls_per_qos*/)
 
   SST_ELI_REGISTER_DERIVED(
@@ -155,6 +154,10 @@ struct SnapprOutPort : public SubComponent {
     return portName_;
   }
 
+  int number() const {
+    return number_;
+  }
+
   int queueLength(int vl) const {
     return arb_->queueLength(vl);
   }
@@ -192,9 +195,9 @@ struct SnapprOutPort : public SubComponent {
     notifier_ = new TailNotifierDerived<T,Fxn>(t,f);
   }
 
-  SnapprOutPort(uint32_t id, SST::Params& params, const std::string& arb,
+  SnapprOutPort(uint32_t id, SST::Params& params,
                 const std::string& subId, const std::string& portName, int number,
-                TimeDelta byte_delay, bool congestion, bool flow_control, Component* parent,
+                bool congestion, bool flow_control, Component* parent,
                 const std::vector<int>& vls_per_qos);
 
  private:
