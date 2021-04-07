@@ -215,6 +215,10 @@ class MpiRequest :
     return stat_;
   }
 
+  void setStatus(const MPI_Status& stat) {
+    stat_ = stat;
+  }
+
   bool isCancelled() const {
     return cancelled_;
   }
