@@ -154,7 +154,8 @@ class Message : public sstmac::hw::NetworkMessage
 
   int targetRank() const {
     switch (NetworkMessage::type()){
-     case NetworkMessage::payload:
+     case NetworkMessage::smsg_send:
+     case NetworkMessage::posted_send:
      case NetworkMessage::rdma_get_payload:
      case NetworkMessage::rdma_put_payload:
      case NetworkMessage::rdma_get_nack:
@@ -171,7 +172,8 @@ class Message : public sstmac::hw::NetworkMessage
 
   int cqId() const {
     switch (NetworkMessage::type()){
-     case NetworkMessage::payload:
+     case NetworkMessage::smsg_send:
+     case NetworkMessage::posted_send:
      case NetworkMessage::rdma_get_payload:
      case NetworkMessage::rdma_put_payload:
      case NetworkMessage::rdma_get_nack:
@@ -220,6 +222,7 @@ class Message : public sstmac::hw::NetworkMessage
 
   int send_cq_;
   int recv_cq_;
+  int posted_recv_queue_;
 
  public:
   sstmac::Timestamp timeArrived() const {

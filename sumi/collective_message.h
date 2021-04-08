@@ -177,7 +177,8 @@ class CollectiveWorkMessage final :
 
   int domTargetRank() const {
     switch (NetworkMessage::type()){
-     case NetworkMessage::payload:
+     case NetworkMessage::smsg_send:
+     case NetworkMessage::posted_send:
      case NetworkMessage::rdma_get_payload:
      case NetworkMessage::rdma_put_payload:
      case NetworkMessage::rdma_get_nack:

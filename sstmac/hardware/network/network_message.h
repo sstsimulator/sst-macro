@@ -65,7 +65,10 @@ class NetworkMessage : public Flow
 
   struct rdma_get {};
   struct rdma_put {};
-  struct header {};
+  struct smsg {};
+  struct post_send {};
+
+  static constexpr uintptr_t bad_recv_buffer = 0x1;
 
   typedef enum {
     null_netmsg_type=0,
@@ -75,12 +78,13 @@ class NetworkMessage : public Flow
     rdma_put_sent_ack=4,
     rdma_put_nack=5,
     payload_sent_ack=6,
-    payload=7,
-    rdma_get_payload=8,
-    rdma_put_payload=9,
-    nvram_get_request=10,
-    nvram_get_payload=11,
-    failure_notification=12
+    smsg_send=7,
+    posted_send=8,
+    rdma_get_payload=9,
+    rdma_put_payload=10,
+    nvram_get_request=11,
+    nvram_get_payload=12,
+    failure_notification=13
   } type_t;
 
  public:
@@ -94,10 +98,27 @@ class NetworkMessage : public Flow
    uint64_t size,
    bool needs_ack,
    void* buf,
-   header  /*ctor_tag*/) :
+   smsg  /*ctor_tag*/) :
     NetworkMessage(qos, flow_id, libname, aid, to, from,
                     size, size, needs_ack, nullptr, nullptr, buf,
-                    payload)
+                    smsg_send)
+  {
+  }
+
+  NetworkMessage(
+   int qos,
+   uint64_t flow_id,
+   const std::string& libname,
+   sw::AppId aid,
+   NodeId to,
+   NodeId from,
+   uint64_t size,
+   bool needs_ack,
+   void* buf,
+   post_send  /*ctor_tag*/) :
+    NetworkMessage(qos, flow_id, libname, aid, to, from,
+                    size, size, needs_ack, nullptr, nullptr, buf,
+                    posted_send)
   {
   }
 
@@ -182,7 +203,7 @@ class NetworkMessage : public Flow
     payload_bytes_ = 0;
     setFlowSize(sz);
     smsg_buffer_ = buf;
-    type_ = payload;
+    type_ = smsg_send;
   }
 
   void setupRdmaPut(void* local_buf, void* remote_buf, uint64_t sz){
@@ -214,6 +235,14 @@ class NetworkMessage : public Flow
 
   void memmoveLocalToRemote();
 
+  void matchRecv(void* recv_buffer);
+
+  void setNoRecvMatch();
+
+  bool isBadRecv() const {
+    return local_buffer_ == (void*) bad_recv_buffer;
+  }
+
   void* localBuffer() const { return local_buffer_; }
 
   void* remoteBuffer() const { return remote_buffer_; }
@@ -224,7 +253,7 @@ class NetworkMessage : public Flow
 
   bool needsAck() const {
     //only paylods get acked
-    return needs_ack_ && type_ >= payload;
+    return needs_ack_ && type_ >= smsg_send;
   }
 
   void setNeedsAck(bool flag){
