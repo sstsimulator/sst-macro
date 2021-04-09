@@ -73,53 +73,53 @@ class BuilderLibrary
     if (iter == factories_.end()){
       return nullptr;
     } else {
-      return iter->second.get();
+      return iter->second;
     }
   }
 
-  const std::map<std::string, std::unique_ptr<BaseBuilder>>& getMap() const {
+  const std::map<std::string, BaseBuilder*>& getMap() const {
     return factories_;
   }
 
-  bool addBuilder(const std::string& name, std::unique_ptr<BaseBuilder>&& fact){
+  bool addBuilder(const std::string& name, BaseBuilder* fact){
     factories_[name] = std::move(fact);
     return true;
   }
 
  private:
-  std::map<std::string, std::unique_ptr<BaseBuilder>> factories_;
+  std::map<std::string, BaseBuilder*> factories_;
 };
 
 template <class Base, class... CtorArgs>
 class BuilderLibraryDatabase {
  public:
   using Library=BuilderLibrary<Base,CtorArgs...>;
-  using LibraryPtr=std::unique_ptr<Library>;
+  using LibraryPtr=Library*;
   using BaseFactory=typename Library::BaseBuilder;
 
   static Library* getLibrary(const std::string& name){
     if (!libraries){
-      libraries = std::unique_ptr<std::map<std::string,LibraryPtr>>(new std::map<std::string,LibraryPtr>);
+      libraries = new std::map<std::string,LibraryPtr>;
     }
     auto iter = libraries->find(name);
     if (iter == libraries->end()){
-      auto info = std::unique_ptr<Library>(new Library);
-      auto* ptr = info.get();
-      (*libraries)[name] = std::move(info);
+      auto info = new Library;
+      auto* ptr = info;
+      (*libraries)[name] = info;
       return ptr;
     } else {
-      return iter->second.get();
+      return iter->second;
     }
   }
 
  private:
   // Database - needs to be a pointer for static init order
-  static std::unique_ptr<std::map<std::string,std::unique_ptr<Library>>> libraries;
+  static std::map<std::string,Library*>* libraries;
 };
 
 template <class Base, class... CtorArgs>
- std::unique_ptr<std::map<std::string,std::unique_ptr<BuilderLibrary<Base,CtorArgs...>>>>
-  BuilderLibraryDatabase<Base,CtorArgs...>::libraries;
+ std::map<std::string,BuilderLibrary<Base,CtorArgs...>*>*
+  BuilderLibraryDatabase<Base,CtorArgs...>::libraries = nullptr;
 
 
 template <class Base, class T>
@@ -214,10 +214,10 @@ struct ElementsBuilder<Base, std::tuple<Args...>>
 };
 
 template <class Base, class T, class... Args>
-std::unique_ptr<DerivedBuilder<Base,T,Args...>>
+DerivedBuilder<Base,T,Args...>*
 makeDerivedBuilder(){
   using ret = DerivedBuilder<Base,T,Args...>;
-  return std::unique_ptr<ret>(new ret);
+  return new ret;
 }
 
 template <class Base, class... Args>
@@ -351,19 +351,19 @@ Base* create(const std::string& elemlib, const std::string& elem, Args&&... args
     return sprockit::BuilderDatabase::getLibrary<__LocalSpktBase,__VA_ARGS__>(name); \
   } \
   static bool addBuilder(const std::string& elemlib, const std::string& elem, \
-                std::unique_ptr<BaseBuilder>&& builder){ \
-    return getBuilderLibrary(elemlib)->addBuilder(elem,std::move(builder)); \
+                BaseBuilder* builder){ \
+    return getBuilderLibrary(elemlib)->addBuilder(elem,builder); \
   }
 
 #define SPKT_DECLARE_CTOR_EXTERN(...) \
   SPKT_CTOR_COMMON(__VA_ARGS__) \
   static BuilderLibrary* getBuilderLibrary(const std::string& name); \
   static bool addBuilder(const std::string& elemlib, const std::string& elem, \
-                         std::unique_ptr<BaseBuilder>&& builder);
+                         BaseBuilder* builder);
 
 #define SPKT_DEFINE_CTOR_EXTERN(base) \
   bool base::addBuilder(const std::string& elemlib, const std::string& elem, \
-                        std::unique_ptr<BaseBuilder>&& builder){ \
+                        BaseBuilder* builder){ \
     return getBuilderLibrary(elemlib)->addBuilder(elem,std::move(builder)); \
   } \
   base::BuilderLibrary* base::getBuilderLibrary(const std::string& elemlib){ \
@@ -383,7 +383,7 @@ Base* create(const std::string& elemlib, const std::string& elem, Args&&... args
     return sprockit::BuilderDatabase::getLibrary<__LocalSpktBase>(name); \
   } \
   static bool addBuilder(const std::string& elemlib, const std::string& elem, \
-                         std::unique_ptr<BaseBuilder>&& builder){ \
+                         BaseBuilder* builder){ \
     return getBuilderLibrary(elemlib)->addBuilder(elem,std::move(builder)); \
   }
 
@@ -391,7 +391,7 @@ Base* create(const std::string& elemlib, const std::string& elem, Args&&... args
   SPKT_DEFAULT_CTOR_COMMON() \
   static BuilderLibrary* getBuilderLibrary(const std::string& name); \
   static bool addBuilder(const std::string& elemlib, const std::string& elem, \
-                         std::unique_ptr<BaseBuilder>&& builder);
+                         BaseBuilder* builder);
 
 #define SPKT_REGISTER_DERIVED(base,cls,lib,name,desc) \
   bool ELI_isLoaded() { \

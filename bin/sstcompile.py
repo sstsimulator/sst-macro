@@ -49,6 +49,7 @@ def addPreprocess(ctx, sourceFile, outputFile, args, cmds):
     ppArgs.append("-include")
     ppArgs.append(entry)
   ppArgs.extend(map(lambda x: "-D%s" % x, ctx.defines))
+  ppArgs.extend(map(lambda x: "-D%s" % x, args.D))
   ppArgs.extend(map(lambda x: "-I%s" % x, args.I)) 
   ppArgs.extend(ctx.cppFlags)
   ppArgs.extend(ctx.compilerFlags)
@@ -126,7 +127,8 @@ def addSrc2SrcCompile(ctx, sourceFile, outputFile, args, cmds):
   #First we must pre-process the file to get it read for source-to-source
   objBaseFolder, objName = os.path.split(outputFile)
   ppTmpFile = addPrefixAndRebase("pp.", sourceFile, objBaseFolder)
-  addPreprocess(ctx, sourceFile, ppTmpFile, args, cmds)
+  if not ctx.src2srcDebug:
+    addPreprocess(ctx, sourceFile, ppTmpFile, args, cmds)
 
   rawPaths = defaultIncludePaths.split(":")
   cleanPaths = []
@@ -157,11 +159,11 @@ def addSrc2SrcCompile(ctx, sourceFile, outputFile, args, cmds):
     clangCmdArr.extend(clangLibtoolingCxxFlagsStr.split())
   else:
     clangCmdArr.extend(clangLibtoolingCFlagsStr.split())
-  clangCmdArr.extend(map(lambda x: "-W%s" % x, args.W))
 
   srcRepl = addPrefixAndRebase("sst.pp.",sourceFile,objBaseFolder)
   cxxInitSrcFile = addPrefixAndRebase("sstGlobals.pp.",sourceFile,objBaseFolder) + ".cpp"
-  cmds.append([None,clangCmdArr,[ppTmpFile,srcRepl,cxxInitSrcFile]]) #None -> don't pipe output anywhere
+  if not ctx.src2srcDebug:
+    cmds.append([None,clangCmdArr,[ppTmpFile,srcRepl,cxxInitSrcFile]]) #None -> don't pipe output anywhere
 
   tmpTarget = addPrefix("tmp.", outputFile)
   llvmPasses = []
@@ -185,6 +187,8 @@ def addSrc2SrcCompile(ctx, sourceFile, outputFile, args, cmds):
     cmdArr.append(srcRepl)
     if args.O:
       cmdArr.append("-O%s" % args.O)
+    if args.g:
+      cmdArr.append("-g")
     cmds.append([None,cmdArr,[tmpTarget]])
 
   cxxInitObjFile = addPrefix("sstGlobals.", outputFile)
@@ -200,6 +204,8 @@ def addSrc2SrcCompile(ctx, sourceFile, outputFile, args, cmds):
   cxxInitCmdArr.extend(ctx.cppFlags)
   if args.O:
     cxxInitCmdArr.append("-O%s" % args.O)
+  if args.g:
+    cxxInitCmdArr.append("-g")
   cmds.append([None,cxxInitCmdArr,[cxxInitObjFile]])
 
   mergeCmdArr = [

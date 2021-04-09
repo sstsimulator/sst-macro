@@ -5,7 +5,7 @@
 
 
 #include <stdio.h>
-#include <sstmac/replacements/mpi.h>
+#include <sstmac/replacements/mpi/mpi.h>
 
 namespace errcode {
 void ChkMsg( int, int, const char [] );

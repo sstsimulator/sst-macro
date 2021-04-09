@@ -1216,6 +1216,7 @@ SkeletonASTVisitor::checkArray(VarDecl* D)
       info->typedefDeclString = sstr.str();
       info->retType = info->fqTypedefName + "*";
       info->needsDeref = false;
+      info->implicitSize = true;
     }
     return info;
   } else {

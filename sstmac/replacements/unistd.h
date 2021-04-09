@@ -46,17 +46,24 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include_next <unistd.h>
 
+#ifndef HOST_NAME_MAX
+#define HOST_NAME_MAX 64
+#endif
+
 #ifndef SSTMAC_NO_REPLACEMENTS
 #define sleep       sstmac_sleep
 #endif
 
 #define gethostname sstmac_gethostname
+#define gethostid   sstmac_gethostid
 #define alarm       sstmac_alarm
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 int sstmac_gethostname(const char* name, size_t sz);
+
+long sstmac_gethostid();
 
 unsigned int sstmac_sleep(unsigned int secs);
 

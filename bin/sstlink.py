@@ -53,7 +53,6 @@ def addLink(ctx, ldTarget, args, cmds, objects, toExe=False):
     linkCmdArr.extend(soFlagsStr.split())
   linkCmdArr.extend(ctx.libs)
   linkCmdArr.extend(ctx.compilerFlags)
-  linkCmdArr.extend(map(lambda x: "-W%s" % x, args.Wl)) #add all the -Wl flags for now
   linkCmdArr.extend(map(lambda x: "-L%s" % x, args.L)) #add all the -L flags for now
   linkCmdArr.extend(map(lambda x: "-l%s" % x, args.l)) #add all the -l flags for now
   linkCmdArr.extend(objects)

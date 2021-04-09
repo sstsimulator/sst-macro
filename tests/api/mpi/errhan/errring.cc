@@ -5,7 +5,7 @@
 
 
 #include <stdio.h>
-#include <sstmac/replacements/mpi.h>
+#include <sstmac/replacements/mpi/mpi.h>
 
 namespace errring {
 #define MPIR_ERR_FATAL 1

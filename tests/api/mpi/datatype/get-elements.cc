@@ -1,7 +1,7 @@
 /* -*- Mode: c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 
 
-#include <sstmac/replacements/mpi.h>
+#include <sstmac/replacements/mpi/mpi.h>
 #include <stdio.h>
 #include <stddef.h>
 #include <assert.h>

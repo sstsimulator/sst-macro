@@ -45,7 +45,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #define sstmac_app_name sstmac_mpi_testall
 
 #include <sstmac/compute.h>
-#include <sstmac/replacements/mpi.h>
+#include <sstmac/replacements/mpi/mpi.h>
 #include <sprockit/errors.h>
 #include <math.h>
 #include <vector>
