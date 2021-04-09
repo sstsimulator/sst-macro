@@ -62,6 +62,10 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
+static struct MPI_Status proc_null_status = {
+  MPI_PROC_NULL, MPI_ANY_TAG, 0, 0, 0
+};
+
 int
 MpiApi::send(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm)
 {  
@@ -71,10 +75,14 @@ MpiApi::send(const void *buf, int count, MPI_Datatype datatype, int dest, int ta
 
   start_pt2pt_call(MPI_Send,count,datatype,dest,tag,comm);
   MpiComm* commPtr = getComm(comm);
-  MpiRequest* req = MpiRequest::construct(MpiRequest::Send);
-  queue_->send(req, count, datatype, dest, tag, commPtr, const_cast<void*>(buf));
-  queue_->progressLoop(req);
-  delete req;
+
+  if (dest != MPI_PROC_NULL){
+    MpiRequest* req = MpiRequest::construct(MpiRequest::Send);
+    queue_->send(req, count, datatype, dest, tag, commPtr, const_cast<void*>(buf));
+    queue_->progressLoop(req);
+    delete req;
+  }
+
   FinishMPICall(MPI_Send);
 
 #ifdef SSTMAC_OTF2_ENABLED
@@ -98,11 +106,25 @@ MpiApi::sendrecv(const void *sendbuf, int sendcount,
   auto start_clock = traceClock();
 #endif
 
-  start_pt2pt_call(MPI_Sendrecv,sendcount,sendtype,source,recvtag,comm);
-  MpiRequest* req = doIsend(sendbuf, sendcount, sendtype, dest, sendtag, comm);
-  doRecv(recvbuf, recvcount, recvtype, source, recvtag, comm, status);
-  queue_->progressLoop(req);
-  delete req;
+  int rc = MPI_SUCCESS;
+  if (dest == MPI_PROC_NULL && source == MPI_PROC_NULL){
+    // pass, do nothing
+    *status = proc_null_status;
+  } else if (source == MPI_PROC_NULL) {
+    //really just a send
+    rc = send(sendbuf, sendcount, sendtype, dest, sendtag, comm);
+    *status = proc_null_status;
+  } else if (dest == MPI_PROC_NULL){
+    //really just a receive
+    rc = recv(recvbuf, recvcount, recvtype, source, recvtag, comm, status);
+  } else {
+    start_pt2pt_call(MPI_Sendrecv,sendcount,sendtype,source,recvtag,comm);
+    MpiRequest* req = doIsend(sendbuf, sendcount, sendtype, dest, sendtag, comm);
+    rc = doRecv(recvbuf, recvcount, recvtype, source, recvtag, comm, status);
+    queue_->progressLoop(req);
+    delete req;
+  }
+
   FinishMPICall(MPI_Sendrecv);
 
 #ifdef SSTMAC_OTF2_ENABLED
@@ -111,7 +133,7 @@ MpiApi::sendrecv(const void *sendbuf, int sendcount,
   }
 #endif
 
-  return MPI_SUCCESS;
+  return rc;
 }
 
 int
@@ -156,13 +178,18 @@ MpiApi::doStart(MPI_Request req)
                       "Starting MPI_Request that is not persistent");
   }
 
-  reqPtr->setComplete(false);
-  MpiComm* commPtr = getComm(op->comm);
-  if (reqPtr->optype() == MpiRequest::Send){
-    queue_->send(reqPtr, op->count, op->datatype, op->partner, op->tag, commPtr, op->content);
+  if (op->partner == MPI_PROC_NULL){
+    reqPtr->setComplete(true); //just mark it done
   } else {
-    queue_->recv(reqPtr, op->count, op->datatype, op->partner, op->tag, commPtr, op->content);
+    reqPtr->setComplete(false);
+    MpiComm* commPtr = getComm(op->comm);
+    if (reqPtr->optype() == MpiRequest::Send){
+      queue_->send(reqPtr, op->count, op->datatype, op->partner, op->tag, commPtr, op->content);
+    } else {
+      queue_->recv(reqPtr, op->count, op->datatype, op->partner, op->tag, commPtr, op->content);
+    }
   }
+
 }
 
 int
@@ -245,7 +272,11 @@ MpiApi::doIsend(const void *buf, int count, MPI_Datatype datatype, int dest,
 {
   MpiComm* commPtr = getComm(comm);
   MpiRequest* req = MpiRequest::construct(MpiRequest::Send);
-  queue_->send(req, count, datatype, dest, tag, commPtr, const_cast<void*>(buf));
+  if (dest == MPI_PROC_NULL){
+    req->setComplete(true); //just mark complete
+  } else {
+    queue_->send(req, count, datatype, dest, tag, commPtr, const_cast<void*>(buf));
+  }
   return req;
 }
 
@@ -286,7 +317,12 @@ MpiApi::recv(void *buf, int count, MPI_Datatype datatype, int source,
 #endif
 
   start_pt2pt_call(MPI_Recv,count,datatype,source,tag,comm);
-  int rc = doRecv(buf,count,datatype,source,tag,comm,status);
+  int rc = MPI_SUCCESS;
+  if (source != MPI_PROC_NULL){
+    rc = doRecv(buf,count,datatype,source,tag,comm,status);
+  } else {
+    *status = proc_null_status;
+  }
   FinishMPICall(MPI_Recv);
 
 #ifdef SSTMAC_OTF2_ENABLED
@@ -370,7 +406,12 @@ MpiApi::irecv(void *buf, int count, MPI_Datatype datatype, int source,
       srcStr(commPtr, source).c_str(), tagStr(tag).c_str(),
       commStr(comm).c_str(), *request);
 
-  queue_->recv(req, count, datatype, source, tag, commPtr, buf);
+  if (source != MPI_PROC_NULL){
+    queue_->recv(req, count, datatype, source, tag, commPtr, buf);
+  } else {
+    req->setComplete(true); //just mark done
+    req->setStatus(proc_null_status);
+  }
   queue_->nonblockingProgress();
   FinishMPICall(MPI_Irecv);
 

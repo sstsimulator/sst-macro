@@ -377,9 +377,8 @@ SimTransport::send(Message* m)
 
   if (spy_bytes_){
     switch(m->sstmac::hw::NetworkMessage::type()){
-    case sstmac::hw::NetworkMessage::payload:
-      spy_bytes_->addData(m->recver(), m->byteLength());
-      break;
+    case sstmac::hw::NetworkMessage::smsg_send:
+    case sstmac::hw::NetworkMessage::posted_send:
     case sstmac::hw::NetworkMessage::rdma_get_request:
     case sstmac::hw::NetworkMessage::rdma_put_payload:
       spy_bytes_->addData(m->recver(), m->payloadBytes());
@@ -390,7 +389,7 @@ SimTransport::send(Message* m)
   }
 
   switch(m->sstmac::hw::NetworkMessage::type()){
-    case sstmac::hw::NetworkMessage::payload:
+    case sstmac::hw::NetworkMessage::smsg_send:
       if (m->recver() == rank_){
         //deliver to self
         debug_printf(sprockit::dbg::sumi,
@@ -408,6 +407,12 @@ SimTransport::send(Message* m)
         }
         nic_ioctl_(m);
       }
+      break;
+    case sstmac::hw::NetworkMessage::posted_send:
+      if (post_header_delay_.ticks()) {
+        parent_->compute(post_header_delay_);
+      }
+      nic_ioctl_(m);
       break;
     case sstmac::hw::NetworkMessage::rdma_get_request:
     case sstmac::hw::NetworkMessage::rdma_put_payload:
@@ -432,7 +437,7 @@ SimTransport::smsgSendResponse(Message* m, uint64_t size, void* buffer, int loca
   m->setSendCq(local_cq);
   m->setRecvCQ(remote_cq);
   m->setQoS(qos);
-  m->sstmac::hw::NetworkMessage::setType(Message::payload);
+  m->sstmac::hw::NetworkMessage::setType(Message::smsg_send);
   send(m);
 }
 

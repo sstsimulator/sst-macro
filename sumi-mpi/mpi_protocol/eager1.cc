@@ -134,7 +134,7 @@ void
 Eager1::incoming(MpiMessage* msg)
 {
   switch(msg->NetworkMessage::type()){
-  case sstmac::hw::NetworkMessage::payload:
+  case sstmac::hw::NetworkMessage::smsg_send:
     incomingHeader(msg);
     break;
   case sstmac::hw::NetworkMessage::rdma_get_sent_ack:

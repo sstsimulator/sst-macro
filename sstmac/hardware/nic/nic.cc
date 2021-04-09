@@ -220,7 +220,8 @@ NIC::recvMessage(NetworkMessage* netmsg)
     case NetworkMessage::rdma_get_payload:
     case NetworkMessage::rdma_put_payload:
     case NetworkMessage::nvram_get_payload:
-    case NetworkMessage::payload: {
+    case NetworkMessage::smsg_send:
+    case NetworkMessage::posted_send: {
       netmsg->takeOffWire();
       parent_->handle(netmsg);
       //node_link_->send(netmsg);
@@ -294,7 +295,7 @@ NIC::recordMessage(NetworkMessage* netmsg)
 
   if (netmsg->type() == NetworkMessage::null_netmsg_type){
     //assume this is a simple payload
-    netmsg->setType(NetworkMessage::payload);
+    netmsg->setType(NetworkMessage::smsg_send);
   }
 
   if (spy_bytes_){
@@ -306,6 +307,11 @@ NIC::recordMessage(NetworkMessage* netmsg)
 void
 NIC::internodeSend(NetworkMessage* netmsg)
 {
+  if (netmsg->toaddr() >= top_->numNodes()){
+    spkt_abort_printf("Got bad destination %d on NIC %d for %s",
+                      int(netmsg->toaddr()), int(addr()), netmsg->toString().c_str());
+  }
+
   recordMessage(netmsg);
   nic_debug("internode send payload %llu of size %d %s",
     netmsg->flowId(), int(netmsg->byteLength()), netmsg->toString().c_str());

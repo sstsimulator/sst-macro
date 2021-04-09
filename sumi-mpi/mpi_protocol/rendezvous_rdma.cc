@@ -163,7 +163,7 @@ RendezvousGet::incoming(MpiMessage* msg)
   minPartnerQuiesce_ = std::min(minPartnerQuiesce_, msg->minQuiesce());
   mpi_queue_protocol_debug("RDMA get incoming %s", msg->toString().c_str());
   switch(msg->sstmac::hw::NetworkMessage::type()){
-  case sstmac::hw::NetworkMessage::payload: {
+  case sstmac::hw::NetworkMessage::smsg_send: {
     if (msg->stage() == 0){
       incomingHeader(msg);
     } else {
