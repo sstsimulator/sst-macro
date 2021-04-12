@@ -1,0 +1,9 @@
+int fxn()
+{
+
+ sstmac_blocking_call(false,1e-6,"mpi");int i=0;
+  return 0;
+}
+#include <sstmac/software/process/cppglobal.h>
+#include <sstmac/software/process/memoize.h>
+

@@ -4,7 +4,7 @@
  */
 
 
-#include <sstmac/replacements/mpi.h>
+#include <sstmac/replacements/mpi/mpi.h>
 
 namespace exitst1 {
 /** 

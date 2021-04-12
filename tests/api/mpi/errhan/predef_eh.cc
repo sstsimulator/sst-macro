@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <stdlib.h>
-#include <sstmac/replacements/mpi.h>
+#include <sstmac/replacements/mpi/mpi.h>
 
 namespace predef_eh {
 /** Ensure that setting a user-defined error handler on predefined

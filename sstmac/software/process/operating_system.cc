@@ -156,7 +156,9 @@ OperatingSystem::OperatingSystem(uint32_t id, SST::Params& params, hw::Node* par
   des_context_(nullptr),
   params_(params),
   compute_sched_(nullptr),
-  sync_tunnel_(nullptr)
+  sync_tunnel_(nullptr),
+  next_condition_(0),
+  next_mutex_(0)
 {
   my_addr_ = node_ ? node_->addr() : 0;
 
@@ -790,6 +792,68 @@ OperatingSystem::getThread(uint32_t threadId) const
     return nullptr;
   } else {
     return iter->second;
+  }
+}
+
+mutex_t*
+OperatingSystem::getMutex(int id)
+{
+  std::map<int,mutex_t>::iterator it = mutexes_.find(id);
+  if (it==mutexes_.end()){
+    return 0;
+  } else {
+    return &it->second;
+  }
+}
+
+int
+OperatingSystem::allocateMutex()
+{
+  int id = next_mutex_++;
+  mutexes_[id]; //implicit make
+  return id;
+}
+
+bool
+OperatingSystem::eraseMutex(int id)
+{
+  std::map<int,mutex_t>::iterator it = mutexes_.find(id);
+  if (it == mutexes_.end()){
+    return false;
+  } else {
+    mutexes_.erase(id);
+    return true;
+  }
+}
+
+int
+OperatingSystem::allocateCondition()
+{
+  int id = next_condition_++;
+  conditions_[id]; //implicit make
+  return id;
+}
+
+bool
+OperatingSystem::eraseCondition(int id)
+{
+  std::map<int,condition_t>::iterator it = conditions_.find(id);
+  if (it == conditions_.end()){
+    return false;
+  } else {
+    conditions_.erase(id);
+    return true;
+  }
+}
+
+condition_t*
+OperatingSystem::getCondition(int id)
+{
+  std::map<int,condition_t>::iterator it = conditions_.find(id);
+  if (it==conditions_.end()){
+    return 0;
+  } else {
+    return &it->second;
   }
 }
 

@@ -9,7 +9,7 @@ void first_fxn()
   (*sstmac_callbacks)[0] = fxn;
  }}
 
-void (*callbacks[4])(int input);typedef void (*array_type_callbacks[4])(int);extern int __offset_callbacks; int __sizeof_callbacks = sizeof(array_type_callbacks);static std::function<void(void*)> init_callbacks = [](void* ptr){ new (ptr) array_type_callbacks; };sstmac::CppGlobalRegisterGuard callbacks_sstmac_ctor(__offset_callbacks, __sizeof_callbacks, false, "callbacks", std::move(init_callbacks));
+void (*callbacks[4])(int input);typedef void (*array_type_callbacks[4])(int);extern int __offset_callbacks; int __sizeof_callbacks = sizeof(array_type_callbacks);static std::function<void(void*)> sstmac_init_callbacks = [](void* ptr){ new (ptr) array_type_callbacks; };sstmac::CppGlobalRegisterGuard callbacks_sstmac_ctor(__offset_callbacks, __sizeof_callbacks, false, "callbacks", std::move(sstmac_init_callbacks));
 
 void second_fxn()
 { char* sstmac_global_data = get_sstmac_global_data();array_type_callbacks* sstmac_callbacks=(array_type_callbacks*)(sstmac_global_data + __offset_callbacks); {
@@ -23,7 +23,7 @@ void third_fxn()
   (*sstmac_more_callbacks)[0][1] = fxn;
  }}
 
-void (*more_callbacks[4][2])(int input);typedef void (*array_type_more_callbacks[4][2])(int);extern int __offset_more_callbacks; int __sizeof_more_callbacks = sizeof(array_type_more_callbacks);static std::function<void(void*)> init_more_callbacks = [](void* ptr){ new (ptr) array_type_more_callbacks; };sstmac::CppGlobalRegisterGuard more_callbacks_sstmac_ctor(__offset_more_callbacks, __sizeof_more_callbacks, false, "more_callbacks", std::move(init_more_callbacks));
+void (*more_callbacks[4][2])(int input);typedef void (*array_type_more_callbacks[4][2])(int);extern int __offset_more_callbacks; int __sizeof_more_callbacks = sizeof(array_type_more_callbacks);static std::function<void(void*)> sstmac_init_more_callbacks = [](void* ptr){ new (ptr) array_type_more_callbacks; };sstmac::CppGlobalRegisterGuard more_callbacks_sstmac_ctor(__offset_more_callbacks, __sizeof_more_callbacks, false, "more_callbacks", std::move(sstmac_init_more_callbacks));
 
 void fourth_fxn()
 { char* sstmac_global_data = get_sstmac_global_data();array_type_more_callbacks* sstmac_more_callbacks=(array_type_more_callbacks*)(sstmac_global_data + __offset_more_callbacks); {
@@ -32,7 +32,7 @@ void fourth_fxn()
 
 typedef void(*func)(int);
 
-func moar_callbacks[4];typedef func array_type_moar_callbacks[4];extern int __offset_moar_callbacks; int __sizeof_moar_callbacks = sizeof(array_type_moar_callbacks);static std::function<void(void*)> init_moar_callbacks = [](void* ptr){ new (ptr) array_type_moar_callbacks; };sstmac::CppGlobalRegisterGuard moar_callbacks_sstmac_ctor(__offset_moar_callbacks, __sizeof_moar_callbacks, false, "moar_callbacks", std::move(init_moar_callbacks));
+func moar_callbacks[4];typedef func array_type_moar_callbacks[4];extern int __offset_moar_callbacks; int __sizeof_moar_callbacks = sizeof(array_type_moar_callbacks);static std::function<void(void*)> sstmac_init_moar_callbacks = [](void* ptr){ new (ptr) array_type_moar_callbacks; };sstmac::CppGlobalRegisterGuard moar_callbacks_sstmac_ctor(__offset_moar_callbacks, __sizeof_moar_callbacks, false, "moar_callbacks", std::move(sstmac_init_moar_callbacks));
 
 void fifth_fxn()
 { char* sstmac_global_data = get_sstmac_global_data();array_type_moar_callbacks* sstmac_moar_callbacks=(array_type_moar_callbacks*)(sstmac_global_data + __offset_moar_callbacks); {

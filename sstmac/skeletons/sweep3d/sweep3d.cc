@@ -45,7 +45,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sstmac/replacements/mpi.h>
+#include <sstmac/replacements/mpi/mpi.h>
 #include <sstmac/replacements/sys/time.h>
 #include <sstmac/replacements/time.h>
 

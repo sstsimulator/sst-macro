@@ -87,4 +87,8 @@ def getoutput(cmd):
   rc, output = getstatusoutput(cmd)
   return output
 
-  
+def read_utf8(path):
+  if sys.version_info < (3,0):
+    return open(path).read()
+  else:
+    return open(path, encoding="utf-8", errors="ignore").read()

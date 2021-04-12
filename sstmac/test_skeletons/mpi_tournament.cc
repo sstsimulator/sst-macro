@@ -44,10 +44,9 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sprockit/test/test.h>
 #include <sstmac/util.h>
-#include <sstmac/replacements/mpi.h>
+#include <sstmac/replacements/mpi/mpi.h>
 #include <sstmac/common/runtime.h>
 #include <sstmac/software/process/backtrace.h>
-#include <sstmac/replacements/mpi.h>
 #include <sstmac/skeleton.h>
 #include <sstmac/compute.h>
 #include <sprockit/keyword_registration.h>

@@ -234,7 +234,9 @@ SimTransport::SimTransport(SST::Params& params, sstmac::sw::App* parent, SST::Co
   parent_app_(parent),
   default_progress_queue_(parent->os()),
   nic_ioctl_(parent->os()->nicDataIoctl()),
-  qos_analysis_(nullptr)
+  qos_analysis_(nullptr),
+  pragma_block_set_(false),
+  pragma_timeout_(-1)
 {
   completion_queues_[0] = std::bind(&DefaultProgressQueue::incoming,
                                     &default_progress_queue_, 0, std::placeholders::_1);
@@ -1108,6 +1110,12 @@ class PatternQoSAnalysis : public QoSAnalysis
   sstmac::TimeDelta allowedDelay_;
 };
 
+extern "C" void sstmac_blocking_call(int condition, double timeout, const char* api_name)
+{
+  sstmac::sw::Thread* t = sstmac::sw::OperatingSystem::currentThread(); 
+  auto* api = t->getApi<sumi::SimTransport>(api_name);
+  api->setPragmaBlocking(condition, timeout);
+}
 
 
 }

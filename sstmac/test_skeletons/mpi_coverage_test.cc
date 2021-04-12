@@ -45,7 +45,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #define sstmac_app_name mpi_coverage
 
 #include <sstmac/compute.h>
-#include <sstmac/replacements/mpi.h>
+#include <sstmac/replacements/mpi/mpi.h>
 #include <math.h>
 
 static int max_pt2pt_count = 64000;

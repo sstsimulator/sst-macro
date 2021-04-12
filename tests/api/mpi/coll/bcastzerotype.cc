@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include <sstmac/replacements/mpi.h>
+#include <sstmac/replacements/mpi/mpi.h>
 
 namespace bcastzerotype {
 /** test broadcast behavior with non-zero counts but zero-sized types */

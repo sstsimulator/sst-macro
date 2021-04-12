@@ -231,9 +231,10 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     std::string fqTypedefName;
     std::string retType;
     bool isFxnStatic;
+    bool implicitSize;
     bool needsDeref;
 
-    ArrayInfo() : isFxnStatic(false), needsDeref(true) {}
+    ArrayInfo() : isFxnStatic(false), needsDeref(true), implicitSize(false) {}
   };
 
 
@@ -788,6 +789,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   GlobalVariableReplacement setupGlobalReplacement(clang::VarDecl* vd, const std::string& namePrefix,
                           bool useAccessor, bool isFxnStatic, bool needFullNs);
 
+  bool isGlobalDefinition(clang::VarDecl* D, GlobalVariableReplacement* var);
   void registerGlobalReplacement(clang::VarDecl* D, GlobalVariableReplacement* repl);
   bool setupClassStaticVarDecl(clang::VarDecl* D);
   bool setupCGlobalVar(clang::VarDecl* D, const std::string& scopePrefix);

@@ -230,8 +230,6 @@ App::App(SST::Params& params, SoftwareId sid,
   params_(params),
   compute_lib_(nullptr),
   next_tls_key_(0),
-  next_condition_(0),
-  next_mutex_(0),
   min_op_cutoff_(0),
   globals_storage_(nullptr),
   notify_(true),
@@ -603,63 +601,41 @@ App::removeSubthread(Thread *thr)
 bool
 App::eraseMutex(int id)
 {
-  std::map<int,mutex_t>::iterator it = mutexes_.find(id);
-  if (it == mutexes_.end()){
-    return false;
-  } else {
-    mutexes_.erase(id);
-    return true;
-  }
-}
-
-bool
-App::eraseCondition(int id)
-{
-  std::map<int,condition_t>::iterator it = conditions_.find(id);
-  if (it == conditions_.end()){
-    return false;
-  } else {
-    conditions_.erase(id);
-    return true;
-  }
+  return os_->eraseMutex(id);
 }
 
 mutex_t*
 App::getMutex(int id)
 {
-  std::map<int,mutex_t>::iterator it = mutexes_.find(id);
-  if (it==mutexes_.end()){
-    return 0;
-  } else {
-    return &it->second;
-  }
+  return os_->getMutex(id);
 }
 
 int
 App::allocateMutex()
 {
-  int id = next_mutex_++;
-  mutexes_[id]; //implicit make
-  return id;
+  return os_->allocateMutex();
+}
+
+bool
+App::eraseCondition(int id)
+{
+  return os_->eraseCondition(id);
 }
 
 int
 App::allocateCondition()
 {
-  int id = next_condition_++;
-  conditions_[id]; //implicit make
-  return id;
+  // this needs to be on the OS in case
+  // we have a process shared thing
+  return os_->allocateCondition();
 }
 
 condition_t*
 App::getCondition(int id)
 {
-  std::map<int,condition_t>::iterator it = conditions_.find(id);
-  if (it==conditions_.end()){
-    return 0;
-  } else {
-    return &it->second;
-  }
+  // this needs to be on the OS in case
+  // we have a process shared thing
+  return os_->getCondition(id);
 }
 
 void
@@ -712,7 +688,7 @@ UserAppCxxFullMain::aliasMains()
     lib->addBuilder(pair.first, builder);
 #else
     using builder_t = sprockit::DerivedBuilder<App,UserAppCxxFullMain,SST::Params&,SoftwareId,OperatingSystem*>;
-    lib->addBuilder(pair.first, std::unique_ptr<builder_t>(new builder_t));
+    lib->addBuilder(pair.first, new builder_t);
 #endif
     }
   }
@@ -749,7 +725,7 @@ UserAppCxxEmptyMain::aliasMains()
       lib->addBuilder(pair.first, builder);
 #else
       using builder_t = sprockit::DerivedBuilder<App,UserAppCxxFullMain,SST::Params&,SoftwareId,OperatingSystem*>;
-      lib->addBuilder(pair.first, std::unique_ptr<builder_t>(new builder_t));
+      lib->addBuilder(pair.first, new builder_t);
 #endif
     }
   }

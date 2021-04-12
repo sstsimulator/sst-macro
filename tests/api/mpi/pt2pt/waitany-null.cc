@@ -10,7 +10,7 @@
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
-#include <sstmac/replacements/mpi.h>
+#include <sstmac/replacements/mpi/mpi.h>
 
 namespace waitany_null {
 static int verbose = 0;
