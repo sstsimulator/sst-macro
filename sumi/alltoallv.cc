@@ -64,28 +64,18 @@ namespace sumi {
 void
 DirectAlltoallvActor::initBuffers()
 {
-  void* dst = result_buffer_;
-  void* src = send_buffer_;
-  if (src){
-    total_send_size_ = 0;
-    total_recv_size_ = 0;
-    for (int i=0; i < dom_nproc_; ++i){
-      total_send_size_ += send_counts_[i];
-      total_recv_size_ += recv_counts_[i];
-    }
-    result_buffer_ = my_api_->makePublicBuffer(dst, total_recv_size_);
-    send_buffer_ = my_api_->makePublicBuffer(src, total_send_size_);
-    recv_buffer_ = result_buffer_;
+  total_send_size_ = 0;
+  total_recv_size_ = 0;
+  for (int i=0; i < dom_nproc_; ++i){
+    total_send_size_ += send_counts_[i];
+    total_recv_size_ += recv_counts_[i];
   }
+  recv_buffer_ = result_buffer_;
 }
 
 void
 DirectAlltoallvActor::finalizeBuffers()
 {
-  if (result_buffer_){
-    my_api_->unmakePublicBuffer(result_buffer_, total_recv_size_);
-    my_api_->unmakePublicBuffer(send_buffer_, total_send_size_);
-  }
 }
 
 void
@@ -143,7 +133,7 @@ DirectAlltoallvActor::initDag()
 void
 DirectAlltoallvActor::bufferAction(void *dst_buffer, void *msg_buffer, Action* ac)
 {
-  std::memcpy(dst_buffer, msg_buffer, ac->nelems * type_size_);
+  my_api_->memcopy(dst_buffer, msg_buffer, ac->nelems * type_size_);
 }
 
 void

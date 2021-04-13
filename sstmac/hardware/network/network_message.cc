@@ -43,6 +43,7 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sstmac/hardware/network/network_message.h>
+#include <sstmac/null_buffer.h>
 #include <sprockit/errors.h>
 
 #define enumcase(x) case x: return #x;
@@ -55,10 +56,10 @@ constexpr uintptr_t NetworkMessage::bad_recv_buffer;
 
 NetworkMessage::~NetworkMessage()
 {
-  if (wire_buffer_){
+  if (isNonNullBuffer(wire_buffer_)){
     delete[] (char*) wire_buffer_;
   }
-  if (smsg_buffer_){
+  if (isNonNullBuffer(smsg_buffer_)){
     delete[] (char*) smsg_buffer_;
   }
 }
@@ -101,7 +102,7 @@ NetworkMessage::putOnWire()
 void
 NetworkMessage::putBufferOnWire(void* buf, uint64_t sz)
 {
-  if (buf){
+  if (isNonNullBuffer(buf)){
     wire_buffer_ = new char[sz];
     ::memcpy(wire_buffer_, buf, sz);
   }
@@ -110,7 +111,7 @@ NetworkMessage::putBufferOnWire(void* buf, uint64_t sz)
 void
 NetworkMessage::takeBufferOffWire(void *buf, uint64_t sz)
 {
-  if (buf){
+  if (isNonNullBuffer(buf)){
     ::memcpy(buf, wire_buffer_, sz);
     delete[] (char*) wire_buffer_;
     wire_buffer_ = nullptr;
@@ -163,7 +164,7 @@ NetworkMessage::memmoveLocalToRemote()
 {
   //due to scatter-gather elements, it's now allowed
   //to have a null remote buffer
-  if (local_buffer_ && remote_buffer_){ //might be null
+  if (isNonNullBuffer(remote_buffer_) && isNonNullBuffer(local_buffer_)){
     ::memcpy(remote_buffer_, local_buffer_, payload_bytes_);
   }
 }
@@ -173,7 +174,7 @@ NetworkMessage::memmoveRemoteToLocal()
 {
   //due to scatter-gather elements, it's now allowed
   //to have a null local buffer
-  if (remote_buffer_ && local_buffer_){
+  if (isNonNullBuffer(remote_buffer_) && isNonNullBuffer(local_buffer_)){
     ::memcpy(local_buffer_, remote_buffer_, payload_bytes_);
   }
 }
@@ -181,17 +182,27 @@ NetworkMessage::memmoveRemoteToLocal()
 void
 NetworkMessage::matchRecv(void *recv_buffer)
 {
-  if (recv_buffer && local_buffer_){
-    ::memcpy(recv_buffer, local_buffer_, payload_bytes_);
-    delete[] (char*) local_buffer_;
+  void* message_buffer = nullptr;
+  switch (type_){
+    case rdma_get_payload:
+    case rdma_put_payload:
+      break;
+    case smsg_send:
+    case posted_send:
+      if (isNonNullBuffer(smsg_buffer_) && isNonNullBuffer(recv_buffer)){
+        ::memcpy(recv_buffer, smsg_buffer_, payload_bytes_);
+        delete[] (char*) smsg_buffer_;
+      }
+      break;
+    default:
+      break;
   }
-  local_buffer_ = recv_buffer;
 }
 
 void
 NetworkMessage::setNoRecvMatch()
 {
-  if (local_buffer_){
+  if (isNonNullBuffer(local_buffer_)){
     delete[] (char*) local_buffer_;
   }
   local_buffer_ = (void*) bad_recv_buffer;

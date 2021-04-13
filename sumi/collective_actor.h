@@ -307,35 +307,21 @@ class DefaultSlicer :
     type_size(ty_size), fxn(f){}
 
   size_t packsendBuf(void* packedBuf, void* unpackedObj,
-            int offset, int nelems) const {
-    char* dstptr = (char*) packedBuf;
-    char* srcptr = (char*) unpackedObj + offset*type_size;
-    ::memcpy(dstptr, srcptr, nelems*type_size);
-    return nelems*type_size;
-  }
+            int offset, int nelems) const override;
 
   void unpackRecvBuf(void* packedBuf, void* unpackedObj,
-            int offset, int nelems) const {
-    char* dstptr = (char*) unpackedObj + offset*type_size;
-    char* srcptr = (char*) packedBuf;
-    ::memcpy(dstptr, srcptr, nelems*type_size);
-  }
+            int offset, int nelems) const override;
 
-  virtual void memcpyPackedBufs(void *dst, void *src, int nelems) const {
-    ::memcpy(dst, src, nelems*type_size);
-  }
+  virtual void memcpyPackedBufs(void *dst, void *src, int nelems) const override;
 
   virtual void unpackReduce(void *packedBuf, void *unpackedObj,
-                  int offset, int nelems) const {
-    char* dstptr = (char*) unpackedObj + offset*type_size;
-    (fxn)(dstptr, packedBuf, nelems);
-  }
+                  int offset, int nelems) const override;
 
-  int elementPackedSize() const {
+  int elementPackedSize() const override {
     return type_size;
   }
 
-  bool contiguous() const {
+  bool contiguous() const override {
     return true;
   }
 

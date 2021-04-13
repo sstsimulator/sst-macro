@@ -341,7 +341,16 @@ SimTransport::pinRdma(uint64_t bytes)
 }
 
 void
-SimTransport::memcopy(uint64_t bytes)
+SimTransport::memcopy(void* dst, void* src, uint64_t bytes)
+{
+  if (isNonNullBuffer(dst) && isNonNullBuffer(src)){
+    ::memcpy(dst, src, bytes);
+  }
+  parent_->computeBlockMemcpy(bytes);
+}
+
+void
+SimTransport::memcopyDelay(uint64_t bytes)
 {
   parent_->computeBlockMemcpy(bytes);
 }
@@ -515,6 +524,24 @@ SimTransport::now() const
   return parent_app_->now();
 }
 
+void*
+SimTransport::allocateWorkspace(uint64_t size, void* parent)
+{
+  if (isNonNullBuffer(parent)){
+    return ::malloc(size);
+  } else {
+    return sstmac_nullptr;
+  }
+}
+
+void
+SimTransport::freeWorkspace(void *buf, uint64_t /*size*/)
+{
+  if (isNonNullBuffer(buf)){
+    ::free(buf);
+  }
+}
+
 CollectiveEngine::CollectiveEngine(SST::Params& params, Transport *tport) :
   tport_(tport),
   global_domain_(nullptr),
@@ -582,9 +609,7 @@ CollectiveEngine::skipCollective(Collective::type_t ty,
 {
   if (!comm) comm = global_domain_;
   if (comm->nproc() == 1){
-    if (dst && src && (dst != src)){
-      ::memcpy(dst, src, nelems*type_size);
-    }
+    tport_->memcopy(dst, src, nelems*type_size);
     return new CollectiveDoneMessage(tag, ty, comm, cq_id);
   } else {
     return nullptr;

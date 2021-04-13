@@ -240,6 +240,7 @@ void sstmac_blocking_call(int condition, double timeout, const char* api);
 #endif
 
 #include <sstmac/skeleton_tls.h>
+#include <sstmac/null_buffer.h>
 
 #endif
 

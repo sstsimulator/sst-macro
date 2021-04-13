@@ -327,6 +327,10 @@ class NetworkMessage : public Flow
  protected:
   void convertToAck();
 
+  void clearSmsgBuffer(){
+    smsg_buffer_ = nullptr;
+  }
+
   NetworkMessage() : //for serialization
    Flow(-1, 0),
    needs_ack_(true),

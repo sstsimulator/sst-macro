@@ -136,9 +136,6 @@ BinaryTreeBcastActor::init_child(int offsetMe, int roundNproc, int nproc)
 void
 BinaryTreeBcastActor::finalizeBuffers()
 {
-  long buffer_size = nelems_ * type_size_;
-  my_api_->unmakePublicBuffer(send_buffer_, buffer_size);
-  //recv and result alias send buffer
 }
 
 void
@@ -164,11 +161,10 @@ BinaryTreeBcastActor::initBuffers()
 {
   void* dst = result_buffer_;
   void* src = send_buffer_;
-  void* buffer;
-  if (dom_me_ == 0) buffer = src; //root
-  else buffer = dst;
-  uint64_t byte_length = nelems_ * type_size_;
-  send_buffer_ = my_api_->makePublicBuffer(buffer, byte_length);
+
+  if (dom_me_ == 0) send_buffer_ = src; //root
+  else send_buffer_ = dst;
+
   recv_buffer_ = send_buffer_;
   result_buffer_ = send_buffer_;
 }
