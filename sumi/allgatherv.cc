@@ -64,29 +64,24 @@ BruckAllgathervActor::initBuffers()
   void* dst = result_buffer_;
   void* src = send_buffer_;
   bool in_place = dst == src;
-  if (dst){ //src can be null
-    //put everything into the dst buffer to begin
-    if (in_place){
-      if (dom_me_ != 0){
-        int inPlaceOffset = my_offset_ * type_size_;
-        void* inPlaceSrc = ((char*)src + inPlaceOffset);
-        std::memcpy(dst, inPlaceSrc, recv_counts_[dom_me_]*type_size_);
-      }
-    } else {
-      std::memcpy(dst, src, recv_counts_[dom_me_] * type_size_);
+  //put everything into the dst buffer to begin
+  if (in_place){
+    if (dom_me_ != 0){
+      int inPlaceOffset = my_offset_ * type_size_;
+      void* inPlaceSrc = ((char*)src + inPlaceOffset);
+      my_api_->memcopy(dst, inPlaceSrc, recv_counts_[dom_me_]*type_size_);
     }
-    long buffer_size = total_nelems_ * type_size_;
-    send_buffer_ = my_api_->makePublicBuffer(dst, buffer_size);
-    recv_buffer_ = send_buffer_;
-    result_buffer_ = send_buffer_;
+  } else {
+    my_api_->memcopy(dst, src, recv_counts_[dom_me_] * type_size_);
   }
+  send_buffer_ = dst;
+  recv_buffer_ = send_buffer_;
+  result_buffer_ = send_buffer_;
 }
 
 void
 BruckAllgathervActor::finalizeBuffers()
 {
-  uint64_t buffer_size = total_nelems_ * type_size_ * comm_->nproc();
-  my_api_->unmakePublicBuffer(send_buffer_, buffer_size);
 }
 
 int
@@ -189,7 +184,7 @@ BruckAllgathervActor::initDag()
 void
 BruckAllgathervActor::bufferAction(void *dst_buffer, void *msg_buffer, Action* ac)
 {
-  std::memcpy(dst_buffer, msg_buffer, ac->nelems * type_size_);
+  my_api_->memcopy(dst_buffer, msg_buffer, ac->nelems * type_size_);
 }
 
 void
@@ -205,20 +200,20 @@ BruckAllgathervActor::finalize()
   //first, copy everything out
   int total_size = total_nelems_ * type_size_;
   char* tmp = new char[total_size];
-  std::memcpy(tmp, result_buffer_, total_size);
+  my_api_->memcopy(tmp, result_buffer_, total_size);
 
   int copy_size = (total_nelems_ - my_offset_) * type_size_;
   int copy_offset = my_offset_ * type_size_;
 
   void* src = tmp;
   void* dst = ((char*)result_buffer_) + copy_offset;
-  std::memcpy(dst, src, copy_size);
+  my_api_->memcopy(dst, src, copy_size);
 
   copy_size = my_offset_ * type_size_;
   copy_offset = (total_nelems_ - my_offset_) * type_size_;
   src = tmp + copy_offset;
   dst = result_buffer_;
-  std::memcpy(dst, src, copy_size);
+  my_api_->memcopy(dst, src, copy_size);
 
 
   delete[] tmp;

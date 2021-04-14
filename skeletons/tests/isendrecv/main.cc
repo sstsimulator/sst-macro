@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2020 National Technology and Engineering Solutions of Sandia,
+Copyright 2009-2020 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -41,43 +41,38 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Questions? Contact sst-macro-help@sandia.gov
 */
-#ifndef sstmac_null_buffer_h
-#define sstmac_null_buffer_h
 
-#include <stdint.h>
+#include <mpi.h>
+#include <stddef.h>
+#include <stdio.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+int main(int argc, char** argv)
+{
+  MPI_Init(&argc, &argv);
+  int rank, size;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-// sentinel value that is a reserved address from mmap
-// but points to no real data
-// used to fake a real pointer, but cannot be accessed
-extern void* sstmac_nullptr;
-// for cases in which send/recv buffers cannot alias
-// this creates two pointers that won't overlap
-extern void* sstmac_nullptr_send;
-extern void* sstmac_nullptr_recv;
-// the maximum pointer in the reserved mmap range
-// all pointers between sstmac_nullptr and this
-// are not real data
-extern void* sstmac_nullptr_range_max;
+  int repeat = argc > 1 ? atoi(argv[1]) : 1;
 
-static inline bool isNonNullBuffer(const void* buf){
-  if (buf){
-    //see if buffer falls in the reserved "null buffer" range
-    return ( (buf < sstmac_nullptr) || (buf >= sstmac_nullptr_range_max) );
-  } else {
-    return false;
+  int partner = rank == 0 ? 1 : 0;
+
+  MPI_Request* req = new MPI_Request[2*repeat];
+  MPI_Request* reqptr = req;
+  char buf[1024];
+  //char* buf = nullptr;
+  int tag = 42;
+  for (int r=0; r < repeat; ++r){
+    MPI_Isend(buf, 1, MPI_INT, partner, tag, MPI_COMM_WORLD, reqptr++);
+    MPI_Irecv(buf, 1, MPI_INT, partner, tag, MPI_COMM_WORLD, reqptr++);
   }
-}
+  MPI_Waitall(2*repeat, req, MPI_STATUSES_IGNORE);
 
-static inline bool isNullBuffer(const void* buf){
-  return !(isNonNullBuffer(buf));
-}
+  if (rank == 0){
+    printf("Rank 0 finished at t=%8.4f ms\n", MPI_Wtime()*1e3);
+  }
 
-#ifdef __cplusplus
-}
-#endif
+  MPI_Finalize();
 
-#endif
+  return 0;
+}

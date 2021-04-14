@@ -71,7 +71,7 @@ BtreeGathervActor::finalizeBuffers() { }
 void
 BtreeGathervActor::bufferAction(void *dst_buffer, void *msg_buffer, Action *ac)
 {
-  std::memcpy(dst_buffer, msg_buffer, ac->nelems * type_size_);
+  my_api_->memcopy(dst_buffer, msg_buffer, ac->nelems * type_size_);
 }
 
 void

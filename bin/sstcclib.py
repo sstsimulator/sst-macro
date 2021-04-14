@@ -558,7 +558,7 @@ def run(typ, extraLibs=""):
   if args.preprocess:
     for srcFile in sourceFiles:
       addPreprocess(ctx, srcFile, None, args, cmds)
-    rc = runAllCmds(cmds, verbose, delSourceTempFiles, delTempObjectFiles, clangBin)
+    rc = runAllCmds(cmds, verbose, delTempSourceFiles, delTempObjectFiles, clangBin)
     return rc
 
   generatedObjects = []

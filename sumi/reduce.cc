@@ -69,40 +69,31 @@ WilkeReduceActor::finalizeBuffers()
   //if we need to do operations, then we need a temp buffer for doing sends
   int size = nelems_ * type_size_;
 
-  if (dom_me_ == root_){
-    my_api_->unmakePublicBuffer(result_buffer_, size);
-  } else {
-    my_api_->freePublicBuffer(result_buffer_, size);
+  if (dom_me_ != root_){
+    my_api_->freeWorkspace(result_buffer_, size);
   }
-
-  my_api_->freePublicBuffer(recv_buffer_, size);
+  my_api_->freeWorkspace(recv_buffer_, size);
 }
 
 void
 WilkeReduceActor::initBuffers()
 {
-  void* dst = result_buffer_;
   void* src = send_buffer_;
-
-  if (!src) return;
 
   //if we need to do operations, then we need a temp buffer for doing sends
   int size = nelems_ * type_size_;
 
-  if (dom_me_ == root_){
-    //I need a full buffer - but I was passed it
-    result_buffer_ = my_api_->makePublicBuffer(dst, size);
-  } else {
+  if (dom_me_ != root_){
     //I need a result buffer - was not given anything
-    result_buffer_ = my_api_->allocatePublicBuffer(size);
+    result_buffer_ = my_api_->allocateWorkspace(size, src);
   }
 
   //but! we need a temporary recv buffer
-  recv_buffer_ = my_api_->allocatePublicBuffer(size);
+  recv_buffer_ = my_api_->allocateWorkspace(size, src);
   send_buffer_ = result_buffer_;
 
   //we will now only work with the dst buffer
-  std::memcpy(send_buffer_, src, size);
+  my_api_->memcopy(send_buffer_, src, size);
 }
 
 void
@@ -314,7 +305,7 @@ WilkeReduceActor::bufferAction(void *dst_buffer, void *msg_buffer, Action* ac)
   if (rnd < num_reducing_rounds_){
     (fxn_)(dst_buffer, msg_buffer, ac->nelems);
   } else {
-    std::memcpy(dst_buffer, msg_buffer, ac->nelems * type_size_);
+    my_api_->memcopy(dst_buffer, msg_buffer, ac->nelems * type_size_);
   }
 }
 

@@ -62,9 +62,8 @@ SimultaneousBtreeScanActor::finalizeBuffers()
   if (!result_buffer_) return;
 
   int size = nelems_ * type_size_;
-  my_api_->unmakePublicBuffer(result_buffer_, size);
-  my_api_->freePublicBuffer(send_buffer_, size);
-  my_api_->freePublicBuffer(recv_buffer_, size);
+  my_api_->freeWorkspace(send_buffer_, size);
+  my_api_->freeWorkspace(recv_buffer_, size);
 }
 
 void
@@ -72,20 +71,17 @@ SimultaneousBtreeScanActor::initBuffers()
 {
   void* dst = result_buffer_;
   void* src = send_buffer_;
-  if (!src) return;
 
   //if we need to do operations, then we need a temp buffer for doing sends
   int size = nelems_ * type_size_;
 
-  result_buffer_ = my_api_->makePublicBuffer(dst, size);
-
   //but! we need a temporary send and recv buffers
-  recv_buffer_ = my_api_->allocatePublicBuffer(size);
-  send_buffer_ = my_api_->allocatePublicBuffer(size);
+  recv_buffer_ = my_api_->allocateWorkspace(size, dst);
+  send_buffer_ = my_api_->allocateWorkspace(size, src);
 
   //and put the initial set of values in
-  std::memcpy(send_buffer_, src, size);
-  std::memcpy(dst, src, size);
+  my_api_->memcopy(send_buffer_, src, size);
+  my_api_->memcopy(dst, src, size);
 }
 
 void

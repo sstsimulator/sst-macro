@@ -170,7 +170,7 @@ Thread::runRoutine(void* threadptr)
   }
 }
 
-Thread::Thread(SSTMAC_MAYBE_UNUSED SST::Params& params, SoftwareId sid, OperatingSystem* os) :
+Thread::Thread(SST::Params& params, SoftwareId sid, OperatingSystem* os) :
   state_(PENDING),
   os_(os),
   parent_app_(nullptr),
@@ -356,8 +356,8 @@ Thread::computeDetailed(uint64_t flops, uint64_t nintops, uint64_t bytes, int nt
 
 void
 Thread::collectStats(
-    SSTMAC_MAYBE_UNUSED Timestamp start, 
-    SSTMAC_MAYBE_UNUSED TimeDelta elapsed)
+     Timestamp start,
+     TimeDelta elapsed)
 {
 #if !SSTMAC_INTEGRATED_SST_CORE
 #if SSTMAC_HAVE_CALL_GRAPH
