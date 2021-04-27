@@ -303,6 +303,7 @@ SnapprNIC::eject(SnapprPacket* pkt)
                                       - pkt->congestionDelay() 
                                       - netmsg->congestionDelay();
     netmsg->setMinDelay(min_delay);
+    netmsg->setTimeArrived(ej_next_free_); //TODO add a set time arrived
   }
 
   sendExecutionEvent(ej_next_free_, qev);
