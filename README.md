@@ -2,7 +2,7 @@
 
 # Structural Simulation Toolkit (SST) Macroscale Element Library
 
-#### Copyright (c) 2009-2020, Sandia National Laboratories
+#### Copyright (c) 2009-2021, Sandia National Laboratories
 Sandia National Laboratories is a multimission laboratory managed and operated
 by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
