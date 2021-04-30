@@ -1,11 +1,11 @@
 ---
-title: Manual for SST-Macro 10.1.x
+title: Manual for SST-Macro 11.0.x
 published: true
 category: SSTDocumentation
 ---
 
 
-# SST/macro 10.1: Developer's Reference
+# SST/macro 11.0: Developer's Reference
 
 
 ![](https://github.com/sstsimulator/sst-macro/blob/devel/docs/developer/figures/sstlogo.png) 
