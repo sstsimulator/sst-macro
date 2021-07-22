@@ -219,6 +219,7 @@ class Interconnect:
       ep = self.nodes[i]
       sw = switches[injSW]
       linkName = "logPinjection%d->%d" % (i, injSW)
+      #print("adding link %s" % linkName)
       link = sst.Link(linkName)
       portName = "output%d" % (sst.macro.NICLogPInjectionPort)
       ep.addLink(link, portName, smallLatency) #put no latency here
@@ -226,14 +227,17 @@ class Interconnect:
       sw.addLink(link, portName, smallLatency)
 
     for i in range(self.num_nodes):
+      #print("For node%d" % i)
       ep = self.nodes[i]
       for p in range(nproc):
-        linkName = "logPejection%d->%d" % (i, injSW)
+        #print("For proc%d" % p)
+        linkName = "logPejection%d->%d" % (p, i)
+        #print("adding link %s" % linkName)
         link = sst.Link(linkName)
         sw = switches[p]
         portName = "output%d" % (i)
         sw.addLink(link, portName, lat)
-        portName = "input%d" % (sst.macro.NICLogPInjectionPort)
+        portName = "input%d" % (sst.macro.NICLogPInjectionPort + p)
         ep.addLink(link, portName, lat)
 
   def buildFull(self, epFxn):

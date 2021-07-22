@@ -144,6 +144,8 @@ Topology::staticTopology(SST::Params& params)
   if (!staticTopology_){
     SST::Params top_params = params.find_scoped_params("topology");
     std::string name = top_params.find<std::string>("name");
+    //std::string name("torus");
+    std::cerr << "name is: " << name << std::endl;
     if (name.empty()){
       spkt_abort_printf("no topology.name parameter in namespace");
     }
