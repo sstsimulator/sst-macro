@@ -101,6 +101,8 @@ NIC::NIC(uint32_t id, SST::Params& params, Node* parent) :
   queue_(parent->os()),
   os_(parent->os())
 {
+  //params.print_all_params(std::cerr);
+
   negligibleSize_ = params.find<int>("negligible_size", DEFAULT_NEGLIGIBLE_SIZE);
   top_ = Topology::staticTopology(params);
 

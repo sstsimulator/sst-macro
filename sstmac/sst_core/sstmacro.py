@@ -119,11 +119,13 @@ class Interconnect:
 
   def defaultEpFxn(self, nodeID):
     nodeParams = getParamNamespace(self.params, "node")
+    topParams = getParamNamespace(self.params,"topology")
     compName = getParam(nodeParams, "name", "node").lower()
     if not compName.endswith("_node"):
       compName += "_node"
     node = sst.Component("Node %d" % nodeID, "macro.%s" % compName)
     node.addParams(macroToCoreParams(nodeParams))
+    node.addParams(macroToCoreParams(topParams))
     node.addParam("id", nodeID)
     return node
 
@@ -219,23 +221,26 @@ class Interconnect:
       ep = self.nodes[i]
       sw = switches[injSW]
       linkName = "logPinjection%d->%d" % (i, injSW)
-      #print("adding link %s" % linkName)
+      print("adding link %s" % linkName)
       link = sst.Link(linkName)
       portName = "output%d" % (sst.macro.NICLogPInjectionPort)
       ep.addLink(link, portName, smallLatency) #put no latency here
-      portName = "input%d" % (i)
+      pnodes = self.num_nodes / nproc
+      print ("pnodes = %d" % pnodes)
+      portName = "input%d" % (i % pnodes)
+      print (portName)
       sw.addLink(link, portName, smallLatency)
 
     for i in range(self.num_nodes):
-      #print("For node%d" % i)
+      print("For node%d" % i)
       ep = self.nodes[i]
       for p in range(nproc):
-        #print("For proc%d" % p)
+        print("For proc%d" % p)
         linkName = "logPejection%d->%d" % (p, i)
-        #print("adding link %s" % linkName)
+        print("adding link %s" % linkName)
         link = sst.Link(linkName)
         sw = switches[p]
-        portName = "output%d" % (i)
+        portName = "output%d" % (p * self.num_nodes + i)
         sw.addLink(link, portName, lat)
         portName = "input%d" % (sst.macro.NICLogPInjectionPort + p)
         ep.addLink(link, portName, lat)
@@ -298,6 +303,7 @@ def setupDeprecatedParams(params, debugList=[]):
   topParams = getParamNamespace(params,"topology")
   icParams["topology"] = topParams
   nodeParams["interconnect"] = icParams
+  nodeParams["topology"] = topParams
   if debugList:
     nodeParams["debug"] = "[" + ",".join(debugList) + "]"
   swParams["topology"] = topParams
@@ -317,6 +323,7 @@ def setupDeprecatedParams(params, debugList=[]):
   return ic
 
 def setupDeprecated():
+  print ("setupDeprecated")
   import sys
   sst.setProgramOption("timebase", "100as")
   params = readCmdLineParams()

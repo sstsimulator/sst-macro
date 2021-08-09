@@ -161,7 +161,10 @@ App::unlockDlopen(int aid)
 void
 App::dlopenCheck(int aid, SST::Params& params, bool check_name)
 {
+  std::cerr << "dlopenCheck\n";
+  params.print_all_params(std::cerr);
   if (params.contains("exe")){
+    std::cerr << "contains exe\n";
     dlopen_lock.lock();
     std::string libname = params.find<std::string>("exe");
     dlopen_entry& entry = dlopens_[aid];
@@ -194,8 +197,11 @@ App::dlopenCheck(int aid, SST::Params& params, bool check_name)
     sstmac_app_loaded(aid);
     dlopen_lock.unlock();
   }
+  std::cerr << "emptyMain\n";
   UserAppCxxEmptyMain::aliasMains();
+  std::cerr << "fullMain\n";
   UserAppCxxFullMain::aliasMains();
+  std::cerr << "exiting dlopenCheck\n";
 }
 
 void

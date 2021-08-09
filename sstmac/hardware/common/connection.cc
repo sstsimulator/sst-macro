@@ -123,12 +123,15 @@ ConnectableSubcomponent::initOutputLink(int src_outport, int dst_inport)
 #if SSTMAC_INTEGRATED_SST_CORE
   std::string name = sprockit::sprintf("output%d", src_outport);
   SST::Link* link = configureLink(name, SharedBaseComponent::timeConverter(), creditHandler(src_outport));
-  if (!link){
-    spkt_abort_printf("cannot find output link for port %s on connectable component named %s",
-                      name.c_str(), getName().c_str());
-  }
-  EventLink::ptr ev_link{new EventLink(name, TimeDelta(), link)};
-  connectOutput(src_outport, dst_inport, std::move(ev_link));
+  // for parallel sim not all links will be used
+  //if (!link){
+  //  spkt_abort_printf("cannot find output link for port %s on connectable component named %s",
+  //                    name.c_str(), getName().c_str());
+  //}
+  if (link) {
+      EventLink::ptr ev_link{new EventLink(name, TimeDelta(), link)};
+      connectOutput(src_outport, dst_inport, std::move(ev_link));
+    }
 #endif
 }
 
@@ -139,12 +142,15 @@ ConnectableComponent::initInputLink(int src_outport, int dst_inport)
 #if SSTMAC_INTEGRATED_SST_CORE
   std::string name = sprockit::sprintf("input%d", dst_inport);
   SST::Link* link = configureLink(name, SharedBaseComponent::timeConverter(), payloadHandler(dst_inport));
-  if (!link){
-    spkt_abort_printf("cannot find input link for port %s on connectable component named %s",
-                      name.c_str(), getName().c_str());
-  }
-  EventLink::ptr ev_link{new EventLink(name, TimeDelta(), link)};
-  connectInput(src_outport, dst_inport, std::move(ev_link));
+// for parallel sim not all links will be used
+//  if (!link){
+//    spkt_abort_printf("cannot find input link for port %s on connectable component named %s",
+//                      name.c_str(), getName().c_str());
+//  }
+  if (link) {
+      EventLink::ptr ev_link{new EventLink(name, TimeDelta(), link)};
+      connectInput(src_outport, dst_inport, std::move(ev_link));
+    }
 #endif
 }
 
@@ -154,12 +160,15 @@ ConnectableComponent::initOutputLink(int src_outport, int dst_inport)
 #if SSTMAC_INTEGRATED_SST_CORE
   std::string name = sprockit::sprintf("output%d", src_outport);
   SST::Link* link = configureLink(name, SharedBaseComponent::timeConverter(), creditHandler(src_outport));
-  if (!link){
-    spkt_abort_printf("cannot find output link for port %s on connectable component %s",
-                      name.c_str(), getName().c_str());
-  }
-  EventLink::ptr ev_link{new EventLink(name, TimeDelta(), link)};
-  connectOutput(src_outport, dst_inport, std::move(ev_link));
+// for parallel sim not all links will be used
+//  if (!link){
+//    spkt_abort_printf("cannot find output link for port %s on connectable component %s",
+//                      name.c_str(), getName().c_str());
+//  }
+  if (link) {
+      EventLink::ptr ev_link{new EventLink(name, TimeDelta(), link)};
+      connectOutput(src_outport, dst_inport, std::move(ev_link));
+    }
 #endif
 }
 

@@ -71,6 +71,10 @@ AppLauncher::incomingRequest(Request* req)
 {
   StartAppRequest* lreq = safe_cast(StartAppRequest, req);
   if (lreq->type() == LaunchRequest::Start){
+    std::cerr << "launching\n";
+    std::cerr << "aid: " << lreq->aid() << std::endl;
+    std::cerr << "uniqueName: " << lreq->uniqueName() << std::endl;
+    lreq->appParams().print_all_params(std::cerr);
     TaskMapping::addGlobalMapping(lreq->aid(), lreq->uniqueName(), lreq->mapping());
 
     //if necessary, bcast this to whomever else needs it

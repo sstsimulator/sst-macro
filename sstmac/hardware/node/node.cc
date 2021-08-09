@@ -86,6 +86,10 @@ Node::Node(uint32_t id, SST::Params& params)
   app_refcount_(0),
   job_launcher_(nullptr)
 {
+
+  std::cerr << "node params:\n";
+  params.print_all_params(std::cerr);
+
 #if SSTMAC_INTEGRATED_SST_CORE
   static bool init_debug = false;
   if (!init_debug){
@@ -129,7 +133,8 @@ Node::Node(uint32_t id, SST::Params& params)
       "macro", params.find<std::string>("job_launcher", "default"), params, os_);
   }
 
-  nic_ = loadSub<NIC>(nic_name, "nic", NIC_SLOT, nic_params, this);
+  params.insert(nic_params);
+  nic_ = loadSub<NIC>(nic_name, "nic", NIC_SLOT, params, this);
 
   //nic_ = sprockit::create<NIC>("macro", nic_name, nic_params, this);
   //sstmac::loadSubComponent<NIC>(nic_name, this, nic_params);
