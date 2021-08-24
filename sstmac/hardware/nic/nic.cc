@@ -68,7 +68,7 @@ RegisterKeywords(
 { "post_latency", "the latency of the NIC posting messages" },
 );
 
-#define DEFAULT_NEGLIGIBLE_SIZE 256
+#define DEFAULT_NEGLIGIBLE_SIZE 1024
 
 namespace sstmac {
 namespace hw {
@@ -119,9 +119,11 @@ NIC::NIC(uint32_t id, SST::Params& params, Node* parent) :
 void
 NIC::configureLogPLinks()
 {
-  //set up LogP management/shortcut network
   initOutputLink(hw::NIC::LogP, addr());
-  initInputLink(addr(), hw::NIC::LogP);
+  for(int i=0; i<2; ++i) {
+      //set up LogP management/shortcut network
+      initInputLink(addr(), hw::NIC::LogP + i);
+    }
 }
 
 void

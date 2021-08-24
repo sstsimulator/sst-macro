@@ -210,7 +210,9 @@ class NIC : public ConnectableSubcomponent
     return bytes <= negligibleSize_;
   }
 
+public:
   int negligibleSize_;
+protected:
   Node* parent_;
   NodeId my_addr_;
   EventLink::ptr logp_link_;

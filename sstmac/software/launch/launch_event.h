@@ -125,24 +125,40 @@ class StartAppRequest :
      TaskId tid,
      NodeId to,
      NodeId from,
+#if SSTMAC_INTEGRATED_SST_CORE
+     const std::string& app_params):
+#else
      const SST::Params& app_params) :
+#endif
     LaunchRequest(flow_id, Start, aid, tid, unique_name, to, from, "launcher"),
     mapping_(mapping),
     app_params_(app_params)
   {
+#if SSTMAC_INTEGRATED_SST_CORE
+    std::cerr << "constructing StartAppRequest with params: " << std::string(app_params_) << "\n";
+#endif
   }
 
   int coreAffinity(int intranode_rank) const;
 
   std::string toString() const override;
 
-  StartAppRequest() {} //for serialization
+  StartAppRequest() {
+    std::cerr << "StartAppRequest constructor for serialization\n";
+    //app_params_.print_all_params(std::cerr);
+  } //for serialization
 
   void serialize_order(serializer& ser) override;
 
+#if SSTMAC_INTEGRATED_SST_CORE
+  const std::string& appParams() const {
+    return app_params_;
+  }
+#else
   const SST::Params& appParams() const {
     return app_params_;
   }
+#endif
 
   TaskMapping::ptr mapping() const {
     return mapping_;
@@ -151,7 +167,11 @@ class StartAppRequest :
  private:
   std::string unique_name_;
   TaskMapping::ptr mapping_;
+#if SSTMAC_INTEGRATED_SST_CORE
+  std::string app_params_;
+#else
   SST::Params app_params_;
+#endif
 
 };
 

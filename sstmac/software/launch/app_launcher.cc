@@ -48,10 +48,12 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/app.h>
 #include <sstmac/common/thread_lock.h>
+#include <sstmac/libraries/nlohmann/json.hpp>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
 #include <unistd.h>
 #include <getopt.h>
+#include <sstream>
 
 namespace sstmac {
 namespace sw {
@@ -71,18 +73,32 @@ AppLauncher::incomingRequest(Request* req)
 {
   StartAppRequest* lreq = safe_cast(StartAppRequest, req);
   if (lreq->type() == LaunchRequest::Start){
-    std::cerr << "launching\n";
-    std::cerr << "aid: " << lreq->aid() << std::endl;
-    std::cerr << "uniqueName: " << lreq->uniqueName() << std::endl;
-    lreq->appParams().print_all_params(std::cerr);
+//    std::cerr << "launching\n";
+//    std::cerr << "aid: " << lreq->aid() << std::endl;
+//    std::cerr << "uniqueName: " << lreq->uniqueName() << std::endl;
+//    lreq->appParams().print_all_params(std::cerr);
     TaskMapping::addGlobalMapping(lreq->aid(), lreq->uniqueName(), lreq->mapping());
+
+#if !SSTMAC_INTEGRATED_SST_CORE
+    SST::Params app_params = lreq->appParams();
+#else
+    SST::Params app_params;
+    using json = nlohmann::json;
+    json j;
+    const std::string& sparams(lreq->appParams());
+    std::stringstream ss(sparams);
+    std::cerr << "stream: " << ss.str() << "\n";
+    ss >> j;
+    for (auto it = j.begin(); it != j.end(); ++it) {
+        app_params.insert(it.key(),*it);
+      }
+#endif
 
     //if necessary, bcast this to whomever else needs it
     os_->outcastAppStart(lreq->tid(), lreq->aid(), lreq->uniqueName(),
-                         lreq->mapping(), lreq->appParams());
+                         lreq->mapping(), app_params);
 
     SoftwareId sid(lreq->aid(), lreq->tid());
-    SST::Params app_params = lreq->appParams();
     App::dlopenCheck(lreq->aid(), app_params);
     auto app_name = app_params.find<std::string>("name");
     App* theapp = sprockit::create<App>("macro", app_name, app_params, sid, os_);
@@ -124,6 +140,22 @@ StartAppRequest::coreAffinity(int  /*intranode_rank*/) const
 void
 StartAppRequest::serialize_order(serializer &ser)
 {
+  if (ser.mode() == SST::Core::Serialization::serializer::UNPACK)
+    std::cerr << "unpacking\n";
+  else {
+    std::cerr << "not unpacking\n";
+//    if (app_params_.count("model") > 0) {
+//        volatile int i = 0;
+//        char hostname[256];
+//        gethostname(hostname, sizeof(hostname));
+//        printf("PID %d on %s ready for attach\n", getpid(), hostname);
+//        fflush(stdout);
+//        while (0 == i)
+//          sleep(5);
+//      }
+    }
+  //app_params_.print_all_params(std::cerr);
+  std::cerr << "ser params: " << std::string(app_params_) << "\n";
   LaunchRequest::serialize_order(ser);
   ser & unique_name_;
   ser & app_params_;
