@@ -135,7 +135,7 @@ class StartAppRequest :
     app_params_(app_params)
   {
 #if SSTMAC_INTEGRATED_SST_CORE
-    std::cerr << "constructing StartAppRequest with params: " << std::string(app_params_) << "\n";
+    //std::cerr << "constructing StartAppRequest with params: " << std::string(app_params_) << "\n";
 #endif
   }
 
@@ -144,7 +144,7 @@ class StartAppRequest :
   std::string toString() const override;
 
   StartAppRequest() {
-    std::cerr << "StartAppRequest constructor for serialization\n";
+    //std::cerr << "StartAppRequest constructor for serialization\n";
     //app_params_.print_all_params(std::cerr);
   } //for serialization
 

@@ -675,7 +675,7 @@ OperatingSystem::outcastAppStart(int my_rank, int aid, const std::string& app_ns
     for (auto &k : keys) {
         j[k] = app_params.find<std::string>(k,"not found");
       }
-    std::cerr << "json params: " << j.dump(3) << "\n";
+    //std::cerr << "json params: " << j.dump(3) << "\n";
     sw::StartAppRequest* lev = new StartAppRequest(node_->allocateUniqueId(),
                                      aid, app_ns, mapping, dst_rank, dst_nid,
                                      addr(), j.dump().c_str());

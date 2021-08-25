@@ -87,7 +87,6 @@ AppLauncher::incomingRequest(Request* req)
     json j;
     const std::string& sparams(lreq->appParams());
     std::stringstream ss(sparams);
-    std::cerr << "stream: " << ss.str() << "\n";
     ss >> j;
     for (auto it = j.begin(); it != j.end(); ++it) {
         app_params.insert(it.key(),*it);
@@ -140,22 +139,6 @@ StartAppRequest::coreAffinity(int  /*intranode_rank*/) const
 void
 StartAppRequest::serialize_order(serializer &ser)
 {
-  if (ser.mode() == SST::Core::Serialization::serializer::UNPACK)
-    std::cerr << "unpacking\n";
-  else {
-    std::cerr << "not unpacking\n";
-//    if (app_params_.count("model") > 0) {
-//        volatile int i = 0;
-//        char hostname[256];
-//        gethostname(hostname, sizeof(hostname));
-//        printf("PID %d on %s ready for attach\n", getpid(), hostname);
-//        fflush(stdout);
-//        while (0 == i)
-//          sleep(5);
-//      }
-    }
-  //app_params_.print_all_params(std::cerr);
-  std::cerr << "ser params: " << std::string(app_params_) << "\n";
   LaunchRequest::serialize_order(ser);
   ser & unique_name_;
   ser & app_params_;

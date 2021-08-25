@@ -87,8 +87,8 @@ Node::Node(uint32_t id, SST::Params& params)
   job_launcher_(nullptr)
 {
 
-  std::cerr << "node params:\n";
-  params.print_all_params(std::cerr);
+  //std::cerr << "node params:\n";
+  //params.print_all_params(std::cerr);
 
 #if SSTMAC_INTEGRATED_SST_CORE
   static bool init_debug = false;
@@ -105,6 +105,16 @@ Node::Node(uint32_t id, SST::Params& params)
 #endif
   my_addr_ = params.find<int>("id");
   next_outgoing_id_.setSrcNode(my_addr_);
+
+//    if (my_addr_ == 5) {
+//        volatile int i = 0;
+//        char hostname[256];
+//        gethostname(hostname, sizeof(hostname));
+//        printf("PID %d on %s ready for attach\n", getpid(), hostname);
+//        fflush(stdout);
+//        while (0 == i)
+//          sleep(5);
+//      }
 
   SST::Params nic_params = params.find_scoped_params("nic");
   auto nic_name = nic_params.find<std::string>("name");

@@ -220,14 +220,14 @@ class Interconnect:
     for i in range(self.num_nodes):
       for j in range(nproc):
         linkName = "logPinjection%d->%d" % (i, j)
-        print("adding link %s" % linkName)
+        #print("adding link %s" % linkName)
         link = sst.Link(linkName)
         links[linkName] = link
 
     for p in range(nproc):
       for i in range(self.num_nodes):
         linkName = "logPejection%d->%d" % (p, i)
-        print("adding link %s" % linkName)
+        #print("adding link %s" % linkName)
         link = sst.Link(linkName)
         links[linkName] = link
 
@@ -236,23 +236,23 @@ class Interconnect:
       ep = self.nodes[i]
       sw = switches[injSW]
       linkName = "logPinjection%d->%d" % (i, injSW)
-      print("configuring link %s" % linkName)
+      #print("configuring link %s" % linkName)
       #link = sst.Link(linkName)
       portName = "output%d" % (sst.macro.NICLogPInjectionPort)
       ep.addLink(links[linkName], portName, smallLatency) #put no latency here
       pnodes = self.num_nodes / nproc
-      print ("pnodes = %d" % pnodes)
+      #print ("pnodes = %d" % pnodes)
       portName = "input%d" % (i % pnodes)
-      print (portName)
+      #print (portName)
       sw.addLink(links[linkName], portName, smallLatency)
 
     for i in range(self.num_nodes):
-      print("For node%d" % i)
+      #print("For node%d" % i)
       ep = self.nodes[i]
       for p in range(nproc):
-        print("For proc%d" % p)
+        #print("For proc%d" % p)
         linkName = "logPejection%d->%d" % (p, i)
-        print("configuring link %s" % linkName)
+        #print("configuring link %s" % linkName)
         #link = sst.Link(linkName)
         sw = switches[p]
         portName = "output%d" % i
@@ -334,9 +334,9 @@ def setupDeprecatedParams(params, debugList=[]):
           nsParams[key] = val
 
   ic = Interconnect(params)
-  print ("building")
+  #print ("building")
   ic.build()
-  print ("done building")
+  #print ("done building")
   return ic
 
 def setupDeprecated():
