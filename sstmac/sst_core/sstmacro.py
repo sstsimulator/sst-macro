@@ -202,6 +202,12 @@ class Interconnect:
         makeUniLink("ejection",ejSwitchComp,swId,switchPort,ep,epId,ejPort,
                     outLat=lat,inLat=smallLatency)
 
+  # Construct LogP short circuit network for small messages
+  # sst-macro uses one LogP switch per simulation rank, but using
+  # a single-switch "star" topology here since elements aren't supposed to
+  # know anything about simulation parallelism and it greatly simplifies
+  # sst-core support. We may want to revisit this decision if it proves
+  # to be a performance bottleneck for MPI parallel simulations.
   def buildLogPNetwork(self):
     import re
     nproc = sst.getMPIRankCount() * sst.getThreadCount()
@@ -209,56 +215,29 @@ class Interconnect:
     if "logp" in switchParams:
       switchParams = switchParams["logp"]
     lat = switchParams["out_in_latency"]
-    switches = []
-    links = {}
-    for i in range(nproc):
-      switch = sst.Component("LogP %d" % i, "macro.logp_switch")
-      switch.addParams(macroToCoreParams(switchParams))
-      switch.addParam("id", i)
-      switches.append(switch)
+    switch = sst.Component("LogP 0", "macro.logp_switch")
+    switch.addParams(macroToCoreParams(switchParams))
+    switch.addParam("id", 0)
 
     for i in range(self.num_nodes):
-      for j in range(nproc):
-        linkName = "logPinjection%d->%d" % (i, j)
-        #print("adding link %s" % linkName)
-        link = sst.Link(linkName)
-        links[linkName] = link
-
-    for p in range(nproc):
-      for i in range(self.num_nodes):
-        linkName = "logPejection%d->%d" % (p, i)
-        #print("adding link %s" % linkName)
-        link = sst.Link(linkName)
-        links[linkName] = link
-
-    for i in range(self.num_nodes):
-      injSW = self.system.nodeToLogPSwitch(i)
       ep = self.nodes[i]
-      sw = switches[injSW]
-      linkName = "logPinjection%d->%d" % (i, injSW)
+      linkName = "logPinjection%d->%d" % (i, 0)
       #print("configuring link %s" % linkName)
-      #link = sst.Link(linkName)
+      link = sst.Link(linkName)
       portName = "output%d" % (sst.macro.NICLogPInjectionPort)
-      ep.addLink(links[linkName], portName, smallLatency) #put no latency here
-      pnodes = self.num_nodes / nproc
-      #print ("pnodes = %d" % pnodes)
-      portName = "input%d" % (i % pnodes)
-      #print (portName)
-      sw.addLink(links[linkName], portName, smallLatency)
+      ep.addLink(link, portName, smallLatency) #put no latency here
+      portName = "input%d" % i
+      switch.addLink(link, portName, smallLatency)
 
     for i in range(self.num_nodes):
-      #print("For node%d" % i)
       ep = self.nodes[i]
-      for p in range(nproc):
-        #print("For proc%d" % p)
-        linkName = "logPejection%d->%d" % (p, i)
-        #print("configuring link %s" % linkName)
-        #link = sst.Link(linkName)
-        sw = switches[p]
-        portName = "output%d" % i
-        sw.addLink(links[linkName], portName, lat)
-        portName = "input%d" % (sst.macro.NICLogPInjectionPort + p)
-        ep.addLink(links[linkName], portName, lat)
+      linkName = "logPejection%d->%d" % (0, i)
+      #print("configuring link %s" % linkName)
+      link = sst.Link(linkName)
+      portName = "output%d" % i
+      switch.addLink(link, portName, lat)
+      portName = "input%d" % (sst.macro.NICLogPInjectionPort)
+      ep.addLink(link, portName, lat)
 
   def buildFull(self, epFxn):
     self.buildSwitches()

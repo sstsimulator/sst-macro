@@ -133,11 +133,7 @@ class StartAppRequest :
     LaunchRequest(flow_id, Start, aid, tid, unique_name, to, from, "launcher"),
     mapping_(mapping),
     app_params_(app_params)
-  {
-#if SSTMAC_INTEGRATED_SST_CORE
-    //std::cerr << "constructing StartAppRequest with params: " << std::string(app_params_) << "\n";
-#endif
-  }
+  {}
 
   int coreAffinity(int intranode_rank) const;
 
@@ -152,13 +148,11 @@ class StartAppRequest :
 
 #if SSTMAC_INTEGRATED_SST_CORE
   const std::string& appParams() const {
-    return app_params_;
-  }
 #else
   const SST::Params& appParams() const {
+#endif
     return app_params_;
   }
-#endif
 
   TaskMapping::ptr mapping() const {
     return mapping_;

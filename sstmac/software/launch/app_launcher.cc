@@ -73,24 +73,25 @@ AppLauncher::incomingRequest(Request* req)
 {
   StartAppRequest* lreq = safe_cast(StartAppRequest, req);
   if (lreq->type() == LaunchRequest::Start){
-//    std::cerr << "launching\n";
-//    std::cerr << "aid: " << lreq->aid() << std::endl;
-//    std::cerr << "uniqueName: " << lreq->uniqueName() << std::endl;
-//    lreq->appParams().print_all_params(std::cerr);
     TaskMapping::addGlobalMapping(lreq->aid(), lreq->uniqueName(), lreq->mapping());
 
-#if !SSTMAC_INTEGRATED_SST_CORE
-    SST::Params app_params = lreq->appParams();
-#else
-    SST::Params app_params;
-    using json = nlohmann::json;
-    json j;
+#if SSTMAC_INTEGRATED_SST_CORE
+    // using sst-core, so params are actually not serializable
+    // so we're receiving a json string instead
+
+    // convert the string back to json object
     const std::string& sparams(lreq->appParams());
     std::stringstream ss(sparams);
+    nlohmann::json j;
     ss >> j;
-    for (auto it = j.begin(); it != j.end(); ++it) {
-        app_params.insert(it.key(),*it);
+
+    // reconstruct the app params
+    SST::Params app_params;
+    for (auto& elem : j.items()) {
+        app_params.insert(elem.key(),elem.value());
       }
+#else
+   SST::Params app_params = lreq->appParams();
 #endif
 
     //if necessary, bcast this to whomever else needs it

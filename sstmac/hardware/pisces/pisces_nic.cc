@@ -101,7 +101,7 @@ PiscesNIC::~PiscesNIC() throw ()
 LinkHandler*
 PiscesNIC::payloadHandler(int port)
 {
-  if (port >= NIC::LogP){
+  if (port == NIC::LogP){
     return newLinkHandler(this, &NIC::mtlHandle);
   } else {
     return newLinkHandler(this, &PiscesNIC::incomingPacket);

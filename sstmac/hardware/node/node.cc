@@ -86,10 +86,6 @@ Node::Node(uint32_t id, SST::Params& params)
   app_refcount_(0),
   job_launcher_(nullptr)
 {
-
-  //std::cerr << "node params:\n";
-  //params.print_all_params(std::cerr);
-
 #if SSTMAC_INTEGRATED_SST_CORE
   static bool init_debug = false;
   if (!init_debug){
@@ -105,16 +101,6 @@ Node::Node(uint32_t id, SST::Params& params)
 #endif
   my_addr_ = params.find<int>("id");
   next_outgoing_id_.setSrcNode(my_addr_);
-
-//    if (my_addr_ == 5) {
-//        volatile int i = 0;
-//        char hostname[256];
-//        gethostname(hostname, sizeof(hostname));
-//        printf("PID %d on %s ready for attach\n", getpid(), hostname);
-//        fflush(stdout);
-//        while (0 == i)
-//          sleep(5);
-//      }
 
   SST::Params nic_params = params.find_scoped_params("nic");
   auto nic_name = nic_params.find<std::string>("name");
@@ -143,8 +129,13 @@ Node::Node(uint32_t id, SST::Params& params)
       "macro", params.find<std::string>("job_launcher", "default"), params, os_);
   }
 
+#if SSTMAC_INTEGRATED_SST_CORE
+  // we need all the params to make sure static topology can get constructed on all simulation ranks
   params.insert(nic_params);
   nic_ = loadSub<NIC>(nic_name, "nic", NIC_SLOT, params, this);
+#else
+  nic_ = loadSub<NIC>(nic_name, "nic", NIC_SLOT, nic_params, this);
+#endif
 
   //nic_ = sprockit::create<NIC>("macro", nic_name, nic_params, this);
   //sstmac::loadSubComponent<NIC>(nic_name, this, nic_params);

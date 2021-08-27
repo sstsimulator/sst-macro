@@ -68,7 +68,7 @@ RegisterKeywords(
 { "post_latency", "the latency of the NIC posting messages" },
 );
 
-#define DEFAULT_NEGLIGIBLE_SIZE 1024
+#define DEFAULT_NEGLIGIBLE_SIZE 256
 
 namespace sstmac {
 namespace hw {
@@ -101,8 +101,6 @@ NIC::NIC(uint32_t id, SST::Params& params, Node* parent) :
   queue_(parent->os()),
   os_(parent->os())
 {
-  //params.print_all_params(std::cerr);
-
   negligibleSize_ = params.find<int>("negligible_size", DEFAULT_NEGLIGIBLE_SIZE);
   top_ = Topology::staticTopology(params);
 
@@ -119,24 +117,26 @@ NIC::NIC(uint32_t id, SST::Params& params, Node* parent) :
 void
 NIC::configureLogPLinks()
 {
+#if SSTMAC_INTEGRATED_SST_CORE
+  initInputLink(addr(), hw::NIC::LogP);
   initOutputLink(hw::NIC::LogP, addr());
-  for(int i=0; i<2; ++i) {
-      //set up LogP management/shortcut network
-      initInputLink(addr(), hw::NIC::LogP + i);
-    }
+#endif
 }
 
 void
 NIC::configureLinks()
 {
+  //set up LogP management/shortcut network
   configureLogPLinks();
 
+#if SSTMAC_INTEGRATED_SST_CORE
   std::vector<Topology::InjectionPort> ports;
-  top_->injectionPorts(addr(), ports);
+  top_->injectionPorts(addr(), ports); 
   for (Topology::InjectionPort& port : ports){
     initOutputLink(port.ep_port, port.switch_port);
     initInputLink(port.switch_port, port.ep_port);
   }
+#endif
 }
 
 NIC::~NIC()

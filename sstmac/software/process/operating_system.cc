@@ -658,29 +658,26 @@ OperatingSystem::outcastAppStart(int my_rank, int aid, const std::string& app_ns
     num_to_send = iter.forward_to(ranks);
   }
 
-//  std::cerr << "rank0 params:\n";
-//  std::cerr << "neg size: " << node_->nic()->negligibleSize_ << std::endl;
-//  app_params.print_all_params(std::cerr);
-
   for (int r=0; r < num_to_send; ++r){
     int dst_rank = ranks[r];
     int dst_nid = mapping->rankToNode(dst_rank);
-#if !SSTMAC_INTEGRATED_SST_CORE
-    sw::StartAppRequest* lev = new StartAppRequest(node_->allocateUniqueId(),
-                                                   aid, app_ns, mapping, dst_rank, dst_nid,
-                                                   addr(), app_params);
-#else
+
+#if SSTMAC_INTEGRATED_SST_CORE
+    // using sst-core so we can't serialize params, will send a json string instead
     std::set<std::string> keys = app_params.getKeys();
     nlohmann::json j;
     for (auto &k : keys) {
         j[k] = app_params.find<std::string>(k,"not found");
       }
-    //std::cerr << "json params: " << j.dump(3) << "\n";
     sw::StartAppRequest* lev = new StartAppRequest(node_->allocateUniqueId(),
                                      aid, app_ns, mapping, dst_rank, dst_nid,
                                      addr(), j.dump().c_str());
+#else
+    sw::StartAppRequest* lev = new StartAppRequest(node_->allocateUniqueId(),
+                                                   aid, app_ns, mapping, dst_rank, dst_nid,
+                                                   addr(), app_params);
 #endif
-    //std::cerr << "byte length: " << static_cast<hw::NetworkMessage*>(lev)->byteLength() << std::endl;
+
     os_debug("outcast to %d: %s", dst_rank, lev->toString().c_str());
     node_->nic()->sendManagerMsg(lev);
   }
