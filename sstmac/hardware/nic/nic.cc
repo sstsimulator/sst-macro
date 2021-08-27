@@ -131,7 +131,7 @@ NIC::configureLinks()
 
 #if SSTMAC_INTEGRATED_SST_CORE
   std::vector<Topology::InjectionPort> ports;
-  top_->injectionPorts(addr(), ports); 
+  top_->injectionPorts(addr(), ports);
   for (Topology::InjectionPort& port : ports){
     initOutputLink(port.ep_port, port.switch_port);
     initInputLink(port.switch_port, port.ep_port);

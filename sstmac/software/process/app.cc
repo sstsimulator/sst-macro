@@ -162,7 +162,6 @@ void
 App::dlopenCheck(int aid, SST::Params& params, bool check_name)
 {
   if (params.contains("exe")){
-    std::cerr << "contains exe\n";
     dlopen_lock.lock();
     std::string libname = params.find<std::string>("exe");
     dlopen_entry& entry = dlopens_[aid];

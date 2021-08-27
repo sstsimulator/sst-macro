@@ -313,9 +313,7 @@ def setupDeprecatedParams(params, debugList=[]):
           nsParams[key] = val
 
   ic = Interconnect(params)
-  #print ("building")
   ic.build()
-  #print ("done building")
   return ic
 
 def setupDeprecated():

@@ -139,10 +139,7 @@ class StartAppRequest :
 
   std::string toString() const override;
 
-  StartAppRequest() {
-    //std::cerr << "StartAppRequest constructor for serialization\n";
-    //app_params_.print_all_params(std::cerr);
-  } //for serialization
+  StartAppRequest() {} //for serialization
 
   void serialize_order(serializer& ser) override;
 
