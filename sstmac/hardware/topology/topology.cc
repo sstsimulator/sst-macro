@@ -88,18 +88,25 @@ int Topology::nproc = 0;
 SwitchId
 Topology::nodeToLogpSwitch(NodeId nid) const
 {
-  int n_nodes = numNodes();
-  int nodes_per_switch = n_nodes / nproc;
-  int epPlusOne = nodes_per_switch + 1;
-  int num_procs_with_extra_node = n_nodes % nproc;
+  // currently using single switch topology for short circuit network when using sst-core
+  // and I think the code below is wrong for some corner cases anyways
 
-  int div_cutoff = num_procs_with_extra_node * epPlusOne;
-  if (nid >= div_cutoff){
-    int offset = nid - div_cutoff;
-    return offset / nodes_per_switch;
-  } else {
-    return nid / epPlusOne;
-  }
+  spkt_abort_printf("unexpected call to nodeToLogPSwitch()");
+  return 0;
+
+  // leaving previous implementation here for potential future use
+//  int n_nodes = numNodes();
+//  int nodes_per_switch = n_nodes / nproc;
+//  int epPlusOne = nodes_per_switch + 1;
+//  int num_procs_with_extra_node = n_nodes % nproc;
+
+//  int div_cutoff = num_procs_with_extra_node * epPlusOne;
+//  if (nid >= div_cutoff){
+//    int offset = nid - div_cutoff;
+//    return offset / nodes_per_switch;
+//  } else {
+//    return nid / epPlusOne;
+//  }
 }
 #endif
 

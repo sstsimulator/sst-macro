@@ -8,6 +8,13 @@ export LD_LIBRARY_PATH=@abs_top_builddir@/sstmac/install/.libs:$LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=@abs_top_builddir@/sst-dumpi/dumpi/libundumpi/.libs:$LD_LIBRARY_PATH
 
 options="$@"
-@sst_prefix@/bin/sst @abs_top_srcdir@/python/default.py --model-options="$options" --partitioner=macro.block
+
+# macro partitioner currently broken:
+# Bad rank: 4294967295 4294967295
+# FATAL: [0:0] SST Core: ERROR: Bad partitioning; partition included unknown ranks.
+#@sst_prefix@/bin/sst @abs_top_srcdir@/python/default.py --model-options="$options" --partitioner=macro.block
+
+# use default partitioner until it's fixed
+@sst_prefix@/bin/sst @abs_top_srcdir@/python/default.py --model-options="$options"
 
 

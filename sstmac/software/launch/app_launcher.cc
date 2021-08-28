@@ -48,6 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/app.h>
 #include <sstmac/common/thread_lock.h>
+#include <sstmac/libraries/nlohmann/json.hpp>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
 #include <unistd.h>
@@ -73,12 +74,27 @@ AppLauncher::incomingRequest(Request* req)
   if (lreq->type() == LaunchRequest::Start){
     TaskMapping::addGlobalMapping(lreq->aid(), lreq->uniqueName(), lreq->mapping());
 
+#if SSTMAC_INTEGRATED_SST_CORE
+    // using sst-core, so params are actually not serializable
+    // so we're receiving a json string instead
+
+    // convert the string back to json object
+    nlohmann::json j = nlohmann::json::parse(lreq->appParams());
+
+    // reconstruct the app params
+    SST::Params app_params;
+    for (auto& elem : j.items()) {
+        app_params.insert(elem.key(),elem.value());
+      }
+#else
+   SST::Params app_params = lreq->appParams();
+#endif
+
     //if necessary, bcast this to whomever else needs it
     os_->outcastAppStart(lreq->tid(), lreq->aid(), lreq->uniqueName(),
-                         lreq->mapping(), lreq->appParams());
+                         lreq->mapping(), app_params);
 
     SoftwareId sid(lreq->aid(), lreq->tid());
-    SST::Params app_params = lreq->appParams();
     App::dlopenCheck(lreq->aid(), app_params);
     auto app_name = app_params.find<std::string>("name");
     App* theapp = sprockit::create<App>("macro", app_name, app_params, sid, os_);

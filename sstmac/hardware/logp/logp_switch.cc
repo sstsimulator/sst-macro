@@ -92,10 +92,12 @@ LogPSwitch::LogPSwitch(uint32_t cid, SST::Params& params) :
 
   nic_links_.resize(top_->numNodes());
 
+#if SSTMAC_INTEGRATED_SST_CORE
   for (int i=0; i < top_->numNodes(); ++i){
-    initOutputLink(i, hw::NIC::LogP);
     initInputLink(hw::NIC::LogP, i);
+    initOutputLink(i, hw::NIC::LogP);
   }
+#endif
 
 }
 

@@ -117,22 +117,26 @@ NIC::NIC(uint32_t id, SST::Params& params, Node* parent) :
 void
 NIC::configureLogPLinks()
 {
-  //set up LogP management/shortcut network
-  initOutputLink(hw::NIC::LogP, addr());
+#if SSTMAC_INTEGRATED_SST_CORE
   initInputLink(addr(), hw::NIC::LogP);
+  initOutputLink(hw::NIC::LogP, addr());
+#endif
 }
 
 void
 NIC::configureLinks()
 {
+  //set up LogP management/shortcut network
   configureLogPLinks();
 
+#if SSTMAC_INTEGRATED_SST_CORE
   std::vector<Topology::InjectionPort> ports;
   top_->injectionPorts(addr(), ports);
   for (Topology::InjectionPort& port : ports){
     initOutputLink(port.ep_port, port.switch_port);
     initInputLink(port.switch_port, port.ep_port);
   }
+#endif
 }
 
 NIC::~NIC()

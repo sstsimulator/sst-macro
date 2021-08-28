@@ -125,12 +125,15 @@ class StartAppRequest :
      TaskId tid,
      NodeId to,
      NodeId from,
+#if SSTMAC_INTEGRATED_SST_CORE
+     const std::string& app_params):
+#else
      const SST::Params& app_params) :
+#endif
     LaunchRequest(flow_id, Start, aid, tid, unique_name, to, from, "launcher"),
     mapping_(mapping),
     app_params_(app_params)
-  {
-  }
+  {}
 
   int coreAffinity(int intranode_rank) const;
 
@@ -140,7 +143,11 @@ class StartAppRequest :
 
   void serialize_order(serializer& ser) override;
 
+#if SSTMAC_INTEGRATED_SST_CORE
+  const std::string& appParams() const {
+#else
   const SST::Params& appParams() const {
+#endif
     return app_params_;
   }
 
@@ -151,7 +158,11 @@ class StartAppRequest :
  private:
   std::string unique_name_;
   TaskMapping::ptr mapping_;
+#if SSTMAC_INTEGRATED_SST_CORE
+  std::string app_params_;
+#else
   SST::Params app_params_;
+#endif
 
 };
 

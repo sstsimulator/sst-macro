@@ -149,9 +149,8 @@ AC_CHECK_HEADERS([mpi.h],
 )
 
 CHECK_CXX_STD()
-if test "X$have_integrated_core" != "Xyes"; then
+
 CHECK_MPI_PARALLEL()
-fi
 
 CHECK_SPACK()
 
