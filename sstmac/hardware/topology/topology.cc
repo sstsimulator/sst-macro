@@ -94,6 +94,7 @@ Topology::nodeToLogpSwitch(NodeId nid) const
   spkt_abort_printf("unexpected call to nodeToLogPSwitch()");
   return 0;
 
+  // leaving previous implementation here for potential future use
 //  int n_nodes = numNodes();
 //  int nodes_per_switch = n_nodes / nproc;
 //  int epPlusOne = nodes_per_switch + 1;

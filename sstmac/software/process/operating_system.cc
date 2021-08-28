@@ -671,7 +671,7 @@ OperatingSystem::outcastAppStart(int my_rank, int aid, const std::string& app_ns
       }
     sw::StartAppRequest* lev = new StartAppRequest(node_->allocateUniqueId(),
                                      aid, app_ns, mapping, dst_rank, dst_nid,
-                                     addr(), j.dump().c_str());
+                                     addr(), j.dump());
 #else
     sw::StartAppRequest* lev = new StartAppRequest(node_->allocateUniqueId(),
                                                    aid, app_ns, mapping, dst_rank, dst_nid,

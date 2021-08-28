@@ -53,7 +53,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/util.h>
 #include <unistd.h>
 #include <getopt.h>
-#include <sstream>
 
 namespace sstmac {
 namespace sw {
@@ -80,10 +79,7 @@ AppLauncher::incomingRequest(Request* req)
     // so we're receiving a json string instead
 
     // convert the string back to json object
-    const std::string& sparams(lreq->appParams());
-    std::stringstream ss(sparams);
-    nlohmann::json j;
-    ss >> j;
+    nlohmann::json j = nlohmann::json::parse(lreq->appParams());
 
     // reconstruct the app params
     SST::Params app_params;
