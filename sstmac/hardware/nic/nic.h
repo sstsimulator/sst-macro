@@ -210,6 +210,7 @@ class NIC : public ConnectableSubcomponent
     return bytes <= negligibleSize_;
   }
 
+protected:
   int negligibleSize_;
   Node* parent_;
   NodeId my_addr_;

@@ -129,7 +129,13 @@ Node::Node(uint32_t id, SST::Params& params)
       "macro", params.find<std::string>("job_launcher", "default"), params, os_);
   }
 
+#if SSTMAC_INTEGRATED_SST_CORE
+  // we need all the params to make sure static topology can get constructed on all simulation ranks
+  params.insert(nic_params);
+  nic_ = loadSub<NIC>(nic_name, "nic", NIC_SLOT, params, this);
+#else
   nic_ = loadSub<NIC>(nic_name, "nic", NIC_SLOT, nic_params, this);
+#endif
 
   //nic_ = sprockit::create<NIC>("macro", nic_name, nic_params, this);
   //sstmac::loadSubComponent<NIC>(nic_name, this, nic_params);

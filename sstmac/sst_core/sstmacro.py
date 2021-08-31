@@ -119,11 +119,13 @@ class Interconnect:
 
   def defaultEpFxn(self, nodeID):
     nodeParams = getParamNamespace(self.params, "node")
+    topParams = getParamNamespace(self.params,"topology")
     compName = getParam(nodeParams, "name", "node").lower()
     if not compName.endswith("_node"):
       compName += "_node"
     node = sst.Component("Node %d" % nodeID, "macro.%s" % compName)
     node.addParams(macroToCoreParams(nodeParams))
+    node.addParams(macroToCoreParams(topParams))
     node.addParam("id", nodeID)
     return node
 
@@ -200,6 +202,12 @@ class Interconnect:
         makeUniLink("ejection",ejSwitchComp,swId,switchPort,ep,epId,ejPort,
                     outLat=lat,inLat=smallLatency)
 
+  # Construct LogP short circuit network for small messages
+  # sst-macro uses one LogP switch per simulation rank, but using
+  # a single-switch "star" topology here since elements aren't supposed to
+  # know anything about simulation parallelism and it greatly simplifies
+  # sst-core support. We may want to revisit this decision if it proves
+  # to be a performance bottleneck for MPI parallel simulations.
   def buildLogPNetwork(self):
     import re
     nproc = sst.getMPIRankCount() * sst.getThreadCount()
@@ -207,34 +215,29 @@ class Interconnect:
     if "logp" in switchParams:
       switchParams = switchParams["logp"]
     lat = switchParams["out_in_latency"]
-    switches = []
-    for i in range(nproc):
-      switch = sst.Component("LogP %d" % i, "macro.logp_switch")
-      switch.addParams(macroToCoreParams(switchParams))
-      switch.addParam("id", i)
-      switches.append(switch)
+    switch = sst.Component("LogP 0", "macro.logp_switch")
+    switch.addParams(macroToCoreParams(switchParams))
+    switch.addParam("id", 0)
 
     for i in range(self.num_nodes):
-      injSW = self.system.nodeToLogPSwitch(i)
       ep = self.nodes[i]
-      sw = switches[injSW]
-      linkName = "logPinjection%d->%d" % (i, injSW)
+      linkName = "logPinjection%d->%d" % (i, 0)
+      #print("configuring link %s" % linkName)
       link = sst.Link(linkName)
       portName = "output%d" % (sst.macro.NICLogPInjectionPort)
       ep.addLink(link, portName, smallLatency) #put no latency here
-      portName = "input%d" % (i)
-      sw.addLink(link, portName, smallLatency)
+      portName = "input%d" % i
+      switch.addLink(link, portName, smallLatency)
 
     for i in range(self.num_nodes):
       ep = self.nodes[i]
-      for p in range(nproc):
-        linkName = "logPejection%d->%d" % (i, injSW)
-        link = sst.Link(linkName)
-        sw = switches[p]
-        portName = "output%d" % (i)
-        sw.addLink(link, portName, lat)
-        portName = "input%d" % (sst.macro.NICLogPInjectionPort)
-        ep.addLink(link, portName, lat)
+      linkName = "logPejection%d->%d" % (0, i)
+      #print("configuring link %s" % linkName)
+      link = sst.Link(linkName)
+      portName = "output%d" % i
+      switch.addLink(link, portName, lat)
+      portName = "input%d" % (sst.macro.NICLogPInjectionPort)
+      ep.addLink(link, portName, lat)
 
   def buildFull(self, epFxn):
     self.buildSwitches()
@@ -294,6 +297,7 @@ def setupDeprecatedParams(params, debugList=[]):
   topParams = getParamNamespace(params,"topology")
   icParams["topology"] = topParams
   nodeParams["interconnect"] = icParams
+  nodeParams["topology"] = topParams
   if debugList:
     nodeParams["debug"] = "[" + ",".join(debugList) + "]"
   swParams["topology"] = topParams
@@ -313,6 +317,7 @@ def setupDeprecatedParams(params, debugList=[]):
   return ic
 
 def setupDeprecated():
+  print ("setupDeprecated")
   import sys
   sst.setProgramOption("timebase", "100as")
   params = readCmdLineParams()
