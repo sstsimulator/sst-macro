@@ -31,7 +31,7 @@ build:no-core:
     - make check
 
 build:mpi-no-core:
-  extends: bild:no-core
+  extends: build:no-core
   variables:
     CC: mpicc
     CXX: mpic++
