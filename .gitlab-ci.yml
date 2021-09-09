@@ -1,0 +1,58 @@
+default:
+  image: ${container_registry}/sst-base-env-ubuntu20.04:0.2
+  tags:
+    - xlarge
+
+stages:
+  - build-nodep
+  - build-with-core
+
+build:core:
+  stage: build-nodep
+  script:
+    - git clone --single-branch --branch devel https://github.com/sstsimulator/sst-core.git sst-core
+    - cmake -B core-build sst-core/experimental -DCMAKE_INSTALL_PREFIX=core-install
+    - cmake --build core-build -j $(nproc)
+    - cmake --install core-build
+    - core-install/bin/sst-test-core
+  artifacts:
+    name: core-install
+    expire_in: 1 week
+    paths:
+      - core-install/
+
+build:no-core:
+  stage: build-nodep
+  script:
+    - sh bootstrap.sh
+    - mkdir -p build
+    - cd build && ../configure
+    - make -j $(nproc)
+    - make check
+
+build:mpi-no-core:
+  extends: bild:no-core
+  variables:
+    CC: mpicc
+    CXX: mpic++
+    MPI_LAUNCHER: 'mpirun -np 3 --allow-run-as-root'
+  allow_failure: true
+
+build:with-core:
+  stage: build-with-core
+  needs:
+    job: build:core
+    artifacts: true
+  script:
+    - sh bootstrap.sh
+    - mkdir -p build
+    - cd build && ../configure --with-sst-core=$PWD/../core-install
+    - make -j $(nproc)
+    - make check
+
+build:mpi-core:
+  extends: build:with-core
+  variables:
+    CC: mpicc
+    CXX: mpic++
+    MPI_LAUNCHER: 'mpirun -np 3 --allow-run-as-root'
