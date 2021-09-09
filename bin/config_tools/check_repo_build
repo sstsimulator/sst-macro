@@ -48,7 +48,10 @@ import sys
 from configlib import getoutput 
 
 if os.path.isdir(".git"):
-  print(getoutput("git rev-parse --abbrev-ref HEAD").strip())
+  if branch == "HEAD": # detached head state
+    sys.stdout.write("\n")
+  else:
+    print(getoutput("git rev-parse --abbrev-ref HEAD").strip())
 else:
   sys.stdout.write("\n")
 
