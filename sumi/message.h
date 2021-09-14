@@ -302,12 +302,12 @@ class ProtocolMessage : public Message {
   }
 
   void serialize_order(sstmac::serializer& ser) override {
+    Message::serialize_order(ser);
     ser & stage_;
     ser & protocol_;
     ser & count_;
     ser & type_size_;
     ser.primitive(partner_buffer_);
-    Message::serialize_order(ser);
   }
 
 #if !SSTMAC_INTEGRATED_SST_CORE
