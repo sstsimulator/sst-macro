@@ -286,23 +286,20 @@ NetworkMessage::serialize_order(serializer& ser)
 {
   Flow::serialize_order(ser);
 
-  // can't serialize a nullptr!
-  // (and for UNPACK wire_buffer_ won't have been initialized yet)
-  if (ser.mode() == SST::Core::Serialization::serializer::SIZER ||
-      ser.mode() == SST::Core::Serialization::serializer::PACK ) {
-      if (wire_buffer_ == nullptr) {
-          wire_is_null_ = true;
-        }
-    }
-  ser & wire_is_null_;
+  // Can't serialize a nullptr!
+  bool wire_is_null = wire_buffer_ == nullptr;
+  ser & wire_is_null;
+  if(!wire_is_null){
+    ser & sstmac::array(wire_buffer_, payload_bytes_);
+  } else {
+    ser & payload_bytes_; 
+  }
 
-  ser & sstmac::array(wire_buffer_, payload_bytes_);
   ser & time_started_;
   ser & time_arrived_;
   ser & injection_started_;
   ser & aid_;
   ser & needs_ack_;
-  ser & payload_bytes_;
   ser & toaddr_;
   ser & fromaddr_;
   ser & type_;
@@ -318,9 +315,6 @@ NetworkMessage::serialize_order(serializer& ser)
   ser.primitive(remote_buffer_);
   ser.primitive(local_buffer_);
   ser.primitive(smsg_buffer_);
-  if (!wire_is_null_) {
-    ser & sstmac::array(wire_buffer_, payload_bytes_);
-    }
 }
 
 #if !SSTMAC_INTEGRATED_SST_CORE
