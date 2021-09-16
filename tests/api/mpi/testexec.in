@@ -2,6 +2,7 @@
 
 export PYTHONPATH=$PYTHONPATH:@prefix@/include/python
 export SST_LIB_PATH=@prefix@/lib:$SST_LIB_PATH
+export DYLD_LIBRARY_PATH=@prefix@/lib:$DYLD_LIBRARY_PATH
 export LD_LIBRARY_PATH=@prefix@/lib:$LD_LIBRARY_PATH
 
 options="$@"
