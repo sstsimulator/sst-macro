@@ -28,6 +28,7 @@ build:no-core:
     - mkdir -p build
     - cd build && ../configure
     - make -j $(nproc)
+    - make install
     - make check
     - make installcheck
 
@@ -41,6 +42,7 @@ build:with-core:
     - mkdir -p build
     - cd build && ../configure --with-sst-core=$PWD/../core-install
     - make -j $(nproc)
+    - make install
     - make check
     - make installcheck
 
