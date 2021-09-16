@@ -28,15 +28,9 @@ build:no-core:
     - mkdir -p build
     - cd build && ../configure
     - make -j $(nproc)
+    - make install
     - make check
-
-build:mpi-no-core:
-  extends: build:no-core
-  variables:
-    CC: mpicc
-    CXX: mpic++
-    MPI_LAUNCHER: 'mpirun -np 3 --allow-run-as-root'
-  allow_failure: true
+    - make installcheck
 
 build:with-core:
   stage: build-with-core
@@ -48,7 +42,9 @@ build:with-core:
     - mkdir -p build
     - cd build && ../configure --with-sst-core=$PWD/../core-install
     - make -j $(nproc)
+    - make install
     - make check
+    - make installcheck
 
 build:mpi-core:
   extends: build:with-core
