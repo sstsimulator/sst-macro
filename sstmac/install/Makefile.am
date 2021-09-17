@@ -75,8 +75,8 @@ SST_REGISTER_TOOL=@sst_prefix@/bin/sst-register
 
 install-exec-hook:
 	  $(SST_REGISTER_TOOL) SST_MACRO SST_MACRO_LIBDIR=@libdir@
-	  #$(SST_REGISTER_TOOL) SST_ELEMENT_SOURCE sst-macro=$(abs_srcdir)/../..
-	  #$(SST_REGISTER_TOOL) SST_ELEMENT_TESTS sst-macro=$(abs_srcdir)/../../tests
+	  $(SST_REGISTER_TOOL) SST_ELEMENT_SOURCE sst-macro=$(abs_srcdir)/../..
+	  $(SST_REGISTER_TOOL) SST_ELEMENT_TESTS sst-macro=$(abs_srcdir)/../../tests
 
 endif
 
