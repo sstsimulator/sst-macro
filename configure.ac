@@ -150,7 +150,19 @@ AC_CHECK_HEADERS([mpi.h],
 
 CHECK_CXX_STD()
 
-CHECK_MPI_PARALLEL()
+if test "X$have_integrated_core" = "Xyes"; then
+  CHECK_MPI_PARALLEL()
+else
+  DISABLE_MPI_PARALLEL()
+  if test "X$have_mpi_header" = "Xyes"; then
+    AC_CHECK_FUNCS([MPI_Init],
+      found_mpi=yes,
+      found_mpi=no)
+  fi
+  if test "X$found_mpi" = "Xyes"; then
+    AC_MSG_ERROR([MPI compiler detected without sst-core, MPI parallel is only supported with sst-core])
+  fi
+fi
 
 CHECK_SPACK()
 
