@@ -32,6 +32,19 @@ build:no-core:
     - make check
     - make installcheck
 
+build:no-core-enable-threads:
+  stage: build-nodep
+  variables:
+    THREAD_ARGS: '-c 0,1,2,3'
+  script:
+    - sh bootstrap.sh
+    - mkdir -p build
+    - cd build && ../configure --enable-multithread
+    - make -j $(nproc)
+    - make install
+    - make check
+    - make installcheck
+
 build:with-core:
   stage: build-with-core
   needs:
