@@ -347,7 +347,7 @@ class MacroBaseComponent
 
   template <class Params, class Stat> Stat*
   registerStatisticType(Params& params, const std::string& name, const std::string& subId){
-    auto scoped_params = params.find_scoped_params(name);
+    auto scoped_params = params.get_scoped_params(name);
     auto type = scoped_params.template find<std::string>("type", "null");
     auto* lib = Stat::getBuilderLibrary("macro");
     if (lib){

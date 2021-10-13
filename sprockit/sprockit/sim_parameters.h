@@ -566,7 +566,7 @@ class Params {
     return params_->getNamespace(name);
   }
 
-  SST::Params find_scoped_params(const std::string& name){
+  SST::Params get_scoped_params(const std::string& name){
     return params_->getOptionalNamespace(name);
   }
 

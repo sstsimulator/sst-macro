@@ -66,7 +66,7 @@ namespace hw {
 SculpinNIC::SculpinNIC(uint32_t id, SST::Params& params, Node* parent) :
   NIC(id, params, parent)
 {
-  SST::Params inj_params = params.find_scoped_params("injection");
+  SST::Params inj_params = params.get_scoped_params("injection");
 
   packet_size_ = inj_params.find<SST::UnitAlgebra>("mtu").getRoundedValue();
   inj_byte_delay_ = TimeDelta(inj_params.find<SST::UnitAlgebra>("bandwidth").getValue().inverse().toDouble());

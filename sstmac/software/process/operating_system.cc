@@ -191,7 +191,7 @@ OperatingSystem::OperatingSystem(uint32_t id, SST::Params& params, hw::Node* par
 
   StackAlloc::init(params);
 
-  SST::Params env_params = params.find_scoped_params("env");
+  SST::Params env_params = params.get_scoped_params("env");
   std::set<std::string> keys = env_params.getKeys();
   for (auto& key : keys){
     env_[key] = env_params.find<std::string>(key);

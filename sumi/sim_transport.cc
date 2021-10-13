@@ -264,7 +264,7 @@ SimTransport::SimTransport(SST::Params& params, sstmac::sw::App* parent, SST::Co
   rank_mapper_ = sstmac::sw::TaskMapping::globalMapping(sid().app_);
   nproc_ = rank_mapper_->nproc();
 
-  auto qos_params = params.find_scoped_params("qos");
+  auto qos_params = params.get_scoped_params("qos");
   auto qos_name = qos_params.find<std::string>("name", "null");
   qos_analysis_ = sprockit::create<QoSAnalysis>("macro", qos_name, qos_params);
 

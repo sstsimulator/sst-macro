@@ -122,7 +122,7 @@ EventManager::EventManager(SST::Params& params, ParallelRuntime *rt) :
   if (nthread_ == 0){
     sprockit::abort("Have zero worker threads! Cannot do any work");
   }
-  SST::Params os_params = params.find_scoped_params("node").find_scoped_params("os");
+  SST::Params os_params = params.get_scoped_params("node").get_scoped_params("os");
   sw::StackAlloc::init(os_params);
 
   auto threading = os_params.find<std::string>("context", sw::ThreadContext::defaultThreading());
