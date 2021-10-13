@@ -118,6 +118,7 @@ void* loadExternLibrary(const std::string& libname)
 
 void unloadExternLibrary(void* handle)
 {
+  // for sst-core parallel simulation, dlclosing causes segfault (GlobalVariableContext destructor)
   //dlclose(handle);
 }
 
