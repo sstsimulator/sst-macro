@@ -118,7 +118,7 @@ void* loadExternLibrary(const std::string& libname)
 
 void unloadExternLibrary(void* handle)
 {
-  dlclose(handle);
+  //dlclose(handle);
 }
 
 }

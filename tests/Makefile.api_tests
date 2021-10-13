@@ -119,8 +119,7 @@ SUPERCHECK_APITESTS = \
 testsuite_mpi_%.$(CHKSUF): $(MPI_TEST_DEPS)
 	$(PYRUNTEST) 20 $(top_srcdir) $@ 'text=No Errors' \
     $(MPI_LAUNCHER) $(top_builddir)/tests/api/mpi/testexec -f $(srcdir)/api/parameters.ini \
-    -p node.app1.testsuite_testmode=$* $(THREAD_ARGS)
-
+    -p node.app1.testsuite_testmode=$* -p node.app1.exe=$(top_builddir)/tests/api/mpi/.libs/libsstmac_api_mpi_test.so $(THREAD_ARGS)
 
 testsuite_globals_%.$(CHKSUF): $(GLOBALS_TEST_DEPS)
 	$(PYRUNTEST) 20 $(top_srcdir) $@ 'text=Passed' \
