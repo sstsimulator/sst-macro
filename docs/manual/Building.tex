@@ -439,58 +439,60 @@ This can be relative to the current directory, an absolute path, or the name of 
 \item -c: If multithreaded, give a comma-separated list (no spaces) of the core affinities to use - see Section \ref{subsec:parallelopt}
 \end{itemize}
 
-\section{Parallel Simulations in Standalone Mode}
+\section{Parallel Simulations}
 \label{sec:PDES}
 
-\sstmacro supports running parallel discrete event simulation (PDES) in distributed memory (MPI), threaded shared memory (pthreads) and hybrid (MPI+pthreads) modes.  Running these in standalone mode will be discouraged as parallel simulations should use the unified SST core. However, near-term, hybrid modes and other optimizations are not fully supported in the unified SST core. The standalone core may still be required for certain cases.
+\sstmacro currently supports running parallel discrete event simulation (PDES) in distributed memory (MPI) mode using SST Core.  
+Parallelism is no longer supported in the standalone (built-in) core, and thread parallelism is not currently supported with SST Core.
+Please consult SST Core documentation for details on parallel execution.
 
-\subsection{Distributed Memory Parallel}
-\label{subsec:mpiparallel}
-Configure will automatically check for MPI.
-Your configure should look something like:
+%\subsection{Distributed Memory Parallel}
+%\label{subsec:mpiparallel}
+%Configure will automatically check for MPI.
+%Your configure should look something like:
 
-\begin{ShellCmd}
-sst-macro/build> ../configure CXX=mpicxx CC=mpicc ...
-\end{ShellCmd}
-With the above options, you can just compile and go.
-\sstmacro is run exactly like the serial version, but is spawned like any other MPI parallel program.
-Use your favorite MPI launcher to run, e.g. for OpenMPI
+%\begin{ShellCmd}
+%sst-macro/build> ../configure CXX=mpicxx CC=mpicc ...
+%\end{ShellCmd}
+%With the above options, you can just compile and go.
+%\sstmacro is run exactly like the serial version, but is spawned like any other MPI parallel program.
+%Use your favorite MPI launcher to run, e.g. for OpenMPI
 
-\begin{ShellCmd}
-mysim> mpirun -n 4 sstmac -f parameters.ini
-\end{ShellCmd}
-or for MPICH
+%\begin{ShellCmd}
+%mysim> mpirun -n 4 sstmac -f parameters.ini
+%\end{ShellCmd}
+%or for MPICH
 
-\begin{ShellCmd}
-mysim> mpiexec -n 4 sstmac -f parameters.ini
-\end{ShellCmd}
+%\begin{ShellCmd}
+%mysim> mpiexec -n 4 sstmac -f parameters.ini
+%\end{ShellCmd}
 
-Even if you compile for MPI parallelism, the code can still be run in serial with the same configuration options.
-\sstmacro will notice the total number of ranks is 1 and ignore any parallel options.
-When launched with multiple MPI ranks, \sstmacro will automatically figure out how many partitions (MPI processes) 
-you are using, partition the network topology into contiguous blocks, and start running in parallel.   
+%Even if you compile for MPI parallelism, the code can still be run in serial with the same configuration options.
+%\sstmacro will notice the total number of ranks is 1 and ignore any parallel options.
+%When launched with multiple MPI ranks, \sstmacro will automatically figure out how many partitions (MPI processes) 
+%you are using, partition the network topology into contiguous blocks, and start running in parallel.   
 
-\subsection{Shared Memory Parallel}
-\label{subsec:parallelopt}
-In order to run shared memory parallel, you must configure the simulator with the \inlineshell{--enable-multithread} flag.
-Partitioning for threads is currently always done using block partitioning and there is no need to set an input parameter.
-Including the integer parameter \inlineshell{sst_nthread} specifies the number of threads to be used (per rank in MPI+pthreads mode) in the simulation.
-The following configuration options may provide better threaded performance.
-\begin{itemize}
-\item\inlineshell{--enable-spinlock} replaces pthread mutexes with spinlocks.  Higher performance and recommended when supported.
-\item\inlineshell{--enable-cpu-affinity} causes \sstmacro to pin threads to specific cpu cores.  When enabled, \sstmacro will require the
-\inlineshell{cpu_affinity} parameter, which is a comma separated list of cpu affinities for each MPI task on a node.  \sstmacro will sequentially
-pin each thread spawned by a task to the next next higher core number.  For example, with two MPI tasks per node and four threads per MPI task,
-\inlineshell{cpu_affinity = 0,4} will result in MPI tasks pinned to cores 0 and 4, with pthreads pinned to cores 1-3 and 5-7.
-For a threaded only simulation \inlineshell{cpu_affinity = 4} would pin the main process to core 4 and any threads to cores 5 and up.
-The affinities can also be specified on the command line using the \inlineshell{-c} option.
-Job launchers may in some cases provide duplicate functionality and either method can be used.
-\end{itemize}
+%\subsection{Shared Memory Parallel}
+%\label{subsec:parallelopt}
+%In order to run shared memory parallel, you must configure the simulator with the \inlineshell{--enable-multithread} flag.
+%Partitioning for threads is currently always done using block partitioning and there is no need to set an input parameter.
+%Including the integer parameter \inlineshell{sst_nthread} specifies the number of threads to be used (per rank in MPI+pthreads mode) in the simulation.
+%The following configuration options may provide better threaded performance.
+%\begin{itemize}
+%\item\inlineshell{--enable-spinlock} replaces pthread mutexes with spinlocks.  Higher performance and recommended when supported.
+%\item\inlineshell{--enable-cpu-affinity} causes \sstmacro to pin threads to specific cpu cores.  When enabled, \sstmacro will require the
+%\inlineshell{cpu_affinity} parameter, which is a comma separated list of cpu affinities for each MPI task on a node.  \sstmacro will sequentially
+%pin each thread spawned by a task to the next next higher core number.  For example, with two MPI tasks per node and four threads per MPI task,
+%\inlineshell{cpu_affinity = 0,4} will result in MPI tasks pinned to cores 0 and 4, with pthreads pinned to cores 1-3 and 5-7.
+%For a threaded only simulation \inlineshell{cpu_affinity = 4} would pin the main process to core 4 and any threads to cores 5 and up.
+%The affinities can also be specified on the command line using the \inlineshell{-c} option.
+%Job launchers may in some cases provide duplicate functionality and either method can be used.
+%\end{itemize}
 
 \subsection{Warnings for Parallel Simulation}
 \label{subsec:parallelwarn}
 \begin{itemize}
-\item If the number of simulated processes specified by e.g. \inlinefile{aprun -n 100} does not match the number of nodes in the topology (i.e. you are not space-filling the whole simulated machine), parallel performance will suffer. \sstmacro partitions nodes, not MPI ranks.
+\item If the number of simulated processes specified by e.g. \inlinefile{aprun -n 100} does not match the number of nodes in the topology (i.e. you are not space-filling the whole simulated machine), parallel performance will suffer. Partitioning is by node, not MPI rank.
 \end{itemize}
 
 \aside{
