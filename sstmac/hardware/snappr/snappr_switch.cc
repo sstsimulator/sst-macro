@@ -76,7 +76,7 @@ static FTQTag stalled("stalled_port", 0);
 SnapprSwitch::SnapprSwitch(uint32_t id, SST::Params& params) :
   NetworkSwitch(id, params)
 {
-  SST::Params rtr_params = params.find_scoped_params("router");
+  SST::Params rtr_params = params.get_scoped_params("router");
   rtr_params.insert("id", std::to_string(my_addr_));
   qos_levels_ = params.find<int>("qos_levels", 1);
   if (rtr_params.contains("names")){
@@ -108,7 +108,7 @@ SnapprSwitch::SnapprSwitch(uint32_t id, SST::Params& params) :
 
   bool congestion = params.find<bool>("congestion", true);
 
-  SST::Params link_params = params.find_scoped_params("link");
+  SST::Params link_params = params.get_scoped_params("link");
 
   bool flow_control = params.find<bool>("flow_control", true);
   std::vector<uint32_t> credits_per_vl(num_vl_);

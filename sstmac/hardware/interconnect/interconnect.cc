@@ -148,7 +148,7 @@ Interconnect::Interconnect(SST::Params& params, SSTMAC_MAYBE_UNUSED EventManager
   if (logp_model){
     logp_params.insert(switch_params);
   }
-  logp_params.insert(switch_params.find_scoped_params("logp"));
+  logp_params.insert(switch_params.get_scoped_params("logp"));
 
   logp_switches_.resize(rt_->nthread());
   uint32_t my_offset = rt_->me() * rt_->nthread() + top->numNodes() + top->numSwitches();
@@ -195,7 +195,7 @@ Interconnect::configureInterconnectLookahead(SST::Params& params)
 {
   SST::Params switch_params = params.get_namespace("switch");
   SST::Params inj_params = params.get_namespace("node")
-      .find_scoped_params("nic").find_scoped_params("injection");
+      .get_scoped_params("nic").get_scoped_params("injection");
 
   SST::Params link_params = switch_params.get_namespace("link");
   TimeDelta hop_latency(link_params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
@@ -230,9 +230,9 @@ Interconnect::connectEndpoints(uint64_t linkIdOffset,
   int num_switches = topology_->numSwitches();
   int me = rt_->me();
   std::vector<Topology::InjectionPort> ports;
-  SST::Params inj_params = ep_params.find_scoped_params("injection");
-  SST::Params ej_params = ep_params.find_scoped_params("ejection");
-  SST::Params link_params= sw_params.find_scoped_params("link");
+  SST::Params inj_params = ep_params.get_scoped_params("injection");
+  SST::Params ej_params = ep_params.get_scoped_params("ejection");
+  SST::Params link_params= sw_params.get_scoped_params("link");
   TimeDelta inj_latency(inj_params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
   TimeDelta ej_latency;
   if (ej_params.contains("latency")){

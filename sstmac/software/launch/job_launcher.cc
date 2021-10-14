@@ -116,12 +116,12 @@ JobLauncher::addLaunchRequests(SST::Params& params)
   bool keep_going = true;
   int aid = 1;
   int last_used_aid = 0;
-  SST::Params all_app_params = params.find_scoped_params("app");
+  SST::Params all_app_params = params.get_scoped_params("app");
   while (keep_going || aid < 10){
     std::string name = sprockit::sprintf("app%d",aid);
-    SST::Params app_params = params.find_scoped_params(name);
+    SST::Params app_params = params.get_scoped_params(name);
     if (!app_params.empty()){
-      SST::Params app_params = params.find_scoped_params(name);
+      SST::Params app_params = params.get_scoped_params(name);
       app_params.insert(all_app_params);
       bool terminate_on_end = app_params.find<bool>("terminate", false);
       if (terminate_on_end){
@@ -148,7 +148,7 @@ JobLauncher::addLaunchRequests(SST::Params& params)
     params.find_array("services", services_to_launch);
   }
   for (std::string& str : services_to_launch){
-    SST::Params srv_params = params.find_scoped_params(str);
+    SST::Params srv_params = params.get_scoped_params(str);
     //setup the name for app factory
     srv_params.insert("name", "distributed_service");
     //setup the name for distributed service
