@@ -66,7 +66,7 @@ PiscesNIC::PiscesNIC(uint32_t id, SST::Params& params, Node* parent) :
   NIC(id, params, parent),
   pending_inject_(1)
 {
-  SST::Params inj_params = params.find_scoped_params("injection");
+  SST::Params inj_params = params.get_scoped_params("injection");
   self_mtl_link_ = allocateSubLink("mtl", TimeDelta(), newLinkHandler(this, &NIC::mtlHandle));
 
   inj_credits_ = inj_params.find<SST::UnitAlgebra>("credits").getRoundedValue();

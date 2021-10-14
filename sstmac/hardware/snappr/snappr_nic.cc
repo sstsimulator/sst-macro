@@ -79,7 +79,7 @@ SnapprNIC::SnapprNIC(uint32_t id, SST::Params& params, Node* parent) :
 {
   packet_size_ = params.find<SST::UnitAlgebra>("mtu").getRoundedValue();
 
-  SST::Params inj_params = params.find_scoped_params("injection");
+  SST::Params inj_params = params.get_scoped_params("injection");
 
   //configure for a single port for now
   int num_ports = 1;

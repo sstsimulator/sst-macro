@@ -85,7 +85,7 @@ SerialPartition::~SerialPartition()
 SerialPartition::SerialPartition(SST::Params& params, ParallelRuntime* rt)
  : Partition(params, rt)
 {
-  SST::Params top_params = params.find_scoped_params("topology");
+  SST::Params top_params = params.get_scoped_params("topology");
   hw::Topology* fake_top = sprockit::create<hw::Topology>(
         "macro", top_params.find<std::string>("name"), top_params);
 
@@ -110,7 +110,7 @@ TopologyPartition::TopologyPartition(SST::Params& params, ParallelRuntime* rt)
   : Partition(params, rt)
 {
   //this will need to be fixed later...
-  SST::Params top_params = params.find_scoped_params("topology");
+  SST::Params top_params = params.get_scoped_params("topology");
   fake_top_ = sprockit::create<hw::Topology>(
      "macro", top_params.find<std::string>("name"), top_params);
 
@@ -130,7 +130,7 @@ BlockPartition::~BlockPartition()
 BlockPartition::BlockPartition(SST::Params& params, ParallelRuntime* rt)
   : Partition(params, rt)
 {
-  SST::Params top_params = params.find_scoped_params("topology");
+  SST::Params top_params = params.get_scoped_params("topology");
   fake_top_ = sprockit::create<hw::Topology>(
      "macro", top_params.find<std::string>("name"), top_params);
   num_switches_total_ = fake_top_->numSwitches();

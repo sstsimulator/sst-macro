@@ -102,14 +102,14 @@ Node::Node(uint32_t id, SST::Params& params)
   my_addr_ = params.find<int>("id");
   next_outgoing_id_.setSrcNode(my_addr_);
 
-  SST::Params nic_params = params.find_scoped_params("nic");
+  SST::Params nic_params = params.get_scoped_params("nic");
   auto nic_name = nic_params.find<std::string>("name");
 
-  SST::Params mem_params = params.find_scoped_params("memory");
+  SST::Params mem_params = params.get_scoped_params("memory");
   auto mem_name = mem_params.find<std::string>("name");
   mem_model_ = loadSub<MemoryModel>(mem_name, "memory", MEMORY_SLOT, mem_params, this);
 
-  SST::Params proc_params = params.find_scoped_params("proc");
+  SST::Params proc_params = params.get_scoped_params("proc");
   auto proc_name = proc_params.find<std::string>("processor", "instruction");
   if (proc_name.empty()){
     spkt_abort_printf("Missing node.processor parameter");
@@ -118,7 +118,7 @@ Node::Node(uint32_t id, SST::Params& params)
 
   nsocket_ = params.find<int>("nsockets", 1);
 
-  SST::Params os_params = params.find_scoped_params("os");
+  SST::Params os_params = params.get_scoped_params("os");
   os_ = newSub<sw::OperatingSystem>("os", OS_SLOT, os_params, this);
 
   app_launcher_ = new AppLauncher(os_);
