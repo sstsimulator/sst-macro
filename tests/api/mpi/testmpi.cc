@@ -1556,11 +1556,7 @@ int USER_MAIN(int argc, char *argv[])
 
   double t_stop = get_time();
   double t_total = t_stop - t_start;
-  static bool printed = false;
-  if (!printed){
-    printf("MPI test ran for %8.4fms\n", t_total*1e3);
-    printed = true;
-  } 
+  printf("MPI test ran for %8.4fms\n", t_total*1e3);
 
   return 0;
 }
