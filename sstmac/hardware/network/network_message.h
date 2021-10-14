@@ -387,6 +387,7 @@ class NetworkMessage : public Flow
    * @brief wire_buffer Represents a payload injected on the wire
  */
   void* wire_buffer_ = nullptr;
+  bool wire_is_null_ = false; //only for serialization
 
   sw::AppId aid_;
 
