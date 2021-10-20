@@ -190,9 +190,11 @@ remapParams(sprockit::SimParameters::ptr params, bool verbose)
   /** If more than one thread, make sure event manager is multithreaded */
   if (params->hasParam("sst_nthread")){
     int nthr = params->getIntParam("sst_nthread");
-    if (nthr > 1 && !params->hasParam("event_manager")){
-      params->addParamOverride("event_manager", "multithread");
-    }
+    if (nthr > 1)
+      spkt_abort_printf("sst_nthread > 1 is not currently supported");
+    //if (nthr > 1 && !params->hasParam("event_manager")){
+    //  params->addParamOverride("event_manager", "multithread");
+    //}
   }
 }
 
