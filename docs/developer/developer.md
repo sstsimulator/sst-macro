@@ -1,11 +1,11 @@
 ---
-title: Manual for SST-Macro 11.0.x
+title: Manual for SST-Macro 11.1.x
 published: true
 category: SSTDocumentation
 ---
 
 
-# SST/macro 11.0: Developer's Reference
+# SST/macro 11.1: Developer's Reference
 
 
 ![](https://github.com/sstsimulator/sst-macro/blob/devel/docs/developer/figures/sstlogo.png) 
@@ -167,7 +167,7 @@ Boost is no longer required or even used.
 Some C++11 features like `unordered_map` and `unique_ptr` are used heavily throughout the code.
 
 
-![Figure 2: Structure of the simulation connecting components with links and event handlers.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/developer/figures/EventHandler) 
+![Figure 2: Structure of the simulation connecting components with links and event handlers.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/developer/figures/EventHandler.pdf) 
 
 *Figure 2: Structure of the simulation connecting components with links and event handlers.*
 
@@ -1322,7 +1322,7 @@ serializable* payload_;
 ````
 This covers the source and destination nodes, a unique ID for the flow (e.g. MPI message) the packet came from, the number of bytes of the flow, and optionally a payload object carrying extra data.
 
-To summarize, we have:
+To summarize, we have: \\
 
 
 | Information | Where Stored | Access Method |
