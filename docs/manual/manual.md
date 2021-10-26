@@ -1,11 +1,11 @@
 ---
-title: Manual for SST-Macro 11.0.x
+title: Manual for SST-Macro 11.1.x
 published: true
 category: SSTDocumentation
 ---
 
 
-# SST/macro 11.0 User's Manual
+# SST/macro 11.1 User's Manual
 
 ![](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/sstlogo.png) 
 
@@ -46,10 +46,8 @@ category: SSTDocumentation
          - [2.5.2: Building Skeleton Applications](#sec_tutorial_runapp)
          - [2.5.3: Makefiles](#subsec_tutorial_makefiles)
          - [2.5.4: Command-line arguments](#subsec_tutorial_cmdline)
-      - [Section 2.6: Parallel Simulations in Standalone Mode](#sec_PDES)
-         - [2.6.1: Distributed Memory Parallel](#subsec_mpiparallel)
-         - [2.6.2: Shared Memory Parallel](#subsec_parallelopt)
-         - [2.6.3: Warnings for Parallel Simulation](#subsec_parallelwarn)
+      - [Section 2.6: Parallel Simulations](#sec_PDES)
+         - [2.6.1: Warnings for Parallel Simulation](#subsec_parallelwarn)
       - [Section 2.7: Debug Output](#sec_dbgoutput)
    - [Chapter 3: Basic Tutorials](#chapter_tutorials)
       - [Section 3.1: SST/macro Parameter files](#sec_parameters)
@@ -741,63 +739,64 @@ This can be relative to the current directory, an absolute path, or the name of 
 -   --otf2: If you are in a folder with all the OTF2 traces, you can invoke the main `sstmac` executable with this option.  This replays the trace in a special debug mode for quickly validating the correctness of a trace.
 -   -d [debug flags]: A list of debug flags to activate as a comma-separated list (no spaces) - see Section [2.7](#sec_dbgoutput)
 -   -p [parameter]=[value]: Setting a parameter value (overrides what is in the parameter file)
--   -c: If multithreaded, give a comma-separated list (no spaces) of the core affinities to use - see Section [2.6.2](#subsec_parallelopt)
+-   -c: If multithreaded, give a comma-separated list (no spaces) of the core affinities to use - see Section 
 
-### Section 2.6: Parallel Simulations in Standalone Mode<a name="sec_PDES"></a>
-
-
-
-SST-macro supports running parallel discrete event simulation (PDES) in distributed memory (MPI), threaded shared memory (pthreads) and hybrid (MPI+pthreads) modes.  Running these in standalone mode will be discouraged as parallel simulations should use the unified SST core. However, near-term, hybrid modes and other optimizations are not fully supported in the unified SST core. The standalone core may still be required for certain cases.
-
-#### 2.6.1: Distributed Memory Parallel<a name="subsec_mpiparallel"></a>
-
-
-Configure will automatically check for MPI.
-Your configure should look something like:
-
-````
-sst-macro/build> ../configure CXX=mpicxx CC=mpicc ...
-````
-With the above options, you can just compile and go.
-SST-macro is run exactly like the serial version, but is spawned like any other MPI parallel program.
-Use your favorite MPI launcher to run, e.g. for OpenMPI
-
-````
-mysim> mpirun -n 4 sstmac -f parameters.ini
-````
-or for MPICH
-
-````
-mysim> mpiexec -n 4 sstmac -f parameters.ini
-````
-
-Even if you compile for MPI parallelism, the code can still be run in serial with the same configuration options.
-SST-macro will notice the total number of ranks is 1 and ignore any parallel options.
-When launched with multiple MPI ranks, SST-macro will automatically figure out how many partitions (MPI processes) 
-you are using, partition the network topology into contiguous blocks, and start running in parallel.   
-
-#### 2.6.2: Shared Memory Parallel<a name="subsec_parallelopt"></a>
-
-
-In order to run shared memory parallel, you must configure the simulator with the `--enable-multithread` flag.
-Partitioning for threads is currently always done using block partitioning and there is no need to set an input parameter.
-Including the integer parameter `sst_nthread` specifies the number of threads to be used (per rank in MPI+pthreads mode) in the simulation.
-The following configuration options may provide better threaded performance.
-
--   `--enable-spinlock` replaces pthread mutexes with spinlocks.  Higher performance and recommended when supported.
--   `--enable-cpu-affinity` causes SST-macro to pin threads to specific cpu cores.  When enabled, SST-macro will require the
-`cpu_affinity` parameter, which is a comma separated list of cpu affinities for each MPI task on a node.  SST-macro will sequentially
-pin each thread spawned by a task to the next next higher core number.  For example, with two MPI tasks per node and four threads per MPI task,
-`cpu_affinity = 0,4` will result in MPI tasks pinned to cores 0 and 4, with pthreads pinned to cores 1-3 and 5-7.
-For a threaded only simulation `cpu_affinity = 4` would pin the main process to core 4 and any threads to cores 5 and up.
-The affinities can also be specified on the command line using the `-c` option.
-Job launchers may in some cases provide duplicate functionality and either method can be used.
-
-#### 2.6.3: Warnings for Parallel Simulation<a name="subsec_parallelwarn"></a>
+### Section 2.6: Parallel Simulations<a name="sec_PDES"></a>
 
 
 
--   If the number of simulated processes specified by e.g. `aprun -n 100` does not match the number of nodes in the topology (i.e. you are not space-filling the whole simulated machine), parallel performance will suffer. SST-macro partitions nodes, not MPI ranks.
+SST-macro currently supports running parallel discrete event simulation (PDES) in distributed memory (MPI) mode using SST Core.  
+Parallelism is no longer supported in the standalone (built-in) core, and thread parallelism is not currently supported with SST Core.
+Please consult SST Core documentation for details on parallel execution.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#### 2.6.1: Warnings for Parallel Simulation<a name="subsec_parallelwarn"></a>
+
+
+
+-   If the number of simulated processes specified by e.g. `aprun -n 100` does not match the number of nodes in the topology (i.e. you are not space-filling the whole simulated machine), parallel performance will suffer. Partitioning is by node, not MPI rank.
 
 
 Parallel simulation speedups are likely to be modest for small runs.
