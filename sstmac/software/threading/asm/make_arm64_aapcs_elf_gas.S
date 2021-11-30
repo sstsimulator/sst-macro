@@ -40,16 +40,16 @@
 .cpu    generic+fp+simd
 .text
 .align  2
-.global make_fcontext
-.type   make_fcontext, %function
-make_fcontext:
+.global sstmac_make_fcontext
+.type   sstmac_make_fcontext, %function
+sstmac_make_fcontext:
     # shift address in x0 (allocated stack) to lower 16 byte boundary
     and x0, x0, ~0xF
 
     # reserve space for context-data on context-stack
     sub  x0, x0, #0x70
 
-    # third arg of make_fcontext() == address of context-function
+    # third arg of sstmac_make_fcontext() == address of context-function
     # store address as a PC to jump in
     str  x2, [x0, #0x60]
 
@@ -66,6 +66,6 @@ finish:
     # exit application
     bl  _exit
 
-.size   make_fcontext,.-make_fcontext
+.size   sstmac_make_fcontext,.-sstmac_make_fcontext
 # Mark that we don't need executable stack.
 .section .note.GNU-stack,"",%progbits
