@@ -26,15 +26,17 @@ libsstmac_native_la_SOURCES = \
   serial_runtime.cc \
   manager.cc 
 
-if !INTEGRATED_SST_CORE
-nobase_library_include_HEADERS += \
-  multithreaded_event_container.h \
-  clock_cycle_event_container.h 
-
-libsstmac_native_la_SOURCES += \
-  multithreaded_event_container.cc \
-  clock_cycle_event_container.cc 
-endif
+# only have clock cycle parallel assembly for x86 and multithread isn't working
+# so disabling everything but default "map" event manager
+#if !INTEGRATED_SST_CORE
+#nobase_library_include_HEADERS += \
+#  multithreaded_event_container.h \
+#  clock_cycle_event_container.h 
+#
+#libsstmac_native_la_SOURCES += \
+#  multithreaded_event_container.cc \
+#  clock_cycle_event_container.cc 
+#endif
 
 
   
