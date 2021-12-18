@@ -26,7 +26,8 @@ AM_CXXFLAGS = $(STD_CXXFLAGS)
 exe_LDADD = \
   ../../sstmac/main/libsstmac_main.la \
   ../../sstmac/install/libsstmac.la \
-  ../../sprockit/sprockit/libsprockit.la
+  ../../sprockit/sprockit/libsprockit.la \
+  ../../sumi/libsumi.la
 
 
 sst_deadlock_SOURCES = deadlock.cc

@@ -46,9 +46,10 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/node/node.h>
 
 #include <sstmac/common/sstmac_env.h>
+#include <sstmac/common/event_manager.h>
 #include <sstmac/backends/common/sim_partition.h>
 #include <sstmac/backends/native/manager.h>
-#include <sstmac/backends/native/clock_cycle_event_container.h>
+//#include <sstmac/backends/native/clock_cycle_event_container.h>
 
 #include <sstmac/common/runtime.h>
 
@@ -241,15 +242,17 @@ Manager::Manager(SST::Params& params, ParallelRuntime* rt) :
   interconnect_(nullptr),
   rt_(rt)
 {
+  // only have clock cycle parallel assembly for x86 and multithread isn't working
+  // so disabling everything but default "map" event manager
   std::string event_man = "map";
-  if (rt_->nthread() > 1){
-#if !SSTMAC_USE_MULTITHREAD
-    spkt_abort_printf("did not compile with multithread support: cannot use nthread > 1");
-    event_man = "multithread";
-#endif
-  } else if (rt_->nproc() > 1){
-    event_man = "clock_cycle_parallel";
-  }
+//  if (rt_->nthread() > 1){
+//#if !SSTMAC_USE_MULTITHREAD
+//    spkt_abort_printf("did not compile with multithread support: cannot use nthread > 1");
+//    event_man = "multithread";
+//#endif
+//  } else if (rt_->nproc() > 1){
+//    event_man = "clock_cycle_parallel";
+//  }
   auto type = params.find<std::string>("event_manager", event_man);
   EventManager_ = sprockit::create<EventManager>("macro",type,params,rt_);
   EventManager::global = EventManager_;

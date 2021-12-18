@@ -167,6 +167,19 @@ endif
 libsstmac_sw_la_SOURCES += \
      threading/threading_fcontext.cc
 
+if FCONTEXT_A64
+if FCONTEXT_MAC
+   libsstmac_sw_la_SOURCES += \
+    threading/asm/make_arm64_aapcs_macho_gas.S \
+    threading/asm/jump_arm64_aapcs_macho_gas.S \
+    threading/asm/ontop_arm64_aapcs_macho_gas.S
+else
+   libsstmac_sw_la_SOURCES += \
+    threading/asm/make_arm64_aapcs_elf_gas.S \
+    threading/asm/jump_arm64_aapcs_elf_gas.S \
+    threading/asm/ontop_arm64_aapcs_elf_gas.S
+endif
+else
 if FCONTEXT_X86
 if FCONTEXT_MAC
    libsstmac_sw_la_SOURCES += \
@@ -192,7 +205,4 @@ else
     threading/asm/ontop_i386_sysv_elf_gas.S 
 endif
 endif
-
-
-
-
+endif
