@@ -242,8 +242,9 @@ def run(typ, extraLibs=""):
   from sstccvars import clangCppFlagsStr, clangLdFlagsStr
   from sstccutils import cleanFlag, getProcTree, swapSuffix
 
-
-  needfPIC = "fPIC" in sstCxxFlagsStr
+  # Probably better to just always compile PIC
+  #needfPIC = "fPIC" in sstCxxFlagsStr
+  needfPIC = True
 
   sstmacExe = cleanFlag(os.path.join(prefix, "bin", "sstmac"))
 
