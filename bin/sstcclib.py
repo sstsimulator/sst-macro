@@ -242,8 +242,9 @@ def run(typ, extraLibs=""):
   from sstccvars import clangCppFlagsStr, clangLdFlagsStr
   from sstccutils import cleanFlag, getProcTree, swapSuffix
 
-
-  needfPIC = "fPIC" in sstCxxFlagsStr
+  # Probably better to just always compile PIC
+  #needfPIC = "fPIC" in sstCxxFlagsStr
+  needfPIC = True
 
   sstmacExe = cleanFlag(os.path.join(prefix, "bin", "sstmac"))
 
@@ -490,7 +491,10 @@ def run(typ, extraLibs=""):
       #always use c++ for linking since we are bringing a bunch of sstmac C++ into the game
       ctx.ld = ctx.cxx
     else:
-      ctx.ld = ctx.cc
+      # this mode doesn't work any more (skeletonization uses code that is invalid with C compiler)
+      #ctx.ld = ctx.cc
+      sys.stderr.write("ERROR: Compiling C requires Clang autoskeletonizer\n")
+      sys.exit(1)
     if args.std:
       ctx.cFlags.append("-std=%s" % args.std)
     elif sstCArgs.std:
