@@ -83,7 +83,7 @@ def createBashWrapper(compiler, exeName, ldTarget, sstCore, sstmacExe):
    configlib.read_utf8(ldTarget),
    '"""',
   ]
-  open(exeName,"w").write("\n".join(str_arr))
+  open(exeName,"w",encoding='utf8').write("\n".join(str_arr))
   os.system("chmod +x %s" % exeName)
   return 0
 
