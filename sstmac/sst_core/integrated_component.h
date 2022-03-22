@@ -49,7 +49,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #if SSTMAC_INTEGRATED_SST_CORE
 #include <sst/core/link.h>
-#include <sst/core/linkMap.h>
 #include <sst/core/params.h>
 #include <sst/core/component.h>
 #include <sst/core/subcomponent.h>
