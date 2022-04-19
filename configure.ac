@@ -30,8 +30,8 @@ dnl m4_define([SSTMAC_SNAPSHOT_TAG],-beta1)
 m4_define([SSTMAC_ACVERSION_TAG],
           [SSTMAC_VERSION_TAG.SSTMAC_SUBVERSION_TAG.SSTMAC_SUBSUBVERSION_TAG])
 
-dnl AC_PREREQ([2.68]) avoid this if possible
-AC_INIT([sstmacro], [SSTMAC_ACVERSION_TAG], [sst-macro-help@sandia.gov])
+dnl AC_PREREQ([2.71]) avoid this if possible
+AC_INIT([sstmacro],[SSTMAC_ACVERSION_TAG],[sst-macro-help@sandia.gov])
 AC_CONFIG_MACRO_DIR([acinclude])
 AC_CONFIG_AUX_DIR(bin)
 AC_CONFIG_HEADERS(sstmac/common/config.h)
@@ -109,8 +109,8 @@ dnl AC_PROG_RANLIB
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_FC
-AC_LANG_CPLUSPLUS
-AC_PROG_LIBTOOL
+AC_LANG([C++])
+LT_INIT
 
 LT_INIT([shared disable-static dlopen])
 
