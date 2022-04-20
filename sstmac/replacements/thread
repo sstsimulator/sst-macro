@@ -1,6 +1,10 @@
 #ifndef sstmac_thread_included
 #define sstmac_thread_included
 
+// Replacing std::thread in this manner was very standards non-compliant
+// and it's broken on newer standard library implementations 
+#if 0
+
 #ifndef SSTMAC_INSIDE_STL
 #define SSTMAC_INSIDE_STL
 #define THREAD_OWNS_STL
@@ -28,6 +32,7 @@ template <class T=void> T yield(){}
 #include <sstmac/replacements/sstmac_pthread_return.h>
 #endif
 
+#endif // end if 0 
 
 #endif
 

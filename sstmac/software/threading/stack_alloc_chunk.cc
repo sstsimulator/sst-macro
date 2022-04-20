@@ -67,7 +67,7 @@ StackAlloc::chunk::chunk(size_t stacksize, size_t suggested_chunk_size, bool pro
 {
   // Now allocate our chunk.
   int mmap_flags = MAP_PRIVATE | MAP_ANON;
-  addr_ = (char*)mmap(0, size_, PROT_READ | PROT_WRITE | PROT_EXEC,
+  addr_ = (char*)mmap(0, size_, PROT_READ | PROT_WRITE,
                       mmap_flags, -1, 0);
   if(addr_ == MAP_FAILED) {
     cerrn << "Failed to mmap a region of size " << size_ << ": "
