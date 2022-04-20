@@ -2,11 +2,7 @@
 
 # Single Switch Validation Benchmark
 
-#### Copyright (c) 2009-2021, Sandia National Laboratories
-Sandia National Laboratories is a multimission laboratory managed and operated
-by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
-owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
-Energy's National Nuclear Security Administration under contract DE-NA0003525.
+#### Copyright (c) 2009-2022, National Technology and Engineering Solutions of Sandia, LLC (NTESS)
 
 ---
 

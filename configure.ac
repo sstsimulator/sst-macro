@@ -1,13 +1,48 @@
 dnl 
 dnl   This file is part of SST/macroscale: 
 dnl                The macroscale architecture simulator from the SST suite.
-dnl   Copyright (c) 2009-2021, NTESS.
-dnl   This software is distributed under the BSD License.
-dnl   Under the terms of Contract DE-NA0003525 with NTESS,
-dnl   the U.S. Government retains certain rights in this software.
-dnl   For more information, see the LICENSE file in the top 
-dnl   SST/macroscale directory.
 dnl
+
+dnl Copyright 2009-2022 National Technology and Engineering Solutions of Sandia,
+dnl LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S. Government
+dnl retains certain rights in this software.
+dnl
+dnl Sandia National Laboratories is a multimission laboratory managed and operated
+dnl by National Technology and Engineering Solutions of Sandia, LLC., a wholly
+dnl owned subsidiary of Honeywell International, Inc., for the U.S. Department of
+dnl Energy's National Nuclear Security Administration under contract DE-NA0003525.
+dnl
+dnl Copyright (c) 2009-2022, NTESS
+dnl
+dnl All rights reserved.
+dnl
+dnl Redistribution and use in source and binary forms, with or without
+dnl modification, are permitted provided that the following conditions are
+dnl met:
+dnl
+dnl * Redistributions of source code must retain the above copyright
+dnl   notice, this list of conditions and the following disclaimer.
+dnl
+dnl * Redistributions in binary form must reproduce the above
+dnl   copyright notice, this list of conditions and the following
+dnl   disclaimer in the documentation and/or other materials provided
+dnl   with the distribution.
+dnl
+dnl * Neither the name of the copyright holder nor the names of its
+dnl   contributors may be used to endorse or promote products derived
+dnl   from this software without specific prior written permission.
+dnl
+dnl THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+dnl "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+dnl LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+dnl A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+dnl OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+dnl SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+dnl LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+dnl DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+dnl THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+dnl (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+dnl OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #-------------------------------------------------
   launch/launch_info.h  \
