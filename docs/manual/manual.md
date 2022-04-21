@@ -1,11 +1,11 @@
 ---
-title: Manual for SST-Macro 11.1.x
+title: Manual for SST-Macro 12.0.x
 published: true
 category: SSTDocumentation
 ---
 
 
-# SST/macro 11.1 User's Manual
+# SST/macro 12.0 User's Manual
 
 ![](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/sstlogo.png) 
 
@@ -322,7 +322,7 @@ The following are dependencies for SST-macro.
 
 
 -   (optional) Git is needed in order to clone the source code repository, but you can also download a tar (Section [2.1.1](#subsec_build_downloading)).
--   Autoconf: 2.68 or later
+-   Autoconf: 2.71 or later
 -   Automake: 1.11.1 or later
 -   Libtool: 2.4 or later
 -   A C/C++ compiler is required with C++11 support.  gcc >=4.8.5 and clang >= 3.7 are known to work.

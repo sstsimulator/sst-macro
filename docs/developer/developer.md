@@ -1,11 +1,11 @@
 ---
-title: Manual for SST-Macro 11.1.x
+title: Manual for SST-Macro 12.0.x
 published: true
 category: SSTDocumentation
 ---
 
 
-# SST/macro 11.1: Developer's Reference
+# SST/macro 12.0: Developer's Reference
 
 
 ![](https://github.com/sstsimulator/sst-macro/blob/devel/docs/developer/figures/sstlogo.png) 
@@ -167,7 +167,7 @@ Boost is no longer required or even used.
 Some C++11 features like `unordered_map` and `unique_ptr` are used heavily throughout the code.
 
 
-![Figure 2: Structure of the simulation connecting components with links and event handlers.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/developer/figures/EventHandler.pdf) 
+![Figure 2: Structure of the simulation connecting components with links and event handlers.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/developer/figures/EventHandler) 
 
 *Figure 2: Structure of the simulation connecting components with links and event handlers.*
 
@@ -1107,12 +1107,16 @@ To access a specific API, a special helper template function `getApi` exists on 
 Thus, instead of calling a global function `MPI_Send`,
 SST/macro redirects to a member function `send` on an `mpi_api` object that is specific to a virtual MPI rank.
 
-| | OS | Node | API | Service |
+\begin{table}
+
+
+| p{2cm} >{\raggedright}p{3cm} >{\raggedright}p{3cm} >{\raggedright}p{3cm} >{\raggedright\arraybackslash}p{3cm}} | OS | Node | API | Service |
 |----------------------------------------------------------------------------------------------------------------|----|------|-----|---------|
 | Runs on Thread | Both user-space and main DES thread | Only main DES thread (user-space with rare exceptions for optimization) | Only user-space thread | Only main DES thread |
 | How Advances Time | Both blocking and scheduling events, depending on context | Scheduling events to other components | Blocking or unblocking | Scheduling events to other components |
 | Receives Events Via | Function calls from API/Service or from Node via `handle_event` function | Function calls from OS, receives scheduled events via the `handle` function | Does not usually receive events - only blocks or unblocks | OS forwards messages to `incoming_event` function |
 | Sends Events Via | Makes function calls and schedules events to Node | Makes function calls and schedules events to NIC, Memory | Does not usually send events - only blocks or unblocks | Makes function calls and schedules events to OS, unblocks APIs |
+\end{table}
 
 ### Section 6.2: Libraries<a name="sec_libraries"></a>
 
