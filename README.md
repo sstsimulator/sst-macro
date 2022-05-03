@@ -21,7 +21,7 @@ The most unique functionality is dedicated to skeleton applications which run as
 To learn more, see the PDF manuals in the top-level source directory. 
 Visit [sst-simulator.org](http://sst-simulator.org) to learn more about SST core.
 
-##### [LICENSE](https://github.com/sstsimulator/sst-core/blob/devel/LICENSE)
+##### [LICENSE](https://github.com/sstsimulator/sst-core/blob/devel/LICENSE.md)
 
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
