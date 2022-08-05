@@ -42,13 +42,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sstmac/replacements/thread>
 #include <sstmac/replacements/mutex>
 #include <sstmac/skeleton.h>
 #include <sstmac/compute.h>
 #include <sstmac/software/process/cppglobal.h>
 #include <iostream>
-
+#include <pthread.h>
 
 extern "C" int ubuntu_cant_name_mangle() { return 0; }
 
@@ -56,15 +55,17 @@ struct tag1{}; struct tag2{};
 sstmac::CppVarTemplate<tag1,int,true> count(0);
 sstmac::CppVarTemplate<tag2,int,true> id(0);
 
-void thrash(std::mutex*  /*mtx*/, int myId)
+void * thrash(void * myId)
 {
-  id() = myId;
+  id() = (long)myId;
   for (int i=0; i < 3; ++i){
     std::cout << "Thread " << id()
         << " has count " << count() << std::endl;
     sstmac_sleep(1);
     count() += 1;
   }
+
+  return nullptr;
 }
 
 
@@ -73,14 +74,15 @@ void thrash(std::mutex*  /*mtx*/, int myId)
 int USER_MAIN(int  /*argc*/, char**  /*argv*/)
 {
   //now test some mutexes
-  std::mutex mtx;
-  std::thread t0(thrash, &mtx, 0);
-  std::thread t1(thrash, &mtx, 1);
-  std::thread t2(thrash, &mtx, 2);
+  pthread_t t0, t1, t2;
 
-  t0.join();
-  t1.join();
-  t2.join();
+  pthread_create(&t0, nullptr, thrash, (void*)0);
+  pthread_create(&t1, nullptr, thrash, (void*)1);
+  pthread_create(&t2, nullptr, thrash, (void*)2);
+
+  pthread_join(t0, nullptr);
+  pthread_join(t1, nullptr);
+  pthread_join(t2, nullptr);
 
   return 0;
 }
