@@ -3,7 +3,7 @@ if !INTEGRATED_SST_CORE
 EXTRA_CPPFLAGS = -I$(top_builddir)/sstmac/replacements \
  -I$(top_srcdir)/sstmac/replacements 
 
-check_PROGRAMS = test_utilities test_pthread test_blas
+check_PROGRAMS = test_utilities test_pthread test_blas test_tls
 test_utilities_SOURCES = test_utilities.cc
 test_utilities_LDADD = $(CORE_LIBS)
 # disable test_std_thread and test_tls because of problems with std::thread replacement
@@ -32,13 +32,13 @@ test_blas_LDADD = libsstmac_test_blas.la \
 #  $(top_builddir)/sstmac/main/libsstmac_main.la \
 #  $(CORE_LIBS)
 
-#noinst_LTLIBRARIES += libsstmac_test_tls.la
-#test_tls_SOURCES = dummy_tls.cc
-#libsstmac_test_tls_la_SOURCES = test_tls.cc
-#libsstmac_test_tls_la_CPPFLAGS = $(EXTRA_CPPFLAGS) $(AM_CPPFLAGS)
-#test_tls_LDADD = libsstmac_test_tls.la \
-#  $(top_builddir)/sstmac/main/libsstmac_main.la \
-#  $(CORE_LIBS)
+noinst_LTLIBRARIES += libsstmac_test_tls.la
+test_tls_SOURCES = dummy_tls.cc
+libsstmac_test_tls_la_SOURCES = test_tls.cc
+libsstmac_test_tls_la_CPPFLAGS = $(EXTRA_CPPFLAGS) $(AM_CPPFLAGS)
+test_tls_LDADD = libsstmac_test_tls.la \
+  $(top_builddir)/sstmac/main/libsstmac_main.la \
+  $(CORE_LIBS)
 
 endif
 
