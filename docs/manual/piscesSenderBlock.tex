@@ -1,3 +1,5 @@
+\openTable
+\hline
 arbitrator \paramType{string} & cut\_through & null, simple, cut\_through & Bandwidth arbitrator for PISCES congestion modeling. Null uses simple delays with no congestion. Simple uses store-and-forward that is cheap to compute, but can have severe latency errors for large packets. Cut-through approximates pipelining of flits across stages.  \\
 \hline
 latency \paramType{time} & No default & & The latency to traverse the component \\
@@ -6,4 +8,4 @@ bandwidth & No default & & The bandwidth of the arbitrator \\
 \hline
 credits \paramType{byte length} & No default & & The number of initial credits for the component. Corresponds to an input buffer on another component. In many cases, SST/macro can compute this from other parameters and fill in the value. In some cases, it will be required. \\
 \hline
-
+\end{tabular}
