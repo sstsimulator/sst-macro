@@ -162,15 +162,6 @@ py_add_sub_params(PyObject* dict, sprockit::SimParameters::ptr params)
   }
 }
 
-PyObject*
-py_dict_from_params(SST::Params& params)
-{
-  PyObject* dict = PyDict_New();
-  sstmac::py_add_params(dict, params);
-  sstmac::py_add_sub_params(dict, params);
-  return dict;
-}
-
 }
 
 static PyObject*
