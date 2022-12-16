@@ -113,7 +113,7 @@ inline PyObject* py_tuple_from_int_vector(const std::vector<int>& vec){
  * @param dict    [out]
  * @param params  [in]
  */
-void py_add_params(PyObject* dict, SST::Params& params);
+void py_add_params(PyObject* dict, sprockit::SimParameters::ptr params);
 
 /**
  * @brief py_add_sub_params Take all the key-value parameters in a sprockit params object
@@ -123,14 +123,6 @@ void py_add_params(PyObject* dict, SST::Params& params);
  * @param params  [in]
  */
 void py_add_sub_params(PyObject* dict, SST::Params& params);
-
-/**
- * @brief py_dict_from_params Wrapper to py_add_params that creates a new Python dictionary
- *        and stores all the key-value pairs in params
- * @param params
- * @return A python dictionary (recursive for namespaces)
- */
-PyObject* py_dict_from_params(SST::Params& params);
 
 } // end namespace sstmac
 
