@@ -20,6 +20,7 @@
 \usepackage{amsmath}
 \usepackage{xspace}
 \usepackage[tt]{titlepic}
+\usepackage{ltablex}
 
 \usepackage{sstmacro}
 
@@ -51,13 +52,14 @@
 \newcommand{\stopvi}{\end{ViFile}}
 
 \newcommand{\tableConfig}{| p{5cm} | p{2cm} | p{3cm} | p{8cm} |}
-\newcommand{\openTable}{\begin{tabular}{\tableConfig}}
+\newcommand{\openTable}{\begin{tabular}{| p{5cm} | p{2cm} | p{3cm} | p{8cm} |}}
+\newcommand{\openLongTable}{\begin{tabularx}{\linewidth}{| p{5cm} | p{2cm} | p{3cm} | p{8cm} |}}
 \newcommand{\paramType}[1]{\newline (#1)}
 \hyphenpenalty=10000
 \pagestyle{empty}
 
 
-\title{SST/macro 12.0: User's Manual}
+\title{SST/macro 12.1: User's Manual}
 \titlepic{\includegraphics[width=0.3\textwidth]{figures/sstlogo.png}}
 \author{Sandia National Labs \\ Livermore, CA}
 

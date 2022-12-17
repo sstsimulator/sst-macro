@@ -175,7 +175,7 @@ macCheck=`echo $host_os | awk '{print substr(\$ 1,0,6)}'`
 
 AM_CONDITIONAL(FCONTEXT_X86, [test "X$host_cpu" = "Xx86_64"])
 AM_CONDITIONAL(FCONTEXT_MAC, [test "X$macCheck" = "Xdarwin"])
-AM_CONDITIONAL(FCONTEXT_A64, [test "X$host_cpu" = "Xarm64" -o "X$host_cpu" = "Xaarch64"])
+AM_CONDITIONAL(FCONTEXT_A64, [test "X$host_cpu" = "Xarm64" -o "X$host_cpu" = "Xaarch64" -o "X$host_cpu" = "Xarm"])
 
 #previously we would have checked for at least one threading interface
 #but now we guarantee that fcontext is available to use

@@ -5,7 +5,7 @@
 The following chapter is organized by parameter namespaces. Tables in each namespace are organized as
 \def\arraystretch{1.5}%  1 is the default, change whatever you need
 
-\begin{tabular}{\tableConfig}
+\openTable
 \hline
 Name (type) & Default if not given & Allowed \newline Values & Description \\
 \hline
@@ -91,6 +91,8 @@ group\_connections \paramType{int} & No default & Positive int & For cascase ir 
 redundant \paramType{vector of int} & vector of 1's & Positive ints & For Cartesian topologies (hypercube, cascadem, dragonfly, torus) this specifies a bandwidth (redundancy) multiplier for network links in each dimension. \\
 \hline
 \end{tabular}
+
+\vspace*{-5cm}
 
 \section{Namespace ``node''}
 \label{sec:nodeParams}
@@ -231,7 +233,7 @@ ugal\_threshold \paramType{int} & 0 & & The minimum number of network hops requi
 \label{sec:appN:Params}
 This is a series of namespaces \inlineshell{app1}, \inlineshell{app2}, and so on for each of the launched applications. These should be contained within the \inlineshell{node} namespace.
 
-\openTable
+\openLongTable
 \hline
 name \paramType{string} & No default & parsedumpi, cxx\_full\_main, cxx\_empty\_main & The name of the application to launch. Very few applications are built-in. Registration of external apps is shown starting in Section \ref{sec:tutorial:basicmpi}. \\
 \hline
@@ -271,11 +273,6 @@ parsedumpi\_terminate\_percent \paramType{int} & 100 & 1-100 & Percent of trace.
 \hline
 host\_compute\_timer \paramType{bool} & False & & Use the compute time on the host to estimate compute delays \\
 \hline
-\end{tabular}
-
-\openTable
-\\
-\hline
 otf2\_metafile \paramType{string} & No default & string & The root file of an OTF2 trace. \\
 \hline
 otf2\_timescale \paramType{double} & 1.0 & Positive float & If running OTF2 traces, scale compute times by the given value. Values less than 1.0 speed up computation. Values greater than 1.0 slow down computation. \\
@@ -292,6 +289,6 @@ otf2\_print\_time\_deltas \paramType{bool} & false & & Debugging flag that print
 otf2\_warn\_unknown\_callback \paramType{bool} & false & & Debugging flag the prints unknown callbacks
 \\
 \hline
-\end{tabular}
+\end{tabularx}
 
 
