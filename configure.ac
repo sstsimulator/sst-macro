@@ -50,8 +50,8 @@ dnl OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #-------------------------------------------------
 
 # Version info, used both in library versioning and inside sstmacro.
-m4_define([SSTMAC_VERSION_TAG], 12)
-m4_define([SSTMAC_SUBVERSION_TAG], 1)
+m4_define([SSTMAC_VERSION_TAG], 13)
+m4_define([SSTMAC_SUBVERSION_TAG], 0)
 m4_define([SSTMAC_SUBSUBVERSION_TAG], 0)
 
 dnl Enable this for releases
