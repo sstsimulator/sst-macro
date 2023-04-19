@@ -42,7 +42,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sst/core/part/sstpart.h>
+#include <sst/core/sstpart.h>
 #include <sst_config.h>
 #include <sst/core/configGraph.h>
 #include <sprockit/sim_parameters.h>
