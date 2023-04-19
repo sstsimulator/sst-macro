@@ -3,7 +3,7 @@ dnl   This file is part of SST/macroscale:
 dnl                The macroscale architecture simulator from the SST suite.
 dnl
 
-dnl Copyright 2009-2022 National Technology and Engineering Solutions of Sandia,
+dnl Copyright 2009-2023 National Technology and Engineering Solutions of Sandia,
 dnl LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S. Government
 dnl retains certain rights in this software.
 dnl
@@ -12,7 +12,7 @@ dnl by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 dnl owned subsidiary of Honeywell International, Inc., for the U.S. Department of
 dnl Energy's National Nuclear Security Administration under contract DE-NA0003525.
 dnl
-dnl Copyright (c) 2009-2022, NTESS
+dnl Copyright (c) 2009-2023, NTESS
 dnl
 dnl All rights reserved.
 dnl
