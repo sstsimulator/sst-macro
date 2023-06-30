@@ -2,7 +2,7 @@
 
 prefix=@prefix@
 exec_prefix=@exec_prefix@
-ldflags="@LDFLAGS@ -L@libdir@ -lsprockit -lsstmac @BOOST_LDFLAGS@ @LIBS@"
+ldflags="@LDFLAGS@ -L@libdir@ -lsprockit -lsstmac @LIBS@"
 libdir="@libdir@"
 libs="@LIBS@"
 includedir=@includedir@
@@ -10,7 +10,7 @@ package="@PACKAGE@"
 version="@VERSION@"
 cflags="@CFLAGS@"
 cc="@CC@"
-cppflags="@BOOST_CPPFLAGS@ -I${includedir}/sstmac @CPPFLAGS@ -I${includedir} -I${includedir}/sstmac/software/libraries -I${includedir}/sstmac -I${includedir}/sstmac/tools"
+cppflags="-I${includedir}/sstmac @CPPFLAGS@ -I${includedir} -I${includedir}/sstmac/software/libraries -I${includedir}/sstmac -I${includedir}/sstmac/tools"
 cxxflags="@CXXFLAGS@"
 cxx="@CXX@"
 upc="@UPC@"
