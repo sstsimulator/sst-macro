@@ -99,7 +99,7 @@ dnl For new releases the following procedure is used to determine the new versio
 dnl If incompatible changes are made: CURRENT++, REVISION=0, AGE=0
 dnl else if interfaces are added: CURRENT++, REVISION=0, AGE++
 dnl else (no interface changes): REVISION++
-m4_define([SSTMAC_CURRENT_LIBVERS],  12)
+m4_define([SSTMAC_CURRENT_LIBVERS],  13)
 m4_define([SSTMAC_REVISION_LIBVERS], 1)
 m4_define([SSTMAC_AGE_LIBVERS],      0)
 m4_define([SSTMAC_LIBVERSION_TAG],
