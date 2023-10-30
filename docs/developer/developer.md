@@ -1,5 +1,5 @@
 ---
-title: Manual for SST-Macro 13.x
+title: Manual for SST-Macro 13.1.x
 published: true
 category: SSTDocumentation
 ---

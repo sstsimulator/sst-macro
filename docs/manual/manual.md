@@ -1,5 +1,5 @@
 ---
-title: Manual for SST-Macro 13.x
+title: Manual for SST-Macro 13.1.x
 published: true
 category: SSTDocumentation
 ---
@@ -3598,9 +3598,9 @@ The following chapter is organized by parameter namespaces. Tables in each names
 
 
 
+| Name (type) | Default | Allowed | Description |
+|-------------|---------|---------|-------------|
 | Name (type) | Default if not given | Allowed  Values | Description |
-|-------------|----------------------|-----------------|-------------|
-|             |                      |                 |             |
 
 which lists the possible parameter names, allowed values, and brief descriptions.
 More detailed descriptions of particular parameter values are found in the documentation in previous chapters.
@@ -3654,6 +3654,8 @@ The allowed parameter types are:
 | num\_core\_switches | No default | Positive int | The total number of core switches in a tapered tree linking the individual aggregation trees. |
 | group\_connections (int) | No default | Positive int | For cascase ir dragonfly, the number of intergroup connections on each switch in a Dragonfly group |
 | redundant (vector of int) | vector of 1's | Positive ints | For Cartesian topologies (hypercube, cascadem, dragonfly, torus) this specifies a bandwidth (redundancy) multiplier for network links in each dimension. |
+
+\vspace*{-5cm}
 
 ### Section 8.3: Namespace "node"<a name="sec_nodeParams"></a>
 
@@ -3778,6 +3780,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | credits (byte length) | No default |  | The number of initial credits for the component. Corresponds to an input buffer on another component. In many cases, SST/macro can compute this from other parameters and fill in the value. In some cases, it will be required. |
 
 
+
 #### 8.5.3: Namespace ``switch.link"<a name="subsec_switch_link_Params"></a>
 
 
@@ -3791,43 +3794,69 @@ All other parameters can be filled in from `node.nic.injection`.
 
 
 
+
 ### Section 8.6: Namespace "appN"<a name="sec_appN_Params"></a>
 
 
 This is a series of namespaces `app1`, `app2`, and so on for each of the launched applications. These should be contained within the `node` namespace.
 
-
-| Name (type) | Default | Allowed | Description |
-|-------------|---------|---------|-------------|
-| name (string) | No default | parsedumpi, cxx\_full\_main, cxx\_empty\_main | The name of the application to launch. Very few applications are built-in. Registration of external apps is shown starting in Section [3.5](#sec_tutorial_basicmpi). |
-| size (int) | No default | Positive int | The number of procs (MPI ranks) to launch. If launch\_cmd given, this parameter is not required. |
-| start (int) | 0 |  | The time at which a launch request for the application will be made |
-| concentration (int) | 1 | Positive int | The number of procs (MPI ranks) per compute node |
-| core\_affinities (vector of int) | Empty |  |  |
-| launch\_cmd (string) | No default | Valid aprun or srun | This uses a launch command as would be found with ALPS or SLURM launchers on real systems, e.g. aprun -n 4 -N 1 |
-| indexing (string) | block | block, random, cart, node\_id, coordinate | The indexing scheme for assign proc ID (MPI rank number) to compute nodes |
-| node\_id\_mapper\_file (filepath) | No default |  | If using Node ID indexing, the file containing the node ID index list |
-| random\_indexer\_seed (long) | System time |  | The seed to use for a random allocation. If not specified, system time is used. |
-| allocation (string) | first\_available | first\_available, random, cart, node\_id, coordinate | The scheme to use for allocating compute nodes to a given job. |
-| random\_allocation\_seed (long) | System time |  | For random allocation policy. If unspecified, system time is used as the seed. |
-| node\_id\_allocation\_file (filepath) | No default |  | If using Node ID allocation, the file containing the list of node IDs to allocate for the job |
-| dumpi\_metaname (filepath) | No default |  | If running DUMPI trace, the location of the metafile for configuring trace replay |
-| coordinate\_file (filepath) | No default |  | If running using coordinate allocation or indexing, the path to the file containing the node coordinates of each proc (MPI rank) |
-| cart\_sizes (vector of int) | No default |  | Launch a contiguous block of nodes in a Cartesian topology. This gives the size of each dimension in the block. |
-| cart\_offsets (vector of int) | No default |  | Launch a contiguous block nodes in a Cartesian topology. This gives the offset in each dimension where the block begins. |
-| parsedumpi\_timescale (double) | 1.0 | Positive float | If running DUMPI traces, scale compute times by the given value. Values less than 1.0 speed up computation. Values greater than 1.0 slow down computation. |
-| parsedumpi\_terminate\_percent (int) | 100 | 1-100 | Percent of trace. Can be used to terminate large traces early |
-| host\_compute\_timer (bool) | False |  | Use the compute time on the host to estimate compute delays |
-
-
-| Name (type) | Default | Allowed | Description |
-|-------------|---------|---------|-------------|
-| otf2\_metafile (string) | No default | string | The root file of an OTF2 trace. |
-| otf2\_timescale (double) | 1.0 | Positive float | If running OTF2 traces, scale compute times by the given value. Values less than 1.0 speed up computation. Values greater than 1.0 slow down computation. |
-| otf2\_print\_mpi\_calls (bool) | false |  | Print MPI calls found in the OTF2 trace |
-| otf2\_print\_trace\_events (bool) | false |  | Debugging flag that printsindividual trace events (which includes details such as when an MPI call begins, ends, and when a collective begins and ends |
-| otf2\_print\_time\_deltas (bool) | false |  | Debugging flag that prints compute delays injected by the simulator |
-| otf2\_warn\_unknown\_callback (bool) | false |  | Debugging flag the prints unknown callbacks |
+\openLongTable
+\hline
+name (string) & No default & parsedumpi, cxx\_full\_main, cxx\_empty\_main & The name of the application to launch. Very few applications are built-in. Registration of external apps is shown starting in Section [3.5](#sec_tutorial_basicmpi). \\
+\hline
+size (int) & No default & Positive int & The number of procs (MPI ranks) to launch. If launch\_cmd given, this parameter is not required. \\
+\hline
+start (int) & 0 & & The time at which a launch request for the application will be made \\
+\hline
+concentration (int) & 1 & Positive int & The number of procs (MPI ranks) per compute node \\
+\hline
+core\_affinities (vector of int) & Empty & & \\
+\hline
+launch\_cmd (string) & No default & Valid aprun or srun & This uses a launch command as would be found with ALPS or SLURM launchers on real systems, e.g. aprun -n 4 -N 1 \\
+\hline
+indexing (string) & block & block, random, cart, node\_id, coordinate & The indexing scheme for assign proc ID (MPI rank number) to compute nodes \\
+\hline
+node\_id\_mapper\_file (filepath) & No default & & If using Node ID indexing, the file containing the node ID index list \\
+\hline 
+random\_indexer\_seed (long) & System time & & The seed to use for a random allocation. If not specified, system time is used. \\
+\hline
+allocation (string) & first\_available & first\_available, random, cart, node\_id, coordinate & The scheme to use for allocating compute nodes to a given job. \\
+\hline
+random\_allocation\_seed (long) & System time & & For random allocation policy. If unspecified, system time is used as the seed.  \\
+\hline
+node\_id\_allocation\_file (filepath) & No default & & If using Node ID allocation, the file containing the list of node IDs to allocate for the job \\
+\hline
+dumpi\_metaname (filepath) & No default & & If running DUMPI trace, the location of the metafile for configuring trace replay \\ 
+\hline
+coordinate\_file (filepath) & No default & & If running using coordinate allocation or indexing, the path to the file containing the node coordinates of each proc (MPI rank) \\ 
+\hline
+cart\_sizes (vector of int) & No default & & Launch a contiguous block of nodes in a Cartesian topology. This gives the size of each dimension in the block. \\
+\hline 
+cart\_offsets (vector of int) & No default & & Launch a contiguous block nodes in a Cartesian topology. This gives the offset in each dimension where the block begins. \\
+\hline
+parsedumpi\_timescale (double) & 1.0 & Positive float & If running DUMPI traces, scale compute times by the given value. Values less than 1.0 speed up computation. Values greater than 1.0 slow down computation. \\
+\hline
+parsedumpi\_terminate\_percent (int) & 100 & 1-100 & Percent of trace. Can be used to terminate large traces early \\
+\hline
+host\_compute\_timer (bool) & False & & Use the compute time on the host to estimate compute delays \\
+\hline
+otf2\_metafile (string) & No default & string & The root file of an OTF2 trace. \\
+\hline
+otf2\_timescale (double) & 1.0 & Positive float & If running OTF2 traces, scale compute times by the given value. Values less than 1.0 speed up computation. Values greater than 1.0 slow down computation. \\
+\hline
+otf2\_print\_mpi\_calls (bool) & false & & Print MPI calls found in the OTF2 trace
+\\
+\hline
+otf2\_print\_trace\_events (bool) & false & & Debugging flag that printsindividual trace events (which includes details such as when an MPI call begins, ends, and when a collective begins and ends
+\\
+\hline
+otf2\_print\_time\_deltas (bool) & false & & Debugging flag that prints compute delays injected by the simulator
+\\
+\hline
+otf2\_warn\_unknown\_callback (bool) & false & & Debugging flag the prints unknown callbacks
+\\
+\hline
+\end{tabularx}
 
 
 
