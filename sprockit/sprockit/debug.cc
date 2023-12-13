@@ -224,6 +224,7 @@ normalize_string(const std::string& thestr,
 void
 Debug::printAllDebugSlots(std::ostream& os)
 {
+  checkInit();
   std::string indent = sprockit::sprintf("%22s", "");
   os << "Valid debug flags are:\n";
   std::map<std::string, std::string>::iterator it, end = docstrings_->end();
