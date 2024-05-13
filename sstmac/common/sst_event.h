@@ -64,6 +64,7 @@ class Event : public serializable
 {
  public:
   void serialize_order(serializer&) override{}
+  virtual std::string toString() const { return ""; }
 };
 #endif
 
