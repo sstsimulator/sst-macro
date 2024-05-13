@@ -73,14 +73,14 @@ char* sstmac_getenv(const char* name);
 int sstmac_putenv(char* input);
 int sstmac_setenv(const char* name, const char* val, int overwrite);
 
-#ifdef __cplusplus
-}
-#endif
-
 #include_next <stdlib.h>
 
 #pragma sst null_ptr safe
 void free(void* ptr);
+
+#ifdef __cplusplus
+}
+#endif
 
 #ifndef __need_malloc_and_calloc
 #define atexit sstmac_atexit
