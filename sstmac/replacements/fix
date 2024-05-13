@@ -36,12 +36,12 @@ def run(regex, out, path):
   else:
     repl(path, str_arr)
 
-regex = re.compile("use of undeclared id.*?(__built.*?)'",re.DOTALL)
+regex = re.compile(r"use of undeclared id.*?(__built.*?)'",re.DOTALL)
 run(regex,out,path)
-regex = re.compile("argument to.*?(__built.*?)'",re.DOTALL)
+regex = re.compile(r"argument to.*?(__built.*?)'",re.DOTALL)
 run(regex,out,path)
 
-regex = re.compile("C-style cast.*?different size.*? return [(]([_\da-z ]+).*?(__built.*?)[ ']", re.DOTALL)
+regex = re.compile(r"C-style cast.*?different size.*? return [(]([_\da-z ]+).*?(__built.*?)[ ']", re.DOTALL)
 already_done = {}
 str_arr = []
 matches = regex.findall(out)
@@ -60,7 +60,7 @@ if matches:
 else:
   print "None"
 
-regex = re.compile("C-style cast from.*?return [(]([_\da-z ]+).*?(__built.*?)[ ']", re.DOTALL)
+regex = re.compile(r"C-style cast from.*?return [(]([_\da-z ]+).*?(__built.*?)[ ']", re.DOTALL)
 already_done = {}
 str_arr = []
 matches = regex.findall(out)
@@ -79,7 +79,7 @@ if matches:
 else:
   print "None"
 
-regex = re.compile("cannot initialize.*?return object of type '(.*?)'.*?return (__built.*?) ", re.DOTALL)
+regex = re.compile(r"cannot initialize.*?return object of type '(.*?)'.*?return (__built.*?) ", re.DOTALL)
 already_done = {}
 str_arr = []
 matches = regex.findall(out)
@@ -98,7 +98,7 @@ if matches:
 else:
   print "None"
 
-regex = re.compile("cannot initialize a.*?parameter of type.*?(__built.*?) ", re.DOTALL)
+regex = re.compile(r"cannot initialize a.*?parameter of type.*?(__built.*?) ", re.DOTALL)
 already_done = {}
 matches = regex.findall(out)
 for name in matches:

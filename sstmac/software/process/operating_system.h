@@ -93,7 +93,7 @@ class OperatingSystem : public SubComponent
   SST_ELI_REGISTER_SUBCOMPONENT_API(sstmac::sw::OperatingSystem,
                                     hw::Node*)
 
-  SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(
+  SST_ELI_REGISTER_SUBCOMPONENT(
     OperatingSystem,
     "macro",
     "os",

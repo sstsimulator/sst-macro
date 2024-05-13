@@ -64,7 +64,7 @@ class SnapprNIC :
 {
  public:
 #if SSTMAC_INTEGRATED_SST_CORE
-  SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(
+  SST_ELI_REGISTER_SUBCOMPONENT(
     SnapprNIC,
     "macro",
     "snappr_nic",

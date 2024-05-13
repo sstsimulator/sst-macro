@@ -90,7 +90,7 @@ SimpleNode::init(SSTMAC_MAYBE_UNUSED unsigned int phase)
   if (phase == 1){
     SST::Link* link0 = unblock_links_[0];
     if (link0){
-      Event* ev = link0->recvInitData();
+      Event* ev = link0->recvUntimedData();
       auto* nev = dynamic_cast<SST::ArielComponent::NameEvent*>(ev);
       os_->setIpcName(nev->name());
     }

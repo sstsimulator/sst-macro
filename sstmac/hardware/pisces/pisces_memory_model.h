@@ -59,7 +59,7 @@ class PiscesMemoryModel : public MemoryModel
 {
  public:
 #if SSTMAC_INTEGRATED_SST_CORE
-  SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(
+  SST_ELI_REGISTER_SUBCOMPONENT(
     PiscesMemoryModel,
     "macro",
     "pisces_memory",

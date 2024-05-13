@@ -61,7 +61,7 @@ class PiscesNIC : public NIC
 {
  public:
 #if SSTMAC_INTEGRATED_SST_CORE
-  SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(
+  SST_ELI_REGISTER_SUBCOMPONENT(
     PiscesNIC,
     "macro",
     "pisces_nic",

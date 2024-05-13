@@ -85,7 +85,7 @@ struct SnapprOutPort : public SubComponent {
                                     const std::string& /*subId*/, const std::string& /*portName*/, int /*number*/,
                                     bool /*congestion*/, bool /*flow_control*/, Component* /*parent*/,
                                     const std::vector<int>& /*vls_per_qos*/)
-  SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(
+  SST_ELI_REGISTER_SUBCOMPONENT(
     SnapprOutPort,
     "macro",
     "snappr_outport",

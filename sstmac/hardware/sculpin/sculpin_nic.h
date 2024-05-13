@@ -63,7 +63,7 @@ class SculpinNIC :
 {
  public:
 #if SSTMAC_INTEGRATED_SST_CORE
-  SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(
+  SST_ELI_REGISTER_SUBCOMPONENT(
     SculpinNIC,
     "macro",
     "sculpin_nic",

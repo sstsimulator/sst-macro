@@ -43,8 +43,6 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 #include <sst_config.h>
 
-#include <sst/core/simulation.h>
-
 #include <sstmac/hardware/vtk/statoutputexodus.h>
 #include <sst/core/statapi/statgroup.h>
 #include <sstmac/hardware/vtk/stattraffic.h>
@@ -59,8 +57,9 @@ StatisticOutputEXODUS::StatisticOutputEXODUS(SST::Params& outputParameters)
     : StatisticOutput (outputParameters)
 {
     // Announce this output object's name
-    Output &out = Simulation::getSimulationOutput();
-    out.verbose(CALL_INFO, 1, 0, " : StatisticOutputEXODUS enabled...\n");
+    // TODO uncoment when StatisticOutput has an API to get the simulation's Output object
+    //Output &out = Simulation::getSimulationOutput();
+    //out.verbose(CALL_INFO, 1, 0, " : StatisticOutputEXODUS enabled...\n");
     setStatisticOutputName("StatisticOutputEXODUS");
 
     m_currentComponentName = "";

@@ -154,7 +154,7 @@ class Interconnect:
   def latencyAsFloat(self, params):
     import re
     lat = self.latency(params)
-    match = re.compile("(\d+[.]?\d*)(.*)").search(lat)
+    match = re.compile(r"(\d+[.]?\d*)(.*)").search(lat)
     if not match:
       sys.exit("improperly formatted latency %s" % lat)
     num, units = match.groups()

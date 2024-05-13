@@ -138,7 +138,7 @@ class NullMemoryModel : public MemoryModel
 {
  public:
 #if SSTMAC_INTEGRATED_SST_CORE
-  SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(
+  SST_ELI_REGISTER_SUBCOMPONENT(
     NullMemoryModel,
     "macro",
     "null_memory",

@@ -216,7 +216,7 @@ class SnapprCredit :
     return vl_;
   }
 
-  std::string toString() const;
+  std::string toString() const override;
 
   uint32_t numBytes() const {
     return num_bytes_;

@@ -61,7 +61,7 @@ namespace hw {
 class TorusMinimalRouter : public Router {
  public:
   struct header : public Packet::Header {
-     char crossed_timeline : 1;
+     unsigned int crossed_timeline : 1;
      char last_dim;
   };
 
