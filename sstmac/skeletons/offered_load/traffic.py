@@ -3,7 +3,7 @@ def getVals(model):
   fileName = "%s.out" % model
   import re
   text = open(fileName).read()
-  regexp = re.compile("throughput=\s+(\d+[.]\d+)")
+  regexp = re.compile(r"throughput=\s+(\d+[.]\d+)")
   matches = regexp.findall(text)
   return map(float, matches)
 

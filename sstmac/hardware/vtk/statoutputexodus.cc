@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2023 National Technology and Engineering Solutions of Sandia,
+Copyright 2009-2024 National Technology and Engineering Solutions of Sandia,
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S. Government
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2023, NTESS
+Copyright (c) 2009-2024, NTESS
 
 All rights reserved.
 
@@ -43,8 +43,6 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 #include <sst_config.h>
 
-#include <sst/core/simulation.h>
-
 #include <sstmac/hardware/vtk/statoutputexodus.h>
 #include <sst/core/statapi/statgroup.h>
 #include <sstmac/hardware/vtk/stattraffic.h>
@@ -59,8 +57,9 @@ StatisticOutputEXODUS::StatisticOutputEXODUS(SST::Params& outputParameters)
     : StatisticOutput (outputParameters)
 {
     // Announce this output object's name
-    Output &out = Simulation::getSimulationOutput();
-    out.verbose(CALL_INFO, 1, 0, " : StatisticOutputEXODUS enabled...\n");
+    // TODO uncoment when StatisticOutput has an API to get the simulation's Output object
+    //Output &out = Simulation::getSimulationOutput();
+    //out.verbose(CALL_INFO, 1, 0, " : StatisticOutputEXODUS enabled...\n");
     setStatisticOutputName("StatisticOutputEXODUS");
 
     m_currentComponentName = "";

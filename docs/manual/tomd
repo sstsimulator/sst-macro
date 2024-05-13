@@ -10,7 +10,7 @@ inline_math_regexp = re.compile(r'\$(.*?)\$')
 
 section_template = r'\\begin{%s}(.*?)\\end{%s}'
 comment_regexp = re.compile(r'%(.*)')
-quotes_regexp = re.compile("``(.*?)''", re.DOTALL)
+quotes_regexp = re.compile(r"``(.*?)''", re.DOTALL)
 newcommand_regexp = re.compile(r'\newcommand.*')
 arrayStretch_regexp = re.compile(r'\\def\\arraystre.*')
 #display_regexp = re.compile(r'\\\[(.*?)\\\]', re.DOTALL)
@@ -419,7 +419,7 @@ text = macro_regexp('ref').sub(process_ref, text)
 text = process_paragraphs(text)
 text = make_toc(text)
 header = """---
-title: Manual for SST-Macro 13.0.x
+title: Manual for SST-Macro 14.0.x
 published: true
 category: SSTDocumentation
 ---"""

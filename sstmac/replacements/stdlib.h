@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2023 National Technology and Engineering Solutions of Sandia,
+Copyright 2009-2024 National Technology and Engineering Solutions of Sandia,
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S. Government
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2023, NTESS
+Copyright (c) 2009-2024, NTESS
 
 All rights reserved.
 
@@ -73,14 +73,14 @@ char* sstmac_getenv(const char* name);
 int sstmac_putenv(char* input);
 int sstmac_setenv(const char* name, const char* val, int overwrite);
 
-#ifdef __cplusplus
-}
-#endif
-
 #include_next <stdlib.h>
 
 #pragma sst null_ptr safe
 void free(void* ptr);
+
+#ifdef __cplusplus
+}
+#endif
 
 #ifndef __need_malloc_and_calloc
 #define atexit sstmac_atexit

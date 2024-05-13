@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2023 National Technology and Engineering Solutions of Sandia,
+Copyright 2009-2024 National Technology and Engineering Solutions of Sandia,
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S. Government
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2023, NTESS
+Copyright (c) 2009-2024, NTESS
 
 All rights reserved.
 
@@ -85,7 +85,7 @@ struct SnapprOutPort : public SubComponent {
                                     const std::string& /*subId*/, const std::string& /*portName*/, int /*number*/,
                                     bool /*congestion*/, bool /*flow_control*/, Component* /*parent*/,
                                     const std::vector<int>& /*vls_per_qos*/)
-  SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(
+  SST_ELI_REGISTER_SUBCOMPONENT(
     SnapprOutPort,
     "macro",
     "snappr_outport",
