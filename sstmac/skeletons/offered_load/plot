@@ -7,7 +7,7 @@ from analyze import *
 def getVals(fileName):
   import re
   text = open(fileName).read()
-  regexp = re.compile("throughput=\s+(\d+[.]\d+)")
+  regexp = re.compile(r"throughput=\s+(\d+[.]\d+)")
   matches = regexp.findall(text)
   return map(float, matches)
 
