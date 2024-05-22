@@ -47,8 +47,8 @@ import sys
 import re
 from configlib import getoutput
 
-cxx = sys.argv[1]
-header = sys.argv[2]
+header = sys.argv[1]
+cxx = sys.argv[2]
 cppflags = ""
 if len(sys.argv) > 3:
   cppflags = " ".join(sys.argv[3:])
