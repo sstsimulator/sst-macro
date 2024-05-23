@@ -311,17 +311,27 @@ def run(typ, extraLibs=""):
 
   ctx = Context()
 
-  for entry in sstCppFlags:
-    clean = cleanFlag(entry)
-    if clean: #don't add empty flags
-      ctx.cppFlags.append(clean)
-
   ctx.sstCore = sstCore
   ctx.cc = spackcc if spackcc else cc
   ctx.cxx = spackcxx if spackcxx else cxx
   ctx.typ = typ
   ctx.sstCore = sstCore
   ctx.hasClang = bool(clangCppFlagsStr)
+
+  # Workaround for CXX containing flags
+  if len(ctx.cxx.split()) > 1:
+      cxxFlags = ctx.cxx.split()[1:]
+      ctx.cxx = ctx.cxx.split()[0]
+
+  for entry in cxxFlags:
+    clean = cleanFlag(entry)
+    if clean: #don't add empty flags
+      ctx.cppFlags.append(clean)
+
+  for entry in sstCppFlags:
+    clean = cleanFlag(entry)
+    if clean: #don't add empty flags
+      ctx.cppFlags.append(clean)
 
 
   #it is possible to override the host compilers use to do preprocessing/compilation
