@@ -319,6 +319,7 @@ def run(typ, extraLibs=""):
   ctx.hasClang = bool(clangCppFlagsStr)
 
   # Workaround for CXX containing flags
+  cxxFlags = []
   if len(ctx.cxx.split()) > 1:
       cxxFlags = ctx.cxx.split()[1:]
       ctx.cxx = ctx.cxx.split()[0]
