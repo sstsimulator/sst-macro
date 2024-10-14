@@ -1,4 +1,4 @@
-#! /usr/bin/env python2
+#! /usr/bin/env python3
 
 import glob
 import sys
@@ -127,7 +127,7 @@ def process_paragraphs(text):
   return "\n\n".join(par_arr)
 
 def repl_display(match):
-  return '\[display\n%s\n\]' % match.groups()[0]
+  return r'\[display\n%s\n\]' % match.groups()[0]
 
 def process_itemize(match):
   items = match.groups()[0].split(r'\item')
@@ -144,7 +144,7 @@ def get_figure_text(label, caption, text, figpath):
   if not fname:
     fname = include_fig_optargs_regexp.search(text)
     if not fname:
-      print text
+      print(text)
       sys.exit("failed parsing figure")
     else:
       fname = fname.groups()[1]
@@ -315,13 +315,13 @@ repls = [
   (newcommand_regexp, ''),
   (arrayStretch_regexp, ''),
   (quotes_regexp, repl_quotes),
-  (r'\nodecls','\inlinecode{node}'),
-  (r'\topcls','\inlinecode{topology}'),
-  (r'\switchid','\inlinecode{SwitchId}'),
-  (r'\nodeid','\inlinecode{NodeId}'),
-  (r'\evhandler','\inlinecode{EventHandler}'),
-  (r'\evscheduler','\inlinecode{EventScheduler}'),
-  (r'\evmgr','\inlinecode{EventManager}'),
+  (r'\nodecls',r'\inlinecode{node}'),
+  (r'\topcls',r'\inlinecode{topology}'),
+  (r'\switchid',r'\inlinecode{SwitchId}'),
+  (r'\nodeid',r'\inlinecode{NodeId}'),
+  (r'\evhandler',r'\inlinecode{EventHandler}'),
+  (r'\evscheduler',r'\inlinecode{EventScheduler}'),
+  (r'\evmgr',r'\inlinecode{EventManager}'),
   (section_regexp("CppCode")  , repl_code_block),
   (section_regexp("ShellCmd") , repl_code_block),
   (section_regexp("ViFile")   , repl_code_block),
@@ -419,11 +419,11 @@ text = macro_regexp('ref').sub(process_ref, text)
 text = process_paragraphs(text)
 text = make_toc(text)
 header = """---
-title: Manual for SST-Macro 14.0.x
+title: Manual for SST-Macro 14.x
 published: true
 category: SSTDocumentation
 ---"""
-print header
-print text
+print(header)
+print(text)
 
 
