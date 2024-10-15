@@ -5,7 +5,7 @@ category: SSTDocumentation
 ---
 
 
-# SST/macro 14.0: Developer's Reference
+# SST/macro 14.1: Developer's Reference
 
 
 ![](https://github.com/sstsimulator/sst-macro/blob/devel/docs/developer/figures/sstlogo.png) 
@@ -998,7 +998,7 @@ all subcomponents must belong to a component.  A subcomponent cannot be separate
 
 The driver for most simulations is a skeleton application.
 Although this can be arbitrary source code, we will consider the example of an MPI application below.
-We will discuss distributed services in Section  below, which is similar to an application.  In general, when we refer to applications we mean scientific codes or client codes that are doing "domain-specific" work.  These will be different from service applications like parallel file systems.
+In general, when we refer to applications we mean scientific codes or client codes that are doing "domain-specific" work.  These will be different from service applications like parallel file systems.
 
 We will be very specific with the use of the terms "virtual" and "real" or "physical".
 Virtual refers to anything being modeled in the simulator.

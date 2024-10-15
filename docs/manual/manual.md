@@ -5,7 +5,7 @@ category: SSTDocumentation
 ---
 
 
-# SST/macro 14.0 User's Manual
+# SST/macro 14.1 User's Manual
 
 ![](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/sstlogo.png) 
 
@@ -2937,7 +2937,7 @@ Finally, the minimal route completes by hopping within Group 2 to the final dest
 
 To improve on minimal routing, global routing strategies are required (global routing is distinguished here from adaptive routing).  
 Global essentially means "not minimal" and spreads packets along many different paths.
-The simplest global routing strategy is Valiant routing, which falls in the global, oblivious category (Figure ).
+The simplest global routing strategy is Valiant routing, which falls in the global, oblivious category (Figure [29](#fig_topologies_cascadevaliantroute)).
 Oblivious simply means packets are scattered randomly without measuring congestion.
 In Valiant routing, each packet does the following:
 
@@ -2945,7 +2945,7 @@ In Valiant routing, each packet does the following:
 -   Route minimally to random node
 -   Route minimally from random node to destination node
 This is somewhat counterintuitive at first.
-Rather than go directly to the destination node, packets go out of their way to a random node, shown in Figure  as the yellow router.
+Rather than go directly to the destination node, packets go out of their way to a random node, shown in Figure [29](#fig_topologies_cascadevaliantroute) as the yellow router.
 Thus, routing from the blue router in Group 0 to the red router in Group 2 first follows the minimal path (green routers) to the randomly selected yellow router in Group 1. 
 From there, a second minimal path is taken through the orange routers to the final destination.
 In cases with high congestion or even for large messages on a quiet network, this actually improves performance.
@@ -3801,33 +3801,29 @@ This is a series of namespaces `app1`, `app2`, and so on for each of the launche
 |-------------|---------|---------|-------------|
 | name (string) | No default | parsedumpi, cxx\_full\_main, cxx\_empty\_main | The name of the application to launch. Very few applications are built-in. Registration of external apps is shown starting in Section [3.5](#sec_tutorial_basicmpi). |
 | size (int) | No default | Positive int | The number of procs (MPI ranks) to launch. If launch\_cmd given, this parameter is not required. |
-| start (int) | 0 |  | The time at which a launch request for the application will be made |
+| start (int) | 0 | | The time at which a launch request for the application will be made |
 | concentration (int) | 1 | Positive int | The number of procs (MPI ranks) per compute node |
-| core\_affinities (vector of int) | Empty |  |  |
+| core\_affinities (vector of int) | Empty | | |
 | launch\_cmd (string) | No default | Valid aprun or srun | This uses a launch command as would be found with ALPS or SLURM launchers on real systems, e.g. aprun -n 4 -N 1 |
 | indexing (string) | block | block, random, cart, node\_id, coordinate | The indexing scheme for assign proc ID (MPI rank number) to compute nodes |
-| node\_id\_mapper\_file (filepath) | No default |  | If using Node ID indexing, the file containing the node ID index list |
-| random\_indexer\_seed (long) | System time |  | The seed to use for a random allocation. If not specified, system time is used. |
+| node\_id\_mapper\_file (filepath) | No default | | If using Node ID indexing, the file containing the node ID index list |
+| random\_indexer\_seed (long) | System time | | The seed to use for a random allocation. If not specified, system time is used. |
 | allocation (string) | first\_available | first\_available, random, cart, node\_id, coordinate | The scheme to use for allocating compute nodes to a given job. |
-| random\_allocation\_seed (long) | System time |  | For random allocation policy. If unspecified, system time is used as the seed. |
-| node\_id\_allocation\_file (filepath) | No default |  | If using Node ID allocation, the file containing the list of node IDs to allocate for the job |
-| dumpi\_metaname (filepath) | No default |  | If running DUMPI trace, the location of the metafile for configuring trace replay |
-| coordinate\_file (filepath) | No default |  | If running using coordinate allocation or indexing, the path to the file containing the node coordinates of each proc (MPI rank) |
-| cart\_sizes (vector of int) | No default |  | Launch a contiguous block of nodes in a Cartesian topology. This gives the size of each dimension in the block. |
-| cart\_offsets (vector of int) | No default |  | Launch a contiguous block nodes in a Cartesian topology. This gives the offset in each dimension where the block begins. |
+| random\_allocation\_seed (long) | System time | | For random allocation policy. If unspecified, system time is used as the seed.  |
+| node\_id\_allocation\_file (filepath) | No default | | If using Node ID allocation, the file containing the list of node IDs to allocate for the job |
+| dumpi\_metaname (filepath) | No default | | If running DUMPI trace, the location of the metafile for configuring trace replay |
+| coordinate\_file (filepath) | No default | | If running using coordinate allocation or indexing, the path to the file containing the node coordinates of each proc (MPI rank) |
+| cart\_sizes (vector of int) | No default | | Launch a contiguous block of nodes in a Cartesian topology. This gives the size of each dimension in the block. |
+| cart\_offsets (vector of int) | No default | | Launch a contiguous block nodes in a Cartesian topology. This gives the offset in each dimension where the block begins. |
 | parsedumpi\_timescale (double) | 1.0 | Positive float | If running DUMPI traces, scale compute times by the given value. Values less than 1.0 speed up computation. Values greater than 1.0 slow down computation. |
 | parsedumpi\_terminate\_percent (int) | 100 | 1-100 | Percent of trace. Can be used to terminate large traces early |
-| host\_compute\_timer (bool) | False |  | Use the compute time on the host to estimate compute delays |
-
-
-| Name (type) | Default | Allowed | Description |
-|-------------|---------|---------|-------------|
+| host\_compute\_timer (bool) | False | | Use the compute time on the host to estimate compute delays |
 | otf2\_metafile (string) | No default | string | The root file of an OTF2 trace. |
 | otf2\_timescale (double) | 1.0 | Positive float | If running OTF2 traces, scale compute times by the given value. Values less than 1.0 speed up computation. Values greater than 1.0 slow down computation. |
-| otf2\_print\_mpi\_calls (bool) | false |  | Print MPI calls found in the OTF2 trace |
-| otf2\_print\_trace\_events (bool) | false |  | Debugging flag that printsindividual trace events (which includes details such as when an MPI call begins, ends, and when a collective begins and ends |
-| otf2\_print\_time\_deltas (bool) | false |  | Debugging flag that prints compute delays injected by the simulator |
-| otf2\_warn\_unknown\_callback (bool) | false |  | Debugging flag the prints unknown callbacks |
+| otf2\_print\_mpi\_calls (bool) | false | | Print MPI calls found in the OTF2 trace |
+| otf2\_print\_trace\_events (bool) | false | | Debugging flag that printsindividual trace events (which includes details such as when an MPI call begins, ends, and when a collective begins and ends |
+| otf2\_print\_time\_deltas (bool) | false | | Debugging flag that prints compute delays injected by the simulator |
+| otf2\_warn\_unknown\_callback (bool) | false | | Debugging flag the prints unknown callbacks |
 
 
 
