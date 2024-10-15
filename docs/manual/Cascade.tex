@@ -90,7 +90,7 @@ Finally, the minimal route completes by hopping within Group 2 to the final dest
 
 To improve on minimal routing, global routing strategies are required (global routing is distinguished here from adaptive routing).  
 Global essentially means ``not minimal'' and spreads packets along many different paths.
-The simplest global routing strategy is Valiant routing, which falls in the global, oblivious category (Figure \ref{fig:topologies:dflyvaliantroute}).
+The simplest global routing strategy is Valiant routing, which falls in the global, oblivious category (Figure \ref{fig:topologies:cascadevaliantroute}).
 Oblivious simply means packets are scattered randomly without measuring congestion.
 In Valiant routing, each packet does the following:
 \begin{itemize}
@@ -99,7 +99,7 @@ In Valiant routing, each packet does the following:
 \item Route minimally from random node to destination node
 \end{itemize}
 This is somewhat counterintuitive at first.
-Rather than go directly to the destination node, packets go out of their way to a random node, shown in Figure \ref{fig:topologies:dflyvaliantroute} as the yellow router.
+Rather than go directly to the destination node, packets go out of their way to a random node, shown in Figure \ref{fig:topologies:cascadevaliantroute} as the yellow router.
 Thus, routing from the blue router in Group 0 to the red router in Group 2 first follows the minimal path (green routers) to the randomly selected yellow router in Group 1. 
 From there, a second minimal path is taken through the orange routers to the final destination.
 In cases with high congestion or even for large messages on a quiet network, this actually improves performance.
