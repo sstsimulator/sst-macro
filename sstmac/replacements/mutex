@@ -18,23 +18,23 @@ namespace std {
 using mutex = sstmac::sw::stdMutex;
 using recursive_mutex = sstmac::sw::stdRecursiveMutex;
 
-struct once_flag {
-  constexpr once_flag() noexcept : called(false) {}
-  bool called;
-};
+// struct once_flag {
+//   constexpr once_flag() noexcept : called(false) {}
+//   bool called;
+// };
 
-template< class Callable, class... Args >
-void call_once(once_flag& flag, Callable&& f, Args&&... args ){
-  if (!flag.called){
-    f(std::forward<Args>(args)...);
-  }
-  flag.called = true;
-}
-#else
-struct once_flag {
-  once_flag() : called(false) {}
-  bool called;
-};
+// template< class Callable, class... Args >
+// void call_once(once_flag& flag, Callable&& f, Args&&... args ){
+//   if (!flag.called){
+//     f(std::forward<Args>(args)...);
+//   }
+//   flag.called = true;
+// }
+// #else
+// struct once_flag {
+//   once_flag() : called(false) {}
+//   bool called;
+// };
 #endif
 
 
