@@ -14,10 +14,10 @@
 
 namespace std {
 
-#if __cplusplus >= 201103L
-using mutex = sstmac::sw::stdMutex;
-using recursive_mutex = sstmac::sw::stdRecursiveMutex;
-
+// #if __cplusplus >= 201103L
+// using mutex = sstmac::sw::stdMutex;
+// using recursive_mutex = sstmac::sw::stdRecursiveMutex;
+//
 // struct once_flag {
 //   constexpr once_flag() noexcept : called(false) {}
 //   bool called;
@@ -31,11 +31,11 @@ using recursive_mutex = sstmac::sw::stdRecursiveMutex;
 //   flag.called = true;
 // }
 // #else
-// struct once_flag {
-//   once_flag() : called(false) {}
-//   bool called;
-// };
-#endif
+struct once_flag {
+  once_flag() : called(false) {}
+  bool called;
+};
+// #endif
 
 
 }
