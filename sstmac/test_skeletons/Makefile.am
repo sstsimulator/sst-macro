@@ -24,6 +24,8 @@ if HAVE_OTF2
 AM_CPPFLAGS += -I$(top_builddir)/sst-dumpi -I$(top_srcdir)/sst-dumpi $(OTF2_CPPFLAGS)
 endif
 
+AM_CPPFLAGS += -D_LIBCPP_REMOVE_TRANSITIVE_INCLUDES
+
 libsstmac_test_skeletons_la_LDFLAGS = 
 
 libsstmac_test_skeletons_la_SOURCES = \
