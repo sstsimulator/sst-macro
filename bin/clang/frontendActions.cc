@@ -134,11 +134,12 @@ ReplaceAction::ExecuteAction()
 
 
   Parser::DeclGroupPtrTy ADecl;
+  Sema::ModuleImportState ImportState;
   ExternalASTSource *External = S.getASTContext().getExternalSource();
   if (External)
     External->StartTranslationUnit(&Consumer);
-  for (bool AtEOF = P.ParseFirstTopLevelDecl(ADecl); !AtEOF;
-       AtEOF = P.ParseTopLevelDecl(ADecl)) {
+  for (bool AtEOF = P.ParseFirstTopLevelDecl(ADecl, ImportState); !AtEOF;
+       AtEOF = P.ParseTopLevelDecl(ADecl, ImportState)) {
     // If we got a null return and something *was* parsed, ignore it.  This
     // is due to a top-level semicolon, an action override, or a parse error
     // skipping something.
