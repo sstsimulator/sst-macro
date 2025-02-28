@@ -127,6 +127,8 @@ sstmac_clang_LDFLAGS = $(CLANG_LDFLAGS) \
  -lclangRewrite \
  -lclangLex \
  -lclangBasic \
+ -lclangSupport \
+ -lclangAPINotes \
  @CLANG_LIBTOOLING_LIBS@ \
  @CLANG_LIBTOOLING_SYSTEM_LIBS@
 

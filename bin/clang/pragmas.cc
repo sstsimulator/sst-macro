@@ -875,7 +875,7 @@ static void addFields(RecordDecl* rd, bool defaultNull,
     Decl* d = *iter;
     if (d->getKind() == Decl::Field){
       FieldDecl* fd = cast<FieldDecl>(d);
-      auto iter = fields.find(fd->getName());
+      auto iter = fields.find(fd->getName().data());
       if (iter == fields.end()){
         if (defaultNull) CompilerGlobals::astNodeMetadata.nullVariables[fd] = prg;
       } else {

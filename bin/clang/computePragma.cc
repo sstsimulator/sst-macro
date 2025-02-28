@@ -104,9 +104,17 @@ SSTLoopCountPragma::transformWhileLoop(Stmt* s)
      VK_LValue,
      loopVar);
 
-  BinaryOperator* cond_stmt = new (fd->getASTContext()) BinaryOperatorCtor(cond_ref, loop_count, BO_LT,
-                                             fd->getASTContext().IntTy, VK_RValue,
-                                             OK_Ordinary, getStart(ws->getCond()));
+     auto &Ctx = fd->getASTContext();
+
+     BinaryOperator *cond_stmt = BinaryOperator::Create(Ctx,
+       cond_ref,
+       loop_count,
+       BO_LT,
+       Ctx.IntTy,
+       VK_PRValue,
+       OK_Ordinary,
+       getStart(ws->getCond()),
+       FPOptions());
 
   DeclRefExpr* inc_ref = DeclRefExpr::Create(
      fd->getASTContext(),
@@ -120,8 +128,16 @@ SSTLoopCountPragma::transformWhileLoop(Stmt* s)
      loopVar);
 
 
-  UnaryOperator* inc_stmt = new (fd->getASTContext()) UnaryOperatorCtor(inc_ref, UO_PostInc, loop_count->getType(),
-                                                          VK_RValue, OK_Ordinary, getStart(ws->getCond()));
+     UnaryOperator *inc_stmt =
+     UnaryOperator::Create(Ctx,
+       inc_ref,
+       UO_PostInc,
+       loop_count->getType(),
+       VK_PRValue,
+       OK_Ordinary,
+       getStart(ws->getCond()),
+       false,
+       FPOptions());
 
   ForStmt* fs = new (fd->getASTContext()) ForStmt(fd->getASTContext(), init_stmt, cond_stmt, loopVar, inc_stmt,
                      ws->getBody(), getStart(ws), getStart(ws->getCond()), getEnd(ws->getCond()));
@@ -163,9 +179,17 @@ SSTLoopCountPragma::transformForLoop(Stmt* s)
      VK_LValue,
      loopVar);
 
-  BinaryOperator* cond_stmt = new (fd->getASTContext()) BinaryOperatorCtor(cond_ref, loop_count, BO_LT,
-                                             fd->getASTContext().IntTy, VK_RValue,
-                                             OK_Ordinary, getStart(fs->getCond()));
+     auto &Ctx = fd->getASTContext();
+
+     BinaryOperator *cond_stmt = BinaryOperator::Create(Ctx,
+       cond_ref,
+       loop_count,
+       BO_LT,
+       Ctx.IntTy,
+       VK_PRValue,
+       OK_Ordinary,
+       getStart(fs->getCond()),
+       FPOptions());
 
   DeclRefExpr* inc_ref = DeclRefExpr::Create(
      fd->getASTContext(),
@@ -178,8 +202,15 @@ SSTLoopCountPragma::transformForLoop(Stmt* s)
      VK_LValue,
      loopVar);
 
-  UnaryOperator* inc_stmt = new (fd->getASTContext()) UnaryOperatorCtor(inc_ref, UO_PostInc, loop_count->getType(),
-                                                          VK_RValue, OK_Ordinary, getStart(fs->getInc()));
+     UnaryOperator *inc_stmt = UnaryOperator::Create(Ctx,
+      inc_ref,
+      UO_PostInc,
+      loop_count->getType(),
+      VK_PRValue,
+      OK_Ordinary,
+      getStart(fs->getInc()),
+      false,
+      FPOptions());
 
   fs->setInit(init_stmt);
   fs->setCond(cond_stmt);
