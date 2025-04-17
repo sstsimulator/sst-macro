@@ -103,7 +103,6 @@ using serializer = sprockit::serializer;
 namespace sstmac {
 using serializer = SST::Core::Serialization::serializer;
 template <class T> using serializable_type = SST::Core::Serialization::serializable_type<T>;
-template <class T> using serialize = typename SST::Core::Serialization::serialize<T>;
 using serializable = SST::Core::Serialization::serializable;
 using SST::Core::Serialization::array;
 using SST::Core::Serialization::raw_ptr;
