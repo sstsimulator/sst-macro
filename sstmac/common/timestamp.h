@@ -95,6 +95,12 @@ class TimeDelta
   static double max_time_;
 
  public:
+
+  void serialize_order(SST::Core::Serialization::serializer& ser) {
+    ser& ticks_;
+    ser& max_time_;
+  }
+
   static void initStamps(tick_t tick_spacing);
 
   typedef enum { exact } timestamp_param_type_t;
@@ -238,6 +244,11 @@ struct Timestamp
   uint64_t epochs;
   TimeDelta time;
 
+  void serialize_order(SST::Core::Serialization::serializer& ser) {
+    ser& epochs;
+    ser& time;
+  }
+
   static constexpr uint64_t carry_bits_mask = 0;
   static constexpr uint64_t remainder_bits_mask = ~uint64_t(0);
   static constexpr uint64_t carry_bits_shift = 0;
@@ -337,22 +348,5 @@ std::string to_printf_type(TimeDelta t);
 
 } // end of namespace sstmac
 
-START_SERIALIZATION_NAMESPACE
-template <> class serialize<sstmac::TimeDelta>
-{
- public:
-  void operator()(sstmac::TimeDelta& t, serializer& ser){
-    ser.primitive(t);
-  }
-};
-
-template <> class serialize<sstmac::Timestamp>
-{
- public:
-  void operator()(sstmac::Timestamp& t, serializer& ser){
-    ser.primitive(t);
-  }
-};
-END_SERIALIZATION_NAMESPACE
 
 #endif

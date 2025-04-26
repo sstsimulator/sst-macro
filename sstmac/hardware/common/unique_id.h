@@ -100,24 +100,16 @@ struct UniqueEventId {
     ++msg_num;
     return other;
   }
-};
 
-
-}
-}
-
-START_SERIALIZATION_NAMESPACE
-template <>
-class serialize<sstmac::hw::UniqueEventId>
-{
- public:
-  void
-  operator()(sstmac::hw::UniqueEventId& id, serializer& ser){
-    ser.primitive(id);
+  void serialize_order(SST::Core::Serialization::serializer& ser) {
+    ser& src_node;
+    ser& msg_num;
   }
 };
-END_SERIALIZATION_NAMESPACE
 
+
+}
+}
 
 namespace std {
 template <>
