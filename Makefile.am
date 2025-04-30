@@ -13,8 +13,8 @@ include $(top_srcdir)/Makefile.common
 
 # Files that should be distributed but are not built.
 EXTRA_DIST = LICENSE bootstrap.sh \
-  developer-sstmacro-14.1.pdf \
-  manual-sstmacro-14.1.pdf \
+  developer-sstmacro-15.0.pdf \
+  manual-sstmacro-15.0.pdf \
   pdes-report.pdf \
   docs \
   share \
