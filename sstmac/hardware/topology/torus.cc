@@ -111,7 +111,7 @@ Torus::minimalDistance(
   for (int i=0; i < ndim; ++i){
     int srcX = (src / div) % dimensions_[i];
     int dstX = (dst / div) % dimensions_[i];
-    dist = shortestDistance(i, srcX, dstX);
+    dist += shortestDistance(i, srcX, dstX);
     div *= dimensions_[i];
   }
 
