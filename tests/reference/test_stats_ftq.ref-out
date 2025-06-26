@@ -1,8 +1,8 @@
 - Finished testing! test successful 
-Total runtime 2004.1845ms
+Total runtime 2004.1953ms
 Aggregate time stats: ftq
         Inactive:          0.00002 s
          Compute:          0.01602 s
            Sleep:          3.00000 s
-             MPI:         13.01756 s
+             MPI:         13.01765 s
 Estimated total runtime of     2.00 seconds
