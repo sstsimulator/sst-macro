@@ -21,8 +21,8 @@ ping-pong between 0 and 20
 4:   0.0015 GB/s
 8:   0.0031 GB/s
 16:   0.0061 GB/s
-32:   0.0110 GB/s
-64:   0.0233 GB/s
+32:   0.0094 GB/s
+64:   0.0225 GB/s
 128:   0.0456 GB/s
 512:   0.1494 GB/s
 1024:   0.1170 GB/s
@@ -36,4 +36,4 @@ ping-pong between 0 and 20
 326144:   4.4640 GB/s
 652288:   4.7168 GB/s
 1304576:   4.8543 GB/s
-Estimated total runtime of           0.00166880 seconds
+Estimated total runtime of           0.00169691 seconds
