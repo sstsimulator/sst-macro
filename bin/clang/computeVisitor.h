@@ -44,10 +44,11 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef bin_clang_compute_visitor_h
 #define bin_clang_compute_visitor_h
 
-#include "clangHeaders.h"
+#include "clang/AST/Decl.h"
+#include "clang/AST/Expr.h"
+#include "clang/AST/Stmt.h"
 #include "computeLoops.h"
 #include "dataFlow.h"
-#include "pragmas.h"
 
 class ComputeVisitor  {
  public:

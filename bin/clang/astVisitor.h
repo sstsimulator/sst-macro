@@ -46,6 +46,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #define bin_clang_replAstVisitor_h
 
 #include "clangHeaders.h"
+#include "clang/AST/RecursiveASTVisitor.h"
 #include "pragmas.h"
 #include "globalVarNamespace.h"
 

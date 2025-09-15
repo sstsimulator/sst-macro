@@ -45,6 +45,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include "util.h"
 #include <sstream>
 #include <cstring>
+#include "clang/Tooling/Tooling.h"
 
 using namespace clang;
 using namespace clang::driver;

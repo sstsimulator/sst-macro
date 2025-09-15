@@ -47,7 +47,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include "clangHeaders.h"
 #include "astVisitor.h"
-#include "globalVarNamespace.h"
 
 class SkeletonASTConsumer : public clang::ASTConsumer {
  public:
