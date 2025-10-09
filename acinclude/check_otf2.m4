@@ -41,17 +41,19 @@ fi
 
 AM_CONDITIONAL([HAVE_OTF2], [test "x$HAVE_OTF2" = "xyes" -a "X$enable_otf2" != "X$no"])
 
+OTF2_CPPFLAGS=""
+OTF2_LDFLAGS=""
+OTF2_LIBS=""
+
 if test "x$HAVE_OTF2" = "xyes" -a "X$enable_otf2" != "Xno"; then
 build_otf2=yes
+OTF2_CPPFLAGS=$CPPFLAGS
+OTF2_LDFLAGS=$LDFLAGS
+OTF2_LIBS=$LIBS
 AC_DEFINE([OTF2_ENABLED],,[Define OTF2 support as enabled])
 else
 build_otf2=no
 fi
-
-#check lib - try this later
-OTF2_CPPFLAGS=$CPPFLAGS
-OTF2_LDFLAGS=$LDFLAGS
-OTF2_LIBS=$LIBS
 
 AC_SUBST([OTF2_CPPFLAGS])
 AC_SUBST([OTF2_LDFLAGS])
