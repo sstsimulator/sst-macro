@@ -44,7 +44,18 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sst_config.h>
 
 #include <sstmac/hardware/vtk/statoutputexodus.h>
+
+#ifdef main
+#define SSTMAC_SAVE_MAIN main
+#undef main
+#endif
 #include <sst/core/statapi/statgroup.h>
+#ifdef SSTMAC_SAVE_MAIN
+#undef main
+#define main SSTMAC_SAVE_MAIN
+#undef SSTMAC_SAVE_MAIN
+#endif
+
 #include <sstmac/hardware/vtk/stattraffic.h>
 #include <sstmac/hardware/vtk/vtk_stats.h>
 #include <sstmac/hardware/topology/topology.h>

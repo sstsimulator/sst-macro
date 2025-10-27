@@ -45,7 +45,18 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/main/sstmac.h>
 
+
+#ifdef main
+#define SSTMAC_SAVE_MAIN main
+#undef main
+#endif
 #include <sst/core/model/element_python.h>
+#ifdef SSTMAC_SAVE_MAIN
+#undef main
+#define main SSTMAC_SAVE_MAIN
+#undef SSTMAC_SAVE_MAIN
+#endif
+
 
 #include <sstmac/common/event_scheduler.h>
 #include <sstmac/sst_core/integrated_core.h>

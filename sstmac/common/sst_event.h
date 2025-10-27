@@ -51,7 +51,18 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/event_scheduler_fwd.h>
 #include <sstmac/common/event_location.h>
 #if SSTMAC_INTEGRATED_SST_CORE
+
+#ifdef main
+#define SSTMAC_SAVE_MAIN main
+#undef main
+#endif
 #include <sst/core/event.h>
+#ifdef SSTMAC_SAVE_MAIN
+#undef main
+#define main SSTMAC_SAVE_MAIN
+#undef SSTMAC_SAVE_MAIN
+#endif
+
 #endif
 
 namespace sstmac {

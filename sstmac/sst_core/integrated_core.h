@@ -47,7 +47,18 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sst_config.h>
 
+
+#ifdef main
+#define SSTMAC_SAVE_MAIN main
+#undef main
+#endif
 #include <sst/core/params.h>
+#ifdef SSTMAC_SAVE_MAIN
+#undef main
+#define main SSTMAC_SAVE_MAIN
+#undef SSTMAC_SAVE_MAIN
+#endif
+
 
 #include <unordered_map>
 #include <sprockit/sim_parameters.h>

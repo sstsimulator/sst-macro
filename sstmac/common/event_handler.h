@@ -53,7 +53,18 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <tuple>
 
 #if SSTMAC_INTEGRATED_SST_CORE
+
+#ifdef main
+#define SSTMAC_SAVE_MAIN main
+#undef main
+#endif
 #include <sst/core/link.h>
+#ifdef SSTMAC_SAVE_MAIN
+#undef main
+#define main SSTMAC_SAVE_MAIN
+#undef SSTMAC_SAVE_MAIN
+#endif
+
 #endif
 
 namespace sstmac {
