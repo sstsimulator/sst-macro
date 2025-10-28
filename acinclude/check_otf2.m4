@@ -39,7 +39,7 @@ if test "X$SHOULD_HAVE_OTF2" = "Xyes" -a "X$HAVE_OTF2" != "Xyes"; then
   AC_MSG_ERROR([OTF2 libraries required by --with-otf2 not found])
 fi
 
-AM_CONDITIONAL([HAVE_OTF2], [test "x$HAVE_OTF2" = "xyes" -a "X$enable_otf2" != "X$no"])
+AM_CONDITIONAL([HAVE_OTF2], [test "x$HAVE_OTF2" = "xyes" -a "X$enable_otf2" != "Xno"])
 
 OTF2_CPPFLAGS=""
 OTF2_LDFLAGS=""

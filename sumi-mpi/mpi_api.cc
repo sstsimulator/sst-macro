@@ -148,16 +148,15 @@ MpiApi::MpiApi(SST::Params& params, sstmac::sw::App* app,
   std::string subname = sprockit::sprintf("app%d.rank%d", app->aid(), app->tid());
   delays_ = app->os()->node()->registerMultiStatistic<int,int,int,int,uint64_t,uint64_t,
       double,double,double,double,double,double,double,double,double>(params, "delays", subname);
-#endif
 
 #ifdef SSTMAC_OTF2_ENABLED
-#if !SSTMAC_INTEGRATED_SST_CORE
-  auto subname = sprockit::sprintf("App%d-Rank%d", app->sid().app_, app->sid().task_);
+  subname = sprockit::sprintf("App%d-Rank%d", app->sid().app_, app->sid().task_);
   auto* stat = comp->registerStatistic<void>(params, "otf2", subname);
   //this will either be a null stat or an otf2 stat
   //the rest of the code will do null checks on the variable before dumping traces
   OTF2Writer_ = dynamic_cast<OTF2Writer*>(stat);
 #endif
+
 #endif
 }
 
