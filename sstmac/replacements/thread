@@ -1,6 +1,8 @@
 #ifndef sstmac_thread_included
 #define sstmac_thread_included
 
+#include_next <thread>
+
 // Replacing std::thread in this manner was very standards non-compliant
 // and it's broken on newer standard library implementations 
 #if 0
