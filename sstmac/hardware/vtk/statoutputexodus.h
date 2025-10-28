@@ -44,9 +44,31 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef SSTMAC_HW_VTK_STATISTICS_OUTPUT_EXODUS
 #define SSTMAC_HW_VTK_STATISTICS_OUTPUT_EXODUS
 
-#include "sst/core/sst_types.h"
 
+#ifdef main
+#define SSTMAC_SAVE_MAIN main
+#undef main
+#endif
+#include "sst/core/sst_types.h"
+#ifdef SSTMAC_SAVE_MAIN
+#undef main
+#define main SSTMAC_SAVE_MAIN
+#undef SSTMAC_SAVE_MAIN
+#endif
+
+
+
+#ifdef main
+#define SSTMAC_SAVE_MAIN main
+#undef main
+#endif
 #include <sst/core/statapi/statoutput.h>
+#ifdef SSTMAC_SAVE_MAIN
+#undef main
+#define main SSTMAC_SAVE_MAIN
+#undef SSTMAC_SAVE_MAIN
+#endif
+
 #include <sstmac/hardware/vtk/vtk_stats.h>
 
 namespace sstmac {
