@@ -58,7 +58,18 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/sculpin/sculpin_switch.h>
 #include <sstmac/hardware/common/recv_cq.h>
 
+
+#ifdef main
+#define SSTMAC_SAVE_MAIN main
+#undef main
+#endif
 #include <sst/core/interfaces/simpleNetwork.h>
+#ifdef SSTMAC_SAVE_MAIN
+#undef main
+#define main SSTMAC_SAVE_MAIN
+#undef SSTMAC_SAVE_MAIN
+#endif
+
 
 #include <stddef.h>
 
