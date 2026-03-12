@@ -48,6 +48,9 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <inttypes.h>
 
+#include <snappr/snappr_inport.h>
+#include <snappr/snappr_outport.h>
+#include <sstmac/common/event_scheduler.h>
 #include <sstmac/hardware/router/router.h>
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/snappr/snappr_switch.h>
@@ -306,14 +309,14 @@ LinkHandler*
 SnapprSwitch::creditHandler(int port)
 {
   switch_debug("returning credit handler on output port %d", port);
-  return newLinkHandler(outports_[port], &SnapprOutPort::handle);
+  return newLinkHandler<SnapprOutPort, &SnapprOutPort::handle>(outports_[port]);
 }
 
 LinkHandler*
 SnapprSwitch::payloadHandler(int port)
 {
   switch_debug("returning payload handler on input port %d", port);
-  return newLinkHandler(&inports_[port], &SnapprInPort::handle);
+  return newLinkHandler<SnapprInPort, &SnapprInPort::handle>(&inports_[port]);
 }
 
 

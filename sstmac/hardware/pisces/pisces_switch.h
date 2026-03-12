@@ -133,6 +133,12 @@ class PiscesSwitch :
     std::string toString() const {
       return parent->xbar()->toString();
     }
+
+    void serialize_order(serializer& ser) {
+      ser & parent;
+      ser & recv_bytes_;
+      ser & port;
+    }
   };
 
   std::vector<PiscesBuffer*> out_buffers_;

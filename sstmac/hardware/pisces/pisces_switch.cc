@@ -42,6 +42,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
+#include <pisces/pisces_buffer.h>
+#include <pisces/pisces_sender.h>
+#include <sstmac/common/event_scheduler.h>
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/pisces/pisces_switch.h>
 #include <sstmac/hardware/nic/nic.h>
@@ -169,7 +172,7 @@ PiscesSwitch::connectOutput(
   int buffer_inport = 0;
   std::string out_port_name = sprockit::sprintf("buffer-out%d", src_outport);
   auto out_link = allocateSubLink(out_port_name, TimeDelta(), //don't put latency on xbar
-                    newLinkHandler(out_buffer, &PiscesBuffer::handlePayload));
+  newLinkHandler<PiscesBuffer, &PiscesBuffer::handlePayload>(out_buffer));
   xbar_->setOutput(src_outport, buffer_inport, std::move(out_link), link_credits_ * scale_factor);
 
   std::string in_port_name = sprockit::sprintf("xbar-credit%d", src_outport);
@@ -231,14 +234,14 @@ PiscesSwitch::creditHandler(int port)
     spkt_abort_printf("Got invalid port %d request for credit handler - max is %d",
                       port, out_buffers_.size() - 1);
   }
-  return newLinkHandler(out_buffers_[port], &PiscesSender::handleCredit);
+  return newLinkHandler<PiscesSender, &PiscesSender::handleCredit>(out_buffers_[port]);
 }
 
 LinkHandler*
 PiscesSwitch::payloadHandler(int port)
 {
   InputPort* inp = &inports_[port];
-  return newLinkHandler(inp, &InputPort::handle);
+  return newLinkHandler<InputPort, &InputPort::handle>(inp);
 }
 
 }

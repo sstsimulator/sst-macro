@@ -18,7 +18,7 @@ AC_ARG_WITH(std,
     cxxstd=$withval
   ],
   [
-    cxxstd=11
+    cxxstd=17
   ]
 )
 

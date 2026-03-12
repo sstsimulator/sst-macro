@@ -42,6 +42,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
+#include <sstmac/common/event_scheduler.h>
 #include <sumi-mpi/mpi_message.h>
 #include <sstmac/hardware/topology/structured_topology.h>
 #include <sstmac/hardware/network/network_message.h>
@@ -169,9 +170,9 @@ LinkHandler*
 SnapprNIC::payloadHandler(int port)
 {
   if (port == NIC::LogP){
-    return newLinkHandler(this, &NIC::mtlHandle);
+    return newLinkHandler<NIC, &NIC::mtlHandle>(this);
   } else {
-    return newLinkHandler(this, &SnapprNIC::handlePayload);
+    return newLinkHandler<SnapprNIC, &SnapprNIC::handlePayload>(this);
   }
 }
 
@@ -188,7 +189,7 @@ SnapprNIC::deadlockCheck()
 LinkHandler*
 SnapprNIC::creditHandler(int  /*port*/)
 {
-  return newLinkHandler(this, &SnapprNIC::handleCredit);
+  return newLinkHandler<SnapprNIC, &SnapprNIC::handleCredit>(this);
 }
 
 void

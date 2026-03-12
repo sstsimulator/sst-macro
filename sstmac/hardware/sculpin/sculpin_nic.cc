@@ -42,6 +42,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
+#include <sstmac/common/event_scheduler.h>
 #include <sstmac/hardware/topology/structured_topology.h>
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/hardware/sculpin/sculpin_nic.h>
@@ -93,16 +94,16 @@ LinkHandler*
 SculpinNIC::payloadHandler(int port)
 {
   if (port == NIC::LogP){
-    return newLinkHandler(this, &NIC::mtlHandle);
+    return newLinkHandler<NIC, &NIC::mtlHandle>(this);
   } else {
-    return newLinkHandler(this, &SculpinNIC::handlePayload);
+    return newLinkHandler<SculpinNIC, &SculpinNIC::handlePayload>(this);
   }
 }
 
 LinkHandler*
 SculpinNIC::creditHandler(int  /*port*/)
 {
-  return newLinkHandler(this, &SculpinNIC::handleCredit);
+  return newLinkHandler<SculpinNIC, &SculpinNIC::handleCredit>(this);
 }
 
 void

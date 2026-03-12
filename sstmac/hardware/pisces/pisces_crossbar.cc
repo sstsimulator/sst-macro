@@ -42,6 +42,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
+#include <sstmac/common/event_scheduler.h>
 #include <sstmac/hardware/pisces/pisces_crossbar.h>
 #include <sstmac/hardware/pisces/pisces_tiled_switch.h>
 #include <sstmac/hardware/topology/structured_topology.h>
@@ -108,13 +109,13 @@ PiscesNtoMQueue(const std::string& selfname, uint32_t id,
 LinkHandler*
 PiscesNtoMQueue::creditHandler()
 {
-  return newLinkHandler(this, &PiscesNtoMQueue::handleCredit);
+  return newLinkHandler<PiscesNtoMQueue, &PiscesNtoMQueue::handleCredit>(this);
 }
 
 LinkHandler*
 PiscesNtoMQueue::payloadHandler()
 {
-  return newLinkHandler(this, &PiscesNtoMQueue::handlePayload);
+  return newLinkHandler<PiscesNtoMQueue, &PiscesNtoMQueue::handlePayload>(this);
 }
 
 PiscesNtoMQueue::~PiscesNtoMQueue()

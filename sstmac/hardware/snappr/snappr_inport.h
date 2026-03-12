@@ -45,13 +45,14 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef snappr_inport_h
 #define snappr_inport_h
 
+#include <sstmac/common/serializable.h>
 #include <sstmac/common/event_scheduler.h>
 #include <sstmac/hardware/snappr/snappr_switch_fwd.h>
 
 namespace sstmac {
 namespace hw {
 
-struct SnapprInPort {
+struct SnapprInPort : public serializable {
   int number;
   int src_outport;
   EventLink::ptr link;
@@ -59,6 +60,16 @@ struct SnapprInPort {
   void handle(Event* ev);
 
   std::string toString() const;
+
+  void serialize_order(serializer& ser) override {
+    ser & number;
+    ser & src_outport;
+    ser & link.get();  // the get is required for sprockit serialization
+    // SnapprSwitch is abstract
+    // ser & parent);
+  }
+
+  ImplementSerializable(SnapprInPort);
 };
 
 }
