@@ -263,13 +263,13 @@ PiscesTiledSwitch::toString() const
 LinkHandler*
 PiscesTiledSwitch::creditHandler(int  /*port*/)
 {
-  return newLinkHandler(this, &PiscesTiledSwitch::handleCredit);
+  return newLinkHandler<&PiscesTiledSwitch::handleCredit>(this);
 }
 
 LinkHandler*
 PiscesTiledSwitch::payloadHandler(int  /*port*/)
 {
-  return newLinkHandler(this, &PiscesTiledSwitch::handlePayload);
+  return newLinkHandler<&PiscesTiledSwitch::handlePayload>(this);
 }
 
 }

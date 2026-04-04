@@ -105,11 +105,11 @@ class LogPSwitch : public ConnectableComponent
   void connectInput(int, int, EventLink::ptr&&) override {}
 
   LinkHandler* payloadHandler(int  /*port*/) override {
-    return newLinkHandler(this, &LogPSwitch::sendEvent);
+    return newLinkHandler<&LogPSwitch::sendEvent>(this);
   }
 
   LinkHandler* creditHandler(int  /*port*/) override {
-    return newLinkHandler(this, &LogPSwitch::dropEvent);
+    return newLinkHandler<&LogPSwitch::dropEvent>(this);
   }
 
   void connectOutput(NodeId nid, EventLink::ptr&& link) {

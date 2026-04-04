@@ -93,16 +93,16 @@ LinkHandler*
 SculpinNIC::payloadHandler(int port)
 {
   if (port == NIC::LogP){
-    return newLinkHandler(this, &NIC::mtlHandle);
+    return newLinkHandler<&NIC::mtlHandle>(this);
   } else {
-    return newLinkHandler(this, &SculpinNIC::handlePayload);
+    return newLinkHandler<&SculpinNIC::handlePayload>(this);
   }
 }
 
 LinkHandler*
 SculpinNIC::creditHandler(int  /*port*/)
 {
-  return newLinkHandler(this, &SculpinNIC::handleCredit);
+  return newLinkHandler<&SculpinNIC::handleCredit>(this);
 }
 
 void

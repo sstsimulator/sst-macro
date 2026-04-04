@@ -78,7 +78,7 @@ SimpleNode::SimpleNode(uint32_t id, SST::Params& params)
   unblock_links_.resize(ncores);
   for (int i=0; i < ncores; ++i){
     std::string linkName = "unblock" + std::to_string(i);
-    unblock_links_[i] = configureLink(linkName, new Event::Handler<SimpleNode>(this, &SimpleNode::unblock));
+    unblock_links_[i] = configureLink(linkName, new Event::Handler<SimpleNode, &SimpleNode::unblock>(this));
   }
 #endif
 }

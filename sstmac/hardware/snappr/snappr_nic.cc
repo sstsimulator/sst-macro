@@ -169,9 +169,9 @@ LinkHandler*
 SnapprNIC::payloadHandler(int port)
 {
   if (port == NIC::LogP){
-    return newLinkHandler(this, &NIC::mtlHandle);
+    return newLinkHandler<&NIC::mtlHandle>(this);
   } else {
-    return newLinkHandler(this, &SnapprNIC::handlePayload);
+    return newLinkHandler<&SnapprNIC::handlePayload>(this);
   }
 }
 
@@ -188,7 +188,7 @@ SnapprNIC::deadlockCheck()
 LinkHandler*
 SnapprNIC::creditHandler(int  /*port*/)
 {
-  return newLinkHandler(this, &SnapprNIC::handleCredit);
+  return newLinkHandler<&SnapprNIC::handleCredit>(this);
 }
 
 void

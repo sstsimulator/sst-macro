@@ -182,7 +182,7 @@ LinkHandler*
 PiscesBranchedSwitch::creditHandler(int port)
 {
   PiscesDemuxer* demux = output_demuxers_[port];
-  return newLinkHandler(demux, &PiscesDemuxer::handlePayload);
+  return newLinkHandler<&PiscesDemuxer::handlePayload>(demux);
 }
 
 void
@@ -212,7 +212,7 @@ LinkHandler*
 PiscesBranchedSwitch::payloadHandler(int port)
 {
   InputPort* mux = const_cast<InputPort*>(&input_muxers_[port]);
-  return newLinkHandler(mux, &InputPort::handle);
+  return newLinkHandler<&InputPort::handle>(mux);
 }
 
 }

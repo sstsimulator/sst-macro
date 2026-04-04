@@ -221,11 +221,11 @@ class DummySwitch : public TestComponent {
   }
 
   LinkHandler* creditHandler(int port) override {
-    return newLinkHandler(this, &DummySwitch::recvCredit);
+    return newLinkHandler<&DummySwitch::recvCredit>(this);
   }
 
   LinkHandler* payloadHandler(int port) override {
-    return newLinkHandler(this, &DummySwitch::recvPayload);
+    return newLinkHandler<&DummySwitch::recvPayload>(this);
   }
 
  private:

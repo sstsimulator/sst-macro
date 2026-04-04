@@ -213,11 +213,11 @@ class SharedBaseComponent {
 
 #if SSTMAC_INTEGRATED_SST_CORE
  public:
-  static SST::TimeConverter* timeConverter() {
+  static SST::TimeConverter timeConverter() {
     return time_converter_;
   }
  protected:
-  static SST::TimeConverter* time_converter_;
+  static SST::TimeConverter time_converter_;
 #endif
 };
 
@@ -249,7 +249,7 @@ class IntegratedBaseComponent :
     return dynamic_cast<T*>(sub);
   }
 
-  SST::SimTime_t getCurrentSimTime(SST::TimeConverter* tc) const {
+  SST::SimTime_t getCurrentSimTime(SST::TimeConverter tc) const {
     return Base::getCurrentSimTime(tc);
   }
 
@@ -295,7 +295,7 @@ protected:
      time_converter_ = Base::getTimeConverter(TimeDelta::tickIntervalString());
    }
    self_link_ = Base::configureSelfLink(selfname, time_converter_,
-         new SST::Event::Handler<IntegratedBaseComponent>(this, &IntegratedBaseComponent::handleExecutionEvent));
+         new SST::Event::Handler<IntegratedBaseComponent, &IntegratedBaseComponent::handleExecutionEvent>(this));
  }
 
  private:
@@ -504,12 +504,27 @@ class SubComponent : public SubComponentParent
   }
 };
 
+namespace detail {
+template <typename> struct handler_class;
+template <typename C, typename R, typename... Args>
+struct handler_class<R(C::*)(Args...)> { using type = C; };
+template <typename C, typename R, typename... Args>
+struct handler_class<R(C::*)(Args...) const> { using type = C; };
+}
+
 #if SSTMAC_INTEGRATED_SST_CORE
-template <class T, class Fxn>
-SST::Event::HandlerBase* newLinkHandler(const T* t, Fxn fxn){
-  return new SST::Event::Handler<T>(const_cast<T*>(t), fxn);
+template <auto Fxn, class T>
+SST::Event::HandlerBase* newLinkHandler(const T* t){
+  using FxnClass = typename detail::handler_class<decltype(Fxn)>::type;
+  return new SST::Event::Handler<FxnClass, Fxn>(
+      const_cast<FxnClass*>(static_cast<const FxnClass*>(t)));
 }
 #else
+template <auto Fxn, class T>
+SST::Event::HandlerBase* newLinkHandler(const T* t){
+  return new MemberFxnHandler<T, decltype(Fxn)>(const_cast<T*>(t), Fxn);
+}
+
 template <class T, class Fxn, class... Args>
 SST::Event::HandlerBase* newLinkHandler(const T* t, Fxn fxn, Args&&... args){
   return new MemberFxnHandler<T, Fxn, Args...>(

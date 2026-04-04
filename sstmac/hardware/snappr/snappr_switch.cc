@@ -306,14 +306,14 @@ LinkHandler*
 SnapprSwitch::creditHandler(int port)
 {
   switch_debug("returning credit handler on output port %d", port);
-  return newLinkHandler(outports_[port], &SnapprOutPort::handle);
+  return newLinkHandler<&SnapprOutPort::handle>(outports_[port]);
 }
 
 LinkHandler*
 SnapprSwitch::payloadHandler(int port)
 {
   switch_debug("returning payload handler on input port %d", port);
-  return newLinkHandler(&inports_[port], &SnapprInPort::handle);
+  return newLinkHandler<&SnapprInPort::handle>(&inports_[port]);
 }
 
 

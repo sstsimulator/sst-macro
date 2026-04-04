@@ -130,6 +130,9 @@ class PiscesSwitch :
 
     void handle(Event* ev);
 
+ 
+    void serialize_order(sstmac::serializer& UNUSED(ser)) {}
+
     std::string toString() const {
       return parent->xbar()->toString();
     }

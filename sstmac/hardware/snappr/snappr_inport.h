@@ -58,6 +58,8 @@ struct SnapprInPort {
   SnapprSwitch* parent;
   void handle(Event* ev);
 
+  void serialize_order(sstmac::serializer& UNUSED(ser)) {}
+
   std::string toString() const;
 };
 

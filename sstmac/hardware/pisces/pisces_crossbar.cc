@@ -108,13 +108,13 @@ PiscesNtoMQueue(const std::string& selfname, uint32_t id,
 LinkHandler*
 PiscesNtoMQueue::creditHandler()
 {
-  return newLinkHandler(this, &PiscesNtoMQueue::handleCredit);
+  return newLinkHandler<&PiscesNtoMQueue::handleCredit>(this);
 }
 
 LinkHandler*
 PiscesNtoMQueue::payloadHandler()
 {
-  return newLinkHandler(this, &PiscesNtoMQueue::handlePayload);
+  return newLinkHandler<&PiscesNtoMQueue::handlePayload>(this);
 }
 
 PiscesNtoMQueue::~PiscesNtoMQueue()

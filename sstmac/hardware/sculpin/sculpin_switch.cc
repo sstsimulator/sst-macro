@@ -339,13 +339,13 @@ SculpinSwitch::toString() const
 LinkHandler*
 SculpinSwitch::creditHandler(int  /*port*/)
 {
-  return newLinkHandler(this, &SculpinSwitch::handleCredit);
+  return newLinkHandler<&SculpinSwitch::handleCredit>(this);
 }
 
 LinkHandler*
 SculpinSwitch::payloadHandler(int  /*port*/)
 {
-  return newLinkHandler(this, &SculpinSwitch::handlePayload);
+  return newLinkHandler<&SculpinSwitch::handlePayload>(this);
 }
 
 }
