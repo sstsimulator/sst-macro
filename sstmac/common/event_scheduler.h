@@ -228,7 +228,7 @@ class SharedBaseComponent {
     return time_converter_;
   }
  protected:
-  static SST::TimeConverter time_converter_;
+  static inline SST::TimeConverter time_converter_ = {};
 #endif
 };
 

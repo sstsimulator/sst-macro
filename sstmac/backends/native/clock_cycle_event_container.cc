@@ -100,8 +100,8 @@ ClockCycleEventMap::handleIncoming(char* buf)
   ser.start_unpacking(buf, 1<<31); //just pass in a huge number
   uint32_t sz; //these are guaranteed to be first
   uint32_t thread;
-  ser & sz;
-  ser & thread;
+  SST_SER(sz;
+  SST_SER(thread;
   if (sz == 0){
     sprockit::abort("got zero size for incoming buffer");
   }

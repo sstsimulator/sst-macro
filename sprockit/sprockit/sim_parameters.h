@@ -654,14 +654,14 @@ template <> class serialize<SST::Params>
   void operator()(SST::Params& p, serializer& ser){
     if (ser.mode() == ser.UNPACK){
       std::string paramStr;
-      ser & paramStr;
+      SST_SER(paramStr);
       std::stringstream sstr(paramStr);
       p->parseStream(sstr, false, true);
     } else {
       std::stringstream sstr;
       p->reproduceParams(sstr);
       std::string paramStr = sstr.str();
-      ser & paramStr;
+      SST_SER(paramStr);
     }
   }
 };

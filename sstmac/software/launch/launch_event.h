@@ -71,8 +71,8 @@ class LaunchRequest : public hw::NetworkMessage
 
   void serialize_order(serializer& ser) override {
     hw::NetworkMessage::serialize_order(ser);
-    ser & ty_;
-    ser & tid_;
+    SST_SER(ty_);
+    SST_SER(tid_);
   }
 
   TaskId tid() const {

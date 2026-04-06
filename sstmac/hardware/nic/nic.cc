@@ -80,7 +80,7 @@ void
 NicEvent::serialize_order(serializer &ser)
 {
   Event::serialize_order(ser);
-  ser & msg_;
+  SST_SER(msg_);
 }
 
 #if !SSTMAC_INTEGRATED_SST_CORE
