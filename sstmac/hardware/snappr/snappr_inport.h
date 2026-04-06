@@ -62,9 +62,9 @@ struct SnapprInPort : public serializable {
   std::string toString() const;
 
   void serialize_order(serializer& ser) override {
-    ser & number;
-    ser & src_outport;
-    ser & link.get();  // the get is required for sprockit serialization
+    SST_SER(number);
+    SST_SER(src_outport);
+    SST_SER(*link);
     // SnapprSwitch is abstract
     // ser & parent);
   }
@@ -76,4 +76,3 @@ struct SnapprInPort : public serializable {
 }
 
 #endif
-

@@ -105,8 +105,8 @@ class PiscesBranchedSwitch :
     }
 
     void serialize_order(serializer& ser) {
-      ser & parent;
-      ser & mux;
+      SST_SER(parent);
+      SST_SER(mux);
     }
   };
 

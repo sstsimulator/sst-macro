@@ -135,9 +135,9 @@ class PiscesSwitch :
     }
 
     void serialize_order(serializer& ser) {
-      ser & parent;
-      ser & recv_bytes_;
-      ser & port;
+      SST_SER(parent);
+      SST_SER(recv_bytes_);
+      SST_SER(port);
     }
   };
 

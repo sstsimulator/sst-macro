@@ -95,9 +95,9 @@ class EventLink : public serializable {
   }
 
   void serialize_order(serializer& ser) override {
-    ser & link_;
-    ser & selflat_;
-    ser & name_;
+    SST_SER(link_);
+    SST_SER(selflat_);
+    SST_SER(name_);
   }
 
   ImplementSerializable(EventLink);
