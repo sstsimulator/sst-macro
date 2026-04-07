@@ -102,6 +102,13 @@ operator&(serializer& ser, pvt::ser_array_wrapper<TPtr,IntType> arr){
   ser.binary(arr.bufptr, arr.sizeptr);
 }
 
+template <class TPtr, class IntType>
+inline void
+sst_ser_helper(sprockit::serializer& ser, pvt::ser_array_wrapper<TPtr,IntType> arr)
+{
+  ser.binary(arr.bufptr, arr.sizeptr);
+}
+
 // Needed only because the default version in serialize.h can't get
 // the template expansions quite right trying to look through several
 // levels of expansion
