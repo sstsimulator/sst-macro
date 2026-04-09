@@ -52,7 +52,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-struct SnapprInPort : public serializable {
+struct SnapprInPort {
   int number;
   int src_outport;
   EventLink::ptr link;
@@ -61,15 +61,13 @@ struct SnapprInPort : public serializable {
 
   std::string toString() const;
 
-  void serialize_order(serializer& ser) override {
+  void serialize_order(serializer& ser) {
     SST_SER(number);
     SST_SER(src_outport);
     SST_SER(*link);
     // SnapprSwitch is abstract
-    // ser & parent);
+    // SST_SER(parent);
   }
-
-  ImplementSerializable(SnapprInPort);
 };
 
 }
