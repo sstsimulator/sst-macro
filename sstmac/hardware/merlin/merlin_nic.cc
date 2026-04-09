@@ -145,8 +145,8 @@ class MerlinNIC :
     ack_queue_.resize(vns_);
     mtu_ = params.find<SST::UnitAlgebra>("mtu").getRoundedValue();
 
-    auto recv_notify = new SST::Interfaces::SimpleNetwork::Handler<MerlinNIC>(this,&MerlinNIC::incomingPacket);
-    auto send_notify = new SST::Interfaces::SimpleNetwork::Handler<MerlinNIC>(this,&MerlinNIC::incomingCredit);
+    auto recv_notify = new SST::Interfaces::SimpleNetwork::Handler<MerlinNIC, &MerlinNIC::incomingPacket>(this);
+    auto send_notify = new SST::Interfaces::SimpleNetwork::Handler<MerlinNIC, &MerlinNIC::incomingCredit>(this);
 
     if (params.contains("test_size")){
       test_size_ = params.find<SST::UnitAlgebra>("test_size").getRoundedValue();

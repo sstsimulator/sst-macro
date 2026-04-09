@@ -108,8 +108,8 @@ class TimeDelta
  public:
 
   void serialize_order(SST::Core::Serialization::serializer& ser) {
-    ser& ticks_;
-    ser& max_time_;
+    SST_SER(ticks_);
+    SST_SER(max_time_);
   }
 
   static void initStamps(tick_t tick_spacing);
@@ -256,8 +256,8 @@ struct Timestamp
   TimeDelta time;
 
   void serialize_order(SST::Core::Serialization::serializer& ser) {
-    ser& epochs;
-    ser& time;
+    SST_SER(epochs);
+    SST_SER(time);
   }
 
   static constexpr uint64_t carry_bits_mask = 0;

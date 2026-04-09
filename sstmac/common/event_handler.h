@@ -115,7 +115,7 @@ public:
     static constexpr bool value = type::value;
 };
 
-template <class Cls, typename Fxn, class ...Args>
+template <class Cls, auto Fxn, typename dataT = void>
 class MemberFxnHandler : public EventHandler
 {
 
@@ -127,20 +127,18 @@ class MemberFxnHandler : public EventHandler
   }
 
   void handle(Event* ev) override {
-    dispatch(ev, typename gens<sizeof...(Args)>::type());
+    dispatch(ev);
   }
 
-  MemberFxnHandler(Cls* obj, Fxn fxn, const Args&... args) :
-    params_(args...),
-    fxn_(fxn),
+  MemberFxnHandler(Cls* obj) :
     obj_(obj)
   {
   }
 
  private:
   template <int ...S>
-  void dispatch(Event* ev, seq<S...>){
-    (obj_->*fxn_)(ev, std::get<S>(params_)...);
+  void dispatch(Event* ev){
+    (obj_->*Fxn)(ev);
   }
 
   template <class T = Cls>
@@ -163,17 +161,14 @@ class MemberFxnHandler : public EventHandler
   typename std::enable_if<!has_deadlock_check<T>::value>::type
   localDeadlockCheck(Event*) {}
 
-  std::tuple<Args...> params_;
-  Fxn fxn_;
   Cls* obj_;
 
 };
 
-template<class Cls, typename Fxn, class ...Args>
-EventHandler* newHandler(Cls* cls, Fxn fxn, const Args&... args)
+template<class Cls, auto Fxn, typename dataT = void>
+EventHandler* newHandler(Cls* cls)
 {
-  return new MemberFxnHandler<Cls, Fxn, Args...>(
-        cls, fxn, args...);
+  return new MemberFxnHandler<Cls, Fxn, dataT>(cls);
 }
 
 

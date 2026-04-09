@@ -44,6 +44,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <string>
 
+#include <sstmac/common/event_scheduler.h>
 #include <sstmac/hardware/pisces/pisces_tiled_switch.h>
 #include <sstmac/hardware/pisces/pisces_nic.h>
 #include <sstmac/hardware/topology/structured_topology.h>
@@ -263,13 +264,13 @@ PiscesTiledSwitch::toString() const
 LinkHandler*
 PiscesTiledSwitch::creditHandler(int  /*port*/)
 {
-  return newLinkHandler(this, &PiscesTiledSwitch::handleCredit);
+  return newLinkHandler<PiscesTiledSwitch, &PiscesTiledSwitch::handleCredit>(this);
 }
 
 LinkHandler*
 PiscesTiledSwitch::payloadHandler(int  /*port*/)
 {
-  return newLinkHandler(this, &PiscesTiledSwitch::handlePayload);
+  return newLinkHandler<PiscesTiledSwitch, &PiscesTiledSwitch::handlePayload>(this);
 }
 
 }

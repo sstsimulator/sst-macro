@@ -87,16 +87,16 @@ void
 SnapprPacket::serialize_order(serializer& ser)
 {
   Packet::serialize_order(ser);
-  ser & seqnum_;
-  ser & arrival_;
-  ser & time_to_send_;
-  ser & congestion_delay_;
-  ser & offset_;
-  ser & vl_;
-  ser & priority_;
-  ser & inport_;
-  ser & input_vl_;
-  ser & deadlocked_;
+  SST_SER(seqnum_);
+  SST_SER(arrival_);
+  SST_SER(time_to_send_);
+  SST_SER(congestion_delay_);
+  SST_SER(offset_);
+  SST_SER(vl_);
+  SST_SER(priority_);
+  SST_SER(inport_);
+  SST_SER(input_vl_);
+  SST_SER(deadlocked_);
 }
 
 std::string
@@ -108,9 +108,9 @@ void
 SnapprCredit::serialize_order(serializer &ser)
 {
   Event::serialize_order(ser);
-  ser & num_bytes_;
-  ser & port_;
-  ser & vl_;
+  SST_SER(num_bytes_);
+  SST_SER(port_);
+  SST_SER(vl_);
 }
 
 }

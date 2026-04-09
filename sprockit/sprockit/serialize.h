@@ -150,6 +150,17 @@ operator&(serializer& ser, T& t){
   serialize<T>()(t, ser);
 }
 
+// Single-argument entry point: serialize 'x' using the in-scope serializer.
+template <class T>
+inline void sst_ser_helper(sprockit::serializer& ser, T& x)
+{
+  // Calls sprockit::operator&(serializer&, T&/T*&/void*)
+  sprockit::operator&(ser, x);
+}
+
+// macro form that only takes the item-to-serialize.
+#define SST_SER(x) sst_ser_helper(ser, (x))
+
 }
 
 #include <sprockit/serialize_array.h>

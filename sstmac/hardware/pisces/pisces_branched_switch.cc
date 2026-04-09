@@ -44,6 +44,8 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <string>
 
+#include <pisces/pisces_crossbar.h>
+#include <sstmac/common/event_scheduler.h>
 #include <sstmac/hardware/pisces/pisces_branched_switch.h>
 #include <sstmac/hardware/pisces/pisces_nic.h>
 #include <sstmac/hardware/topology/structured_topology.h>
@@ -182,7 +184,7 @@ LinkHandler*
 PiscesBranchedSwitch::creditHandler(int port)
 {
   PiscesDemuxer* demux = output_demuxers_[port];
-  return newLinkHandler(demux, &PiscesDemuxer::handlePayload);
+  return newLinkHandler<PiscesNtoMQueue, &PiscesNtoMQueue::handlePayload>(demux);
 }
 
 void
@@ -212,7 +214,7 @@ LinkHandler*
 PiscesBranchedSwitch::payloadHandler(int port)
 {
   InputPort* mux = const_cast<InputPort*>(&input_muxers_[port]);
-  return newLinkHandler(mux, &InputPort::handle);
+  return newLinkHandler<InputPort, &InputPort::handle>(mux);
 }
 
 }

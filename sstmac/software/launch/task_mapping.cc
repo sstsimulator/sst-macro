@@ -60,9 +60,9 @@ TaskMapping::serialize_order(AppId aid, serializer &ser)
   TaskMapping::ptr mapping;
   if (ser.mode() == ser.UNPACK){
     int num_nodes;
-    ser & num_nodes;
+    SST_SER(num_nodes);
     mapping = std::make_shared<TaskMapping>(aid);
-    ser & mapping->rank_to_node_indexing_;
+    SST_SER(mapping->rank_to_node_indexing_);
     mapping->node_to_rank_indexing_.resize(num_nodes);
     int num_ranks = mapping->rank_to_node_indexing_.size();
     for (int i=0; i < num_ranks; ++i){
@@ -82,8 +82,8 @@ TaskMapping::serialize_order(AppId aid, serializer &ser)
     mapping = app_ids_launched_[aid];
     if (!mapping) spkt_abort_printf("no task mapping exists for application %d", aid);
     int num_nodes = mapping->node_to_rank_indexing_.size();
-    ser & num_nodes;
-    ser & mapping->rank_to_node_indexing_;
+    SST_SER(num_nodes);
+    SST_SER(mapping->rank_to_node_indexing_);
   }
   return mapping;
 }
