@@ -77,7 +77,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #define SSTMAC_SAVE_MAIN main
 #undef main
 #endif
-#include <sst/core/serialization/serialize_serializable.h>
+#include <sst/core/serialization/serializable.h>
 #ifdef SSTMAC_SAVE_MAIN
 #undef main
 #define main SSTMAC_SAVE_MAIN
@@ -123,7 +123,7 @@ using SST::Core::Serialization::raw_ptr;
 #else
 #include <sprockit/serializer_fwd.h>
 #include <sprockit/serializable.h>
-#include <sprockit/serialize_serializable.h>
+#include <sprockit/serializable.h>
 #include <sprockit/serializer.h>
 
 namespace SST {

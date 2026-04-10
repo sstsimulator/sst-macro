@@ -45,6 +45,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef SSTMAC_COMMON_EventScheduler_H_INCLUDED
 #define SSTMAC_COMMON_EventScheduler_H_INCLUDED
 
+#include <sstmac/common/serializable.h>
 #include <sstmac/common/timestamp.h>
 #include <sstmac/common/event_handler.h>
 #include <sstmac/common/handler_event_queue_entry.h>
@@ -65,7 +66,7 @@ extern int run_standalone(int, char**);
 namespace sstmac {
   using LinkHandler = SST::Event::HandlerBase;
 
-class EventLink {
+class EventLink : public serializable {
  public:
   EventLink(const std::string& name, TimeDelta selflat, SST::Link* link) :
     link_(link),
@@ -73,6 +74,8 @@ class EventLink {
     name_(name)
   {
   }
+
+  EventLink() = default;
 
   using ptr = std::unique_ptr<EventLink>;
 
@@ -90,6 +93,14 @@ class EventLink {
   void send(Event* ev){
     send(selflat_, ev);
   }
+
+  void serialize_order(serializer& ser) override {
+    SST_SER(link_);
+    SST_SER(selflat_);
+    SST_SER(name_);
+  }
+
+  ImplementSerializable(EventLink);
 
  private:
   SST::Link* link_;
@@ -213,11 +224,11 @@ class SharedBaseComponent {
 
 #if SSTMAC_INTEGRATED_SST_CORE
  public:
-  static SST::TimeConverter* timeConverter() {
+  static SST::TimeConverter timeConverter() {
     return time_converter_;
   }
  protected:
-  static SST::TimeConverter* time_converter_;
+  static inline SST::TimeConverter time_converter_ = {};
 #endif
 };
 
@@ -249,7 +260,7 @@ class IntegratedBaseComponent :
     return dynamic_cast<T*>(sub);
   }
 
-  SST::SimTime_t getCurrentSimTime(SST::TimeConverter* tc) const {
+  SST::SimTime_t getCurrentSimTime(SST::TimeConverter tc) const {
     return Base::getCurrentSimTime(tc);
   }
 
@@ -295,7 +306,7 @@ protected:
      time_converter_ = Base::getTimeConverter(TimeDelta::tickIntervalString());
    }
    self_link_ = Base::configureSelfLink(selfname, time_converter_,
-         new SST::Event::Handler<IntegratedBaseComponent>(this, &IntegratedBaseComponent::handleExecutionEvent));
+         new SST::Event::Handler<IntegratedBaseComponent, &IntegratedBaseComponent::handleExecutionEvent>(this));
  }
 
  private:
@@ -505,15 +516,14 @@ class SubComponent : public SubComponentParent
 };
 
 #if SSTMAC_INTEGRATED_SST_CORE
-template <class T, class Fxn>
-SST::Event::HandlerBase* newLinkHandler(const T* t, Fxn fxn){
-  return new SST::Event::Handler<T>(const_cast<T*>(t), fxn);
+template <typename T, auto funcT, typename dataT = void>
+SST::Event::HandlerBase* newLinkHandler(const T* t){
+  return new SST::Event::Handler<T, funcT, dataT>(const_cast<T*>(t));
 }
 #else
-template <class T, class Fxn, class... Args>
-SST::Event::HandlerBase* newLinkHandler(const T* t, Fxn fxn, Args&&... args){
-  return new MemberFxnHandler<T, Fxn, Args...>(
-        const_cast<T*>(t), fxn, std::forward<Args>(args)...);
+template <class T, auto Fxn, typename dataT = void>
+SST::Event::HandlerBase* newLinkHandler(const T* t){
+  return new MemberFxnHandler<T, Fxn, dataT>(const_cast<T*>(t));
 }
 
 class LocalLink : public EventLink {

@@ -102,8 +102,8 @@ struct UniqueEventId {
   }
 
   void serialize_order(SST::Core::Serialization::serializer& ser) {
-    ser& src_node;
-    ser& msg_num;
+    SST_SER(src_node);
+    SST_SER(msg_num);
   }
 };
 

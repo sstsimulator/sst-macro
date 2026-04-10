@@ -130,7 +130,7 @@ LogPNIC::connectInput(int /*src_outport*/, int /*dst_inport*/,
 LinkHandler*
 LogPNIC::payloadHandler(int  /*port*/)
 {
-  return newLinkHandler(this, &NIC::mtlHandle);
+  return newLinkHandler<NIC, &NIC::mtlHandle>(this);
 }
 
 }

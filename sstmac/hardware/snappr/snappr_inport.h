@@ -45,6 +45,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef snappr_inport_h
 #define snappr_inport_h
 
+#include <sstmac/common/serializable.h>
 #include <sstmac/common/event_scheduler.h>
 #include <sstmac/hardware/snappr/snappr_switch_fwd.h>
 
@@ -59,10 +60,17 @@ struct SnapprInPort {
   void handle(Event* ev);
 
   std::string toString() const;
+
+  void serialize_order(serializer& ser) {
+    SST_SER(number);
+    SST_SER(src_outport);
+    SST_SER(*link);
+    // SnapprSwitch is abstract
+    // SST_SER(parent);
+  }
 };
 
 }
 }
 
 #endif
-

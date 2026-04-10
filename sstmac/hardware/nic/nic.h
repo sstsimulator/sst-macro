@@ -144,7 +144,7 @@ class NIC : public ConnectableSubcomponent
    */
   void injectSend(NetworkMessage* netmsg);
 
-  EventHandler* mtlHandler() const;
+  EventHandler* mtlHandler();
 
   virtual void mtlHandle(Event* ev);
 

@@ -75,8 +75,8 @@ PiscesPacket::serialize_order(serializer& ser)
 {
   //routable::serialize_order(ser);
   Packet::serialize_order(ser);
-  ser & arrival_;
-  ser & current_vc_;
+  SST_SER(arrival_);
+  SST_SER(current_vc_);
 }
 
 std::string
@@ -101,9 +101,9 @@ void
 PiscesCredit::serialize_order(serializer& ser)
 {
   Event::serialize_order(ser);
-  ser & num_credits_;
-  ser & port_;
-  ser & vc_;
+  SST_SER(num_credits_);
+  SST_SER(port_);
+  SST_SER(vc_);
 }
 
 }

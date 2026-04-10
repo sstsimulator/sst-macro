@@ -314,13 +314,13 @@ ParallelRuntime::~ParallelRuntime()
 void
 ParallelRuntime::runSerialize(serializer& ser, IpcEvent* iev)
 {
-  ser & iev->ser_size; //this must be first!!!
-  ser & iev->thread; //this must be first!!!
-  ser & iev->t;
-  ser & iev->seqnum;
-  ser & iev->link;
-  ser & iev->rank;
-  ser & iev->ev;
+  SST_SER(iev->ser_size); //this must be first!!!
+  SST_SER(iev->thread); //this must be first!!!
+  SST_SER(iev->t);
+  SST_SER(iev->seqnum);
+  SST_SER(iev->link);
+  SST_SER(iev->rank);
+  SST_SER(iev->ev);
 }
 
 void ParallelRuntime::sendEvent(IpcEvent* iev)
@@ -338,7 +338,7 @@ void ParallelRuntime::sendEvent(IpcEvent* iev)
 
   sprockit::serializer ser;
   ser.start_sizing();
-  ser & iev->ev;
+  SST_SER(iev->ev);
   iev->ser_size = overhead + ser.size();
   align64(iev->ser_size);
   CommBuffer& buff = send_buffers_[iev->rank];

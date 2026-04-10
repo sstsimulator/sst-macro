@@ -42,6 +42,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
+#include <sstmac/common/event_handler.h>
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/hardware/network/network_message.h>
@@ -79,7 +80,7 @@ void
 NicEvent::serialize_order(serializer &ser)
 {
   Event::serialize_order(ser);
-  ser & msg_;
+  SST_SER(msg_);
 }
 
 #if !SSTMAC_INTEGRATED_SST_CORE
@@ -144,9 +145,9 @@ NIC::~NIC()
 }
 
 EventHandler*
-NIC::mtlHandler() const
+NIC::mtlHandler()
 {
-  return newHandler(const_cast<NIC*>(this), &NIC::mtlHandle);
+  return newHandler<NIC, &NIC::mtlHandle>(this);
 }
 
 void

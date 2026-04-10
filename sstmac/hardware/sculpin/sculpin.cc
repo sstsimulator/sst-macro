@@ -82,9 +82,9 @@ SculpinPacket::serialize_order(serializer& ser)
 {
   //routable::serialize_order(ser);
   Packet::serialize_order(ser);
-  ser & arrival_;
-  ser & time_to_send_;
-  ser & priority_;
+  SST_SER(arrival_);
+  SST_SER(time_to_send_);
+  SST_SER(priority_);
 }
 
 }

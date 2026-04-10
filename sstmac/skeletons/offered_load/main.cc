@@ -77,9 +77,9 @@ class RdmaMessage :
   }
 
   void serialize_order(sstmac::serializer& ser) override {
-    ser & iter_;
-    ser & start_;
-    ser & finish_;
+    SST_SER( iter_ );
+    SST_SER( start_ );
+    SST_SER( finish_ );
     sumi::Message::serialize_order(ser);
   }
 

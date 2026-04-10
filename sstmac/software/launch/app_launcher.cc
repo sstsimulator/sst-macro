@@ -137,8 +137,8 @@ void
 StartAppRequest::serialize_order(serializer &ser)
 {
   LaunchRequest::serialize_order(ser);
-  ser & unique_name_;
-  ser & app_params_;
+  SST_SER(unique_name_);
+  SST_SER(app_params_);
   mapping_ = TaskMapping::serialize_order(aid(), ser);
 }
 

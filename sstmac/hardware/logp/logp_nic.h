@@ -96,7 +96,7 @@ class LogPNIC :
   }
 
   LinkHandler* creditHandler(int  /*port*/) override {
-    return newLinkHandler(this, &LogPNIC::dropEvent);
+    return newLinkHandler<LogPNIC, &LogPNIC::dropEvent>(this);
   }
 
   LinkHandler* payloadHandler(int port) override;

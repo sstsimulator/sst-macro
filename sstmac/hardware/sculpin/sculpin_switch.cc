@@ -48,6 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <inttypes.h>
 
+#include <sstmac/common/event_scheduler.h>
 #include <sstmac/hardware/router/router.h>
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/sculpin/sculpin_switch.h>
@@ -339,13 +340,13 @@ SculpinSwitch::toString() const
 LinkHandler*
 SculpinSwitch::creditHandler(int  /*port*/)
 {
-  return newLinkHandler(this, &SculpinSwitch::handleCredit);
+  return newLinkHandler<SculpinSwitch, &SculpinSwitch::handleCredit>(this);
 }
 
 LinkHandler*
 SculpinSwitch::payloadHandler(int  /*port*/)
 {
-  return newLinkHandler(this, &SculpinSwitch::handlePayload);
+  return newLinkHandler<SculpinSwitch, &SculpinSwitch::handlePayload>(this);
 }
 
 }

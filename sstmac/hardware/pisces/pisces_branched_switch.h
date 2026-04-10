@@ -45,6 +45,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef pisces_BRANCHED_SWITCH_H
 #define pisces_BRANCHED_SWITCH_H
 
+#include <sstmac/common/serializable.h>
 #include <sstmac/hardware/pisces/pisces_switch.h>
 #include <sstmac/hardware/pisces/pisces_buffer.h>
 #include <sstmac/hardware/pisces/pisces_crossbar.h>
@@ -101,6 +102,11 @@ class PiscesBranchedSwitch :
 
     std::string toString() const {
       return parent->toString();
+    }
+
+    void serialize_order(serializer& ser) {
+      SST_SER(parent);
+      SST_SER(mux);
     }
   };
 
