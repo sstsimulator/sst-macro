@@ -280,11 +280,11 @@ static void* gen_sst_macro_integrated_pymodule(void)
   PyObject* nproc_fxn = PyObject_GetAttrString(mainModule, "getMPIRankCount");
   PyObject* nthr_fxn = PyObject_GetAttrString(mainModule, "getThreadCount");
 
-  PyObject* nthr_py = PyEval_CallObject(nthr_fxn, NULL);
+  PyObject* nthr_py = PyObject_CallNoArgs(nthr_fxn);
   int nthread = PyInt_AsLong(nthr_py);
   Py_DECREF(nthr_py);
   Py_DECREF(nthr_fxn);
-  PyObject* nproc_py = PyEval_CallObject(nproc_fxn, NULL);
+  PyObject* nproc_py = PyObject_CallNoArgs(nproc_fxn);
   int nproc = PyInt_AsLong(nproc_py);
   Py_DECREF(nproc_py);
   Py_DECREF(nproc_fxn);
