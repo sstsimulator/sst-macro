@@ -46,6 +46,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #define bin_clang_util_h
 
 #include "clangHeaders.h"
+#include "clang/Frontend/CompilerInstance.h"
+#include "clang/Tooling/Tooling.h"
 #include <clangtidymacros.h>
 
 #include <string>

@@ -42,10 +42,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include "clangHeaders.h"
-#include "globalVarNamespace.h"
+#include "clang/Tooling/CommonOptionsParser.h"
 #include "frontendActions.h"
-#include "astVisitor.h"
 
 using namespace clang;
 using namespace clang::driver;

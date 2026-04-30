@@ -90,7 +90,8 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <map>
 #include <list>
-#include "clangHeaders.h"
+#include "clang/Frontend/CompilerInstance.h"
+#include "clang/Rewrite/Core/Rewriter.h"
 
 namespace clang {
   class CompilerInstance;

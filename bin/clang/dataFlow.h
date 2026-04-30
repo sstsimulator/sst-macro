@@ -44,6 +44,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef bin_clang_dataFlow_h
 #define bin_clang_dataFlow_h
 
+#include "clang/AST/Decl.h"
+#include <cstdint>
+#include <set>
 struct DataFlowMap {
   struct Access {
     uint32_t generation;
