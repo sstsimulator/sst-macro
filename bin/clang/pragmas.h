@@ -49,9 +49,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #include "clangHeaders.h"
 #include "clangGlobals.h"
 #include "util.h"
+#include <iostream>
 #include <set>
 #include <cstdint>
-#include <functional>
 
 template <typename T>             
 std::uintptr_t pragmaID() noexcept {

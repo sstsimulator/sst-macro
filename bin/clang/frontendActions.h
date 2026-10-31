@@ -45,7 +45,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef bin_clang_frontendactions_h
 #define bin_clang_frontendactions_h
 
-#include "clangHeaders.h"
+#include "clang/Tooling/Tooling.h"
 #include "astConsumers.h"
 #include "globalVarNamespace.h"
 

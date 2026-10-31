@@ -88,7 +88,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef bin_clang_memoizeVariable_h
 #define bin_clang_memoizeVariable_h
 
-#include "clangHeaders.h"
+#include "clang/AST/Decl.h"
 
 namespace memoize {
 

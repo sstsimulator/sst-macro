@@ -46,11 +46,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #define bin_clang_globalvarnamespace_H
 
 #include <string>
-#include <set>
 #include <map>
 #include <ostream>
 #include <sstream>
-#include "clangHeaders.h"
 #include "util.h"
 #include "clangGlobals.h"
 

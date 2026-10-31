@@ -43,15 +43,12 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include "clangGlobals.h"
+#include "clang/Parse/Parser.h"
 
 #include "frontendActions.h"
 #include "globalVarNamespace.h"
 #include "pragmas.h"
-#include "replacePragma.h"
-#include "computePragma.h"
-#include <sstream>
 #include <fstream>
-#include <iostream>
 #include <sstmac/common/sstmac_config.h>
 
 using namespace clang;
