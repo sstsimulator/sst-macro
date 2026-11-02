@@ -419,7 +419,7 @@ text = macro_regexp('ref').sub(process_ref, text)
 text = process_paragraphs(text)
 text = make_toc(text)
 header = """---
-title: Manual for SST-Macro 16.0
+title: Manual for SST-Macro 16.1
 published: true
 category: SSTDocumentation
 ---"""
